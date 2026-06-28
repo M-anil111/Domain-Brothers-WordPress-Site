@@ -48,6 +48,15 @@ add_action( 'init', function () {
 	if ( empty( $_GET['db_news_refresh'] ) || ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
+	// CSRF protection: require a valid nonce. Without one, show a confirm link.
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'db_news_refresh' ) ) {
+		$confirm = wp_nonce_url( add_query_arg( 'db_news_refresh', '1', home_url( '/' ) ), 'db_news_refresh' );
+		wp_die(
+			'Clear the cached news feed? <a href="' . esc_url( $confirm ) . '">Confirm refresh</a>',
+			'DB News',
+			array( 'response' => 200 )
+		);
+	}
 	// Clear every SimplePie feed transient so the next render re-fetches.
 	global $wpdb;
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_feed_%' OR option_name LIKE '_transient_timeout_feed_%'" );
@@ -71,7 +80,13 @@ function db_render_news( $limit = 12 ) {
 		}
 		$source = $feed->get_title();
 		$max    = $feed->get_item_quantity( $limit );
-		foreach ( $feed->get_items( 0, $max ) as $item ) {
+		// get_items() can return null/false on an empty or unparseable feed;
+		// in PHP 8 foreach over null is a fatal TypeError, so guard it.
+		$feed_items = $feed->get_items( 0, $max );
+		if ( ! is_array( $feed_items ) ) {
+			continue;
+		}
+		foreach ( $feed_items as $item ) {
 			$ts = $item->get_date( 'U' );
 			$items[] = array(
 				'title'  => $item->get_title(),
@@ -144,7 +159,8 @@ add_shortcode( 'db_news', function ( $atts ) {
  */
 add_filter( 'the_content', function ( $content ) {
 	$slug = 'news';
-	if ( ! is_page( $slug ) || is_admin() ) {
+	// Only the main query's main loop on the news page — never widgets/sidebars.
+	if ( ! is_page( $slug ) || is_admin() || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	if ( has_shortcode( $content, 'db_news' ) || false !== strpos( $content, 'db-news-grid' ) ) {

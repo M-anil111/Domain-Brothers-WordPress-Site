@@ -60,10 +60,10 @@ function db_offer_value( $data, $logical ) {
 
 /* Decide whether a given CF7 form is the offer form. */
 function db_is_offer_form( $contact_form ) {
-	if ( ! $contact_form ) {
+	if ( ! is_object( $contact_form ) ) {
 		return false;
 	}
-	if ( DB_OFFER_FORM_ID > 0 ) {
+	if ( DB_OFFER_FORM_ID > 0 && method_exists( $contact_form, 'id' ) ) {
 		return (int) $contact_form->id() === (int) DB_OFFER_FORM_ID;
 	}
 	$title = method_exists( $contact_form, 'title' ) ? $contact_form->title() : '';
@@ -120,14 +120,15 @@ add_action( 'wp_footer', function () {
 	$form_id = (int) DB_OFFER_FORM_ID;
 	if ( $form_id === 0 && function_exists( 'WPCF7_ContactForm' ) ) {
 		// Best-effort: find a form whose title contains "offer".
+		// Fetch full post objects in one query and read post_title directly
+		// (avoids an N+1 of get_the_title() per form).
 		$forms = get_posts( array(
 			'post_type'      => 'wpcf7_contact_form',
 			'posts_per_page' => 50,
-			'fields'         => 'ids',
 		) );
-		foreach ( $forms as $fid ) {
-			if ( false !== stripos( get_the_title( $fid ), 'offer' ) ) {
-				$form_id = (int) $fid;
+		foreach ( $forms as $form_post ) {
+			if ( false !== stripos( $form_post->post_title, 'offer' ) ) {
+				$form_id = (int) $form_post->ID;
 				break;
 			}
 		}
@@ -143,8 +144,13 @@ add_action( 'wp_footer', function () {
 		var DOMAIN_FIELDS = <?php echo wp_json_encode( array_values( $map['domain'] ) ); ?>;
 
 		document.addEventListener('wpcf7mailsent', function (event) {
-			// Only act on the offer form (when we know its id).
-			if (DB_OFFER_FORM_ID && event.detail && event.detail.contactFormId &&
+			// Without a known offer form id, do nothing — never redirect other
+			// forms (contact, newsletter, etc.).
+			if (!DB_OFFER_FORM_ID) {
+				return;
+			}
+			// Only act on the offer form.
+			if (event.detail && event.detail.contactFormId &&
 			    parseInt(event.detail.contactFormId, 10) !== DB_OFFER_FORM_ID) {
 				return;
 			}
