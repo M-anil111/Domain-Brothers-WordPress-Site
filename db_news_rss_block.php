@@ -93,7 +93,12 @@ function db_render_news( $limit = 12 ) {
 				'link'   => $item->get_permalink(),
 				'date'   => $ts ? (int) $ts : 0,
 				'source' => $source,
-				'excerpt'=> wp_trim_words( wp_strip_all_tags( $item->get_description() ), 32, '&hellip;' ),
+				// Strip tags, then decode entities so esc_html() (applied at
+				// render time) doesn't double-encode "&amp;" -> "&amp;amp;".
+				// Strip tags, then decode entities so esc_html() (applied at
+				// render time) doesn't double-encode "&amp;" -> "&amp;amp;".
+				// Use a literal ellipsis (not "&hellip;") for the same reason.
+				'excerpt'=> wp_trim_words( html_entity_decode( wp_strip_all_tags( $item->get_description() ), ENT_QUOTES, 'UTF-8' ), 32, "\xE2\x80\xA6" ),
 			);
 		}
 		// Once we have a healthy primary feed, stop (others are fallbacks).
@@ -158,14 +163,16 @@ add_shortcode( 'db_news', function ( $atts ) {
  * Change $slug if the news page uses a different slug.
  */
 add_filter( 'the_content', function ( $content ) {
+	static $done = false; // render at most once per request
 	$slug = 'news';
 	// Only the main query's main loop on the news page — never widgets/sidebars.
-	if ( ! is_page( $slug ) || is_admin() || ! in_the_loop() || ! is_main_query() ) {
+	if ( $done || ! is_page( $slug ) || is_admin() || ! in_the_loop() || ! is_main_query() ) {
 		return $content;
 	}
 	if ( has_shortcode( $content, 'db_news' ) || false !== strpos( $content, 'db-news-grid' ) ) {
 		return $content; // already rendered via shortcode
 	}
+	$done = true;
 	return $content . db_render_news( 12 );
 } );
 /* === end DB live news RSS feed === */

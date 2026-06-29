@@ -70,6 +70,34 @@ function db_is_offer_form( $contact_form ) {
 	return ( false !== stripos( $title, 'offer' ) );
 }
 
+/* Resolve the offer form id for the JS guard. Returns the configured id, or
+ * auto-detects by title and caches the result so we don't run get_posts() on
+ * every page load. Returns 0 if none found (JS then does nothing). */
+function db_offer_resolved_form_id() {
+	if ( DB_OFFER_FORM_ID > 0 ) {
+		return (int) DB_OFFER_FORM_ID;
+	}
+	$cached = get_transient( 'db_offer_form_id' );
+	if ( false !== $cached ) {
+		return (int) $cached;
+	}
+	$form_id = 0;
+	if ( class_exists( 'WPCF7_ContactForm' ) ) {
+		$forms = get_posts( array(
+			'post_type'      => 'wpcf7_contact_form',
+			'posts_per_page' => 50,
+		) );
+		foreach ( $forms as $form_post ) {
+			if ( false !== stripos( $form_post->post_title, 'offer' ) ) {
+				$form_id = (int) $form_post->ID;
+				break;
+			}
+		}
+	}
+	set_transient( 'db_offer_form_id', $form_id, DAY_IN_SECONDS );
+	return $form_id;
+}
+
 /* 1) Send the branded customer confirmation when an offer is submitted. */
 add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 	if ( ! db_is_offer_form( $contact_form ) ) {
@@ -95,7 +123,7 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 	$amt_line = $amount ? ' of <strong>' . esc_html( $amount ) . '</strong>' : '';
 
 	$subject = $domain
-		? 'We received your offer for ' . $domain
+		? 'We received your offer for ' . sanitize_text_field( $domain )
 		: 'We received your offer';
 
 	$body  = '<p>' . esc_html( $greeting ) . '</p>';
@@ -116,24 +144,7 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
  * hard-coded production redirect configured elsewhere.
  */
 add_action( 'wp_footer', function () {
-	// Resolve the offer form id for the JS guard.
-	$form_id = (int) DB_OFFER_FORM_ID;
-	if ( $form_id === 0 && function_exists( 'WPCF7_ContactForm' ) ) {
-		// Best-effort: find a form whose title contains "offer".
-		// Fetch full post objects in one query and read post_title directly
-		// (avoids an N+1 of get_the_title() per form).
-		$forms = get_posts( array(
-			'post_type'      => 'wpcf7_contact_form',
-			'posts_per_page' => 50,
-		) );
-		foreach ( $forms as $form_post ) {
-			if ( false !== stripos( $form_post->post_title, 'offer' ) ) {
-				$form_id = (int) $form_post->ID;
-				break;
-			}
-		}
-	}
-
+	$form_id  = db_offer_resolved_form_id();
 	$thankyou = esc_url( home_url( '/thank-you/' ) );
 	$map      = db_offer_field_map();
 	?>

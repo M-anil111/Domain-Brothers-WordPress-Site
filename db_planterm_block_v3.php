@@ -63,14 +63,19 @@ function db_plan_b64( $key ) {
 
 /* Render the widget by appending to the page content. */
 add_filter( 'the_content', function ( $content ) {
-	if ( is_admin() || ! in_the_loop() || ! is_main_query() || ! db_is_plan_page() ) {
+	static $done = false; // render at most once per request
+	if ( $done || is_admin() || ! in_the_loop() || ! is_main_query() || ! db_is_plan_page() ) {
 		return $content;
 	}
 
 	$domain    = sanitize_text_field( db_plan_b64( 'd' ) );
 	$price_raw = db_plan_b64( 'p' );
-	// Keep digits and a single decimal point only.
-	$price = (float) preg_replace( '/[^0-9.]/', '', $price_raw );
+	// Extract the first valid number (handles "$1,200.50", rejects junk like
+	// "10.50.99" by matching only a single optional decimal portion).
+	$price = 0.0;
+	if ( preg_match( '/[0-9]+(?:\.[0-9]+)?/', preg_replace( '/[^0-9.]/', '', $price_raw ), $m ) ) {
+		$price = (float) $m[0];
+	}
 
 	if ( $price <= 0 ) {
 		return $content; // nothing to price; leave the page as-is
@@ -179,11 +184,11 @@ add_filter( 'the_content', function ( $content ) {
 		}
 
 		function addMonths(date, m){
-			var dt = new Date(date.getTime());
-			var day = dt.getDate();
-			dt.setMonth(dt.getMonth()+m);
-			// Guard month overflow (e.g. Jan 31 + 1 month).
-			if(dt.getDate() < day){ dt.setDate(0); }
+			// Land on the target month's 1st, then clamp the day to that
+			// month's length (e.g. Jan 31 + 1mo -> Feb 28, not back to Jan).
+			var dt = new Date(date.getFullYear(), date.getMonth()+m, 1);
+			var lastDay = new Date(dt.getFullYear(), dt.getMonth()+1, 0).getDate();
+			dt.setDate(Math.min(date.getDate(), lastDay));
 			return dt;
 		}
 
@@ -235,6 +240,7 @@ add_filter( 'the_content', function ( $content ) {
 	</script>
 	<?php
 	$widget = ob_get_clean();
+	$done   = true;
 
 	return $content . $widget;
 } );
