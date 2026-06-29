@@ -1,5 +1,34 @@
 # Domain Brothers Beta — Next Steps
 
+> ## ⏰ Read this first (status as of the latest session)
+>
+> **This environment cannot reach `beta.domainbrothers.com`** — the network
+> policy blocks the host at the egress proxy (403 on CONNECT). So I can't log
+> into wp-admin, can't pull the live `functions.php`, and can't push code to the
+> live site from here, even with valid admin credentials.
+>
+> **The two pending CODE items are written, reviewed, and ready to paste** —
+> `db_news_rss_block.php` (#52) and `db_offer_flow_block.php` (#39). They passed
+> `php -l` and all six Gemini review findings are fixed. They are append-blocks:
+> nothing else needs to change in `functions.php`.
+>
+> **Your 2-minute action when you're back (pick ONE):**
+> 1. **Deploy the two blocks:** open wp-admin → Appearance → Theme File Editor →
+>    `functions.php`, scroll to the bottom, and paste the full contents of
+>    `db_news_rss_block.php` then `db_offer_flow_block.php`. Save. Then verify
+>    `/news/` and a test offer (see sections below for the assumptions to check).
+> 2. **OR unblock full automation:** change this environment's network policy to
+>    allow outbound to `beta.domainbrothers.com` (or "allow all"), start a fresh
+>    session, and I'll do the full pull + review + commit of the real
+>    `functions.php` and keep GitHub in sync with the live site.
+> 3. **OR hand me the file:** paste the live `functions.php` (or attach the theme
+>    zip) into chat and I'll split every `db_*` block into the repo as the true
+>    source of truth — no live access needed.
+>
+> **Security:** rotate the admin password (pasted in chat) and the Stripe/webhook
+> secrets per HANDOFF §7.
+
+
 Prioritized action list, split by who can do it. See `HANDOFF.md` for full context.
 
 > **Important context:** This git repo currently holds only documentation plus
