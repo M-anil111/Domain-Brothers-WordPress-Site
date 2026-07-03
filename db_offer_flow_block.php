@@ -118,6 +118,14 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 		return; // nothing to send to
 	}
 
+	// Rate-limit: one confirmation per email address per 30 minutes.
+	// Prevents the form from being used to spam a victim or exhaust SendGrid quota.
+	$rate_key = 'db_offer_conf_' . md5( strtolower( $email ) );
+	if ( get_transient( $rate_key ) ) {
+		return;
+	}
+	set_transient( $rate_key, 1, 30 * MINUTE_IN_SECONDS );
+
 	$greeting = $name ? 'Hi ' . $name . ',' : 'Hi,';
 	$dom_line = $domain ? '<strong>' . esc_html( $domain ) . '</strong>' : 'the domain';
 	$amt_line = $amount ? ' of <strong>' . esc_html( $amount ) . '</strong>' : '';

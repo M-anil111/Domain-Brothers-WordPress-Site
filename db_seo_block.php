@@ -59,7 +59,10 @@ add_shortcode( 'db_sitemap', function ( $atts ) {
 		$atts,
 		'db_sitemap'
 	);
-	$excluded = array_map( 'trim', explode( ',', $atts['exclude_slugs'] ) );
+	// Checkout/utility slugs are always excluded regardless of the attribute value,
+	// so an editor cannot inadvertently expose them in the public HTML sitemap.
+	$always_excluded = array( 'buy-now', 'thank-you', 'payment-plan-setup' );
+	$excluded = array_unique( array_merge( $always_excluded, array_map( 'trim', explode( ',', $atts['exclude_slugs'] ) ) ) );
 
 	ob_start();
 	?>
