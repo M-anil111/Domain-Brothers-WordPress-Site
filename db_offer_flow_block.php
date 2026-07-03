@@ -155,14 +155,14 @@ add_action( 'wp_footer', function () {
 		var DOMAIN_FIELDS = <?php echo wp_json_encode( array_values( $map['domain'] ) ); ?>;
 
 		document.addEventListener('wpcf7mailsent', function (event) {
-			// Without a known offer form id, do nothing — never redirect other
-			// forms (contact, newsletter, etc.).
-			if (!DB_OFFER_FORM_ID) {
-				return;
-			}
-			// Only act on the offer form.
-			if (event.detail && event.detail.contactFormId &&
-			    parseInt(event.detail.contactFormId, 10) !== DB_OFFER_FORM_ID) {
+			// Require an exact contactFormId match. The previous &&-chain
+			// short-circuited when contactFormId was absent (old CF7 / some
+			// extensions), skipping the early return and redirecting EVERY CF7
+			// form submission to the offer thank-you page.
+			// If DB_OFFER_FORM_ID is 0 (auto-detect not resolved) or the form ID
+			// doesn't match, do nothing.
+			var formId = event.detail ? parseInt(event.detail.contactFormId, 10) : 0;
+			if (!DB_OFFER_FORM_ID || !formId || formId !== DB_OFFER_FORM_ID) {
 				return;
 			}
 			var domain = '';

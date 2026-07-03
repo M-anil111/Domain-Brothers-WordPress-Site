@@ -93,7 +93,8 @@ add_filter( 'the_content', function ( $content ) {
 		data-domain="<?php echo esc_attr( $domain ); ?>"
 		data-d="<?php echo esc_attr( $d_b64 ); ?>"
 		data-p="<?php echo esc_attr( $p_b64 ); ?>"
-		data-cur="<?php echo esc_attr( $cur ); ?>">
+		data-cur="<?php echo esc_attr( $cur ); ?>"
+		data-buynow="<?php echo esc_attr( home_url( '/buy-now/' ) ); ?>">
 
 		<div class="db-plan-head">
 			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
@@ -166,6 +167,7 @@ add_filter( 'the_content', function ( $content ) {
 		var cur    = root.getAttribute('data-cur') || '$';
 		var d      = root.getAttribute('data-d') || '';
 		var p      = root.getAttribute('data-p') || '';
+		var buynow = root.getAttribute('data-buynow') || '/buy-now/';
 		var active = terms[0];
 
 		function money(n){ return cur + n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
@@ -227,7 +229,7 @@ add_filter( 'the_content', function ( $content ) {
 			});
 
 			var cta = document.getElementById('db-plan-cta');
-			var url = '/buy-now/?t=plan&m='+encodeURIComponent(active);
+			var url = buynow+'?t=plan&m='+encodeURIComponent(active);
 			if(d) url += '&d='+encodeURIComponent(d);
 			if(p) url += '&p='+encodeURIComponent(p);
 			cta.setAttribute('href', url);
