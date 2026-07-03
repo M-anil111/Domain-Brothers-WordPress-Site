@@ -21,16 +21,36 @@
  * Paste at the end of functions.php. Self-contained.
  */
 
-/* ---- 1. noindex for checkout/utility pages (via meta tag) ---- */
+/* ---- 1. noindex for checkout/utility pages ---- */
+
+/*
+ * When RankMath is active: use its own robots filter so only ONE <meta robots>
+ * tag appears in the HTML. Emitting a second tag via wp_head causes conflicting
+ * directives — crawlers resolve them differently (only Google reliably takes the
+ * most restrictive). This filter avoids the conflict entirely.
+ */
+add_filter( 'rank_math/frontend/robots', function ( $robots ) {
+	$noindex_slugs = array( 'buy-now', 'thank-you', 'payment-plan-setup' );
+	if ( is_page( $noindex_slugs ) ) {
+		$robots['index']  = 'noindex';
+		$robots['follow'] = 'nofollow';
+	}
+	return $robots;
+} );
+
+/*
+ * Fallback for sites where RankMath is not installed: emit a plain meta tag.
+ * Skipped when RankMath is active because the filter above already handles it.
+ */
 add_action( 'wp_head', function () {
-	if ( is_admin() ) {
+	if ( is_admin() || class_exists( 'RankMath' ) ) {
 		return;
 	}
 	$noindex_slugs = array( 'buy-now', 'thank-you', 'payment-plan-setup' );
 	if ( is_page( $noindex_slugs ) ) {
 		echo '<meta name="robots" content="noindex, nofollow">' . "\n";
 	}
-}, 1 ); // priority 1 — before RankMath outputs its own robots meta, so ours is authoritative
+}, 1 );
 
 /* ---- 2. HTML sitemap shortcode [db_sitemap] ---- */
 add_shortcode( 'db_sitemap', function ( $atts ) {
@@ -142,15 +162,19 @@ add_filter( 'rank_math/sitemap/entry/query_vars', function ( $vars, $post_type )
  */
 add_filter( 'rank_math/sitemap/exclude_empty_terms', '__return_true' );
 
-add_filter( 'rank_math/sitemap/entry', function ( $xml, $url, $type ) {
+// $url may be an array (with 'loc' key) or a string depending on RankMath version.
+// Guard both shapes. The noindex meta tag above is the primary exclusion mechanism;
+// this filter is belt-and-suspenders to also remove them from the XML source.
+add_filter( 'rank_math/sitemap/entry', function ( $xml, $url ) {
 	$blocked = array( '/buy-now/', '/thank-you/', '/payment-plan-setup/' );
+	$loc = is_array( $url ) ? ( $url['loc'] ?? '' ) : ( is_string( $url ) ? $url : '' );
 	foreach ( $blocked as $slug ) {
-		if ( false !== strpos( $url['loc'] ?? '', $slug ) ) {
-			return ''; // empty string removes the <url> entry from the sitemap
+		if ( '' !== $loc && false !== strpos( $loc, $slug ) ) {
+			return ''; // empty string suppresses this <url> entry from the XML
 		}
 	}
 	return $xml;
-}, 10, 3 );
+}, 10, 2 );
 
 /* ---- 4. Admin trigger: apply recommended RankMath settings ---- */
 add_action( 'init', function () {

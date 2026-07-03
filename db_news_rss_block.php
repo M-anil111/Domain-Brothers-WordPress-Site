@@ -38,10 +38,12 @@ function db_news_feeds() {
 	);
 }
 
-/* Cap how long SimplePie caches the fetched feed (matches DB_NEWS_TTL). */
-add_filter( 'wp_feed_cache_transient_lifetime', function ( $seconds ) {
-	return DB_NEWS_TTL;
-} );
+/* Cap how long SimplePie caches our news feeds (matches DB_NEWS_TTL).
+ * Scoped to only our feed URLs so third-party plugins' fetch_feed() calls keep
+ * their own intended cache lifetimes. */
+add_filter( 'wp_feed_cache_transient_lifetime', function ( $seconds, $url = '' ) {
+	return in_array( $url, db_news_feeds(), true ) ? DB_NEWS_TTL : $seconds;
+}, 10, 2 );
 
 /* Admin-only manual refresh: /?db_news_refresh=1 */
 add_action( 'init', function () {

@@ -43,13 +43,12 @@ function db_plan_terms() {
 	return array( 3, 6, 9, 12 );
 }
 
-/* Is this the payment-plan-setup page? (slug match OR the d/p params present). */
+/* Is this the payment-plan-setup page? */
 function db_is_plan_page() {
-	if ( is_page( DB_PLAN_PAGE_SLUG ) ) {
-		return true;
-	}
-	// Fallback: any page that received both checkout params.
-	return ( isset( $_GET['d'], $_GET['p'] ) && is_page() );
+	return is_page( DB_PLAN_PAGE_SLUG );
+	// NOTE: the former fallback (isset($_GET['d'], $_GET['p']) && is_page()) was
+	// removed because it injected the plan widget on any WordPress page when those
+	// params were present, breaking layout on contact, about, etc.
 }
 
 /* Safe base64 decode of a URL param. */

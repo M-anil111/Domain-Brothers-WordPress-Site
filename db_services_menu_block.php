@@ -174,36 +174,42 @@ add_action( 'wp_footer', function () {
 	<script>
 	(function () {
 		'use strict';
-		var toggle = document.querySelector('.db-svc-toggle');
-		if (!toggle) return;
-		var parent = toggle.closest ? toggle.closest('.db-svc-parent') : toggle.parentElement;
-		if (!parent) return;
+		// Use querySelectorAll so every injected Services item (header, footer,
+		// etc.) gets its own independent click handler — querySelector only finds
+		// the first match and would leave any secondary toggles non-functional.
+		var toggles = document.querySelectorAll('.db-svc-toggle');
+		if (!toggles.length) return;
 
 		function isMobile() { return window.innerWidth <= 900; }
 
-		toggle.addEventListener('click', function (e) {
-			if (!isMobile()) return;
-			e.preventDefault();
-			var open = parent.classList.toggle('is-open');
-			toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-		});
+		toggles.forEach(function (toggle) {
+			var parent = toggle.closest ? toggle.closest('.db-svc-parent') : toggle.parentElement;
+			if (!parent) return;
 
-		// Close when clicking anywhere outside the dropdown.
-		document.addEventListener('click', function (e) {
-			if (!isMobile()) return;
-			if (parent.classList.contains('is-open') && !parent.contains(e.target)) {
-				parent.classList.remove('is-open');
-				toggle.setAttribute('aria-expanded', 'false');
-			}
-		});
+			toggle.addEventListener('click', function (e) {
+				if (!isMobile()) return;
+				e.preventDefault();
+				var open = parent.classList.toggle('is-open');
+				toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+			});
 
-		// ESC key closes the dropdown and returns focus to the toggle.
-		document.addEventListener('keydown', function (e) {
-			if ((e.key === 'Escape' || e.keyCode === 27) && parent.classList.contains('is-open')) {
-				parent.classList.remove('is-open');
-				toggle.setAttribute('aria-expanded', 'false');
-				toggle.focus();
-			}
+			// Close when clicking anywhere outside this dropdown.
+			document.addEventListener('click', function (e) {
+				if (!isMobile()) return;
+				if (parent.classList.contains('is-open') && !parent.contains(e.target)) {
+					parent.classList.remove('is-open');
+					toggle.setAttribute('aria-expanded', 'false');
+				}
+			});
+
+			// ESC key closes the dropdown and returns focus to the toggle.
+			document.addEventListener('keydown', function (e) {
+				if ((e.key === 'Escape' || e.keyCode === 27) && parent.classList.contains('is-open')) {
+					parent.classList.remove('is-open');
+					toggle.setAttribute('aria-expanded', 'false');
+					toggle.focus();
+				}
+			});
 		});
 	})();
 	</script>

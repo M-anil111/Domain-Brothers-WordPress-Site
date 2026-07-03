@@ -73,9 +73,12 @@ add_action( 'phpmailer_init', function ( $phpmailer ) {
 	);
 } );
 
-/* Lock the From address so plugins can't override it. */
-add_filter( 'wp_mail_from',      function () { return DB_SG_FROM; } );
-add_filter( 'wp_mail_from_name', function () { return DB_SG_NAME; } );
+/* Lock the From address only when SendGrid routing is active (API key saved).
+ * When no key is set, wp_mail() falls back to native PHP mail() — forcing
+ * sales@domainbrothers.com via a server with no DKIM/SPF authority for that
+ * domain would cause every site email to be rejected or go to spam. */
+add_filter( 'wp_mail_from',      function ( $email ) { return db_sg_api_key() ? DB_SG_FROM : $email; } );
+add_filter( 'wp_mail_from_name', function ( $name )  { return db_sg_api_key() ? DB_SG_NAME : $name; } );
 
 /* ---- WP admin settings page: Settings → DB SMTP (SendGrid) ---- */
 add_action( 'admin_menu', function () {
@@ -101,7 +104,7 @@ function db_sg_settings_page() {
 		return;
 	}
 	$key_saved = '' !== db_sg_api_key();
-	$test_url  = esc_url( add_query_arg( 'db_mailtest', get_option( 'admin_email' ), home_url( '/' ) ) );
+	$test_url  = esc_url( wp_nonce_url( add_query_arg( 'db_mailtest', get_option( 'admin_email' ), home_url( '/' ) ), 'db_mailtest' ) );
 	?>
 	<div class="wrap">
 		<h1>DB SMTP — SendGrid</h1>
@@ -176,6 +179,12 @@ function db_sg_settings_page() {
 add_action( 'init', function () {
 	if ( empty( $_GET['db_mailtest'] ) || ! current_user_can( 'manage_options' ) ) {
 		return;
+	}
+	// CSRF protection — require a valid nonce so a malicious page can't force
+	// the admin to send test emails to arbitrary addresses.
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'db_mailtest' ) ) {
+		$confirm = wp_nonce_url( add_query_arg( 'db_mailtest', sanitize_email( wp_unslash( $_GET['db_mailtest'] ) ), home_url( '/' ) ), 'db_mailtest' );
+		wp_die( 'Send a test email? <a href="' . esc_url( $confirm ) . '">Confirm</a>', 'DB Mail Test', array( 'response' => 200 ) );
 	}
 	$to = sanitize_email( wp_unslash( $_GET['db_mailtest'] ) );
 	if ( ! is_email( $to ) ) {
