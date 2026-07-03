@@ -59,10 +59,18 @@ add_action( 'init', function () {
 			array( 'response' => 200 )
 		);
 	}
-	// Clear every SimplePie feed transient so the next render re-fetches.
-	global $wpdb;
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_feed_%' OR option_name LIKE '_transient_timeout_feed_%'" );
-	wp_die( 'DB news cache cleared. <a href="' . esc_url( home_url( '/news/' ) ) . '">View /news/</a>', 'DB News', array( 'response' => 200 ) );
+	// Clear only the SimplePie transients for OUR news feeds (not all site feeds).
+	// WordPress SimplePie stores each feed under 'feed_' . md5($url) and the
+	// modification time under 'feed_mod_' . md5($url).  Deleting only these keys
+	// leaves any other plugin's feed cache untouched.
+	$cleared = 0;
+	foreach ( db_news_feeds() as $feed_url ) {
+		$hash = md5( $feed_url );
+		delete_transient( 'feed_' . $hash );
+		delete_transient( 'feed_mod_' . $hash );
+		$cleared++;
+	}
+	wp_die( 'DB news cache cleared (' . (int) $cleared . ' feed(s)). <a href="' . esc_url( home_url( '/news/' ) ) . '">View /news/</a>', 'DB News', array( 'response' => 200 ) );
 } );
 
 /*
