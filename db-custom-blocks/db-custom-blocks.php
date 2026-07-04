@@ -1823,12 +1823,16 @@ add_action( 'wp_head', function () {
 } );
 
 /* ============================================================
-   CRM BLOCK — Lead Management System
+   PHASE 4 — CRM Lead Management
    ============================================================ */
 require_once __DIR__ . '/db-crm-block.php';
-
 
 /* ============================================================
-   INCLUDE PHASE 4 — CRM Lead Management
+   EMAIL + THANK-YOU BLOCK — Branded emails & thank-you page
    ============================================================ */
-require_once __DIR__ . '/db-crm-block.php';
+require_once __DIR__ . '/db-email-thankyou-block.php';
+
+/* ============================================================
+   PHASE 2 — Stripe Checkout, Webhooks & Payment Integration
+   ============================================================ */
+require_once __DIR__ . '/db-stripe-block.php';

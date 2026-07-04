@@ -1,8 +1,11 @@
+<?php
 /**
  * DB CRM Block — Domain Brothers Lead Management System
  *
- * Require_once'd from db-custom-blocks.php (already inside an open PHP context).
- * Do NOT add an opening <?php tag to this file.
+ * Require_once'd from db-custom-blocks.php.
+ * NOTE: PHP require_once always starts the included file in HTML mode, so a
+ * <?php opening tag IS required here — the "already-open PHP context" of the
+ * including file does not carry over to included files.
  *
  * Features:
  *   - Custom DB table for leads (wp_db_leads)
