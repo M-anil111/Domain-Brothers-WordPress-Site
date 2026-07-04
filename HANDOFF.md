@@ -1,8 +1,6 @@
 # Domain Brothers Beta — Master Handoff
 
-**Purpose:** Single source of truth so another agent (Codex / Claude Code / Cowork on a different machine) can continue this project with full context. Read this first, then `CHAT_EXPORT.md` for the full conversation history (not yet committed — see note below).
-
-> **Repo note (added this session):** This GitHub repository previously contained only `README.md`. The `db_*_block.php` source files, `CHAT_EXPORT.md`, and the various report `.md` files referenced below were never committed here — they lived only in the previous Cowork session and on the live site. This session re-commits this `HANDOFF.md` plus freshly reconstructed code blocks for the two pending *code* items (#52 RSS news, #39 offer flow). See `NEXT_STEPS.md`.
+**Purpose:** Single source of truth so another agent or developer can continue this project with full context.
 
 Owner: Jay Mehta (jay@jaymehta.co).
 
@@ -10,148 +8,128 @@ Owner: Jay Mehta (jay@jaymehta.co).
 
 ## 1. What this project is
 
-Domain Brothers is a WordPress domain marketplace. We are working on the staging site https://beta.domainbrothers.com (production is https://www.domainbrothers.com). The goal: make the beta fully functional (front + back end), build a custom on-site Stripe checkout + payment plans, standardize branded emails, fix migration bugs, add SEO service pages, and harden the site — then it can be promoted to production.
+Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.domainbrothers.com. Production: https://www.domainbrothers.com. The goal: make beta fully functional (front + back end), custom on-site Stripe checkout + payment plans, branded emails, AEO/SEO, and site hardening — then promote to production.
 
 ### Environment & access
 
-- **WP admin:** https://beta.domainbrothers.com/wp-admin (rotate credentials — see Security).
-- **Host:** Hostinger shared "Agency Startup" plan (hosts ~15 sites incl. jaymehta.co, mindshare.consulting). hPanel managed under the tech@netclues.com account (impersonate mode). Site path on server: `/home/.../websites/boqfWdtEc/public_html`.
-- **Theme:** DomainFolio (commercial theme, active, no child theme). All custom code lives in `wp-content/themes/DomainFolio/functions.php`, appended as clearly-marked blocks (see section 3).
+- **WP admin:** https://beta.domainbrothers.com/wp-admin — **rotate credentials** (exposed in prior chat).
+- **Host:** Hostinger shared "Agency Startup" plan. hPanel under tech@netclues.com (impersonate). Site path: `/home/.../websites/boqfWdtEc/public_html`.
+- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.0.0) — NOT in functions.php.
 - **WordPress:** 6.9.x, PHP 8.5.
-- **Custom post type:** `domain`. Price meta key: `domain_price`. Category taxonomy: `domain_category`.
-- **CDN:** Hostinger CDN (cdn.domainbrothers.com) caches HTML and ignores query strings. During this work, CDN "Development mode" was turned ON to bypass caching. **TURN IT OFF** in hPanel when done, or pages won't update for visitors / will serve stale HTML. If a code change "doesn't show," it's almost always this cache.
-- **SSH:** enabled on the account (but credentials are not in this repo; editing was done through the WP Theme File Editor).
+- **Custom post type:** `domain`. Price meta key: `domain_price`. Category: `domain_category`.
+- **CDN:** Hostinger CDN — Development mode ON during development. **Turn OFF** in hPanel when done.
+- **SSH:** enabled (credentials not in repo).
 
 ---
 
-## 2. Current status of every task
+## 2. Plugin architecture (v3.0.0)
 
-### Done & verified
+All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-content/plugins/db-custom-blocks/db-custom-blocks.php`). This is a single-file monolithic plugin with 17 blocks (see §3). It replaces the old approach of pasting code into `functions.php`.
 
-- Core hardening: plugins updated, Wordfence firewall on, real server cron (WP pseudo-cron off), object-cache drop-in removed, `WP_MEMORY_LIMIT` 256M, tagline fixed.
-- Migration bug fixes (PHP 8 / migration): single-domain pages, Buy Now critical error, Blog page, Acquire form + email, search spacing, sitemap links.
-- Removed ex-team members; rewrote Refund Policy; reviewed Terms/FAQs.
-- On-site Stripe checkout (custom branded page replacing Stripe hosted checkout) — full payment and payment-plan (subscription) flows.
-- Branded email system — one table-based template, dynamic copyright year, beta→prod URL rewrite, wraps CF7 emails. Managed from theme code.
-- Stripe webhooks — verified end-to-end: payment delivered to beta with valid signature, handler fires branded receipt + admin "DOMAIN SOLD". Recurring receipts, dunning/failed-payment warnings, term-cap (auto-cancel after final installment), admin alerts. Accepts BOTH live and test signing secrets.
-- Payment-plan summary page — zero-interest across all terms, per-term pricing, exact-date payment schedule, transfer-after-final-payment + interim IP/MX messaging.
-- Dynamic SEO meta (title/description/OG) for domain pages.
-- Domain page banner image fixed; developed-one (`?lis=y`) footer logo fixed (server-side).
-- 5 service landing pages created + linked from About Us with the agency group + 25 yrs (see section 4).
-- Thank-you page — type-aware headline (purchase/plan/offer) + service-icon cross-sell links.
-- Honeypot anti-spam on forms.
-- Downtime root-caused (shared-plan 508s) and documented.
+### How to install / update
 
-### Implemented but needs a manual check
+1. WP Admin → Plugins → Add New → Upload Plugin → upload `db-custom-blocks.zip` → Activate.
+2. OR use the one-shot `db-recover.php` recovery script (see §8) — it installs + activates automatically.
 
-- **Stripe Payment Element + Link/wallets (#48):** the checkout was switched to Stripe Payment Element (Link, Cash App Pay, Klarna, cards, wallets all render). The automated end-to-end card test could not be completed by the agent because Stripe Link forces a mobile number (inside a cross-origin iframe the tooling can't drive). **Action:** do ONE manual test purchase (test card `4242 4242 4242 4242`, any future expiry/CVC, uncheck "Save my information for faster checkout" or enter a phone) and confirm redirect to the Thank-You page + the branded receipt email. If anything is wrong, the proven previous checkout is preserved as `db_onsite_checkout_block.php` (v1, split CardElement) — paste it back over the v2 block.
+### Deployment for updates
 
-### Pending (need the owner or a follow-up)
-
-- **#54 SMTP delivery** — beta has NO authenticated SMTP, so `wp_mail` falls back to PHP `mail()` and Gmail drops it. A WordPress settings page was built: **Settings → DB SMTP Email** (pre-filled Hostinger host `smtp.hostinger.com`, port 465 SSL, from `sales@domainbrothers.com`). **Action:** enter the mailbox password there and Save, then visit `/?db_mailtest=jay@jaymehta.co` (as admin) to confirm. Until this is done, receipts/alerts/offer/contact emails won't actually deliver.
-- **#52 Domain News** — the `/news/` page is just old WordPress posts dated 2024 (not a live feed). Owner chose "pull a live industry RSS feed". **Reconstructed this session** as `db_news_rss_block.php` (uses `fetch_feed()` from domain-industry sources). Needs deploy + verify.
-- **#39 Make-a-Custom-Offer flow** — needs: customer confirmation email + fix offer redirect (currently lands on production `/thank-you/`; should go to beta `/thank-you/?type=offer&domain=...`). The thank-you page already supports `?type=offer`. **Reconstructed this session** as `db_offer_flow_block.php`. Needs the offer form ID/field names confirmed, then deploy + verify.
-- **#44 Plugin cleanup** — owner must DELETE the inactive plugins (agent only deactivates, never deletes): WP PayPal, AIOS, WPS Hide Login, WP Mail SMTP. Keep All-in-One WP Migration (for migration). Replace "Team Members" plugin with static HTML. reCAPTCHA/Turnstile needs site+secret keys from the owner (honeypot is already active in the meantime).
-- **#53 Full payment-type test matrix** — test full purchase + each plan term (3/6/9/12) + offer, end to end, once SMTP + Payment Element are confirmed.
+After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover) → Update, OR deactivate + delete + re-upload.
 
 ---
 
-## 3. Architecture — the custom code blocks
+## 3. The 17 blocks in db-custom-blocks v3.0.0
 
-All custom code is appended to `functions.php` as blocks delimited by `/* === DB ... === */ ... /* === end DB ... === */`. The exact source of each block was kept as a `db_*_block*.php` file. To recreate the live state, the theme's original `functions.php` + these blocks (in order) = current `functions.php`.
+| Block # | Block name | What it does |
+|---------|-----------|--------------|
+| 1 | SMTP routing (SendGrid) | Routes wp_mail() via SendGrid SMTP. WP Admin → Settings → DB SMTP (SendGrid). `/?db_sg_test=email` to test. |
+| 2 | Homepage redesign | Full-width dark navy hero, eyebrow, headline, CTAs, trust bar. Injected via `the_content` on front page. |
+| 3 | Live news RSS feed | Pulls live domain-industry RSS (domainnamewire.com, domaininvesting.com, dnjournal.com). Shortcode `[db_news]` or auto-inject on /news/ page. `/?db_news_refresh=1` to clear cache (admin). |
+| 4 | Services nav menu | Injects "Services" dropdown into primary nav. CSS-only on desktop, JS tap-toggle on mobile. |
+| 5 | Payment plan widget | `/payment-plan-setup/?d=BASE64&p=BASE64` — 3/6/9/12 month term selector, zero-interest, exact per-installment rounding, payment schedule. |
+| 6 | Offer flow | CF7 offer form → redirect to `/thank-you/?type=offer`, customer confirmation email, 30-min rate limiting per email. |
+| 7 | SEO block | Noindex utility pages, HTML sitemap shortcode `[db_sitemap]`, RankMath filters. `/?db_seo_setup=1` (admin) applies RankMath settings. |
+| 8 | Performance hardening | Remove query strings, preconnect hints, lazy loading, disable XML-RPC, block author enumeration, restrict REST user listing, HTTP security headers. |
+| 9 | AEO / JSON-LD | Organization, WebSite+SearchAction, FAQPage, Service, BreadcrumbList schemas on appropriate pages. Open Graph fallbacks. |
+| 10 | Modern UI | CSS design system (tokens, typography, spacing), body class `db-ui-active`, dark mode via `prefers-color-scheme`. |
+| 11 | Honeypot anti-spam | Hidden honeypot field on all CF7 forms. Blocks submission if filled. |
+| 12 | Dynamic meta (domain CPT) | Override `<title>` and `<meta description>` for individual domain listing pages. Only fires if RankMath is NOT active. |
+| 13 | Service pages creator | Creates/refreshes 5 service landing pages. Trigger: `/?db_make_service_pages=1` (admin + nonce). |
+| 14 | DevOne logo fix | Replaces footer attribution logo on `?lis=y` pages server-side. |
+| 15 | **[Phase 2] Stripe checkout + webhooks** | On-site Stripe Payment Element checkout at `/buy-now/?d=...&p=...`. Payment plan first installment with `&m=MONTHS`. Webhook handler at `/wp-json/db/v1/stripe-webhook`. Admin settings: Settings → DB Stripe Keys. Triggers: `/?db_create_webhook=1`. |
+| 16 | **[Phase 3] Branded email + thank-you** | Unified HTML email template wrapping all wp_mail() calls for domain sales. Type-aware thank-you page (`?type=full\|plan\|offer`). Customer receipts, admin alerts, payment-failed emails, offer acks. |
+| 17 | **[Phase 4] CRM lead management** | Custom DB table for leads. Auto-creates lead on CF7 offer form submission. WP Admin → Domain Brothers → Leads: list, filter, edit, bulk status change, CSV export. Dashboard widget. |
 
-| File in repo | Block marker | What it does |
-|---|---|---|
-| `db_onsite_checkout_v2.php` | `DB Stripe Checkout (on-site custom card form)` | LIVE checkout. Stripe Payment Element (Link/wallets). |
-| `db_onsite_checkout_block.php` | (same marker) | v1 fallback — proven split CardElement version. |
-| `db_webhook_block_v2_admin_and_verify.php` | `DB Stripe webhooks` | LIVE webhooks. Verifies signature, handles payment/invoice events. |
-| `db_create_webhook_block.php` | `DB auto-create Stripe webhook endpoint` | Admin trigger `/?db_create_webhook=1`. |
-| `db_smtp_routing_block_v3.php` | `DB SMTP routing` | LIVE SMTP. Settings → DB SMTP Email. |
-| `db_planterm_block_v2.php` | `DB fix payment-plan term selection` | Zero-interest per-term pricing + schedule. |
-| `db_thankyou_block.php` | `DB thank-you` | Type-aware thank-you headline + cross-sell. |
-| `db_service_pages_block.php` | `DB service landing pages creator` | Admin trigger `/?db_make_service_pages=1`. |
-| `db_link_services_about_block.php` | `DB link services on About page` | Admin trigger `/?db_link_services_about=1`. |
-| `db_email_template_block.php` | `DB unified branded email` | Branded HTML email wrapper. |
-| `db_dynamic_meta_block.php` | `DB dynamic SEO meta` | Dynamic meta for `is_singular('domain')`. |
-| `db_devone_logo_block.php` | `DB developed-one footer logo` | Server-side logo injection on `?lis=` pages. |
-| `db_honeypot_block.php` | `DB honeypot anti-spam` | Hidden field on CF7 forms. |
-| `db_whlog_block.php` | `DB webhook hit logger` | Diagnostic webhook log. |
-| `db_news_rss_block.php` | `DB live news RSS feed` | **NEW (#52)** live industry RSS on `/news/`. |
-| `db_offer_flow_block.php` | `DB make-an-offer flow` | **NEW (#39)** offer confirmation email + redirect fix. |
+### Admin trigger URLs (must be logged in as admin)
 
-### Admin-only trigger URLs (must be logged in as admin)
-
-- `/?db_create_webhook=1` — create Stripe webhook endpoint + save signing secret.
-- `/?db_make_service_pages=1` — create/refresh the 5 service pages.
-- `/?db_link_services_about=1` — add services section to About.
-- `/?db_mailtest=you@email.com` — send a test email + report SMTP status.
-- `/?db_whlog=1` — view recent webhook deliveries.
-- `/?db_news_refresh=1` — (new) force-clear the cached news feed.
+- `/?db_create_webhook=1` — create Stripe webhook endpoint, auto-save signing secret.
+- `/?db_make_service_pages=1` — create/refresh 5 service pages (nonce-protected confirm).
+- `/?db_mailtest=you@email.com` — send a test email via SendGrid + report SMTP status.
+- `/?db_news_refresh=1` — force-clear the news feed transient cache.
+- `/?db_seo_setup=1` — apply RankMath settings (noindex, sitemap).
+- `/?db_stripe_log=1` — view last 20 Stripe webhook events (admin only).
 
 ---
 
 ## 4. Service pages & key URLs
 
 - `/website-design-development/`, `/digital-marketing/`, `/software-development/`, `/mobile-app-development/`, `/other-services/`
-- Linked from `/about-us/` ("Our Services" section). Agencies referenced: Mindshare Consulting Inc., Jay Mehta Digital, Netclues, 25+ years.
-- Checkout entry: `/buy-now/?d=<base64 domain>&p=<base64 $price>` (full) or with `&m=<months>` / `&t=plan` (plan). Plan setup: `/payment-plan-setup/?d=...&p=...`.
-- Thank you: `/thank-you/?domain=...&type=full|plan|offer`.
+- Checkout: `/buy-now/?d=<base64 domain>&p=<base64 $price>` — full purchase.
+- Payment plan checkout: `/buy-now/?d=...&p=...&m=<months>` — plan first installment.
+- Payment plan setup (pricing widget): `/payment-plan-setup/?d=...&p=...`
+- Thank you: `/thank-you/?type=full|plan|offer&domain=<base64>&amount=<base64>`
 
 ---
 
 ## 5. Stripe configuration
 
-- Test keys are configured in Settings → Stripe Keys (checkout works in test mode).
-- A test-mode webhook endpoint was auto-created pointing at beta; its test signing secret is saved (Settings → Stripe Webhook, "Test signing secret").
-- **For production go-live:** switch to LIVE Stripe keys in Settings → Stripe Keys, then hit `/?db_create_webhook=1` (as admin) to create the LIVE endpoint and auto-save the LIVE signing secret. In the Stripe Dashboard, enable Smart Retries (Billing → dunning) and TURN OFF Stripe's own failed-payment emails (we send branded ones). Set Stripe branding (logo/color) for the few Stripe-only emails (e.g. 3DS).
-- Webhook events used: `payment_intent.succeeded`, `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`, `customer.subscription.deleted`, `charge.refunded`.
+- Keys stored in WP options: `db_stripe_pub_live`, `db_stripe_sec_live`, `db_stripe_pub_test`, `db_stripe_sec_test`, `db_stripe_mode` ('test'|'live').
+- Webhook signing secrets: `db_stripe_wh_secret_live`, `db_stripe_wh_secret_test`.
+- Settings page: WP Admin → Settings → DB Stripe Keys.
+- For go-live: switch to LIVE mode on settings page, then run `/?db_create_webhook=1`.
+- Webhook events handled: `payment_intent.succeeded`, `invoice.payment_failed`, `charge.refunded`.
 
 ---
 
-## 6. How to edit functions.php safely (lessons learned)
+## 6. Leads / CRM (Block 17)
 
-The agent edited via the WP Theme File Editor + CodeMirror. Reliable recipe:
-
-1. Open `wp-admin/theme-editor.php?file=functions.php`.
-2. In console/JS: get `document.querySelector('.CodeMirror').CodeMirror`, do a string replace of the marked block (or append), then `cm.setValue(...)` and also set `document.getElementById('newcontent').value`.
-3. Verify brace balance (`{` count === `}` count) before saving — WordPress lints PHP on save and rejects unbalanced/broken code (the file on disk is left unchanged if rejected, so a bad save won't break the site).
-4. Click `#submit` once (double-submitting can corrupt the buffer). Confirm "File edited successfully."
-
-**Gotchas:**
-
-- JavaScript `String.replace()` treats `$'`, `$&`, `` $` `` in the *replacement string* as special. Use the **function form**: `str.replace(search, () => replacement)`.
-- For large blocks, gzip the PHP, base64 it, and decode in-browser with `DecompressionStream('gzip')`.
-- Stripe Elements live in cross-origin iframes; you cannot click/type into them via coordinate tools reliably or read them via the accessibility tree.
+- DB table: `{$wpdb->prefix}db_leads` — auto-created on plugin load.
+- Lead statuses: new → contacted → negotiating → won / lost.
+- Lead sources: offer_form (CF7 auto-capture), direct (manual add).
+- Admin: WP Admin → Domain Brothers → Leads.
+- CSV export: WP Admin → Domain Brothers → Export CSV.
 
 ---
 
-## 7. SECURITY — rotate these (exposed in chat/exports)
-
-`CHAT_EXPORT.md` contains secrets the user pasted during the session. Rotate all of them:
+## 7. SECURITY — rotate these (exposed in prior chat)
 
 - WordPress admin password.
-- Stripe live secret key, Stripe test secret key, and the webhook signing secrets.
-- Any SMTP/mailbox password should only ever be entered in the WP Settings page, never committed.
-
-Agent safety rules honored: never entered passwords/keys into fields itself (user pasted), never deleted plugins/files (only deactivated), test-mode only (no real charges), did not touch the blocked Stripe Dashboard via automation.
+- Stripe live + test secret keys and webhook signing secrets.
+- SMTP/API keys — only ever enter in WP Settings pages, never commit.
 
 ---
 
-## 8. Files in this repo
+## 8. Recovery from a broken site
 
-- `HANDOFF.md` (this file) — start here.
-- `NEXT_STEPS.md` — prioritized action list, owner-only vs. code work.
-- `db_news_rss_block.php` — **NEW (#52)** live RSS news feed block.
-- `db_offer_flow_block.php` — **NEW (#39)** offer confirmation email + redirect fix.
-- (Not yet committed: `CHAT_EXPORT.md` and the other `db_*_block.php` files / earlier reports — they live only on the live site and the prior session. Provide them to add to version control.)
+If the site shows "critical error" or is broken:
+
+1. Upload `db-recover.php` to WordPress root via Hostinger hPanel → File Manager.
+2. Visit: `https://beta.domainbrothers.com/db-recover.php?token=DB_RECOVER_ALPHA7`
+3. The script: cleans functions.php, installs + activates the plugin, creates QC user, self-destructs.
+
+QC login (created by recovery script): `qc-tester` / `QCtest@DomBro2025!`
 
 ---
 
-## 9. Immediate next steps for whoever picks this up
+## 9. Remaining owner-only actions (no code needed, just admin clicks)
 
-1. Enter the SMTP mailbox password (Settings → DB SMTP Email) and confirm `/?db_mailtest=`.
-2. Do one manual test purchase to confirm the Payment Element checkout completes + receipt arrives.
-3. Deploy + verify the live RSS feed for `/news/` (#52) — `db_news_rss_block.php`.
-4. Confirm the offer form ID/fields, then deploy + verify the offer flow (#39) — `db_offer_flow_block.php`.
-5. Owner: delete inactive plugins, provide reCAPTCHA keys (#44).
-6. Go-live: live Stripe keys → `/?db_create_webhook=1` → Stripe dashboard dunning/email settings → turn CDN Development mode OFF.
+| Action | Where |
+|--------|-------|
+| Enter SendGrid API key and Save | WP Admin → Settings → DB SMTP (SendGrid) |
+| Enter Stripe test keys (pub + secret) + set mode to Test | WP Admin → Settings → DB Stripe Keys |
+| Run `/?db_create_webhook=1` after entering keys | Browser (admin) |
+| One manual test purchase (card `4242 4242 4242 4242`) | /buy-now/ |
+| Run `/?db_make_service_pages=1` to create service pages | Browser (admin) |
+| Delete inactive plugins: WP PayPal, AIOS, WPS Hide Login, WP Mail SMTP | WP Admin → Plugins |
+| Rotate WP admin password + Stripe keys | WP Admin / Stripe Dashboard |
+| Turn CDN Development Mode OFF | Hostinger hPanel |
+| Submit `/sitemap_index.xml` to Google Search Console | GSC |

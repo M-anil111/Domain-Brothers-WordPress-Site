@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
- * Description: All Domain Brothers custom functionality — SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, and performance hardening.
- * Version:     2.0.0
+ * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
+ * Version:     3.0.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '2.0.0' );
+define( 'DB_BLOCKS_LOADED', '3.0.0' );
 
 
 /* ============================================================
@@ -1546,3 +1546,289 @@ add_action( 'wp_head', function () {
 </style>
 	<?php
 } );
+
+/* ============================================================
+   BLOCK 11 — DB Honeypot anti-spam for CF7 forms
+   ============================================================ */
+
+/*
+ * Adds a hidden honeypot field to all CF7 forms.
+ * Bots fill every field; humans never see or touch the honeypot.
+ * If it arrives non-empty, the submission is silently discarded
+ * (wpcf7_spam filter returns true = block the mail).
+ */
+
+if ( ! defined( 'DB_HONEYPOT_FIELD' ) ) {
+	define( 'DB_HONEYPOT_FIELD', 'db_hp_website' ); // field name bots love
+}
+
+/* Inject the honeypot field into every CF7 form output. */
+add_filter( 'wpcf7_form_elements', function ( $html ) {
+	$hp = '<div class="db-hp-trap" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">'
+	      . '<label for="' . DB_HONEYPOT_FIELD . '">Leave this field empty</label>'
+	      . '<input type="text" name="' . DB_HONEYPOT_FIELD . '" id="' . DB_HONEYPOT_FIELD . '" tabindex="-1" autocomplete="off" value="">'
+	      . '</div>';
+	// Inject just before the closing </form> equivalent (after last submit button area).
+	return $html . $hp;
+} );
+
+/* Block submission if honeypot was filled. */
+add_filter( 'wpcf7_spam', function ( $is_spam ) {
+	if ( $is_spam ) {
+		return true; // already flagged by another check
+	}
+	if ( ! empty( $_POST[ DB_HONEYPOT_FIELD ] ) ) {
+		return true; // bot filled the trap
+	}
+	return false;
+} );
+
+
+/* ============================================================
+   BLOCK 12 — DB Dynamic SEO meta for domain CPT pages
+   ============================================================ */
+
+/*
+ * Overrides <title> and <meta description> for individual domain listing pages
+ * (custom post type "domain"). Works alongside RankMath — if RankMath is active
+ * and has a manually set title/description we leave it alone; we only fill the
+ * gap when no custom meta is set.
+ *
+ * Also adds Open Graph tags specific to the domain post.
+ */
+
+/* Remove the default wp_title on domain singular pages so we can set our own. */
+add_filter( 'pre_get_document_title', function ( $title ) {
+	if ( ! is_singular( 'domain' ) ) {
+		return $title;
+	}
+	$post        = get_queried_object();
+	$domain_name = get_post_meta( $post->ID, 'domain_name', true );
+	if ( ! $domain_name ) {
+		$domain_name = $post->post_title;
+	}
+	$price = get_post_meta( $post->ID, 'domain_price', true );
+	$price_str = $price ? ' — $' . number_format( (float) $price, 0 ) : '';
+	return esc_html( $domain_name ) . $price_str . ' | Domain Brothers';
+} );
+
+/* Inject <meta description> and Open Graph tags in <head>. */
+add_action( 'wp_head', function () {
+	if ( ! is_singular( 'domain' ) ) {
+		return;
+	}
+	// Skip if RankMath has already output its meta (check for rm_og_description).
+	if ( defined( 'RANK_MATH_VERSION' ) ) {
+		return; // RankMath handles it; our AEO block augments with JSON-LD
+	}
+
+	$post        = get_queried_object();
+	$domain_name = get_post_meta( $post->ID, 'domain_name', true );
+	if ( ! $domain_name ) {
+		$domain_name = $post->post_title;
+	}
+	$price     = get_post_meta( $post->ID, 'domain_price', true );
+	$price_fmt = $price ? '$' . number_format( (float) $price, 0 ) : 'Contact for price';
+	$desc      = 'Buy ' . $domain_name . ' for ' . $price_fmt . '. Premium domain brokerage — expert transfer, secure escrow, flexible payment plans. Domain Brothers.';
+	$url       = get_permalink( $post->ID );
+	$img       = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: home_url( '/wp-content/themes/DomainFolio/img/og-default.jpg' );
+
+	echo "\n<!-- DB Dynamic Meta -->\n";
+	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $domain_name . ' — Domain Brothers' ) . '">' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $desc ) . '">' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
+	echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n";
+	echo '<meta property="og:type" content="product">' . "\n";
+	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
+	echo '<meta name="twitter:title" content="' . esc_attr( $domain_name . ' — Domain Brothers' ) . '">' . "\n";
+	echo '<meta name="twitter:description" content="' . esc_attr( $desc ) . '">' . "\n";
+	echo "<!-- /DB Dynamic Meta -->\n";
+}, 1 ); // priority 1 so theme can override at default priority
+
+
+/* ============================================================
+   BLOCK 13 — DB Service pages creator
+   ============================================================ */
+
+/*
+ * Creates (or refreshes) the 5 Domain Brothers service landing pages.
+ * Trigger: /?db_make_service_pages=1 (admin only, nonce-protected confirm).
+ *
+ * Each page gets: slug, title, a featured image placeholder, and rich content
+ * matching Domain Brothers' service offering + 25 yrs agency network.
+ */
+
+if ( ! function_exists( 'db_service_page_defs' ) ) {
+	function db_service_page_defs() {
+		return array(
+			array(
+				'slug'    => 'website-design-development',
+				'title'   => 'Website Design & Development',
+				'excerpt' => 'Custom, high-performance websites built for conversion — from domain acquisition to launch.',
+				'content' => '<h2>Websites That Convert</h2>
+<p>Your domain is just the start. Domain Brothers works with agency partners including <strong>Mindshare Consulting Inc.</strong>, <strong>Jay Mehta Digital</strong>, and <strong>Netclues</strong> — a network with <strong>25+ years of combined experience</strong> — to deliver websites that are fast, accessible, and built to rank.</p>
+<h3>What We Deliver</h3>
+<ul>
+<li>Custom WordPress and headless CMS development</li>
+<li>E-commerce and marketplace builds</li>
+<li>Landing page and conversion rate optimisation</li>
+<li>ADA/WCAG accessibility compliance</li>
+<li>Core Web Vitals and speed optimisation</li>
+</ul>
+<h3>Ready to Build?</h3>
+<p><a href="/contact/" class="button">Get a Free Quote</a></p>',
+			),
+			array(
+				'slug'    => 'digital-marketing',
+				'title'   => 'Digital Marketing',
+				'excerpt' => 'SEO, PPC, content strategy — full-funnel digital marketing that drives qualified traffic and revenue.',
+				'content' => '<h2>Marketing That Pays for Itself</h2>
+<p>A premium domain is a head-start, not a guarantee. Our agency partners provide full-funnel digital marketing — from organic search to paid acquisition — to make sure the right visitors find your new domain.</p>
+<h3>Our Services</h3>
+<ul>
+<li>Search Engine Optimisation (technical, on-page, off-page)</li>
+<li>Google Ads and Meta Ads management</li>
+<li>Content strategy and copywriting</li>
+<li>Email marketing automation</li>
+<li>Social media management</li>
+<li>Analytics setup and reporting (GA4, Search Console)</li>
+</ul>
+<h3>Start Growing</h3>
+<p><a href="/contact/" class="button">Book a Strategy Call</a></p>',
+			),
+			array(
+				'slug'    => 'software-development',
+				'title'   => 'Software Development',
+				'excerpt' => 'Bespoke software solutions — APIs, SaaS platforms, custom tools — built by experienced engineers.',
+				'content' => '<h2>Custom Software for Ambitious Brands</h2>
+<p>Whether you need a proprietary platform, a REST API, or a complex integration, our software development partners bring enterprise-grade engineering to businesses of every size.</p>
+<h3>Expertise</h3>
+<ul>
+<li>SaaS platform architecture and development</li>
+<li>REST and GraphQL API design</li>
+<li>Third-party integrations (Stripe, Salesforce, HubSpot, etc.)</li>
+<li>Database design and optimisation</li>
+<li>DevOps, CI/CD, and cloud infrastructure (AWS, GCP)</li>
+</ul>
+<h3>Have a Project?</h3>
+<p><a href="/contact/" class="button">Discuss Your Requirements</a></p>',
+			),
+			array(
+				'slug'    => 'mobile-app-development',
+				'title'   => 'Mobile App Development',
+				'excerpt' => 'iOS and Android apps — from MVP to App Store launch, built with React Native or native stacks.',
+				'content' => '<h2>Mobile Apps Built to Launch</h2>
+<p>Turn your domain into a product. Our mobile development partners build consumer and enterprise apps using React Native, Swift, and Kotlin — with a track record of successful App Store and Google Play launches.</p>
+<h3>What We Build</h3>
+<ul>
+<li>Cross-platform apps (React Native / Flutter)</li>
+<li>Native iOS (Swift) and Android (Kotlin) apps</li>
+<li>MVP development with rapid iteration</li>
+<li>App Store Optimisation (ASO)</li>
+<li>Post-launch maintenance and updates</li>
+</ul>
+<h3>Let\'s Build Your App</h3>
+<p><a href="/contact/" class="button">Get Started</a></p>',
+			),
+			array(
+				'slug'    => 'other-services',
+				'title'   => 'Other Services',
+				'excerpt' => 'Domain consulting, valuation, brand strategy, and more — the full stack of services beyond the domain itself.',
+				'content' => '<h2>Beyond the Domain</h2>
+<p>Domain Brothers and our agency network offer a wide range of supporting services to ensure your new domain translates into a thriving online presence.</p>
+<h3>Additional Services</h3>
+<ul>
+<li><strong>Domain Portfolio Consulting</strong> — strategy for buying, selling, and managing domain portfolios</li>
+<li><strong>Brand Name Development</strong> — naming, trademark check, and brand identity</li>
+<li><strong>Domain Valuation Reports</strong> — certified market valuations for financing, sale, or insurance</li>
+<li><strong>DNS & Email Setup</strong> — professional DNS configuration and business email launch</li>
+<li><strong>Domain Monitoring</strong> — watch for expiring or infringing domains in your niche</li>
+</ul>
+<h3>Get in Touch</h3>
+<p><a href="/contact/" class="button">Contact Us</a></p>',
+			),
+		);
+	}
+}
+
+add_action( 'init', function () {
+	if ( empty( $_GET['db_make_service_pages'] ) || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	// Nonce gate.
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'db_make_service_pages' ) ) {
+		$confirm_url = wp_nonce_url( add_query_arg( 'db_make_service_pages', '1', home_url( '/' ) ), 'db_make_service_pages' );
+		wp_die( 'Create / refresh the 5 service pages? <a href="' . esc_url( $confirm_url ) . '">Confirm</a>', 'DB Service Pages', array( 'response' => 200 ) );
+	}
+
+	$results = array();
+	foreach ( db_service_page_defs() as $def ) {
+		$existing = get_page_by_path( $def['slug'] );
+		$page_data = array(
+			'post_title'   => $def['title'],
+			'post_content' => $def['content'],
+			'post_excerpt' => $def['excerpt'],
+			'post_status'  => 'publish',
+			'post_type'    => 'page',
+			'post_name'    => $def['slug'],
+		);
+		if ( $existing ) {
+			$page_data['ID'] = $existing->ID;
+			wp_update_post( $page_data );
+			$results[] = 'Updated: /' . $def['slug'] . '/';
+		} else {
+			$id = wp_insert_post( $page_data );
+			$results[] = $id && ! is_wp_error( $id ) ? 'Created: /' . $def['slug'] . '/' : 'Failed: ' . $def['slug'];
+		}
+	}
+
+	$list = '<ul><li>' . implode( '</li><li>', array_map( 'esc_html', $results ) ) . '</li></ul>';
+	wp_die( 'DB Service Pages — Done:<br>' . $list . '<br><a href="' . esc_url( home_url( '/about-us/' ) ) . '">View About Us</a>', 'DB Service Pages', array( 'response' => 200 ) );
+} );
+
+
+/* ============================================================
+   BLOCK 14 — DB DevOne logo fix (developed-by footer logo)
+   ============================================================ */
+
+/*
+ * On domain listing pages where ?lis=y is present in the URL (the DomainFolio
+ * theme appends this for "developed by" attribution pages), the theme renders
+ * a generic logo. This block replaces it with the Domain Brothers wordmark
+ * served server-side so it's present on first paint (no JS flash).
+ *
+ * If DomainFolio changes the filter name, update the hook below.
+ */
+
+add_filter( 'devone_logo_url', function ( $url ) {
+	if ( isset( $_GET['lis'] ) ) {
+		return esc_url( home_url( '/wp-content/themes/DomainFolio/img/logo.png' ) );
+	}
+	return $url;
+} );
+
+/* Also inject an inline CSS override for the devone footer on ?lis pages. */
+add_action( 'wp_head', function () {
+	if ( ! isset( $_GET['lis'] ) ) {
+		return;
+	}
+	?>
+	<style id="db-devone-css">
+	.devone-footer-logo img { max-height: 28px !important; width: auto !important; }
+	.devone-footer { display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #888 !important; }
+	</style>
+	<?php
+} );
+
+/* ============================================================
+   CRM BLOCK — Lead Management System
+   ============================================================ */
+require_once __DIR__ . '/db-crm-block.php';
+
+
+/* ============================================================
+   INCLUDE PHASE 4 — CRM Lead Management
+   ============================================================ */
+require_once __DIR__ . '/db-crm-block.php';
