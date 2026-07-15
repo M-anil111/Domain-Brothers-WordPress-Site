@@ -741,7 +741,9 @@ add_filter( 'the_content', function ( $content ) {
 				body.appendChild(tr);
 			});
 			var cta=document.getElementById('db-plan-cta');
-			var url=buynow+'?t=plan&m='+encodeURIComponent(active);
+			/* 'months', not 'm' — m is a reserved WP query var (date archive)
+			   and makes the buy-now page 404. */
+			var url=buynow+'?t=plan&months='+encodeURIComponent(active);
 			if(d) url+='&d='+encodeURIComponent(d);
 			if(p) url+='&p='+encodeURIComponent(p);
 			cta.setAttribute('href',url);
@@ -880,7 +882,9 @@ add_action( 'wp_footer', function () {
 				}
 			} catch(e) {}
 			var url = DB_THANKYOU + '?type=offer';
-			if(domain) url += '&domain=' + encodeURIComponent(domain);
+			/* 'd', not 'domain' — the domain CPT's public query var hijacks
+			   ?domain= and the thank-you page never renders. */
+			if(domain) url += '&d=' + encodeURIComponent(domain);
 			window.location = url;
 		}, false);
 	})();

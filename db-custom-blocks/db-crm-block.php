@@ -188,8 +188,8 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 	// silently create no CRM lead at all, since this handler's own list
 	// didn't recognize that field name.
 	$domain = function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'domain' ) : ( $posted['your-domain'] ?? '' );
-	if ( empty( $domain ) && isset( $_GET['domain'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$domain = sanitize_text_field( wp_unslash( $_GET['domain'] ) );
+	if ( empty( $domain ) && isset( $_GET['d'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$domain = sanitize_text_field( wp_unslash( $_GET['d'] ) );
 	}
 
 	$data = array(

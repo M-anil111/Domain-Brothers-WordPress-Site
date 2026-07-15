@@ -231,8 +231,11 @@ add_action( 'template_redirect', static function () {
 		wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
 	}
 
+	// 'months', not 'm' — m is a reserved WordPress query var (date archive
+	// month); a request carrying it turns the main query into an empty date
+	// archive and the buy-now page 404s before this hook can render.
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$months_raw = isset( $_GET['m'] ) ? (int) sanitize_text_field( wp_unslash( $_GET['m'] ) ) : 0;
+	$months_raw = isset( $_GET['months'] ) ? (int) sanitize_text_field( wp_unslash( $_GET['months'] ) ) : 0;
 	$is_plan    = in_array( $months_raw, [ 3, 6, 9, 12 ], true );
 	$months     = $is_plan ? $months_raw : 0;
 
@@ -370,9 +373,13 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		$monthly_cents   = $is_plan ? db_stripe_installment_cents( $price, $months, 1 ) : 0;
 		$monthly_display = $is_plan ? '$' . number_format( $monthly_cents / 100, 2 ) : '';
 		$btn_label       = $is_plan ? 'Start Payment Plan' : 'Pay Now';
+		// 'd', not 'domain' — the domain CPT registers 'domain' as its own
+		// public query var, so ?domain=... hijacks the main query away from
+		// the thank-you page (renders the listing or a 404 instead).
 		$return_url      = home_url(
 			'/thank-you/?type=' . ( $is_plan ? 'plan' : 'full' )
-			. '&domain=' . rawurlencode( $domain )
+			. '&d=' . rawurlencode( $domain )
+			. '&amt=' . rawurlencode( number_format( $price, 0, '.', ',' ) )
 		);
 
 		header( 'Content-Type: text/html; charset=UTF-8' );

@@ -336,12 +336,12 @@ add_filter( 'the_content', function ( $content ) {
 		$type = 'full';
 	}
 
-	// Both producers (Stripe return_url, offer-flow redirect) send these as
-	// plain rawurlencode()/encodeURIComponent() text, never base64 — decode
-	// attempts here were guessing wrong on any plain value that happened to
-	// look like valid base64, garbling the domain shown to the customer.
-	$domain = ! empty( $_GET['domain'] ) ? sanitize_text_field( wp_unslash( $_GET['domain'] ) ) : '';
-	$amount = ! empty( $_GET['amount'] ) ? sanitize_text_field( wp_unslash( $_GET['amount'] ) ) : '';
+	// Params are 'd'/'amt' — NOT 'domain' (hijacked by the domain CPT's
+	// public query var, which pulls the request away from this page) and
+	// NOT base64 (producers send plain urlencoded text; decode guessing
+	// garbled any value that happened to look like valid base64).
+	$domain = ! empty( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
+	$amount = ! empty( $_GET['amt'] ) ? sanitize_text_field( wp_unslash( $_GET['amt'] ) ) : '';
 
 	$done = true;
 	return db_ty_html( $type, $domain, $amount ) . $content;
@@ -746,17 +746,18 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 		$type = 'full';
 	}
 
+	// Same param names + plain-text handling as the the_content filter
+	// above: 'd'/'amt', never 'domain' (CPT query-var collision) and never
+	// base64-decoded (producers send plain urlencoded text).
 	$domain = $atts['domain'];
-	if ( ! $domain && ! empty( $_GET['domain'] ) ) {
-		$raw    = base64_decode( wp_unslash( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ), true );
-		$domain = ( false !== $raw && '' !== $raw ) ? sanitize_text_field( $raw ) : sanitize_text_field( wp_unslash( $_GET['domain'] ) );
+	if ( ! $domain && ! empty( $_GET['d'] ) ) {
+		$domain = wp_unslash( $_GET['d'] );
 	}
 	$domain = sanitize_text_field( $domain );
 
 	$amount = $atts['amount'];
-	if ( ! $amount && ! empty( $_GET['amount'] ) ) {
-		$raw    = base64_decode( wp_unslash( sanitize_text_field( wp_unslash( $_GET['amount'] ) ) ), true );
-		$amount = ( false !== $raw && preg_match( '/[0-9]/', (string) $raw ) ) ? sanitize_text_field( $raw ) : sanitize_text_field( wp_unslash( $_GET['amount'] ) );
+	if ( ! $amount && ! empty( $_GET['amt'] ) ) {
+		$amount = wp_unslash( $_GET['amt'] );
 	}
 	$amount = sanitize_text_field( $amount );
 
