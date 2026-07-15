@@ -14,7 +14,7 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 - **WP admin:** https://beta.domainbrothers.com/wp-admin — **rotate credentials** (exposed in prior chat).
 - **Host:** Hostinger shared "Agency Startup" plan. hPanel under tech@netclues.com (impersonate). Site path: `/home/.../websites/boqfWdtEc/public_html`.
-- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.0.0) — NOT in functions.php.
+- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.2.0) — NOT in functions.php.
 - **WordPress:** 6.9.x, PHP 8.5.
 - **Custom post type:** `domain`. Price meta key: `domain_price`. Category: `domain_category`.
 - **CDN:** Hostinger CDN — Development mode ON during development. **Turn OFF** in hPanel when done.
@@ -22,9 +22,17 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 ---
 
-## 2. Plugin architecture (v3.0.0)
+## 2. Plugin architecture (v3.2.0)
 
-All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-content/plugins/db-custom-blocks/db-custom-blocks.php`). This is a single-file monolithic plugin with 17 blocks (see §3). It replaces the old approach of pasting code into `functions.php`.
+All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-content/plugins/db-custom-blocks/db-custom-blocks.php` + 4 require_once'd sub-files). It replaces the old approach of pasting code into `functions.php`.
+
+| File | Contains |
+|------|----------|
+| `db-custom-blocks.php` | Blocks 1–14 (see §3) |
+| `db-crm-block.php` | Block 17 — CRM lead management |
+| `db-stripe-block.php` | Block 15 — Stripe checkout, webhooks, payment plans |
+| `db-email-thankyou-block.php` | Block 16 — branded email + thank-you page |
+| `db-analytics-block.php` | CRM analytics dashboard (charts) |
 
 ### How to install / update
 
@@ -37,7 +45,7 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 
 ---
 
-## 3. The 17 blocks in db-custom-blocks v3.0.0
+## 3. The 17 blocks in db-custom-blocks v3.2.0
 
 | Block # | Block name | What it does |
 |---------|-----------|--------------|
@@ -82,21 +90,26 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 
 ## 5. Stripe configuration
 
-- Keys stored in WP options: `db_stripe_pub_live`, `db_stripe_sec_live`, `db_stripe_pub_test`, `db_stripe_sec_test`, `db_stripe_mode` ('test'|'live').
+- Keys stored in WP options: `db_stripe_live_pub_key`, `db_stripe_live_sec_key`, `db_stripe_test_pub_key`, `db_stripe_test_sec_key`, `db_stripe_mode` ('test'|'live'). (Note: earlier versions of this doc listed different option names — these are the ones the code actually reads.)
 - Webhook signing secrets: `db_stripe_wh_secret_live`, `db_stripe_wh_secret_test`.
 - Settings page: WP Admin → Settings → DB Stripe Keys.
 - For go-live: switch to LIVE mode on settings page, then run `/?db_create_webhook=1`.
-- Webhook events handled: `payment_intent.succeeded`, `invoice.payment_failed`, `charge.refunded`.
+- Webhook events handled: `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`. Verification only accepts the signing secret for the **currently active mode** — a test-mode event can no longer be processed while the site is in live mode.
+- **Price integrity:** the checkout's `?p=` URL parameter is display-only. The actual charge amount is always looked up server-side from the domain listing's own `domain_price` post meta (`db_stripe_lookup_domain_price()`) — a listing that can't be matched by title is rejected rather than trusted. This closed a critical bug where editing the URL let anyone buy any domain for $1.
+- **Receipt email:** the checkout page now collects the buyer's email and attaches it to the PaymentIntent via `POST /wp-json/db/v1/set-receipt-email` (proven by the client_secret, not just the PI id) right before confirming payment. Previously no email was ever collected, so sale/failure notifications had no address to send to.
+- **Payment plans now actually bill every installment.** Plan checkout creates a Stripe Customer with `setup_future_usage=off_session`; a daily WP-Cron event (`db_stripe_charge_due_installments`) charges installments 2..N automatically against the saved payment method. Previously only installment 1 was ever charged and the remaining months silently went unbilled — this was a severe revenue-loss bug, not a cosmetic one.
+- Active plan state: option `db_stripe_active_plans` (index) + `db_stripe_plan_<md5(domain)>` (per-plan record: customer_id, payment_method, price, next_charge_ts, history).
 
 ---
 
-## 6. Leads / CRM (Block 17)
+## 6. Leads / CRM (Block 17) + Analytics dashboard
 
 - DB table: `{$wpdb->prefix}db_leads` — auto-created on plugin load.
 - Lead statuses: new → contacted → negotiating → won / lost.
-- Lead sources: offer_form (CF7 auto-capture), direct (manual add).
+- Lead sources: offer_form (CF7 auto-capture, shares the same field-name map as Block 6's offer flow — `db_offer_value()`), direct (manual add).
 - Admin: WP Admin → Domain Brothers → Leads.
-- CSV export: WP Admin → Domain Brothers → Export CSV.
+- CSV export: WP Admin → Domain Brothers → Export CSV. Cell values starting with `= + - @` are neutralized (formula-injection guard).
+- **Analytics:** WP Admin → Domain Brothers → Analytics — stat tiles, 30-day leads trend chart, pipeline-by-stage funnel, lead-source breakdown. Server-rendered SVG, no external chart library.
 
 ---
 

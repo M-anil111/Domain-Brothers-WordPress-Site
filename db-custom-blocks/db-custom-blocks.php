@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.1.0
+ * Version:     3.2.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.0.0' );
+define( 'DB_BLOCKS_LOADED', '3.2.0' );
 
 
 /* ============================================================
@@ -634,7 +634,7 @@ add_filter( 'the_content', function ( $content ) {
 
 		<div class="db-plan-head">
 			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
-			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 2 ) ); ?></strong> &middot; <span class="db-plan-zero">0% interest</span></p>
+			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero">0% interest</span></p>
 		</div>
 		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
 		<div class="db-plan-summary">
@@ -1116,10 +1116,20 @@ if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       get
 if ( ! defined( 'DB_AEO_CONTACT_EMAIL' ) )   define( 'DB_AEO_CONTACT_EMAIL',  'sales@domainbrothers.com' );
 if ( ! defined( 'DB_AEO_TWITTER_HANDLE' ) )  define( 'DB_AEO_TWITTER_HANDLE', '' );
 if ( ! defined( 'DB_AEO_PRICE_META' ) )      define( 'DB_AEO_PRICE_META',     'domain_price' );
-if ( ! defined( 'DB_AEO_OG_IMAGE' ) ) {
-	$_db_site_icon = get_site_icon_url( 512 );
-	define( 'DB_AEO_OG_IMAGE', $_db_site_icon ?: '' );
-	unset( $_db_site_icon );
+if ( ! function_exists( 'db_aeo_og_image' ) ) {
+	/**
+	 * Site-icon lookup, done lazily on first actual use instead of at plugin
+	 * parse time — the old top-level define() ran get_site_icon_url() (an
+	 * attachment/meta lookup) on every single request, admin-ajax and
+	 * Stripe webhook POSTs included, even when no OG tag would ever print.
+	 */
+	function db_aeo_og_image() {
+		static $image = null;
+		if ( null === $image ) {
+			$image = get_site_icon_url( 512 ) ?: '';
+		}
+		return $image;
+	}
 }
 
 if ( ! function_exists( 'db_aeo_emit' ) ) {
@@ -1140,7 +1150,7 @@ add_action( 'wp_head', function () {
 	if ( is_admin() ) { return; }
 	$site_url  = esc_url( home_url( '/' ) );
 	$site_name = DB_AEO_ORG_NAME;
-	$logo_url  = DB_AEO_OG_IMAGE;
+	$logo_url  = db_aeo_og_image();
 
 	$org = array( '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url,
 		'description' => 'Premium domain name brokerage offering expert acquisition, flexible payment plans, and secure escrow services.',
@@ -1213,7 +1223,7 @@ add_action( 'wp_head', function () {
 	$title       = wp_get_document_title();
 	$description = get_bloginfo( 'description' );
 	$url         = db_aeo_canonical();
-	$image       = DB_AEO_OG_IMAGE;
+	$image       = db_aeo_og_image();
 	$type        = 'website';
 	$site_name   = DB_AEO_ORG_NAME;
 	if ( is_singular() ) {
@@ -1222,6 +1232,10 @@ add_action( 'wp_head', function () {
 		$description = has_excerpt() ? get_the_excerpt() : $description;
 		$url         = esc_url( get_permalink() );
 	}
+	// Lets Block 12 (dynamic meta) supply a richer, price-inclusive
+	// description for domain listing pages instead of duplicating this
+	// whole OG/Twitter block a second time.
+	$description = apply_filters( 'db_aeo_description', $description );
 	echo '<meta property="og:type"        content="' . esc_attr( $type )        . '">' . "\n";
 	echo '<meta property="og:site_name"   content="' . esc_attr( $site_name )   . '">' . "\n";
 	echo '<meta property="og:title"       content="' . esc_attr( $title )       . '">' . "\n";
@@ -1597,9 +1611,13 @@ add_filter( 'wpcf7_spam', function ( $is_spam ) {
  * Also adds Open Graph tags specific to the domain post.
  */
 
-/* Remove the default wp_title on domain singular pages so we can set our own. */
+/* Remove the default wp_title on domain singular pages so we can set our own.
+ * Deferred to RankMath's own title output when it's active, same as the
+ * meta-description hook below — otherwise this always wins the title-filter
+ * chain (it's the last one applied) and silently overrides RankMath's title
+ * on every domain listing. */
 add_filter( 'pre_get_document_title', function ( $title ) {
-	if ( ! is_singular( 'domain' ) ) {
+	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
 		return $title;
 	}
 	$post        = get_queried_object();
@@ -1612,38 +1630,35 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	return esc_html( $domain_name ) . $price_str . ' | Domain Brothers';
 } );
 
-/* Inject <meta description> and Open Graph tags in <head>. */
+/* Domain listing's richer, price-inclusive description — consumed by both
+ * the plain <meta name="description"> below and by the AEO block's OG/Twitter
+ * tags (via the db_aeo_description filter) so there's one description, not
+ * two competing ones. */
+if ( ! function_exists( 'db_domain_meta_description' ) ) {
+	function db_domain_meta_description( $post ) {
+		$domain_name = get_post_meta( $post->ID, 'domain_name', true ) ?: $post->post_title;
+		$price       = get_post_meta( $post->ID, 'domain_price', true );
+		$price_fmt   = $price ? '$' . number_format( (float) $price, 0 ) : 'Contact for price';
+		return 'Buy ' . $domain_name . ' for ' . $price_fmt . '. Premium domain brokerage — expert transfer, secure escrow, flexible payment plans. Domain Brothers.';
+	}
+}
+
+add_filter( 'db_aeo_description', function ( $description ) {
+	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
+		return $description;
+	}
+	return db_domain_meta_description( get_queried_object() );
+} );
+
+/* Inject the plain SEO <meta name="description"> tag. Open Graph/Twitter
+ * tags for domain pages are handled once, by the AEO block (Block 9) —
+ * see the db_aeo_description filter above. */
 add_action( 'wp_head', function () {
-	if ( ! is_singular( 'domain' ) ) {
+	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
 		return;
 	}
-	// Skip if RankMath has already output its meta (check for rm_og_description).
-	if ( defined( 'RANK_MATH_VERSION' ) ) {
-		return; // RankMath handles it; our AEO block augments with JSON-LD
-	}
-
-	$post        = get_queried_object();
-	$domain_name = get_post_meta( $post->ID, 'domain_name', true );
-	if ( ! $domain_name ) {
-		$domain_name = $post->post_title;
-	}
-	$price     = get_post_meta( $post->ID, 'domain_price', true );
-	$price_fmt = $price ? '$' . number_format( (float) $price, 0 ) : 'Contact for price';
-	$desc      = 'Buy ' . $domain_name . ' for ' . $price_fmt . '. Premium domain brokerage — expert transfer, secure escrow, flexible payment plans. Domain Brothers.';
-	$url       = get_permalink( $post->ID );
-	$img       = get_the_post_thumbnail_url( $post->ID, 'large' ) ?: home_url( '/wp-content/themes/DomainFolio/img/og-default.jpg' );
-
-	echo "\n<!-- DB Dynamic Meta -->\n";
+	$desc = db_domain_meta_description( get_queried_object() );
 	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
-	echo '<meta property="og:title" content="' . esc_attr( $domain_name . ' — Domain Brothers' ) . '">' . "\n";
-	echo '<meta property="og:description" content="' . esc_attr( $desc ) . '">' . "\n";
-	echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
-	echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n";
-	echo '<meta property="og:type" content="product">' . "\n";
-	echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
-	echo '<meta name="twitter:title" content="' . esc_attr( $domain_name . ' — Domain Brothers' ) . '">' . "\n";
-	echo '<meta name="twitter:description" content="' . esc_attr( $desc ) . '">' . "\n";
-	echo "<!-- /DB Dynamic Meta -->\n";
 }, 1 ); // priority 1 so theme can override at default priority
 
 
@@ -1836,3 +1851,8 @@ require_once __DIR__ . '/db-email-thankyou-block.php';
    PHASE 2 — Stripe Checkout, Webhooks & Payment Integration
    ============================================================ */
 require_once __DIR__ . '/db-stripe-block.php';
+
+/* ============================================================
+   ANALYTICS — CRM dashboard charts (leads, pipeline, sources)
+   ============================================================ */
+require_once __DIR__ . '/db-analytics-block.php';

@@ -153,6 +153,43 @@ if ( ! function_exists( 'db_stripe_settings_page' ) ) {
 	}
 }
 
+// ─── Authoritative price lookup ────────────────────────────────────────────────
+
+if ( ! function_exists( 'db_stripe_lookup_domain_price' ) ) {
+	/**
+	 * Looks up the real, authoritative price for a domain listing from its
+	 * `domain` CPT post (domain_price meta) by exact (case-insensitive) title
+	 * match. This is the ONLY source of truth for what a checkout charges —
+	 * never the client-supplied ?p= URL parameter.
+	 *
+	 * @return float|null Price in USD, or null if no matching listing exists.
+	 */
+	function db_stripe_lookup_domain_price( string $domain ) : ?float {
+		$q = new WP_Query( [
+			'post_type'      => 'domain',
+			'post_status'    => 'publish',
+			'title'          => $domain,
+			'posts_per_page' => 1,
+			'no_found_rows'  => true,
+		] );
+
+		if ( empty( $q->posts ) ) {
+			return null;
+		}
+
+		$post = $q->posts[0];
+		if ( 0 !== strcasecmp( $post->post_title, $domain ) ) {
+			return null; // WP_Query's 'title' can loosely match — require exact.
+		}
+
+		$raw   = (string) get_post_meta( $post->ID, 'domain_price', true );
+		$clean = preg_replace( '/[^0-9.]/', '', $raw );
+		$price = is_numeric( $clean ) ? (float) $clean : 0.0;
+
+		return $price > 0.0 ? $price : null;
+	}
+}
+
 // ─── Checkout page (template_redirect) ────────────────────────────────────────
 
 add_action( 'template_redirect', static function () {
@@ -178,11 +215,20 @@ add_action( 'template_redirect', static function () {
 		wp_die( esc_html( 'Invalid request.' ) );
 	}
 
-	$domain = sanitize_text_field( $domain );
-	$price  = (float) $price_raw;
+	$domain       = sanitize_text_field( $domain );
+	$client_price = (float) $price_raw;
 
-	if ( ! $domain || $price <= 0.0 ) {
+	if ( ! $domain || $client_price <= 0.0 ) {
 		wp_die( esc_html( 'Invalid request parameters.' ) );
+	}
+
+	// SECURITY: the URL's price is client-supplied and untrusted — it only
+	// selects WHICH domain to show. The actual charge amount always comes
+	// from the domain listing's own domain_price meta, looked up here.
+	// Without this, anyone could edit ?p= and buy any domain for $1.
+	$price = db_stripe_lookup_domain_price( $domain );
+	if ( null === $price ) {
+		wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -195,12 +241,37 @@ add_action( 'template_redirect', static function () {
 	exit;
 } );
 
+// ─── Installment math (must match the payment-plan widget exactly) ────────────
+
+if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
+	/**
+	 * Cents for installment $n (1-indexed) of a $months-month 0%-interest plan.
+	 * Mirrors the widget's installments(total, months) JS exactly: every
+	 * installment is round(total/months, 2) except the last, which absorbs
+	 * the rounding remainder so the sum always equals the domain's price.
+	 */
+	function db_stripe_installment_cents( float $price_usd, int $months, int $n ) : int {
+		$monthly_cents = (int) round( $price_usd / $months * 100 );
+		if ( $n < $months ) {
+			return $monthly_cents;
+		}
+		$total_cents = (int) round( $price_usd * 100 );
+		return $total_cents - $monthly_cents * ( $months - 1 );
+	}
+}
+
 // ─── PaymentIntent creation ────────────────────────────────────────────────────
 
 if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 	/**
 	 * Creates a Stripe PaymentIntent via wp_remote_post.
-	 * For payment plans, creates an intent for the first installment only.
+	 *
+	 * For a full purchase, this is the only charge. For a payment plan, this
+	 * creates installment 1 AND a Stripe Customer with the payment method
+	 * saved for off-session reuse (setup_future_usage) — db_stripe_charge_next_installment()
+	 * uses that saved customer/payment_method to charge installments 2..N
+	 * automatically via WP-Cron. Without this, plans only ever collected the
+	 * first installment and silently never billed the rest.
 	 *
 	 * @return array{client_secret?: string, pi_id?: string, amount_cents?: int, error?: string}
 	 */
@@ -211,20 +282,43 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 			return [ 'error' => 'Payment system is not configured. Please contact support.' ];
 		}
 
-		$amount_cents = $months > 0
-			? (int) ceil( $price_usd / $months * 100 )
-			: (int) round( $price_usd * 100 );
+		$is_plan      = $months > 0;
+		$amount_cents = $is_plan ? db_stripe_installment_cents( $price_usd, $months, 1 ) : (int) round( $price_usd * 100 );
+
+		$customer_id = '';
+		if ( $is_plan ) {
+			$cust_response = wp_remote_post( 'https://api.stripe.com/v1/customers', [
+				'headers'   => [
+					'Authorization' => 'Bearer ' . $keys['sec'],
+					'Content-Type'  => 'application/x-www-form-urlencoded',
+				],
+				'body'      => [ 'description' => 'Payment plan — ' . $domain ],
+				'timeout'   => 15,
+				'sslverify' => true,
+			] );
+			if ( is_wp_error( $cust_response ) ) {
+				error_log( 'DB Stripe: Customer creation failed — ' . $cust_response->get_error_message() );
+				return [ 'error' => 'Payment system is temporarily unavailable. Please try again.' ];
+			}
+			$cust_data   = json_decode( wp_remote_retrieve_body( $cust_response ), true );
+			$customer_id = (string) ( $cust_data['id'] ?? '' );
+			if ( ! $customer_id ) {
+				return [ 'error' => 'Could not start payment plan. Please try again.' ];
+			}
+		}
 
 		$body = [
 			'amount'                             => $amount_cents,
 			'currency'                           => 'usd',
 			'automatic_payment_methods[enabled]' => 'true',
 			'metadata[domain]'                   => $domain,
-			'metadata[type]'                     => $months > 0 ? 'plan' : 'full',
+			'metadata[type]'                     => $is_plan ? 'plan' : 'full',
 			'metadata[total_price_usd]'          => (string) $price_usd,
 		];
 
-		if ( $months > 0 ) {
+		if ( $is_plan ) {
+			$body['customer']                     = $customer_id;
+			$body['setup_future_usage']           = 'off_session';
 			$body['metadata[total_months]']       = (string) $months;
 			$body['metadata[installment_number]'] = '1';
 		}
@@ -273,7 +367,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		$not_configured = empty( $pub_key ) || empty( $keys['sec'] );
 
 		$price_display   = '$' . number_format( $price, 0, '.', ',' );
-		$monthly_cents   = $is_plan ? (int) ceil( $price / $months * 100 ) : 0;
+		$monthly_cents   = $is_plan ? db_stripe_installment_cents( $price, $months, 1 ) : 0;
 		$monthly_display = $is_plan ? '$' . number_format( $monthly_cents / 100, 2 ) : '';
 		$btn_label       = $is_plan ? 'Start Payment Plan' : 'Pay Now';
 		$return_url      = home_url(
@@ -308,6 +402,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .db-stripe-plan-box{background:rgba(79,156,249,.1);border:1px solid rgba(79,156,249,.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.93rem;color:rgba(255,255,255,.85);line-height:1.5}
 .db-stripe-plan-box strong{color:#4f9cf9;font-size:1.15rem}
 .db-stripe-badge{display:inline-block;background:#16a34a;color:#fff;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
+/* Email field */
+.db-stripe-label{display:block;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.db-stripe-input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:.95rem;margin-bottom:18px}
+.db-stripe-input::placeholder{color:rgba(255,255,255,.35)}
+.db-stripe-input:focus{outline:2px solid #4f9cf9;outline-offset:1px}
 /* Payment element */
 .db-stripe-pe-wrap{background:#fff;border-radius:10px;padding:20px 18px;margin-bottom:18px;min-height:80px}
 /* Button */
@@ -361,6 +460,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 		<div id="db-stripe-err" class="db-stripe-err"></div>
 		<form id="db-stripe-form" novalidate>
+			<label class="db-stripe-label" for="db-stripe-email">Email for your receipt</label>
+			<input type="email" id="db-stripe-email" class="db-stripe-input" placeholder="you@example.com" required autocomplete="email">
 			<div class="db-stripe-pe-wrap">
 				<div id="db-stripe-payment-element"></div>
 			</div>
@@ -392,6 +493,7 @@ window.DB_PUB_KEY    = <?php echo wp_json_encode( $pub_key ); ?>;
 window.DB_PI_SECRET  = <?php echo wp_json_encode( $client_secret ); ?>;
 window.DB_RETURN_URL = <?php echo wp_json_encode( $return_url ); ?>;
 window.DB_BTN_LABEL  = <?php echo wp_json_encode( $btn_label ); ?>;
+window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-email' ) ); ?>;
 </script>
 <script src="https://js.stripe.com/v3/" crossorigin="anonymous"></script>
 <script>
@@ -407,9 +509,10 @@ window.DB_BTN_LABEL  = <?php echo wp_json_encode( $btn_label ); ?>;
 		var payEl    = elements.create('payment');
 		payEl.mount('#db-stripe-payment-element');
 
-		var form   = document.getElementById('db-stripe-form');
-		var btn    = document.getElementById('db-stripe-btn');
-		var errDiv = document.getElementById('db-stripe-err');
+		var form     = document.getElementById('db-stripe-form');
+		var btn      = document.getElementById('db-stripe-btn');
+		var errDiv   = document.getElementById('db-stripe-err');
+		var emailInp = document.getElementById('db-stripe-email');
 
 		function showErr(msg) {
 			errDiv.textContent = msg;
@@ -420,14 +523,31 @@ window.DB_BTN_LABEL  = <?php echo wp_json_encode( $btn_label ); ?>;
 
 		form.addEventListener('submit', function (e) {
 			e.preventDefault();
+
+			var email = (emailInp.value || '').trim();
+			if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+				showErr('Please enter a valid email address.');
+				emailInp.focus();
+				return;
+			}
+
 			btn.disabled = true;
 			btn.textContent = 'Processing…';
 			errDiv.style.display = 'none';
 
-			stripe.confirmPayment({
-				elements: elements,
-				confirmParams: { return_url: window.DB_RETURN_URL },
-				redirect: 'if_required'
+			// Attach the buyer's email as the PaymentIntent's receipt_email
+			// before confirming — this is what lets the sale-complete and
+			// payment-failed emails reach the actual buyer.
+			fetch(window.DB_EMAIL_REST, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: email })
+			}).catch(function () { /* non-fatal — still attempt payment */ }).then(function () {
+				return stripe.confirmPayment({
+					elements: elements,
+					confirmParams: { return_url: window.DB_RETURN_URL },
+					redirect: 'if_required'
+				});
 			}).then(function (result) {
 				if (result.error) {
 					showErr(result.error.message || 'Payment failed. Please try again.');
@@ -450,7 +570,7 @@ window.DB_BTN_LABEL  = <?php echo wp_json_encode( $btn_label ); ?>;
 	}
 }
 
-// ─── REST: register webhook route ─────────────────────────────────────────────
+// ─── REST: register webhook + receipt-email routes ────────────────────────────
 
 add_action( 'rest_api_init', static function () {
 	register_rest_route( 'db/v1', '/stripe-webhook', [
@@ -458,7 +578,59 @@ add_action( 'rest_api_init', static function () {
 		'callback'            => 'db_stripe_handle_webhook',
 		'permission_callback' => '__return_true',
 	] );
+
+	register_rest_route( 'db/v1', '/set-receipt-email', [
+		'methods'             => WP_REST_Server::CREATABLE,
+		'callback'            => 'db_stripe_set_receipt_email',
+		'permission_callback' => '__return_true',
+		'args'                => [
+			'client_secret' => [ 'required' => true, 'type' => 'string' ],
+			'email'         => [ 'required' => true, 'type' => 'string' ],
+		],
+	] );
 } );
+
+if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
+	/**
+	 * Attaches the buyer's email to their own PaymentIntent as receipt_email,
+	 * called from the checkout page right before confirmPayment(). Without
+	 * this, sale-complete/payment-failed emails have no address to send to.
+	 *
+	 * Requires the full client_secret (not just the PI id) as proof of
+	 * ownership — a bare PaymentIntent id is not a secret, but the
+	 * client_secret only ever reaches the one browser that's paying it.
+	 */
+	function db_stripe_set_receipt_email( WP_REST_Request $request ) {
+		$client_secret = sanitize_text_field( (string) $request->get_param( 'client_secret' ) );
+		$email         = sanitize_email( (string) $request->get_param( 'email' ) );
+
+		if ( ! preg_match( '/^(pi_[a-zA-Z0-9]+)_secret_[a-zA-Z0-9]+$/', $client_secret, $m ) || ! is_email( $email ) ) {
+			return new WP_REST_Response( [ 'error' => 'Invalid parameters.' ], 400 );
+		}
+		$pi_id = $m[1];
+
+		$keys = db_stripe_keys();
+		if ( empty( $keys['sec'] ) ) {
+			return new WP_REST_Response( [ 'error' => 'Payment system not configured.' ], 500 );
+		}
+
+		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), [
+			'headers'   => [
+				'Authorization' => 'Bearer ' . $keys['sec'],
+				'Content-Type'  => 'application/x-www-form-urlencoded',
+			],
+			'body'      => [ 'receipt_email' => $email ],
+			'timeout'   => 15,
+			'sslverify' => true,
+		] );
+
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return new WP_REST_Response( [ 'error' => 'Could not update receipt email.' ], 502 );
+		}
+
+		return new WP_REST_Response( [ 'ok' => true ], 200 );
+	}
+}
 
 // ─── Init fallback webhook (?db_stripe_wh=1) ──────────────────────────────────
 
@@ -491,28 +663,31 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 			return db_stripe_wh_respond( $request, [ 'error' => 'Missing payload or signature.' ], 400 );
 		}
 
-		// Try both live and test signing secrets; use whichever verifies.
-		$event = null;
-		foreach ( [
-			(string) get_option( 'db_stripe_wh_secret_live', '' ),
-			(string) get_option( 'db_stripe_wh_secret_test', '' ),
-		] as $secret ) {
-			if ( $secret ) {
-				$event = db_stripe_verify_webhook_sig( $payload, $sig_header, $secret );
-				if ( null !== $event ) {
-					break;
-				}
-			}
-		}
+		// Only the active mode's secret is accepted — otherwise a test-mode
+		// event (e.g. a 4242 test card) verifies fine while the site is in
+		// live mode and gets processed as a real sale.
+		$secret = db_stripe_keys()['webhook_secret'];
+		$event  = $secret ? db_stripe_verify_webhook_sig( $payload, $sig_header, $secret ) : null;
 
 		if ( null === $event ) {
 			error_log( 'DB Stripe: Webhook signature verification failed.' );
 			return db_stripe_wh_respond( $request, [ 'error' => 'Invalid signature.' ], 400 );
 		}
 
+		$event_id   = (string) ( $event['id'] ?? '' );
 		$event_type = (string) ( $event['type'] ?? '' );
 		$obj        = (array)  ( $event['data']['object'] ?? [] );
 		$domain     = (string) ( $obj['metadata']['domain'] ?? '' );
+
+		// Idempotency: Stripe retries deliveries on timeout, which would
+		// otherwise send duplicate receipts/alerts and double-append plan
+		// installment history for the same event.
+		if ( $event_id && get_transient( 'db_stripe_evt_' . $event_id ) ) {
+			return db_stripe_wh_respond( $request, [ 'received' => true, 'duplicate' => true ], 200 );
+		}
+		if ( $event_id ) {
+			set_transient( 'db_stripe_evt_' . $event_id, 1, DAY_IN_SECONDS );
+		}
 
 		$log = [
 			'ts'         => time(),
@@ -527,9 +702,9 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 				$log['status'] = 'processed';
 				break;
 
-			case 'invoice.payment_failed':
-				$email      = (string) ( $obj['customer_email'] ?? '' );
-				$amount_usd = isset( $obj['amount_due'] ) ? round( (float) $obj['amount_due'] / 100, 2 ) : 0.0;
+			case 'payment_intent.payment_failed':
+				$email      = (string) ( $obj['receipt_email'] ?? '' );
+				$amount_usd = isset( $obj['amount'] ) ? round( (float) $obj['amount'] / 100, 2 ) : 0.0;
 				db_stripe_on_payment_failed( $domain, $email, $amount_usd );
 				$log['status'] = 'processed';
 				break;
@@ -624,11 +799,11 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$installment_num = isset( $meta['installment_number'] ) ? (int) $meta['installment_number'] : 1;
 		$amount_usd      = isset( $pi['amount_received'] )   ? round( (float) $pi['amount_received'] / 100, 2 ) : 0.0;
 
-		// Resolve customer email from PaymentIntent or first charge
+		// receipt_email is set by db_stripe_set_receipt_email() before the
+		// checkout form confirms payment — PaymentIntent responses no longer
+		// include a 'charges' array in current Stripe API versions, so that
+		// used to silently resolve to an empty email on every sale.
 		$customer_email = (string) ( $pi['receipt_email'] ?? '' );
-		if ( ! $customer_email ) {
-			$customer_email = (string) ( $pi['charges']['data'][0]['billing_details']['email'] ?? '' );
-		}
 
 		if ( $type === 'full' ) {
 			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full' );
@@ -641,19 +816,135 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 			$installment_num, $total_months, $domain, $amount_usd
 		) );
 
-		$opt_key   = 'db_stripe_plan_' . md5( $domain );
-		$history   = (array) get_option( $opt_key, [] );
-		$history[] = [
-			'installment' => $installment_num,
-			'amount_usd'  => $amount_usd,
-			'ts'          => time(),
-		];
-		update_option( $opt_key, $history, false );
+		$opt_key = 'db_stripe_plan_' . md5( $domain );
+		$plan    = (array) get_option( $opt_key, [] );
+		$total_price = isset( $meta['total_price_usd'] ) ? (float) $meta['total_price_usd'] : $amount_usd;
+
+		$plan['domain']         = $domain;
+		$plan['price_usd']      = $total_price;
+		$plan['total_months']   = $total_months;
+		$plan['customer_email'] = $customer_email ?: ( $plan['customer_email'] ?? '' );
+		$plan['customer_id']    = (string) ( $pi['customer'] ?? ( $plan['customer_id'] ?? '' ) );
+		$plan['payment_method'] = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
+		$plan['paid_installments'] = $installment_num;
+		$plan['history']        = (array) ( $plan['history'] ?? [] );
+		$plan['history'][]      = [ 'installment' => $installment_num, 'amount_usd' => $amount_usd, 'ts' => time() ];
 
 		if ( $installment_num >= $total_months ) {
-			$total_price = isset( $meta['total_price_usd'] ) ? (float) $meta['total_price_usd'] : $amount_usd;
+			$plan['status'] = 'completed';
+			update_option( $opt_key, $plan, false );
+			db_stripe_plan_index_remove( $domain );
 			db_stripe_on_sale_complete( $domain, $total_price, $customer_email, 'plan' );
+			return;
 		}
+
+		$plan['status']            = 'active';
+		$plan['next_installment']  = $installment_num + 1;
+		$plan['next_charge_ts']    = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		update_option( $opt_key, $plan, false );
+		db_stripe_plan_index_add( $domain );
+	}
+}
+
+// ─── Payment-plan index (so cron doesn't have to scan every wp_option) ────────
+
+if ( ! function_exists( 'db_stripe_plan_index_add' ) ) {
+	function db_stripe_plan_index_add( string $domain ) : void {
+		$key   = md5( $domain );
+		$index = (array) get_option( 'db_stripe_active_plans', [] );
+		if ( ! in_array( $key, $index, true ) ) {
+			$index[] = $key;
+			update_option( 'db_stripe_active_plans', $index, false );
+		}
+	}
+}
+
+if ( ! function_exists( 'db_stripe_plan_index_remove' ) ) {
+	function db_stripe_plan_index_remove( string $domain ) : void {
+		$key   = md5( $domain );
+		$index = array_values( array_diff( (array) get_option( 'db_stripe_active_plans', [] ), [ $key ] ) );
+		update_option( 'db_stripe_active_plans', $index, false );
+	}
+}
+
+// ─── Cron: charge due plan installments (2..N) ────────────────────────────────
+
+add_action( 'db_stripe_charge_due_installments', static function () {
+	$keys = db_stripe_keys();
+	if ( empty( $keys['sec'] ) ) {
+		return;
+	}
+	foreach ( (array) get_option( 'db_stripe_active_plans', [] ) as $plan_key ) {
+		$opt_key = 'db_stripe_plan_' . $plan_key;
+		$plan    = (array) get_option( $opt_key, [] );
+		if ( empty( $plan ) || 'active' !== ( $plan['status'] ?? '' ) ) {
+			continue;
+		}
+		if ( (int) ( $plan['next_charge_ts'] ?? 0 ) > time() ) {
+			continue; // Not due yet.
+		}
+		db_stripe_charge_next_installment( $plan );
+	}
+} );
+
+if ( ! function_exists( 'db_stripe_ensure_installment_cron' ) ) {
+	function db_stripe_ensure_installment_cron() : void {
+		if ( ! wp_next_scheduled( 'db_stripe_charge_due_installments' ) ) {
+			wp_schedule_event( time(), 'daily', 'db_stripe_charge_due_installments' );
+		}
+	}
+}
+add_action( 'init', 'db_stripe_ensure_installment_cron' );
+
+if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
+	/**
+	 * Charges the next off-session installment for an active payment plan
+	 * using the Customer + payment method saved at plan start. This is what
+	 * actually collects installments 2..N — previously nothing did, and
+	 * plans silently stopped billing after the first payment.
+	 */
+	function db_stripe_charge_next_installment( array $plan ) : void {
+		$keys = db_stripe_keys();
+		$domain      = (string) $plan['domain'];
+		$n           = (int) $plan['next_installment'];
+		$months      = (int) $plan['total_months'];
+		$price_usd   = (float) $plan['price_usd'];
+		$opt_key     = 'db_stripe_plan_' . md5( $domain );
+		$amount_cents = db_stripe_installment_cents( $price_usd, $months, $n );
+
+		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents', [
+			'headers'   => [
+				'Authorization' => 'Bearer ' . $keys['sec'],
+				'Content-Type'  => 'application/x-www-form-urlencoded',
+			],
+			'body'      => [
+				'amount'                    => $amount_cents,
+				'currency'                  => 'usd',
+				'customer'                  => $plan['customer_id'],
+				'payment_method'            => $plan['payment_method'],
+				'off_session'               => 'true',
+				'confirm'                   => 'true',
+				'receipt_email'             => $plan['customer_email'] ?? '',
+				'metadata[domain]'          => $domain,
+				'metadata[type]'            => 'plan',
+				'metadata[total_price_usd]' => (string) $price_usd,
+				'metadata[total_months]'    => (string) $months,
+				'metadata[installment_number]' => (string) $n,
+			],
+			'timeout'   => 30,
+			'sslverify' => true,
+		] );
+
+		// Success/failure both arrive via the payment_intent.succeeded /
+		// payment_intent.payment_failed webhook — this call only needs to
+		// push the charge attempt, plus push next_charge_ts forward so a
+		// failed card doesn't retry every single day.
+		if ( is_wp_error( $response ) ) {
+			error_log( 'DB Stripe: installment charge request failed for ' . $domain . ' — ' . $response->get_error_message() );
+		}
+
+		$plan['next_charge_ts'] = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		update_option( $opt_key, $plan, false );
 	}
 }
 

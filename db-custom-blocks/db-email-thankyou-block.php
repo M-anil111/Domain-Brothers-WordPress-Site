@@ -292,10 +292,11 @@ add_filter( 'wpcf7_mail_components', function ( $components, $cf7 ) {
 		$subj       = ! empty( $components['subject'] ) ? (string) $components['subject'] : 'Message — Domain Brothers';
 		$raw_body   = (string) $components['body'];
 
-		// Convert plain text to basic HTML if no tags present.
-		$body_html = ( false === strpos( $raw_body, '<' ) )
-			? '<p>' . nl2br( esc_html( $raw_body ) ) . '</p>'
-			: $raw_body;
+		// CF7's default mail body is plain text — always escape it before we
+		// force an HTML content-type below. Treating any '<' in the visitor's
+		// own message as "already safe HTML" would let attacker-supplied
+		// markup render live in the recipient's mail client.
+		$body_html = '<p>' . nl2br( esc_html( $raw_body ) ) . '</p>';
 
 		$components['body'] = db_mail_wrap( $subj, $body_html, $from_name, $from_email );
 	}
@@ -326,23 +327,21 @@ add_filter( 'the_content', function ( $content ) {
 	if ( ! is_page( array( 'thank-you', 'thankyou' ) ) ) {
 		return $content;
 	}
+	if ( has_shortcode( $content, 'db_thankyou' ) ) {
+		return $content; // Manual [db_thankyou] placement takes precedence — don't double-render.
+	}
 
 	$type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : 'full';
 	if ( ! in_array( $type, array( 'full', 'plan', 'offer' ), true ) ) {
 		$type = 'full';
 	}
 
-	$domain = '';
-	if ( ! empty( $_GET['domain'] ) ) {
-		$raw    = base64_decode( wp_unslash( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ), true );
-		$domain = ( false !== $raw && '' !== $raw ) ? sanitize_text_field( $raw ) : sanitize_text_field( wp_unslash( $_GET['domain'] ) );
-	}
-
-	$amount = '';
-	if ( ! empty( $_GET['amount'] ) ) {
-		$raw    = base64_decode( wp_unslash( sanitize_text_field( wp_unslash( $_GET['amount'] ) ) ), true );
-		$amount = ( false !== $raw && preg_match( '/[0-9]/', (string) $raw ) ) ? sanitize_text_field( $raw ) : sanitize_text_field( wp_unslash( $_GET['amount'] ) );
-	}
+	// Both producers (Stripe return_url, offer-flow redirect) send these as
+	// plain rawurlencode()/encodeURIComponent() text, never base64 — decode
+	// attempts here were guessing wrong on any plain value that happened to
+	// look like valid base64, garbling the domain shown to the customer.
+	$domain = ! empty( $_GET['domain'] ) ? sanitize_text_field( wp_unslash( $_GET['domain'] ) ) : '';
+	$amount = ! empty( $_GET['amount'] ) ? sanitize_text_field( wp_unslash( $_GET['amount'] ) ) : '';
 
 	$done = true;
 	return db_ty_html( $type, $domain, $amount ) . $content;
