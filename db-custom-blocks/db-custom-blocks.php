@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.6.0
+ * Version:     3.8.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.6.0' );
+define( 'DB_BLOCKS_LOADED', '3.8.0' );
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -273,17 +273,26 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			$menu_html .= '<a href="' . $href . '">' . esc_html( $label ) . '</a>';
 		}
 
+		// The site-wide mobile-nav block (db-mobilenav-block.php) provides the
+		// hamburger on all pages, so the hero shows its own burger only if
+		// that block isn't handling it.
+		$show_burger = ! ( defined( 'DB_HERO_HIDE_BURGER' ) && DB_HERO_HIDE_BURGER );
+
 		$html  = '<section class="db-hp-hero" aria-label="Domain Brothers">';
 		// Brand bar at the top of the hero: logo left, burger right.
 		$html .= '<div class="db-hp-nav">';
 		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
 		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
 		$html .= '</a>';
-		$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
-		$html .= '<span></span><span></span><span></span></button>';
+		if ( $show_burger ) {
+			$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
+			$html .= '<span></span><span></span><span></span></button>';
+		}
 		$html .= '</div>';
-		// Slide-down menu panel.
-		$html .= '<nav id="db-hp-menu" class="db-hp-menu" aria-label="Primary" hidden>' . $menu_html . '</nav>';
+		// Slide-down menu panel (only when the hero owns the burger).
+		if ( $show_burger ) {
+			$html .= '<nav id="db-hp-menu" class="db-hp-menu" aria-label="Primary" hidden>' . $menu_html . '</nav>';
+		}
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
@@ -1996,6 +2005,37 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	color: var(--db-navy); letter-spacing: -0.02em;
 }
 
+/* ── CMS / content pages: centered white "sheet" on the blue canvas ──────────
+   Applies to regular pages (About, Contact, service pages, FAQs, Our Team,
+   policies) — NOT the homepage (own design) and NOT functional pages
+   (search / domain / buy / offer) which the owner asked to keep as color-only. */
+body.page:not(.home) .db-ui-active #main.site-main,
+body.page:not(.home).db-ui-active #main.site-main {
+	max-width: 900px;
+	margin: clamp(28px, 5vw, 56px) auto;
+	background: #ffffff;
+	border: 1px solid #e4ecf7;
+	border-radius: 18px;
+	padding: clamp(26px, 5vw, 60px);
+	box-shadow: 0 1px 2px rgba(8,23,58,.05), 0 14px 44px rgba(8,23,58,.07);
+}
+body.page:not(.home) .entry-title {
+	margin-top: 0; margin-bottom: 18px;
+	font-size: clamp(28px, 4.5vw, 44px); color: var(--db-navy);
+	letter-spacing: -0.03em; text-wrap: balance;
+}
+/* Comfortable prose inside the sheet */
+body.page:not(.home) .entry-content { max-width: 100%; font-size: 16px; }
+body.page:not(.home) .entry-content > h2 { margin: 38px 0 14px; padding-top: 6px; }
+body.page:not(.home) .entry-content > h3 { margin: 26px 0 8px; color: var(--db-navy); }
+body.page:not(.home) .entry-content p { margin: 0 0 16px; line-height: 1.7; color: #334155; }
+body.page:not(.home) .entry-content ul li,
+body.page:not(.home) .entry-content ol li { margin: 6px 0; line-height: 1.65; color: #334155; }
+body.page:not(.home) .entry-content a { color: var(--db-blue); }
+body.page:not(.home) .entry-content img { border-radius: 12px; }
+/* Numbered "How We Work" style steps read as a subtle divided list */
+body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
+
 /* Domain listing card grid (built from the theme's tables by the enhancer) */
 .db-domain-grid {
 	display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2122,21 +2162,27 @@ add_action( 'wp_footer', function () {
 				}
 			});
 
-			/* 4. Hide empty theme elements: blank nav-toggle pills under the
-			   logo and empty social-icon <li>/<a>s atop the footer (they
-			   render as stray bullets). Checks background-image too, since
-			   some icon links use CSS sprites with no inline media node. */
+			/* 4. Hide elements that render as empty stray bullets/pills: the
+			   blank header nav-toggle and the footer social icons whose
+			   Font Awesome glyphs aren't loading (so the <i> exists but paints
+			   nothing). We test ACTUAL rendered size of any icon child rather
+			   than just its presence. */
+			var iconRenders = function (el) {
+				var ic = el.querySelector('img, svg, i, [class*="icon"], .dashicons');
+				if (!ic) {
+					var bg = window.getComputedStyle(el).backgroundImage;
+					return bg && bg !== 'none';
+				}
+				var r = ic.getBoundingClientRect();
+				return (r.width > 3 && r.height > 3); // a real, painted glyph/image
+			};
 			document.querySelectorAll(
 				'header a, header button, header label, header div, header span,' +
 				'footer li, footer a, .site-footer li, .site-footer a, #colophon li, #colophon a'
 			).forEach(function (el) {
-				var hasText = (el.textContent || '').trim().length > 0;
-				if (hasText) { return; }
-				if (el.querySelector('img, svg, i, .dashicons, [class*="icon"]')) { return; }
-				var bg = window.getComputedStyle(el).backgroundImage;
-				if (bg && bg !== 'none') { return; }
-				// Only hide small/empty controls, never a large structural wrapper.
-				if (el.getBoundingClientRect().height > 80) { return; }
+				if ((el.textContent || '').trim().length > 0) { return; }
+				if (iconRenders(el)) { return; }
+				if (el.getBoundingClientRect().height > 80) { return; } // never a big wrapper
 				el.style.display = 'none';
 			});
 
@@ -2693,3 +2739,13 @@ require_once __DIR__ . '/db-tls-block.php';
    SEO META — Yoast-aware per-page titles/descriptions/keywords
    ============================================================ */
 require_once __DIR__ . '/db-seo-meta-block.php';
+
+/* ============================================================
+   MOBILE NAV — site-wide hamburger drawer
+   ============================================================ */
+require_once __DIR__ . '/db-mobilenav-block.php';
+
+/* ============================================================
+   PAGE CURTAIN — branded transition overlay
+   ============================================================ */
+require_once __DIR__ . '/db-curtain-block.php';
