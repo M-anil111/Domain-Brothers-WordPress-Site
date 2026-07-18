@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.5.0
+ * Version:     3.5.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.5.0' );
+define( 'DB_BLOCKS_LOADED', '3.5.1' );
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -2099,12 +2099,22 @@ add_action( 'wp_footer', function () {
 				}
 			});
 
-			/* 4. Hide empty theme elements: the two blank nav-toggle pills
-			   under the logo and empty social-icon <li>s atop the footer. */
-			document.querySelectorAll('header a, header button, footer li, .site-footer li').forEach(function (el) {
+			/* 4. Hide empty theme elements: blank nav-toggle pills under the
+			   logo and empty social-icon <li>/<a>s atop the footer (they
+			   render as stray bullets). Checks background-image too, since
+			   some icon links use CSS sprites with no inline media node. */
+			document.querySelectorAll(
+				'header a, header button, header label, header div, header span,' +
+				'footer li, footer a, .site-footer li, .site-footer a, #colophon li, #colophon a'
+			).forEach(function (el) {
 				var hasText = (el.textContent || '').trim().length > 0;
-				var hasMedia = el.querySelector('img, svg, i, .dashicons');
-				if (!hasText && !hasMedia) { el.style.display = 'none'; }
+				if (hasText) { return; }
+				if (el.querySelector('img, svg, i, .dashicons, [class*="icon"]')) { return; }
+				var bg = window.getComputedStyle(el).backgroundImage;
+				if (bg && bg !== 'none') { return; }
+				// Only hide small/empty controls, never a large structural wrapper.
+				if (el.getBoundingClientRect().height > 80) { return; }
+				el.style.display = 'none';
 			});
 
 			/* 5. Hero burger menu toggle. */
@@ -2131,8 +2141,18 @@ add_action( 'wp_footer', function () {
 					if (!action) { return; }
 					var nameLink = tr.querySelector('a:not(.db-act-buy):not(.db-act-offer)');
 					if (!nameLink) { return; }
-					var priceEl = tr.querySelector('.db-price-strong');
-					var isOffer = action.classList.contains('db-act-offer');
+
+					// Extract the price by scanning the price cell's text and
+					// removing the button's own label — robust whether the
+					// price is a raw text node or wrapped in a span/p.
+					var cell = action.closest('td') || action.parentNode;
+					var cellText = (cell ? cell.textContent : '').replace(action.textContent || '', '');
+					var pm = cellText.match(/\$\s?[\d.,]+/);
+					var priceText = '';
+					if (pm) {
+						var digits = pm[0].replace(/[^\d]/g, '');
+						if (digits) { priceText = '$' + Number(digits).toLocaleString('en-US'); }
+					}
 
 					var card = document.createElement('div');
 					card.className = 'db-domain-card';
@@ -2143,12 +2163,12 @@ add_action( 'wp_footer', function () {
 					var row = document.createElement('div');
 					row.className = 'db-domain-card__row';
 					var price = document.createElement('span');
-					if (priceEl && !isOffer) {
+					if (priceText) {
 						price.className = 'db-domain-card__price';
-						price.textContent = (priceEl.textContent || '').trim();
+						price.textContent = priceText;
 					} else {
 						price.className = 'db-domain-card__price--offer';
-						price.textContent = 'Make an offer';
+						price.textContent = 'Open to offers';
 					}
 					row.appendChild(price);
 					row.appendChild(action);
