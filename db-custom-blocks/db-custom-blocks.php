@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.4.0
+ * Version:     3.5.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.4.0' );
+define( 'DB_BLOCKS_LOADED', '3.5.0' );
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -240,12 +240,31 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			$trust_html .= '<span class="db-hp-titem">' . esc_html( $item ) . '</span>';
 		}
 		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
+
+		// Burger menu links (no WP nav menu is registered on this theme).
+		$menu = array(
+			'Browse Domains' => $browse_href,
+			'Payment Plans'  => esc_url( home_url( '/payment-plan-setup/' ) ),
+			'Services'       => esc_url( home_url( '/website-design-development/' ) ),
+			'News'           => esc_url( home_url( '/news/' ) ),
+			'Contact'        => $offer_href,
+		);
+		$menu_html = '';
+		foreach ( $menu as $label => $href ) {
+			$menu_html .= '<a href="' . $href . '">' . esc_html( $label ) . '</a>';
+		}
+
 		$html  = '<section class="db-hp-hero" aria-label="Domain Brothers">';
-		// Brand bar at the top of the hero (logo, then everything follows).
+		// Brand bar at the top of the hero: logo left, burger right.
 		$html .= '<div class="db-hp-nav">';
 		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
 		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
-		$html .= '</a></div>';
+		$html .= '</a>';
+		$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
+		$html .= '<span></span><span></span><span></span></button>';
+		$html .= '</div>';
+		// Slide-down menu panel.
+		$html .= '<nav id="db-hp-menu" class="db-hp-menu" aria-label="Primary" hidden>' . $menu_html . '</nav>';
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
@@ -254,8 +273,6 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
 		$html .= '</div>';
 		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
-		// Selling is available but deliberately not pushed — a quiet link only.
-		$html .= '<p class="db-hp-sell"><a href="' . $offer_href . '">Have a domain to sell? Contact us &rarr;</a></p>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
 		return $html;
@@ -341,8 +358,8 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		color: #f5f7fb; box-sizing: border-box;
 	}
 	.db-hp-nav {
-		position: relative; z-index: 2; max-width: 1140px; margin: 0 auto;
-		display: flex; align-items: center;
+		position: relative; z-index: 3; max-width: 1140px; margin: 0 auto;
+		display: flex; align-items: center; justify-content: space-between;
 		padding: 20px 0 clamp(40px, 8vw, 92px);
 	}
 	.db-hp-logo { display: inline-flex; align-items: center; text-decoration: none; }
@@ -350,6 +367,35 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		height: clamp(40px, 8vw, 52px); width: auto; max-width: 220px;
 		display: block;
 	}
+	/* Burger */
+	.db-hp-burger {
+		display: inline-flex; flex-direction: column; justify-content: center; gap: 5px;
+		width: 46px; height: 46px; padding: 0 11px; cursor: pointer;
+		background: rgba(255,255,255,0.06); border: 1px solid rgba(157,199,251,0.28);
+		border-radius: 12px; transition: background 0.18s ease, border-color 0.18s ease;
+	}
+	.db-hp-burger:hover { background: rgba(79,156,249,0.14); border-color: rgba(157,199,251,0.5); }
+	.db-hp-burger span {
+		display: block; height: 2px; width: 100%; background: #f5f7fb; border-radius: 2px;
+		transition: transform 0.22s ease, opacity 0.22s ease;
+	}
+	.db-hp-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+	.db-hp-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+	.db-hp-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+	/* Slide-down menu */
+	.db-hp-menu {
+		position: relative; z-index: 3; max-width: 1140px; margin: -28px auto 0;
+		display: flex; flex-direction: column; gap: 2px;
+		background: rgba(8,23,58,0.72); border: 1px solid rgba(157,199,251,0.2);
+		border-radius: 14px; padding: 10px; overflow: hidden;
+		backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+	}
+	.db-hp-menu[hidden] { display: none; }
+	.db-hp-menu a {
+		color: #e9f0fb !important; text-decoration: none; font-size: 16px; font-weight: 600;
+		padding: 13px 16px; border-radius: 9px; transition: background 0.16s ease, color 0.16s ease;
+	}
+	.db-hp-menu a:hover { background: rgba(79,156,249,0.16); color: #ffffff !important; }
 	.db-hp-sell {
 		margin: 26px 0 0; font-size: 13.5px;
 		animation: db-fade-up 0.6s 0.5s ease both;
@@ -1907,6 +1953,74 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 .db-ui-active a.db-act-offer:hover { background: var(--db-blue); color: #fff !important; }
 .db-ui-active td .db-price-strong { font-weight: 800; color: var(--db-navy); font-variant-numeric: tabular-nums; }
 
+/* Front page only: hide the theme's duplicate logo (the hero already
+   carries the brand). Keep the header search usable. */
+.home.db-ui-active .custom-logo-link,
+.home.db-ui-active .site-header .custom-logo { display: none !important; }
+
+/* ==========================================================================
+   10b. BELOW-HERO — section rhythm + domain listing cards + decor
+   ========================================================================== */
+
+/* Soft blue canvas below the hero so white cards read as elevated. */
+.home.db-ui-active #primary,
+.home.db-ui-active .site-content,
+.home.db-ui-active .content-area {
+	background: linear-gradient(180deg, #f4f8fe 0%, #eef4fc 100%);
+}
+/* Section headings below the hero */
+.home.db-ui-active h2 {
+	color: var(--db-navy); letter-spacing: -0.02em;
+}
+
+/* Domain listing card grid (built from the theme's tables by the enhancer) */
+.db-domain-grid {
+	display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 16px; margin: 22px 0 8px;
+}
+.db-domain-card {
+	position: relative; display: flex; flex-direction: column; gap: 14px;
+	background: #ffffff; border: 1px solid #e4ecf7; border-radius: 16px;
+	padding: 20px 20px 18px;
+	box-shadow: 0 1px 2px rgba(8,23,58,.05), 0 10px 30px rgba(8,23,58,.06);
+	transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+	overflow: hidden;
+}
+.db-domain-card::before {
+	content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+	background: linear-gradient(90deg, #2563eb, #4f9cf9);
+	opacity: 0; transition: opacity 0.18s ease;
+}
+.db-domain-card:hover { transform: translateY(-4px); box-shadow: 0 6px 14px rgba(8,23,58,.10), 0 20px 44px rgba(8,23,58,.14); border-color: #cfe0f7; }
+.db-domain-card:hover::before { opacity: 1; }
+.db-domain-card__name {
+	font-size: 19px; font-weight: 700; color: var(--db-navy); word-break: break-word;
+	text-decoration: none; line-height: 1.25;
+}
+.db-domain-card__name:hover { color: var(--db-blue); }
+.db-domain-card__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; }
+.db-domain-card__price {
+	font-size: 20px; font-weight: 800; color: var(--db-navy); font-variant-numeric: tabular-nums;
+}
+.db-domain-card__price--offer { font-size: 14px; font-weight: 600; color: #64748b; }
+.db-domain-card .db-act-buy,
+.db-domain-card .db-act-offer { margin-left: 0; }
+
+/* Decorative floating domain/web motifs (subtle, blue on the light canvas) */
+.db-decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.db-decor span {
+	position: absolute; font-weight: 800; color: #2563eb; opacity: 0.06;
+	font-family: var(--db-font); user-select: none; will-change: transform;
+}
+.home.db-ui-active #primary,
+.home.db-ui-active .site-content,
+.home.db-ui-active .content-area { position: relative; }
+.home.db-ui-active .site-content > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+	.db-domain-card { transition: none; }
+	.db-decor span { transition: none !important; }
+}
+
 /* ==========================================================================
    11. MOBILE
    ========================================================================== */
@@ -1992,6 +2106,94 @@ add_action( 'wp_footer', function () {
 				var hasMedia = el.querySelector('img, svg, i, .dashicons');
 				if (!hasText && !hasMedia) { el.style.display = 'none'; }
 			});
+
+			/* 5. Hero burger menu toggle. */
+			var burger = document.querySelector('.db-hp-burger');
+			var menu = document.getElementById('db-hp-menu');
+			if (burger && menu) {
+				burger.addEventListener('click', function () {
+					var open = burger.getAttribute('aria-expanded') === 'true';
+					burger.setAttribute('aria-expanded', open ? 'false' : 'true');
+					burger.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+					if (open) { menu.setAttribute('hidden', ''); } else { menu.removeAttribute('hidden'); }
+				});
+			}
+
+			/* 6. Turn the theme's plain domain tables into a card grid.
+			   A domain table is any <table> containing a Buy Now / Make an
+			   Offer action (tagged in step 2). */
+			document.querySelectorAll('table').forEach(function (table) {
+				if (!table.querySelector('.db-act-buy, .db-act-offer')) { return; }
+				var grid = document.createElement('div');
+				grid.className = 'db-domain-grid';
+				table.querySelectorAll('tr').forEach(function (tr) {
+					var action = tr.querySelector('.db-act-buy, .db-act-offer');
+					if (!action) { return; }
+					var nameLink = tr.querySelector('a:not(.db-act-buy):not(.db-act-offer)');
+					if (!nameLink) { return; }
+					var priceEl = tr.querySelector('.db-price-strong');
+					var isOffer = action.classList.contains('db-act-offer');
+
+					var card = document.createElement('div');
+					card.className = 'db-domain-card';
+					var name = document.createElement('a');
+					name.className = 'db-domain-card__name';
+					name.href = nameLink.getAttribute('href') || '#';
+					name.textContent = (nameLink.textContent || '').trim();
+					var row = document.createElement('div');
+					row.className = 'db-domain-card__row';
+					var price = document.createElement('span');
+					if (priceEl && !isOffer) {
+						price.className = 'db-domain-card__price';
+						price.textContent = (priceEl.textContent || '').trim();
+					} else {
+						price.className = 'db-domain-card__price--offer';
+						price.textContent = 'Make an offer';
+					}
+					row.appendChild(price);
+					row.appendChild(action);
+					card.appendChild(name);
+					card.appendChild(row);
+					grid.appendChild(card);
+				});
+				if (grid.children.length) { table.parentNode.replaceChild(grid, table); }
+			});
+
+			/* 7. Subtle floating domain/web motifs on the below-hero canvas,
+			   with a light parallax drift on scroll (front page, motion-safe). */
+			var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			var canvas = document.querySelector('.home.db-ui-active .site-content, .home.db-ui-active #primary, .home.db-ui-active .content-area');
+			if (canvas && !reduce && document.body.classList.contains('home')) {
+				var decor = document.createElement('div');
+				decor.className = 'db-decor';
+				decor.setAttribute('aria-hidden', 'true');
+				var motifs = ['.com', '@', '</>', '.io', 'www', '.ai', '#', '.co'];
+				var sizes = [42, 68, 30, 54, 38, 60, 34, 48];
+				for (var i = 0; i < motifs.length; i++) {
+					var sp = document.createElement('span');
+					sp.textContent = motifs[i];
+					sp.style.fontSize = sizes[i] + 'px';
+					sp.style.left = ((i * 12 + 6) % 92) + '%';
+					sp.style.top = ((i * 127) % 90 + 4) + '%';
+					sp.setAttribute('data-depth', (0.15 + (i % 4) * 0.12).toFixed(2));
+					decor.appendChild(sp);
+				}
+				canvas.appendChild(decor);
+				var spans = decor.querySelectorAll('span');
+				var ticking = false;
+				window.addEventListener('scroll', function () {
+					if (ticking) { return; }
+					ticking = true;
+					window.requestAnimationFrame(function () {
+						var y = window.pageYOffset || 0;
+						for (var k = 0; k < spans.length; k++) {
+							var d = parseFloat(spans[k].getAttribute('data-depth')) || 0.2;
+							spans[k].style.transform = 'translateY(' + (-(y * d)).toFixed(1) + 'px)';
+						}
+						ticking = false;
+					});
+				}, { passive: true });
+			}
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
 	</script>
