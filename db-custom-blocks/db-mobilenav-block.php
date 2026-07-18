@@ -50,8 +50,13 @@ add_action( 'wp_footer', function () {
 	<div id="db-mnav-scrim" class="db-mnav-scrim" hidden></div>
 
 	<style>
-	.db-mnav-toggle { display: none; }
+	/* Mobile-only: the toggle and drawer are hidden entirely on desktop so
+	   the drawer markup never shows as a plain list in normal flow. The
+	   scrim is governed by its [hidden] attribute + JS, and can't open on
+	   desktop because the toggle that opens it is hidden. */
+	.db-mnav-toggle, .db-mnav { display: none; }
 	@media (max-width: 860px) {
+		.db-mnav { display: block; }
 		.db-mnav-toggle {
 			position: fixed; top: 12px; right: 12px; z-index: 100001;
 			width: 46px; height: 46px; padding: 12px 11px; border: 0; cursor: pointer;
