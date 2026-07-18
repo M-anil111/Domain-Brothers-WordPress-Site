@@ -140,8 +140,8 @@ if ( ! function_exists( 'db_mail_send_sale_receipt' ) ) {
 		if ( 'plan' === $type ) {
 			$monthly    = ( $plan_months > 0 ) ? '$' . number_format( (float) $amount_usd / (int) $plan_months, 2 ) : $amount_fmt;
 			$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active!</p>';
-			$body .= '<p>Your payment plan for <strong>' . $domain_safe . '</strong> has started. Your <strong>' . esc_html( $monthly ) . '/month</strong> plan over <strong>' . (int) $plan_months . ' months</strong> has been activated.</p>';
-			$body .= '<p>Domain transfer begins after your final payment. Payment schedule and details have been recorded; you will receive reminders before each installment.</p>';
+			$body .= '<p>Your plan for <strong>' . $domain_safe . '</strong> is now active &mdash; <strong>' . esc_html( $monthly ) . '/month</strong> over <strong>' . (int) $plan_months . ' months</strong>, 0% interest.</p>';
+			$body .= '<p>Installments bill automatically each month, and we\'ll send a reminder before each one. Domain transfer begins right after your final payment.</p>';
 		} else {
 			$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Congratulations! Your purchase is confirmed.</p>';
 			$body .= '<p>Your purchase of <strong>' . $domain_safe . '</strong> for <strong>' . esc_html( $amount_fmt ) . '</strong> is confirmed. Our team will initiate the domain transfer within 1&ndash;2 business days.</p>';
@@ -252,8 +252,8 @@ if ( ! function_exists( 'db_mail_send_offer_ack' ) ) {
 		$domain_safe = esc_html( $domain );
 		$subject     = 'We received your offer — Domain Brothers';
 
-		$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Thank you for your interest!</p>';
-		$body .= '<p>We\'ve received your offer for <strong>' . $domain_safe . '</strong> and our team will review it within <strong>24 hours</strong>.</p>';
+		$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Offer received!</p>';
+		$body .= '<p>We\'ve received your offer for <strong>' . $domain_safe . '</strong>. Our team personally reviews every offer within <strong>24 hours</strong>.</p>';
 
 		if ( $offer_amount ) {
 			$amt_display = '$' . ltrim( preg_replace( '/[^0-9.,]/', '', (string) $offer_amount ), '$' );
@@ -262,7 +262,7 @@ if ( ! function_exists( 'db_mail_send_offer_ack' ) ) {
 			$body .= '</div>';
 		}
 
-		$body .= '<p>You\'ll hear back from us at <strong>' . esc_html( $to_email ) . '</strong>. Our team personally reviews every offer and responds with a decision or counter-offer.</p>';
+		$body .= '<p>You\'ll hear back from us at <strong>' . esc_html( $to_email ) . '</strong> with a decision or counter-offer.</p>';
 		$body .= '<p>Questions in the meantime? Contact us at <a href="mailto:sales@domainbrothers.com" style="color:#0a6ed1;">sales@domainbrothers.com</a>.</p>';
 		$body .= '<p style="margin-top:20px;">&#8212; The Domain Brothers Team</p>';
 
@@ -419,16 +419,16 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$html .= $check_svg;
 			$html .= '<h1 class="db-ty-headline">Your payment plan is active' . ( $domain_safe ? ' &mdash; <span class="db-ty-domain">' . $domain_safe . '</span>' : '' ) . '</h1>';
 			$sub = $domain_safe
-				? 'Your first payment has been processed. <strong>' . $domain_safe . '</strong> will be transferred after your final installment.'
-				: 'Your first payment has been processed. The domain will be transferred after your final installment.';
+				? 'Your first installment has been processed. <strong>' . $domain_safe . '</strong> transfers to you right after your final payment.'
+				: 'Your first installment has been processed. The domain transfers to you right after your final payment.';
 			$html .= '<p class="db-ty-sub">' . $sub . '</p>';
 
 			$html .= '<div class="db-ty-infobox">';
-			$html .= '<strong>&#128274; Secure escrow protection throughout.</strong><br>';
-			$html .= 'Domain transfer occurs after your final payment. Your domain is held securely during the full plan term.';
+			$html .= '<strong>&#128274; Escrow-protected for the full term.</strong><br>';
+			$html .= 'Remaining installments bill automatically each month &mdash; no action needed. We\'ll email you before each charge, and your domain is held securely until the plan completes.';
 			$html .= '</div>';
 
-			$html .= '<a class="db-ty-cta" href="' . esc_url( home_url( '/services/' ) ) . '">View Our Services &rarr;</a>';
+			$html .= '<a class="db-ty-cta" href="' . esc_url( home_url( '/' ) ) . '">Browse More Domains &rarr;</a>';
 
 			$html .= '<div class="db-ty-svc-links"><strong>Quick links:</strong>';
 			foreach ( $services as $label => $path ) {
@@ -440,18 +440,19 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 		/* ---- type=offer ---- */
 		else {
 			$html .= '<div class="db-ty-icon db-ty-icon--letter" aria-hidden="true">&#128235;</div>';
-			$html .= '<h1 class="db-ty-headline">Offer received &mdash; we\'ll be in touch' . ( $domain_safe ? ' about <span class="db-ty-domain">' . $domain_safe . '</span>' : '' ) . '</h1>';
-			$html .= '<p class="db-ty-sub">Thank you for your interest' . ( $domain_safe ? ' in <strong>' . $domain_safe . '</strong>' : '' ) . '. Our team reviews all offers within <strong>24 hours</strong>.</p>';
+			$html .= '<h1 class="db-ty-headline">Offer received' . ( $domain_safe ? ' for <span class="db-ty-domain">' . $domain_safe . '</span>' : '' ) . '</h1>';
+			$html .= '<p class="db-ty-sub">Thank you for your interest' . ( $domain_safe ? ' in <strong>' . $domain_safe . '</strong>' : '' ) . '. Our team personally reviews every offer within <strong>24 hours</strong>.</p>';
 
+			$html .= '<h2 class="db-ty-timeline-title">What happens next</h2>';
 			$html .= '<div class="db-ty-timeline" role="list">';
 			$offer_steps = array(
-				array( 'icon' => '&#x1F4CB;', 'label' => 'We review your offer',            'sub' => 'within 24 hours' ),
-				array( 'icon' => '&#x1F4E7;', 'label' => 'You receive our response by email','sub' => '' ),
-				array( 'icon' => '&#x1F91D;', 'label' => 'We negotiate &amp; close',        'sub' => 'secure transfer via escrow' ),
+				array( 'n' => 1, 'label' => 'We personally review your offer',   'sub' => 'within 24 hours' ),
+				array( 'n' => 2, 'label' => 'You receive our response by email', 'sub' => 'a decision or counter-offer' ),
+				array( 'n' => 3, 'label' => 'We negotiate &amp; close',          'sub' => 'secure transfer via escrow' ),
 			);
 			foreach ( $offer_steps as $step ) {
 				$html .= '<div class="db-ty-step" role="listitem">';
-				$html .= '<div class="db-ty-step-icon" aria-hidden="true">' . $step['icon'] . '</div>';
+				$html .= '<div class="db-ty-step-dot" aria-hidden="true">' . esc_html( (string) $step['n'] ) . '</div>';
 				$html .= '<div class="db-ty-step-body"><strong>' . $step['label'] . '</strong>';
 				if ( $step['sub'] ) { $html .= '<span class="db-ty-step-sub">' . $step['sub'] . '</span>'; }
 				$html .= '</div></div>';
@@ -509,6 +510,8 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 	--db-ty-chip-bg:     #f3f4f6;
 	--db-ty-chip-text:   #374151;
 	--db-ty-chip-hover:  #dbeafe;
+	--db-ty-grad-a:      #eaf2fc;
+	--db-ty-grad-b:      #f7f9fc;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
@@ -525,15 +528,19 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 		--db-ty-chip-bg:     #374151;
 		--db-ty-chip-text:   #d1d5db;
 		--db-ty-chip-hover:  #1e3a5f;
+		--db-ty-grad-a:      #0d1f3c;
+		--db-ty-grad-b:      #111827;
 	}
 }
-:root[data-theme="dark"]  { --db-ty-bg:#111827; --db-ty-card-bg:#1f2937; --db-ty-border:#374151; --db-ty-text:#d1d5db; --db-ty-heading:#f9fafb; --db-ty-muted:#9ca3af; --db-ty-green-lt:#052e16; --db-ty-info-bg:#1e3a5f; --db-ty-info-border:#3b82f6; --db-ty-step-line:#4b5563; --db-ty-chip-bg:#374151; --db-ty-chip-text:#d1d5db; --db-ty-chip-hover:#1e3a5f; }
-:root[data-theme="light"] { --db-ty-bg:#f4f6f9; --db-ty-card-bg:#ffffff; --db-ty-border:#e5e7eb; --db-ty-text:#374151; --db-ty-heading:#111827; --db-ty-muted:#6b7280; --db-ty-green-lt:#e7f6ec; --db-ty-info-bg:#eff6ff; --db-ty-info-border:#bfdbfe; --db-ty-step-line:#d1d5db; --db-ty-chip-bg:#f3f4f6; --db-ty-chip-text:#374151; --db-ty-chip-hover:#dbeafe; }
+:root[data-theme="dark"]  { --db-ty-bg:#111827; --db-ty-card-bg:#1f2937; --db-ty-border:#374151; --db-ty-text:#d1d5db; --db-ty-heading:#f9fafb; --db-ty-muted:#9ca3af; --db-ty-green-lt:#052e16; --db-ty-info-bg:#1e3a5f; --db-ty-info-border:#3b82f6; --db-ty-step-line:#4b5563; --db-ty-chip-bg:#374151; --db-ty-chip-text:#d1d5db; --db-ty-chip-hover:#1e3a5f; --db-ty-grad-a:#0d1f3c; --db-ty-grad-b:#111827; }
+:root[data-theme="light"] { --db-ty-bg:#f4f6f9; --db-ty-card-bg:#ffffff; --db-ty-border:#e5e7eb; --db-ty-text:#374151; --db-ty-heading:#111827; --db-ty-muted:#6b7280; --db-ty-green-lt:#e7f6ec; --db-ty-info-bg:#eff6ff; --db-ty-info-border:#bfdbfe; --db-ty-step-line:#d1d5db; --db-ty-chip-bg:#f3f4f6; --db-ty-chip-text:#374151; --db-ty-chip-hover:#dbeafe; --db-ty-grad-a:#eaf2fc; --db-ty-grad-b:#f7f9fc; }
 
 .db-ty-wrap {
-	max-width: 680px;
+	max-width: 720px;
 	margin: 0 auto 48px;
-	padding: 0 16px;
+	padding: clamp(28px, 6vw, 56px) clamp(16px, 4vw, 32px);
+	background: linear-gradient(180deg, var(--db-ty-grad-a) 0%, var(--db-ty-grad-b) 100%);
+	border-radius: 24px;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -548,12 +555,27 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 	text-align: center;
 }
 
-/* ---- Icon ---- */
+/* ---- Icon (animated stroke draw; static when reduced motion) ---- */
 .db-ty-icon {
-	width: 72px;
-	height: 72px;
+	width: clamp(72px, 12vw, 92px);
+	height: auto;
 	margin: 0 auto 22px;
 	display: block;
+}
+@media (prefers-reduced-motion: no-preference) {
+	.db-ty-icon-ring {
+		stroke-dasharray: 183;
+		stroke-dashoffset: 183;
+		animation: db-ty-draw 0.6s ease-out forwards;
+	}
+	.db-ty-icon-tick {
+		stroke-dasharray: 38;
+		stroke-dashoffset: 38;
+		animation: db-ty-draw 0.35s ease-out 0.55s forwards;
+	}
+}
+@keyframes db-ty-draw {
+	to { stroke-dashoffset: 0; }
 }
 .db-ty-icon--letter {
 	font-size: 62px;
@@ -575,7 +597,7 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 
 /* ---- Sub ---- */
 .db-ty-sub {
-	font-size: 16px;
+	font-size: clamp(15px, 2.5vw, 17px);
 	line-height: 1.65;
 	color: var(--db-ty-text);
 	margin: 0 auto 28px;
@@ -583,6 +605,16 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 }
 
 /* ---- Timeline ---- */
+.db-ty-timeline-title {
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.09em;
+	color: var(--db-ty-muted);
+	text-align: left;
+	max-width: 420px;
+	margin: 0 auto 10px;
+}
 .db-ty-timeline {
 	text-align: left;
 	max-width: 420px;
@@ -592,9 +624,9 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 .db-ty-timeline::before {
 	content: "";
 	position: absolute;
-	left: 19px;
-	top: 30px;
-	bottom: 30px;
+	left: 16px;
+	top: 26px;
+	bottom: 26px;
 	width: 2px;
 	background: var(--db-ty-step-line);
 	border-radius: 2px;
@@ -603,33 +635,36 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 	display: flex;
 	align-items: flex-start;
 	gap: 16px;
-	padding: 8px 0;
+	padding: 9px 0;
 	position: relative;
 }
-.db-ty-step-icon {
-	width: 40px;
-	height: 40px;
+.db-ty-step-dot {
+	width: 34px;
+	height: 34px;
 	flex-shrink: 0;
-	background: var(--db-ty-card-bg);
-	border: 2px solid var(--db-ty-border);
+	background: var(--db-ty-navy);
+	color: #ffffff;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 17px;
+	font-size: 14px;
+	font-weight: 700;
 	position: relative;
 	z-index: 1;
-	transition: border-color 0.2s;
+	box-shadow: 0 0 0 4px var(--db-ty-card-bg);
 }
-.db-ty-step--done .db-ty-step-icon {
-	background: var(--db-ty-green-lt);
-	border-color: var(--db-ty-green);
+.db-ty-step--done .db-ty-step-dot {
+	background: var(--db-ty-blue);
+}
+.db-ty-step--done .db-ty-step-body strong {
+	color: var(--db-ty-blue);
 }
 .db-ty-step-body {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	padding-top: 9px;
+	padding-top: 6px;
 	font-size: 15px;
 	color: var(--db-ty-heading);
 }
@@ -717,13 +752,14 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 /* ---- Responsive ---- */
 @media (max-width: 480px) {
 	.db-ty-card { padding: 24px 16px; }
-	.db-ty-timeline { max-width: 100%; }
+	.db-ty-timeline, .db-ty-timeline-title { max-width: 100%; }
 	.db-ty-chips { gap: 6px; }
 	.db-ty-chip { font-size: 12px; padding: 5px 11px; }
-	.db-ty-icon { width: 58px; height: 58px; }
+	.db-ty-icon { width: 58px; }
 }
 @media (prefers-reduced-motion: reduce) {
-	.db-ty-cta, .db-ty-chip, .db-ty-step-icon { transition: none !important; }
+	.db-ty-cta, .db-ty-chip, .db-ty-step-dot { transition: none !important; }
+	.db-ty-cta:hover { transform: none; }
 }
 </style>
 		<?php
