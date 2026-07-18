@@ -22,7 +22,10 @@ if ( ! defined( 'DB_PWA_THEME_COLOR' ) ) {
 	define( 'DB_PWA_THEME_COLOR', '#0a1628' );
 }
 if ( ! defined( 'DB_PWA_CACHE_VERSION' ) ) {
-	define( 'DB_PWA_CACHE_VERSION', 'db-pwa-v1' );
+	// Bumped v1→v2: the SW 'activate' step purges every cache whose name
+	// isn't the current one, so this clears any stale HTML a previous SW
+	// cached on visitors' devices.
+	define( 'DB_PWA_CACHE_VERSION', 'db-pwa-v2' );
 }
 
 /* ─── Manifest + SW endpoints ─────────────────────────────────────────────── */
@@ -114,16 +117,11 @@ self.addEventListener('fetch', (e) => {
 			})
 		);
 	} else {
-		// Pages: network-first with cache fallback (offline support).
-		e.respondWith(
-			fetch(req).then((res) => {
-				if (res && res.status === 200) {
-					const copy = res.clone();
-					caches.open(CACHE).then((cache) => cache.put(req, copy));
-				}
-				return res;
-			}).catch(() => caches.match(req))
-		);
+		// Pages: NEVER cache HTML. The page markup carries inline
+		// enhancer JS that changes with each release; caching it made
+		// visitors run stale scripts (e.g. old domain-card rendering).
+		// Always go to network; only fall back to cache when fully offline.
+		e.respondWith(fetch(req).catch(() => caches.match(req)));
 	}
 });
 JS;

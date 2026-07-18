@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.5.1
+ * Version:     3.5.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.5.1' );
+define( 'DB_BLOCKS_LOADED', '3.5.2' );
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -43,6 +43,25 @@ if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 			|| class_exists( 'WPSEO_Options' );
 	}
 }
+
+/*
+ * Keep the homepage HTML out of the LiteSpeed / Hostinger page cache.
+ * The front page's domain-card layout is built by inline enhancer JS that
+ * ships inside the HTML and changes with each release; a cached page made
+ * visitors run stale scripts (old "Make an offer" cards, etc.). The
+ * external CSS/JS assets are content-hashed and still cache normally —
+ * only the small HTML document is kept fresh.
+ */
+add_action( 'send_headers', function () {
+	if ( is_admin() || ! is_front_page() ) {
+		return;
+	}
+	if ( headers_sent() ) {
+		return;
+	}
+	header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
+	header( 'X-LiteSpeed-Cache-Control: no-cache' ); // LiteSpeed/Hostinger opt-out
+} );
 
 
 /* ============================================================
