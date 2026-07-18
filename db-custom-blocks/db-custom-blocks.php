@@ -3,10 +3,13 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.2.0
+ * Version:     3.3.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
+ * Requires at least: 6.2
+ * Tested up to: 7.1
+ * Requires PHP: 7.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.2.0' );
+define( 'DB_BLOCKS_LOADED', '3.3.0' );
 
 
 /* ============================================================
@@ -255,9 +258,10 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 	} );
 }
 
-add_action( 'wp_head', function () {
-	?>
-	<style id="db-hp-styles">
+if ( ! function_exists( 'db_hp_css' ) ) {
+	function db_hp_css() : string {
+		ob_start();
+		?>
 	body {
 		font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 		-webkit-font-smoothing: antialiased;
@@ -359,9 +363,23 @@ add_action( 'wp_head', function () {
 		.db-hp-trust { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; column-gap: 8px; row-gap: 6px; }
 		.db-hp-titem { padding: 2px 6px; font-size: 12px; }
 	}
-	</style>
-	<?php
-}, 5 );
+		<?php
+		return (string) ob_get_clean();
+	}
+}
+
+add_action( 'wp_enqueue_scripts', function () {
+	// Hero CSS only exists to style front-page markup — shipping it on
+	// every other page was dead weight on 95%+ of views.
+	if ( ! is_front_page() ) {
+		return;
+	}
+	if ( ! db_external_style( 'hero', db_hp_css() ) ) {
+		add_action( 'wp_head', function () {
+			echo '<style id="db-hp-styles">' . db_hp_css() . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		}, 5 );
+	}
+} );
 
 add_action( 'wp_footer', function () {
 	if ( ! is_front_page() ) { return; }
@@ -1277,9 +1295,52 @@ add_filter( 'body_class', function ( $classes ) {
 	return $classes;
 } );
 
-add_action( 'wp_head', function () {
-	?>
-<style id="db-modern-ui">
+if ( ! function_exists( 'db_external_style' ) ) {
+	/**
+	 * Serves a CSS payload as a browser-cacheable static file instead of
+	 * inline <style> in every HTML response. Content-addressed filename
+	 * (md5 of the CSS) means updates bust caches automatically and repeat
+	 * visitors transfer the CSS once instead of on every page view —
+	 * this is the single biggest PageSpeed lever in the plugin (~50 KB of
+	 * inline CSS otherwise rides along with every page).
+	 *
+	 * @return bool False if the uploads dir is unwritable (caller should
+	 *              fall back to inline output).
+	 */
+	function db_external_style( string $handle, string $css ) : bool {
+		$upload = wp_upload_dir();
+		if ( ! empty( $upload['error'] ) ) {
+			return false;
+		}
+		$dir  = $upload['basedir'] . '/db-blocks';
+		$ver  = substr( md5( $css ), 0, 10 );
+		$file = $dir . '/' . $handle . '-' . $ver . '.css';
+
+		if ( ! file_exists( $file ) ) {
+			if ( ! wp_mkdir_p( $dir ) || false === file_put_contents( $file, $css ) ) {
+				return false;
+			}
+			foreach ( (array) glob( $dir . '/' . $handle . '-*.css' ) as $old ) {
+				if ( $old !== $file ) {
+					@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				}
+			}
+		}
+
+		wp_enqueue_style(
+			'db-' . $handle,
+			$upload['baseurl'] . '/db-blocks/' . basename( $file ),
+			array(),
+			null // version is in the filename
+		);
+		return true;
+	}
+}
+
+if ( ! function_exists( 'db_ui_css' ) ) {
+	function db_ui_css() : string {
+		ob_start();
+		?>
 
 /* ==========================================================================
    0. DESIGN TOKENS
@@ -1726,8 +1787,18 @@ add_action( 'wp_head', function () {
 	.db-ui-active .entry-content { padding-left: var(--db-sp-3); padding-right: var(--db-sp-3); }
 }
 
-</style>
-	<?php
+		<?php
+		return (string) ob_get_clean();
+	}
+}
+
+add_action( 'wp_enqueue_scripts', function () {
+	if ( ! db_external_style( 'ui', db_ui_css() ) ) {
+		// Uploads not writable — fall back to the old inline behavior.
+		add_action( 'wp_head', function () {
+			echo '<style id="db-modern-ui">' . db_ui_css() . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		} );
+	}
 } );
 
 /* ============================================================
@@ -2165,3 +2236,13 @@ require_once __DIR__ . '/db-stripe-block.php';
    ANALYTICS — CRM dashboard charts (leads, pipeline, sources)
    ============================================================ */
 require_once __DIR__ . '/db-analytics-block.php';
+
+/* ============================================================
+   PWA — installable app + home-screen support
+   ============================================================ */
+require_once __DIR__ . '/db-pwa-block.php';
+
+/* ============================================================
+   TLS — forced HTTPS, HSTS, upgrade-insecure-requests
+   ============================================================ */
+require_once __DIR__ . '/db-tls-block.php';

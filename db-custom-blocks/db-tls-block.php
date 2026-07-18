@@ -25,6 +25,14 @@ add_action( 'init', function () {
 	if ( is_ssl() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 		return;
 	}
+	// Local/dev installs run plain HTTP legitimately.
+	if ( in_array( wp_get_environment_type(), array( 'local', 'development' ), true ) ) {
+		return;
+	}
+	$host = isset( $_SERVER['HTTP_HOST'] ) ? strtolower( (string) $_SERVER['HTTP_HOST'] ) : '';
+	if ( 'localhost' === strtok( $host, ':' ) || 0 === strpos( $host, '127.0.0.1' ) ) {
+		return;
+	}
 	// Behind Hostinger's proxy the forwarded header is authoritative.
 	if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO'] ) {
 		return;

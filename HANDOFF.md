@@ -14,7 +14,7 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 - **WP admin:** https://beta.domainbrothers.com/wp-admin — **rotate credentials** (exposed in prior chat).
 - **Host:** Hostinger shared "Agency Startup" plan. hPanel under tech@netclues.com (impersonate). Site path: `/home/.../websites/boqfWdtEc/public_html`.
-- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.2.0) — NOT in functions.php.
+- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.3.0) — NOT in functions.php.
 - **WordPress:** 6.9.x, PHP 8.5.
 - **Custom post type:** `domain`. Price meta key: `domain_price`. Category: `domain_category`.
 - **CDN:** Hostinger CDN — Development mode ON during development. **Turn OFF** in hPanel when done.
@@ -22,7 +22,7 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 ---
 
-## 2. Plugin architecture (v3.2.0)
+## 2. Plugin architecture (v3.3.0)
 
 All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-content/plugins/db-custom-blocks/db-custom-blocks.php` + 4 require_once'd sub-files). It replaces the old approach of pasting code into `functions.php`.
 
@@ -33,6 +33,8 @@ All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-conten
 | `db-stripe-block.php` | Block 15 — Stripe checkout, webhooks, payment plans |
 | `db-email-thankyou-block.php` | Block 16 — branded email + thank-you page |
 | `db-analytics-block.php` | CRM analytics dashboard (charts) |
+| `db-pwa-block.php` | PWA: web-app manifest + service worker (Add to Home Screen, asset caching) |
+| `db-tls-block.php` | Forced HTTPS + HSTS + upgrade-insecure-requests |
 
 ### How to install / update
 
@@ -45,7 +47,7 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 
 ---
 
-## 3. The 17 blocks in db-custom-blocks v3.2.0
+## 3. The 17 blocks in db-custom-blocks v3.3.0
 
 | Block # | Block name | What it does |
 |---------|-----------|--------------|
@@ -63,7 +65,7 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 | 12 | Dynamic meta (domain CPT) | Override `<title>` and `<meta description>` for individual domain listing pages. Only fires if RankMath is NOT active. |
 | 13 | Service pages creator | Creates/refreshes 5 service landing pages. Trigger: `/?db_make_service_pages=1` (admin + nonce). |
 | 14 | DevOne logo fix | Replaces footer attribution logo on `?lis=y` pages server-side. |
-| 15 | **[Phase 2] Stripe checkout + webhooks** | On-site Stripe Payment Element checkout at `/buy-now/?d=...&p=...`. Payment plan first installment with `&m=MONTHS`. Webhook handler at `/wp-json/db/v1/stripe-webhook`. Admin settings: Settings → DB Stripe Keys. Triggers: `/?db_create_webhook=1`. |
+| 15 | **[Phase 2] Stripe checkout + webhooks** | On-site Stripe Payment Element checkout at `/buy-now/?d=...&p=...`. Payment plan first installment with `&months=N`. Webhook handler at `/wp-json/db/v1/stripe-webhook`. Admin settings: Settings → DB Stripe Keys. Triggers: `/?db_create_webhook=1`. |
 | 16 | **[Phase 3] Branded email + thank-you** | Unified HTML email template wrapping all wp_mail() calls for domain sales. Type-aware thank-you page (`?type=full\|plan\|offer`). Customer receipts, admin alerts, payment-failed emails, offer acks. |
 | 17 | **[Phase 4] CRM lead management** | Custom DB table for leads. Auto-creates lead on CF7 offer form submission. WP Admin → Domain Brothers → Leads: list, filter, edit, bulk status change, CSV export. Dashboard widget. |
 
@@ -82,9 +84,9 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 
 - `/website-design-development/`, `/digital-marketing/`, `/software-development/`, `/mobile-app-development/`, `/other-services/`
 - Checkout: `/buy-now/?d=<base64 domain>&p=<base64 $price>` — full purchase.
-- Payment plan checkout: `/buy-now/?d=...&p=...&m=<months>` — plan first installment.
+- Payment plan checkout: `/buy-now/?d=...&p=...&months=<3|6|9|12>` — plan first installment (param is `months`, NOT `m` — `m` is a reserved WP date query var).
 - Payment plan setup (pricing widget): `/payment-plan-setup/?d=...&p=...`
-- Thank you: `/thank-you/?type=full|plan|offer&domain=<base64>&amount=<base64>`
+- Thank you: `/thank-you/?type=full|plan|offer&d=<plain domain>&amt=<plain amount>` (params are `d`/`amt`, NOT `domain` — that collides with the domain CPT query var).
 
 ---
 
