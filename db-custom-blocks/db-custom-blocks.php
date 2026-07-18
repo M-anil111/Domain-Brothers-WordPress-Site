@@ -336,19 +336,19 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	.db-hp-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; text-align: center; }
 	.db-hp-eyebrow {
 		display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
-		text-transform: uppercase; color: #9dc7fb; margin: 0 0 28px; padding: 7px 18px;
+		text-transform: uppercase; color: #9dc7fb !important; margin: 0 0 28px; padding: 7px 18px;
 		border: 1px solid rgba(79,156,249,0.38); border-radius: 999px;
 		background: rgba(79,156,249,0.08);
 		animation: db-fade-up 0.6s ease both;
 	}
 	.db-hp-h1 {
 		font-size: clamp(40px, 7vw, 80px); font-weight: 700; line-height: 1.04;
-		letter-spacing: -0.04em; color: #f5f7fb; margin: 0 0 24px;
+		letter-spacing: -0.04em; color: #f5f7fb !important; margin: 0 0 24px;
 		text-wrap: balance;
 		animation: db-fade-up 0.6s 0.10s ease both;
 	}
 	.db-hp-sub {
-		font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(245,247,251,0.72);
+		font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(245,247,251,0.86) !important;
 		max-width: 660px; margin: 0 auto 44px; font-weight: 400;
 		animation: db-fade-up 0.6s 0.20s ease both;
 	}
@@ -372,7 +372,7 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	.db-hp-btn-ghost:hover { border-color: rgba(157,199,251,0.90); background: rgba(79,156,249,.12); color: #ffffff !important; transform: translateY(-2px); }
 	.db-hp-trust {
 		display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-		font-size: 13px; font-weight: 500; color: rgba(245,247,251,0.55); letter-spacing: 0.025em;
+		font-size: 13px; font-weight: 500; color: rgba(245,247,251,0.72) !important; letter-spacing: 0.025em;
 		animation: db-fade-up 0.6s 0.42s ease both;
 	}
 	.db-hp-titem { padding: 4px 14px; white-space: nowrap; }
@@ -1635,19 +1635,16 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 /* ==========================================================================
    5. NAVIGATION
    ========================================================================== */
+/* NOT sticky: DomainFolio's header stacks logo + toggles + search into a
+   ~250px-tall block. Pinning that to the top overlaid every section
+   heading on scroll (with the blur showing content bleeding through).
+   A normal-flow header that scrolls away is the correct behavior for
+   this theme. */
 .db-ui-active .site-header,
 .db-ui-active #masthead {
-	position: sticky;
-	top: 0;
-	z-index: 200;
-	background: var(--db-header-bg);
-	backdrop-filter: blur(12px) saturate(1.4);
-	-webkit-backdrop-filter: blur(12px) saturate(1.4);
+	position: static;
+	background: var(--db-surface);
 	border-bottom: 1px solid var(--db-gray-200);
-}
-@supports not (backdrop-filter: blur(12px)) {
-	.db-ui-active .site-header,
-	.db-ui-active #masthead { background: var(--db-surface); }
 }
 .db-ui-active .main-navigation a,
 .db-ui-active .nav-menu a,
@@ -1837,9 +1834,11 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 .db-ui-active .entry-content h1 > a,
 .db-ui-active .entry-content h2 > a,
 .db-ui-active .entry-content h3 > a,
-.db-ui-active h2 + a {
-	margin-left: 12px; font-size: 14px; font-weight: 600;
-	color: var(--db-blue); text-decoration: none; white-space: nowrap;
+.db-ui-active h2 + a,
+.db-ui-active a.db-view-all {
+	margin-left: 14px; font-size: 14px; font-weight: 600;
+	color: var(--db-blue) !important; text-decoration: none; white-space: nowrap;
+	vertical-align: middle;
 }
 
 /* Domain price-table actions: tagged by the enhancer JS below. */
@@ -1918,23 +1917,36 @@ add_action( 'wp_footer', function () {
 				if (seen > 1 && f.offsetParent !== null) { f.style.display = 'none'; }
 			});
 
-			/* 2. Tag action links by their visible text. */
+			/* 2. Tag action links + "View All" by their visible text. */
 			document.querySelectorAll('a').forEach(function (a) {
 				var t = (a.textContent || '').trim().toLowerCase();
 				if (t === 'buy now') { a.classList.add('db-act-buy'); }
 				else if (t === 'make an offer') { a.classList.add('db-act-offer'); }
+				else if (t === 'view all') { a.classList.add('db-view-all'); }
 			});
 
-			/* 3. Bold the price text that precedes a Buy Now link. */
+			/* 3. Bold the price text that precedes a Buy Now link, and
+			   normalize it to comma-grouped format (the two homepage tables
+			   disagree: "$10,000" vs "$10000"). */
 			document.querySelectorAll('a.db-act-buy').forEach(function (a) {
 				var n = a.previousSibling;
 				while (n && n.nodeType === 3 && !n.textContent.trim()) { n = n.previousSibling; }
 				if (n && n.nodeType === 3 && /\$[\d,]/.test(n.textContent)) {
+					var num = n.textContent.replace(/[^\d]/g, '');
+					var pretty = num ? '$' + Number(num).toLocaleString('en-US') : n.textContent.trim();
 					var span = document.createElement('span');
 					span.className = 'db-price-strong';
-					span.textContent = n.textContent;
+					span.textContent = pretty;
 					n.parentNode.replaceChild(span, n);
 				}
+			});
+
+			/* 4. Hide empty theme elements: the two blank nav-toggle pills
+			   under the logo and empty social-icon <li>s atop the footer. */
+			document.querySelectorAll('header a, header button, footer li, .site-footer li').forEach(function (el) {
+				var hasText = (el.textContent || '').trim().length > 0;
+				var hasMedia = el.querySelector('img, svg, i, .dashicons');
+				if (!hasText && !hasMedia) { el.style.display = 'none'; }
 			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
