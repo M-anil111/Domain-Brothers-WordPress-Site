@@ -14,7 +14,7 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 - **WP admin:** https://beta.domainbrothers.com/wp-admin — **rotate credentials** (exposed in prior chat).
 - **Host:** Hostinger shared "Agency Startup" plan. hPanel under tech@netclues.com (impersonate). Site path: `/home/.../websites/boqfWdtEc/public_html`.
-- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.3.0) — NOT in functions.php.
+- **Theme:** DomainFolio (commercial, no child theme). All custom code is now in the **DB Custom Blocks plugin** (v3.4.0) — NOT in functions.php.
 - **WordPress:** 6.9.x, PHP 8.5.
 - **Custom post type:** `domain`. Price meta key: `domain_price`. Category: `domain_category`.
 - **CDN:** Hostinger CDN — Development mode ON during development. **Turn OFF** in hPanel when done.
@@ -22,7 +22,7 @@ Domain Brothers is a WordPress domain marketplace. Staging site: https://beta.do
 
 ---
 
-## 2. Plugin architecture (v3.3.0)
+## 2. Plugin architecture (v3.4.0)
 
 All custom code lives in the **`db-custom-blocks` WordPress plugin** (`wp-content/plugins/db-custom-blocks/db-custom-blocks.php` + 4 require_once'd sub-files). It replaces the old approach of pasting code into `functions.php`.
 
@@ -47,7 +47,7 @@ After code changes: rebuild the zip, upload via WP Admin → Plugins → (hover)
 
 ---
 
-## 3. The 17 blocks in db-custom-blocks v3.3.0
+## 3. The 17 blocks in db-custom-blocks v3.4.0
 
 | Block # | Block name | What it does |
 |---------|-----------|--------------|

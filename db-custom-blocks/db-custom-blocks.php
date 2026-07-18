@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.3.0
+ * Version:     3.4.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.3.0' );
+define( 'DB_BLOCKS_LOADED', '3.4.0' );
+
+if ( ! function_exists( 'db_seo_other_plugin' ) ) {
+	/**
+	 * True when a dedicated SEO plugin owns <head> meta output. Our AEO,
+	 * dynamic-meta and canonical blocks defer to it to avoid duplicate
+	 * title/description/OG/canonical tags. Covers RankMath AND Yoast — the
+	 * site currently runs Yoast, and the blocks previously only checked
+	 * RankMath, so they were double-emitting meta alongside Yoast.
+	 */
+	function db_seo_other_plugin() {
+		return class_exists( 'RankMath' )
+			|| defined( 'RANK_MATH_VERSION' )
+			|| defined( 'WPSEO_VERSION' )
+			|| class_exists( 'WPSEO_Options' );
+	}
+}
 
 
 /* ============================================================
@@ -204,6 +220,7 @@ add_action( 'init', function () {
 if ( ! defined( 'DB_HERO_BROWSE_URL' ) )    define( 'DB_HERO_BROWSE_URL',    '' );
 if ( ! defined( 'DB_HERO_OFFER_URL' ) )     define( 'DB_HERO_OFFER_URL',     '/contact/' );
 if ( ! defined( 'DB_HERO_HIDE_EXISTING' ) ) define( 'DB_HERO_HIDE_EXISTING', false );
+if ( ! defined( 'DB_HERO_LOGO_URL' ) )      define( 'DB_HERO_LOGO_URL',      '' );
 // 'buffer' by default: DomainFolio's homepage uses a custom frontpage.php
 // template that runs neither the_content nor wp_body_open, so the hero is
 // spliced in via front-page output buffering (see the dispatch below).
@@ -222,16 +239,23 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 			$trust_html .= '<span class="db-hp-titem">' . esc_html( $item ) . '</span>';
 		}
+		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
 		$html  = '<section class="db-hp-hero" aria-label="Domain Brothers">';
+		// Brand bar at the top of the hero (logo, then everything follows).
+		$html .= '<div class="db-hp-nav">';
+		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
+		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
+		$html .= '</a></div>';
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
-		$html .= '<p class="db-hp-sub">Buy and sell premium domains with a team that has 27+ years of combined experience — every transfer escrow-protected, every purchase eligible for 0% interest payment plans.</p>';
+		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for 0% interest payment plans.</p>';
 		$html .= '<div class="db-hp-ctas">';
 		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
-		$html .= '<a href="' . $offer_href . '" class="db-hp-btn-ghost">Sell Your Domain</a>';
 		$html .= '</div>';
 		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
+		// Selling is available but deliberately not pushed — a quiet link only.
+		$html .= '<p class="db-hp-sell"><a href="' . $offer_href . '">Have a domain to sell? Contact us &rarr;</a></p>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
 		return $html;
@@ -313,9 +337,29 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		margin-left: -50vw; margin-right: -50vw; margin-top: 0; margin-bottom: 48px;
 		background: linear-gradient(150deg, #0a1628 0%, #08173a 42%, #132b52 100%);
 		overflow: hidden;
-		padding: clamp(76px, 12vw, 148px) 24px clamp(64px, 10vw, 124px);
+		padding: 0 24px clamp(64px, 10vw, 124px);
 		color: #f5f7fb; box-sizing: border-box;
 	}
+	.db-hp-nav {
+		position: relative; z-index: 2; max-width: 1140px; margin: 0 auto;
+		display: flex; align-items: center;
+		padding: 20px 0 clamp(40px, 8vw, 92px);
+	}
+	.db-hp-logo { display: inline-flex; align-items: center; text-decoration: none; }
+	.db-hp-logo img {
+		height: clamp(40px, 8vw, 52px); width: auto; max-width: 220px;
+		display: block;
+	}
+	.db-hp-sell {
+		margin: 26px 0 0; font-size: 13.5px;
+		animation: db-fade-up 0.6s 0.5s ease both;
+	}
+	.db-hp-sell a {
+		color: rgba(245,247,251,0.60) !important; text-decoration: none;
+		border-bottom: 1px solid rgba(245,247,251,0.22); padding-bottom: 1px;
+		transition: color 0.18s ease, border-color 0.18s ease;
+	}
+	.db-hp-sell a:hover { color: rgba(245,247,251,0.92) !important; border-color: rgba(245,247,251,0.5); }
 	.db-hp-hero::before {
 		content: ''; position: absolute; top: -14%; left: 50%;
 		width: 92vw; height: 92vw; max-width: 1040px; max-height: 1040px;
@@ -379,7 +423,7 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	.db-hp-tdot { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: rgba(79,156,249,0.55); vertical-align: middle; }
 	@keyframes db-fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
 	@media (prefers-reduced-motion: reduce) {
-		.db-hp-eyebrow, .db-hp-h1, .db-hp-sub, .db-hp-ctas, .db-hp-trust { animation: none; }
+		.db-hp-eyebrow, .db-hp-h1, .db-hp-sub, .db-hp-ctas, .db-hp-trust, .db-hp-sell { animation: none; }
 		.db-hp-btn-primary:hover, .db-hp-btn-ghost:hover { transform: none; }
 	}
 	@media (max-width: 580px) {
@@ -965,7 +1009,7 @@ add_filter( 'rank_math/frontend/robots', function ( $robots ) {
 } );
 
 add_action( 'wp_head', function () {
-	if ( is_admin() || class_exists( 'RankMath' ) ) { return; }
+	if ( is_admin() || db_seo_other_plugin() ) { return; }
 	$noindex_slugs = array( 'buy-now', 'thank-you', 'payment-plan-setup' );
 	if ( is_page( $noindex_slugs ) ) {
 		echo '<meta name="robots" content="noindex, nofollow">' . "\n";
@@ -1281,7 +1325,7 @@ add_action( 'wp_head', function () {
 }, 5 );
 
 add_action( 'wp_head', function () {
-	if ( is_admin() || class_exists( 'RankMath' ) ) { return; }
+	if ( is_admin() || db_seo_other_plugin() ) { return; }
 	$title       = wp_get_document_title();
 	$description = get_bloginfo( 'description' );
 	$url         = db_aeo_canonical();
@@ -2010,7 +2054,7 @@ add_filter( 'wpcf7_spam', function ( $is_spam ) {
  * chain (it's the last one applied) and silently overrides RankMath's title
  * on every domain listing. */
 add_filter( 'pre_get_document_title', function ( $title ) {
-	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
+	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
 		return $title;
 	}
 	$post        = get_queried_object();
@@ -2037,7 +2081,7 @@ if ( ! function_exists( 'db_domain_meta_description' ) ) {
 }
 
 add_filter( 'db_aeo_description', function ( $description ) {
-	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
+	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
 		return $description;
 	}
 	return db_domain_meta_description( get_queried_object() );
@@ -2047,7 +2091,7 @@ add_filter( 'db_aeo_description', function ( $description ) {
  * tags for domain pages are handled once, by the AEO block (Block 9) —
  * see the db_aeo_description filter above. */
 add_action( 'wp_head', function () {
-	if ( ! is_singular( 'domain' ) || defined( 'RANK_MATH_VERSION' ) ) {
+	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
 		return;
 	}
 	$desc = db_domain_meta_description( get_queried_object() );
@@ -2399,3 +2443,8 @@ require_once __DIR__ . '/db-pwa-block.php';
    TLS — forced HTTPS, HSTS, upgrade-insecure-requests
    ============================================================ */
 require_once __DIR__ . '/db-tls-block.php';
+
+/* ============================================================
+   SEO META — Yoast-aware per-page titles/descriptions/keywords
+   ============================================================ */
+require_once __DIR__ . '/db-seo-meta-block.php';
