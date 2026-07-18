@@ -207,7 +207,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 	function db_hp_hero_html() {
 		$browse_href = DB_HERO_BROWSE_URL ? esc_url( DB_HERO_BROWSE_URL ) : '#db-below-hero';
 		$offer_href  = esc_url( home_url( DB_HERO_OFFER_URL ) );
-		$trust_items = array( 'Expert Brokerage', '0% Interest Plans', 'Secure Escrow', '24-Hour Response' );
+		$trust_items = array( 'Escrow-Protected Transfers', '0% Interest Payment Plans', '27+ Years Combined Experience', '500+ Domains Sold' );
 		$trust_html  = '';
 		foreach ( $trust_items as $i => $item ) {
 			if ( $i > 0 ) {
@@ -217,12 +217,12 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		}
 		$html  = '<section class="db-hp-hero" aria-label="Domain Brothers">';
 		$html .= '<div class="db-hp-inner">';
-		$html .= '<p class="db-hp-eyebrow">Premium Domain Brokerage</p>';
-		$html .= '<h1 class="db-hp-h1">The Right Domain<br>Changes Everything.</h1>';
-		$html .= '<p class="db-hp-sub">We source, negotiate, and transfer premium domain names with expert precision — flexible payment plans, secure escrow, and guidance from a team with 25+ years of combined experience.</p>';
+		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
+		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
+		$html .= '<p class="db-hp-sub">Buy and sell premium domains with a team that has 27+ years of combined experience — every transfer escrow-protected, every purchase eligible for 0% interest payment plans.</p>';
 		$html .= '<div class="db-hp-ctas">';
 		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
-		$html .= '<a href="' . $offer_href . '" class="db-hp-btn-ghost">Make an Offer</a>';
+		$html .= '<a href="' . $offer_href . '" class="db-hp-btn-ghost">Sell Your Domain</a>';
 		$html .= '</div>';
 		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
 		$html .= '</div></section>';
@@ -265,53 +265,60 @@ add_action( 'wp_head', function () {
 		text-rendering: optimizeLegibility;
 	}
 	h1, h2, h3, h4 { letter-spacing: -0.02em; }
-	:focus-visible { outline: 2px solid #0b6ed4; outline-offset: 3px; border-radius: 4px; }
+	:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; border-radius: 4px; }
 	.wp-block-button__link,
 	.btn, .button:not(.db-plan-cta):not(.db-hp-btn-primary):not(.db-hp-btn-ghost),
 	input[type="submit"], button[type="submit"] {
-		border-radius: 8px !important;
-		transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+		border-radius: 10px !important;
+		transition: transform 0.18s ease, box-shadow 0.18s ease !important;
 	}
 	.wp-block-button__link:hover, .btn:hover,
 	input[type="submit"]:hover, button[type="submit"]:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 4px 14px rgba(0,0,0,.14);
+		box-shadow: 0 1px 2px rgba(8,23,58,.10), 0 8px 24px rgba(8,23,58,.16);
 	}
 	.db-hp-hero {
 		position: relative; width: 100vw; left: 50%; right: 50%;
 		margin-left: -50vw; margin-right: -50vw; margin-top: 0; margin-bottom: 48px;
-		background: linear-gradient(140deg, #060d24 0%, #0b2250 45%, #0e3272 100%);
+		background: linear-gradient(150deg, #0a1628 0%, #08173a 42%, #132b52 100%);
 		overflow: hidden;
-		padding: clamp(72px, 12vw, 140px) 24px clamp(64px, 10vw, 120px);
-		color: #f5f5f7; box-sizing: border-box;
+		padding: clamp(76px, 12vw, 148px) 24px clamp(64px, 10vw, 124px);
+		color: #f5f7fb; box-sizing: border-box;
 	}
 	.db-hp-hero::before {
-		content: ''; position: absolute; top: -10%; left: 50%;
-		width: 90vw; height: 90vw; max-width: 960px; max-height: 960px;
+		content: ''; position: absolute; top: -14%; left: 50%;
+		width: 92vw; height: 92vw; max-width: 1040px; max-height: 1040px;
 		transform: translateX(-50%);
-		background: radial-gradient(ellipse, rgba(59,130,246,0.20) 0%, transparent 68%);
+		background:
+			radial-gradient(ellipse at 50% 38%, rgba(79,156,249,0.26) 0%, rgba(37,99,235,0.12) 42%, transparent 70%);
+		filter: blur(2px);
 		pointer-events: none;
 	}
 	.db-hp-hero::after {
 		content: ''; position: absolute; inset: 0;
-		background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px);
-		background-size: 32px 32px; pointer-events: none;
+		background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+		background-size: 32px 32px;
+		-webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 78%);
+		mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 78%);
+		pointer-events: none;
 	}
-	.db-hp-inner { position: relative; z-index: 1; max-width: 840px; margin: 0 auto; text-align: center; }
+	.db-hp-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; text-align: center; }
 	.db-hp-eyebrow {
-		display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
-		text-transform: uppercase; color: #93c5fd; margin: 0 0 26px; padding: 6px 16px;
-		border: 1px solid rgba(147,197,253,0.35); border-radius: 999px;
+		display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+		text-transform: uppercase; color: #9dc7fb; margin: 0 0 28px; padding: 7px 18px;
+		border: 1px solid rgba(79,156,249,0.38); border-radius: 999px;
+		background: rgba(79,156,249,0.08);
 		animation: db-fade-up 0.6s ease both;
 	}
 	.db-hp-h1 {
-		font-size: clamp(38px, 7vw, 78px); font-weight: 700; line-height: 1.03;
-		letter-spacing: -0.04em; color: #f5f5f7; margin: 0 0 26px;
+		font-size: clamp(40px, 7vw, 80px); font-weight: 700; line-height: 1.04;
+		letter-spacing: -0.04em; color: #f5f7fb; margin: 0 0 24px;
+		text-wrap: balance;
 		animation: db-fade-up 0.6s 0.10s ease both;
 	}
 	.db-hp-sub {
-		font-size: clamp(16px, 2vw, 20px); line-height: 1.58; color: rgba(245,245,247,0.70);
-		max-width: 640px; margin: 0 auto 44px; font-weight: 400;
+		font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(245,247,251,0.72);
+		max-width: 660px; margin: 0 auto 44px; font-weight: 400;
 		animation: db-fade-up 0.6s 0.20s ease both;
 	}
 	.db-hp-ctas {
@@ -319,32 +326,38 @@ add_action( 'wp_head', function () {
 		margin-bottom: 56px; animation: db-fade-up 0.6s 0.30s ease both;
 	}
 	.db-hp-btn-primary {
-		display: inline-block; padding: 16px 36px; background: #f5f5f7; color: #0b1430 !important;
+		display: inline-block; padding: 16px 36px; background: #f5f7fb; color: #0a1628 !important;
 		font-size: 16px; font-weight: 600; text-decoration: none !important; border-radius: 999px;
-		box-shadow: 0 2px 10px rgba(0,0,0,.22);
-		transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+		box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.24);
+		transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 	}
-	.db-hp-btn-primary:hover { background: #ffffff; color: #060d24 !important; transform: scale(1.03); box-shadow: 0 8px 28px rgba(0,0,0,.32); }
+	.db-hp-btn-primary:hover { background: #ffffff; color: #0a1628 !important; transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,.20), 0 14px 36px rgba(0,0,0,.34); }
 	.db-hp-btn-ghost {
-		display: inline-block; padding: 16px 36px; background: transparent; color: #f5f5f7 !important;
+		display: inline-block; padding: 16px 36px; background: transparent; color: #f5f7fb !important;
 		font-size: 16px; font-weight: 600; text-decoration: none !important;
-		border: 1.5px solid rgba(245,245,247,0.45); border-radius: 999px;
-		transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+		border: 1.5px solid rgba(157,199,251,0.45); border-radius: 999px;
+		transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
 	}
-	.db-hp-btn-ghost:hover { border-color: rgba(245,245,247,0.85); background: rgba(255,255,255,.10); color: #ffffff !important; transform: scale(1.03); }
+	.db-hp-btn-ghost:hover { border-color: rgba(157,199,251,0.90); background: rgba(79,156,249,.12); color: #ffffff !important; transform: translateY(-2px); }
 	.db-hp-trust {
 		display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-		font-size: 13px; color: rgba(245,245,247,0.50); letter-spacing: 0.025em;
+		font-size: 13px; font-weight: 500; color: rgba(245,247,251,0.55); letter-spacing: 0.025em;
 		animation: db-fade-up 0.6s 0.42s ease both;
 	}
-	.db-hp-titem { padding: 4px 14px; }
-	.db-hp-tdot { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: rgba(245,245,247,0.28); vertical-align: middle; }
+	.db-hp-titem { padding: 4px 14px; white-space: nowrap; }
+	.db-hp-tdot { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: rgba(79,156,249,0.55); vertical-align: middle; }
 	@keyframes db-fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+	@media (prefers-reduced-motion: reduce) {
+		.db-hp-eyebrow, .db-hp-h1, .db-hp-sub, .db-hp-ctas, .db-hp-trust { animation: none; }
+		.db-hp-btn-primary:hover, .db-hp-btn-ghost:hover { transform: none; }
+	}
 	@media (max-width: 580px) {
-		.db-hp-ctas { flex-direction: column; align-items: center; }
-		.db-hp-btn-primary, .db-hp-btn-ghost { width: 100%; max-width: 320px; text-align: center; }
+		.db-hp-hero { margin-bottom: 32px; }
+		.db-hp-ctas { flex-direction: column; align-items: center; gap: 12px; margin-bottom: 44px; }
+		.db-hp-btn-primary, .db-hp-btn-ghost { width: 100%; max-width: 340px; text-align: center; }
 		.db-hp-tdot { display: none; }
-		.db-hp-titem { padding: 2px 8px; }
+		.db-hp-trust { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; column-gap: 8px; row-gap: 6px; }
+		.db-hp-titem { padding: 2px 6px; font-size: 12px; }
 	}
 	</style>
 	<?php

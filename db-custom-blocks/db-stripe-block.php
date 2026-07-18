@@ -402,31 +402,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* Layout */
 .db-stripe-main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 64px}
 .db-stripe-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px;width:100%;max-width:520px;backdrop-filter:blur(10px)}
-/* Domain & Price */
+/* Order summary */
+.db-stripe-summary{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;margin-bottom:24px}
 .db-stripe-domain{font-size:1.55rem;font-weight:700;color:#4f9cf9;word-break:break-all;margin-bottom:6px}
-.db-stripe-price{font-size:2.5rem;font-weight:800;margin-bottom:24px}
+.db-stripe-price{font-size:2.5rem;font-weight:800;line-height:1.1}
+.db-stripe-onetime{font-size:.8rem;color:rgba(255,255,255,.55);margin-top:8px}
 /* Plan info */
 .db-stripe-plan-box{background:rgba(79,156,249,.1);border:1px solid rgba(79,156,249,.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.93rem;color:rgba(255,255,255,.85);line-height:1.5}
 .db-stripe-plan-box strong{color:#4f9cf9;font-size:1.15rem}
 .db-stripe-badge{display:inline-block;background:#16a34a;color:#fff;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
 /* Email field */
 .db-stripe-label{display:block;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-.db-stripe-input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:.95rem;margin-bottom:18px}
+.db-stripe-input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:.95rem;margin-bottom:18px;transition:border-color .15s,box-shadow .15s}
 .db-stripe-input::placeholder{color:rgba(255,255,255,.35)}
-.db-stripe-input:focus{outline:2px solid #4f9cf9;outline-offset:1px}
+.db-stripe-input:focus{outline:none;border-color:#4f9cf9;box-shadow:0 0 0 3px rgba(79,156,249,.25)}
 /* Payment element */
-.db-stripe-pe-wrap{background:#fff;border-radius:10px;padding:20px 18px;margin-bottom:18px;min-height:80px}
+.db-stripe-pe-wrap{background:#fff;border-radius:12px;padding:20px 18px;margin-bottom:18px;min-height:80px}
 /* Button */
-.db-stripe-btn{width:100%;padding:15px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:1.02rem;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:20px}
+.db-stripe-btn{width:100%;padding:17px 20px;background:#2563eb;color:#fff;border:none;border-radius:12px;font-size:1.02rem;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
+.db-stripe-btn svg{width:15px;height:15px;fill:currentColor;flex-shrink:0}
 .db-stripe-btn:hover:not(:disabled){background:#1d4ed8}
 .db-stripe-btn:active:not(:disabled){transform:scale(.98)}
 .db-stripe-btn:disabled{background:#475569;cursor:not-allowed}
 /* Error */
 .db-stripe-err{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:11px 15px;color:#fca5a5;font-size:.88rem;margin-bottom:14px;display:none}
 /* Trust row */
-.db-stripe-trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
-.db-stripe-trust-item{display:flex;align-items:center;gap:5px;font-size:.78rem;color:rgba(255,255,255,.45)}
-.db-stripe-trust-item svg{width:13px;height:13px;fill:rgba(255,255,255,.35);flex-shrink:0}
+.db-stripe-trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.db-stripe-trust-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.55)}
+.db-stripe-trust-item svg{width:13px;height:13px;fill:rgba(255,255,255,.45);flex-shrink:0}
 /* Notice */
 .db-stripe-notice{text-align:center;padding:24px 0;color:rgba(255,255,255,.6);font-size:.95rem;line-height:1.6}
 .db-stripe-notice a{color:#4f9cf9}
@@ -453,15 +456,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 		</div>
 
 <?php else : ?>
-		<p class="db-stripe-domain"><?php echo esc_html( $domain ); ?></p>
-		<p class="db-stripe-price"><?php echo esc_html( $price_display ); ?></p>
+		<div class="db-stripe-summary">
+			<p class="db-stripe-domain"><?php echo esc_html( $domain ); ?></p>
+			<p class="db-stripe-price"><?php echo esc_html( $price_display ); ?></p>
+<?php if ( ! $is_plan ) : ?>
+			<p class="db-stripe-onetime">One-time payment &middot; Instant transfer initiation</p>
+<?php endif; ?>
+		</div>
 
 <?php if ( $is_plan ) : ?>
 		<div class="db-stripe-plan-box">
 			<strong><?php echo esc_html( $monthly_display ); ?>/mo</strong>
 			&times; <?php echo esc_html( (string) $months ); ?> months
 			<span class="db-stripe-badge">0% interest</span>
-			<br><small style="opacity:.65;margin-top:4px;display:block">First installment charged today. Remaining installments billed monthly.</small>
+			<br><small style="opacity:.65;margin-top:4px;display:block">First installment charged today &mdash; remaining <?php echo esc_html( (string) ( $months - 1 ) ); ?> installments billed monthly, 0% interest.</small>
 		</div>
 <?php endif; ?>
 
@@ -472,7 +480,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 			<div class="db-stripe-pe-wrap">
 				<div id="db-stripe-payment-element"></div>
 			</div>
-			<button type="submit" id="db-stripe-btn" class="db-stripe-btn"><?php echo esc_html( $btn_label ); ?></button>
+			<button type="submit" id="db-stripe-btn" class="db-stripe-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg><?php echo esc_html( $btn_label ); ?></button>
 		</form>
 
 		<div class="db-stripe-trust">

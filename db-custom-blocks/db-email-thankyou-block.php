@@ -360,10 +360,10 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$amount_safe = $clean ? '$' . number_format( (float) $clean, 0 ) : esc_html( $amount );
 		}
 
-		// Green checkmark SVG
+		// Green circle-check SVG — stroke draw animated via CSS (reduced-motion safe)
 		$check_svg  = '<svg class="db-ty-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Success">';
-		$check_svg .= '<circle cx="32" cy="32" r="32" fill="#137a3e"/>';
-		$check_svg .= '<path d="M18 32l10 10 18-20" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+		$check_svg .= '<circle class="db-ty-icon-ring" cx="32" cy="32" r="29" fill="none" stroke="#137a3e" stroke-width="4"/>';
+		$check_svg .= '<path class="db-ty-icon-tick" d="M20 33l9 9 16-18" stroke="#137a3e" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
 		$check_svg .= '</svg>';
 
 		// Service chips — reuse db_services_list() if available
@@ -393,17 +393,18 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 				: 'Your payment has been confirmed. Domain transfer begins within 1&ndash;2 business days.';
 			$html .= '<p class="db-ty-sub">' . $sub . '</p>';
 
+			$html .= '<h2 class="db-ty-timeline-title">What happens next</h2>';
 			$html .= '<div class="db-ty-timeline" role="list">';
 			$steps = array(
-				array( 'icon' => '&#9989;',    'label' => 'Payment confirmed',              'sub' => '',                         'done' => true ),
-				array( 'icon' => '&#x1F504;',  'label' => 'Transfer initiated',             'sub' => 'within 24 hours',          'done' => false ),
-				array( 'icon' => '&#x1F4E7;',  'label' => 'Authorization email sent to you','sub' => '',                         'done' => false ),
-				array( 'icon' => '&#x1F310;',  'label' => 'Domain live in your account',   'sub' => '2&ndash;5 days',           'done' => false ),
+				array( 'n' => 1, 'label' => 'Payment confirmed',               'sub' => 'just now',                'done' => true ),
+				array( 'n' => 2, 'label' => 'Transfer initiated',              'sub' => 'within 24 hours',         'done' => false ),
+				array( 'n' => 3, 'label' => 'Authorization email sent to you', 'sub' => 'approve with one click',  'done' => false ),
+				array( 'n' => 4, 'label' => 'Domain live in your account',     'sub' => '2&ndash;5 days',          'done' => false ),
 			);
 			foreach ( $steps as $step ) {
 				$cls = 'db-ty-step' . ( $step['done'] ? ' db-ty-step--done' : '' );
 				$html .= '<div class="' . esc_attr( $cls ) . '" role="listitem">';
-				$html .= '<div class="db-ty-step-icon" aria-hidden="true">' . $step['icon'] . '</div>';
+				$html .= '<div class="db-ty-step-dot" aria-hidden="true">' . ( $step['done'] ? '&#10003;' : esc_html( (string) $step['n'] ) ) . '</div>';
 				$html .= '<div class="db-ty-step-body"><strong>' . esc_html( $step['label'] ) . '</strong>';
 				if ( $step['sub'] ) { $html .= '<span class="db-ty-step-sub">' . $step['sub'] . '</span>'; }
 				$html .= '</div></div>';
