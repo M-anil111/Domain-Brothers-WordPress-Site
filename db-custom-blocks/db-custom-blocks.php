@@ -1774,13 +1774,80 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 }
 
 /* ==========================================================================
-   10. MOBILE
+   10. THEME POLISH — DomainFolio markup quirks
+   (logo size, header search, price-table links, heading/View-All spacing)
+   ========================================================================== */
+
+/* Header logo: theme ships it unconstrained and it fills the viewport on
+   mobile. Constrain any image inside the site header/branding area. */
+.db-ui-active .site-header img,
+.db-ui-active header img,
+.db-ui-active .site-branding img,
+.db-ui-active .custom-logo {
+	max-height: 52px; width: auto; height: auto;
+}
+
+/* Header search: consistent pill treatment for the theme's search forms. */
+.db-ui-active header form input[type="text"],
+.db-ui-active header form input[type="search"],
+.db-ui-active form.search-form input[type="text"],
+.db-ui-active form.search-form input[type="search"] {
+	height: 44px; padding: 0 16px;
+	border: 1px solid var(--db-gray-200); border-radius: var(--db-r-md);
+	font-size: 15px;
+}
+.db-ui-active header form input[type="submit"],
+.db-ui-active header form button[type="submit"],
+.db-ui-active form.search-form input[type="submit"] {
+	height: 44px; padding: 0 22px;
+	background: var(--db-grad-navy); color: #fff;
+	border: none; border-radius: var(--db-r-md);
+	font-size: 15px; font-weight: 600; cursor: pointer;
+}
+
+/* "Featured Domains" + inline "View All": give the crammed inline link
+   breathing room and a quieter treatment than the heading. */
+.db-ui-active .entry-content h1 > a,
+.db-ui-active .entry-content h2 > a,
+.db-ui-active .entry-content h3 > a,
+.db-ui-active h2 + a {
+	margin-left: 12px; font-size: 14px; font-weight: 600;
+	color: var(--db-blue); text-decoration: none; white-space: nowrap;
+}
+
+/* Domain price-table actions: tagged by the enhancer JS below. */
+.db-ui-active a.db-act-buy {
+	display: inline-flex; align-items: center; justify-content: center;
+	padding: 8px 16px; margin-left: 10px;
+	background: var(--db-grad-navy); color: #fff !important;
+	border-radius: 999px; font-size: 13.5px; font-weight: 700;
+	text-decoration: none !important; white-space: nowrap;
+	box-shadow: var(--db-shadow-sm);
+	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active a.db-act-buy:hover { transform: translateY(-1px); box-shadow: var(--db-shadow-md); }
+.db-ui-active a.db-act-offer {
+	display: inline-flex; align-items: center; justify-content: center;
+	padding: 7px 15px;
+	border: 1.5px solid var(--db-blue); color: var(--db-blue) !important;
+	border-radius: 999px; font-size: 13.5px; font-weight: 700;
+	text-decoration: none !important; white-space: nowrap;
+	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active a.db-act-offer:hover { background: var(--db-blue); color: #fff !important; }
+.db-ui-active td .db-price-strong { font-weight: 800; color: var(--db-navy); font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   11. MOBILE
    ========================================================================== */
 @media (max-width: 768px) {
 	.db-ui-active .site-content,
 	.db-ui-active .entry-content { padding-left: var(--db-sp-4); padding-right: var(--db-sp-4); }
 	.db-ui-active h1 { font-size: clamp(24px, 7vw, 36px); }
 	.db-ui-active h2 { font-size: clamp(20px, 5vw, 28px); }
+	.db-ui-active .site-header img, .db-ui-active header img { max-height: 44px; }
+	.db-ui-active th, .db-ui-active td { padding: 10px 10px; }
+	.db-ui-active a.db-act-buy, .db-ui-active a.db-act-offer { padding: 7px 13px; font-size: 13px; margin-left: 6px; }
 }
 @media (max-width: 480px) {
 	.db-ui-active .site-content,
@@ -1800,6 +1867,53 @@ add_action( 'wp_enqueue_scripts', function () {
 		} );
 	}
 } );
+
+/*
+ * Theme-markup enhancer. DomainFolio renders things CSS alone can't fix:
+ * two stacked header search forms (desktop + mobile variant both visible),
+ * and Buy Now / Make an Offer as bare text links CSS cannot select by text.
+ * This tags them with classes the design system styles (see section 10).
+ */
+add_action( 'wp_footer', function () {
+	?>
+	<script id="db-ui-enhancer">
+	(function () {
+		'use strict';
+		try {
+			/* 1. Hide duplicate search forms — keep the first visible one. */
+			var seen = 0;
+			document.querySelectorAll('form').forEach(function (f) {
+				var inp = f.querySelector('input[type="text"], input[type="search"]');
+				if (!inp) { return; }
+				var ph = (inp.getAttribute('placeholder') || '').toLowerCase();
+				if (ph.indexOf('search') === -1) { return; }
+				seen++;
+				if (seen > 1 && f.offsetParent !== null) { f.style.display = 'none'; }
+			});
+
+			/* 2. Tag action links by their visible text. */
+			document.querySelectorAll('a').forEach(function (a) {
+				var t = (a.textContent || '').trim().toLowerCase();
+				if (t === 'buy now') { a.classList.add('db-act-buy'); }
+				else if (t === 'make an offer') { a.classList.add('db-act-offer'); }
+			});
+
+			/* 3. Bold the price text that precedes a Buy Now link. */
+			document.querySelectorAll('a.db-act-buy').forEach(function (a) {
+				var n = a.previousSibling;
+				while (n && n.nodeType === 3 && !n.textContent.trim()) { n = n.previousSibling; }
+				if (n && n.nodeType === 3 && /\$[\d,]/.test(n.textContent)) {
+					var span = document.createElement('span');
+					span.className = 'db-price-strong';
+					span.textContent = n.textContent;
+					n.parentNode.replaceChild(span, n);
+				}
+			});
+		} catch (e) { /* enhancement only — never break the page */ }
+	})();
+	</script>
+	<?php
+}, 98 );
 
 /* ============================================================
    BLOCK 11 — DB Honeypot anti-spam for CF7 forms
