@@ -204,7 +204,11 @@ add_action( 'init', function () {
 if ( ! defined( 'DB_HERO_BROWSE_URL' ) )    define( 'DB_HERO_BROWSE_URL',    '' );
 if ( ! defined( 'DB_HERO_OFFER_URL' ) )     define( 'DB_HERO_OFFER_URL',     '/contact/' );
 if ( ! defined( 'DB_HERO_HIDE_EXISTING' ) ) define( 'DB_HERO_HIDE_EXISTING', false );
-if ( ! defined( 'DB_HERO_USE_HOOK' ) )      define( 'DB_HERO_USE_HOOK',      'the_content' );
+// 'buffer' by default: DomainFolio's homepage uses a custom frontpage.php
+// template that runs neither the_content nor wp_body_open, so the hero is
+// spliced in via front-page output buffering (see the dispatch below).
+// Override to 'the_content' or 'wp_body_open' for themes that support them.
+if ( ! defined( 'DB_HERO_USE_HOOK' ) )      define( 'DB_HERO_USE_HOOK',      'buffer' );
 
 if ( ! function_exists( 'db_hp_hero_html' ) ) {
 	function db_hp_hero_html() {
@@ -248,6 +252,29 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 		$GLOBALS['db_hero_rendered'] = true;
 		return db_hp_hero_html() . $content;
 	} );
+} elseif ( 'buffer' === DB_HERO_USE_HOOK ) {
+	// DomainFolio's custom frontpage.php calls neither the_content nor
+	// wp_body_open, so the only reliable injection point is to buffer the
+	// whole front-page response and splice the hero in right after the
+	// opening <body> tag. Scoped to the front page only; if no <body> is
+	// found the original output is returned untouched.
+	add_action( 'template_redirect', function () {
+		if ( is_admin() || ! is_front_page() || is_feed() || is_robots() ) {
+			return;
+		}
+		ob_start( function ( $html ) {
+			if ( $GLOBALS['db_hero_rendered'] || false === stripos( $html, '<body' ) ) {
+				return $html;
+			}
+			$GLOBALS['db_hero_rendered'] = true;
+			return preg_replace(
+				'/(<body[^>]*>)/i',
+				'$1' . db_hp_hero_html(),
+				$html,
+				1
+			);
+		} );
+	}, 1 );
 } else {
 	add_action( 'wp_body_open', function () {
 		if ( ! is_front_page() || is_admin() || $GLOBALS['db_hero_rendered'] ) {
