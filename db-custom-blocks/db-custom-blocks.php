@@ -269,7 +269,7 @@ add_action( 'wp_head', function () {
 	.wp-block-button__link,
 	.btn, .button:not(.db-plan-cta):not(.db-hp-btn-primary):not(.db-hp-btn-ghost),
 	input[type="submit"], button[type="submit"] {
-		border-radius: 10px !important;
+		border-radius: 12px !important;
 		transition: transform 0.18s ease, box-shadow 0.18s ease !important;
 	}
 	.wp-block-button__link:hover, .btn:hover,
@@ -1285,56 +1285,82 @@ add_action( 'wp_head', function () {
    0. DESIGN TOKENS
    ========================================================================== */
 :root {
-	--db-navy:      #060d24;
-	--db-blue:      #0a6ed1;
-	--db-blue-lt:   #e8f0fb;
+	--db-navy:      #0a1628;
+	--db-navy-2:    #08173a;
+	--db-navy-3:    #132b52;
+	--db-blue:      #2563eb;
+	--db-accent:    #4f9cf9;
+	--db-blue-dk:   #1d4fd7;
+	--db-blue-lt:   #e8f0fd;
 	--db-green:     #137a3e;
 	--db-red:       #c0392b;
 
-	--db-gray-50:   #f9fafb;
-	--db-gray-100:  #f3f4f6;
-	--db-gray-200:  #e5e7eb;
-	--db-gray-300:  #d1d5db;
-	--db-gray-500:  #6b7280;
-	--db-gray-700:  #374151;
-	--db-gray-900:  #111827;
+	--db-gray-50:   #f8fafc;
+	--db-gray-100:  #f1f5f9;
+	--db-gray-200:  #e2e8f0;
+	--db-gray-300:  #cbd5e1;
+	--db-gray-500:  #64748b;
+	--db-gray-700:  #334155;
+	--db-gray-900:  #0f172a;
 
-	--db-font:      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
+	--db-surface:      #ffffff;
+	--db-header-bg:    rgba(255,255,255,.82);
+	--db-focus-ring:   rgba(37,99,235,.22);
+
+	--db-font:      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, sans-serif;
+
+	--db-fs-h1:   clamp(2rem, 5vw, 3.2rem);
+	--db-fs-h2:   clamp(1.5rem, 3.5vw, 2.25rem);
+	--db-fs-h3:   clamp(1.2rem, 2.4vw, 1.55rem);
+	--db-fs-body: 1rem;
+	--db-fs-sm:   0.875rem;
 
 	--db-sp-1:  4px;  --db-sp-2:  8px;  --db-sp-3:  12px; --db-sp-4:  16px;
 	--db-sp-6:  24px; --db-sp-8:  32px; --db-sp-12: 48px; --db-sp-16: 64px;
 
-	--db-r-sm:   6px;
-	--db-r-md:   10px;
+	--db-r-sm:   8px;
+	--db-r-md:   12px;
 	--db-r-lg:   16px;
 	--db-r-pill: 999px;
 
-	--db-shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-	--db-shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 10px 15px rgba(0,0,0,.1);
-	--db-shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 20px 25px rgba(0,0,0,.12);
+	--db-shadow-sm: 0 1px 2px rgba(8,23,58,.06), 0 2px 6px rgba(8,23,58,.05);
+	--db-shadow-md: 0 1px 2px rgba(8,23,58,.08), 0 8px 24px rgba(8,23,58,.10);
+	--db-shadow-lg: 0 2px 4px rgba(8,23,58,.08), 0 16px 40px rgba(8,23,58,.16);
 
-	--db-ease:      cubic-bezier(.4,0,.2,1);
+	--db-ease:      ease;
 	--db-dur-fast:  120ms;
-	--db-dur-base:  200ms;
-	--db-dur-slow:  350ms;
+	--db-dur-base:  180ms;
+	--db-dur-slow:  320ms;
+
+	--db-grad-navy: linear-gradient(180deg, #0a1628 0%, #132b52 100%);
 
 	--db-max-content: 1200px;
 	--db-max-prose:    700px;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
-		--db-gray-50:  #1a1f2e;
-		--db-gray-100: #252b3b;
-		--db-gray-200: #2e3548;
-		--db-gray-300: #3d4560;
-		--db-gray-500: #8892a4;
-		--db-gray-700: #c4cdd8;
-		--db-gray-900: #f0f2f5;
-		--db-blue-lt:  #0d1f3c;
+		--db-gray-50:  #0e1524;
+		--db-gray-100: #16203a;
+		--db-gray-200: #22304f;
+		--db-gray-300: #33456b;
+		--db-gray-500: #8fa0bd;
+		--db-gray-700: #c7d2e4;
+		--db-gray-900: #eef2f9;
+		--db-blue:     #4f9cf9;
+		--db-accent:   #7ab6fb;
+		--db-blue-dk:  #6faaf9;
+		--db-blue-lt:  #10254a;
+		--db-surface:  #101b33;
+		--db-header-bg: rgba(10,22,40,.82);
+		--db-focus-ring: rgba(79,156,249,.28);
+		--db-shadow-sm: 0 1px 2px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.28);
+		--db-shadow-md: 0 1px 2px rgba(0,0,0,.40), 0 8px 24px rgba(0,0,0,.38);
+		--db-shadow-lg: 0 2px 4px rgba(0,0,0,.42), 0 16px 40px rgba(0,0,0,.50);
+		--db-grad-navy: linear-gradient(180deg, #132b52 0%, #1c3a6b 100%);
 	}
 }
 @media (prefers-reduced-motion: reduce) {
-	*, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+	*, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
 /* ==========================================================================
@@ -1342,16 +1368,19 @@ add_action( 'wp_head', function () {
    ========================================================================== */
 .db-ui-active {
 	font-family: var(--db-font);
+	font-size: var(--db-fs-body);
 	color: var(--db-gray-900);
-	line-height: 1.6;
+	line-height: 1.65;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 .db-ui-active *, .db-ui-active *::before, .db-ui-active *::after { box-sizing: border-box; }
 .db-ui-active img { max-width: 100%; height: auto; display: block; }
-.db-ui-active a { color: var(--db-blue); transition: color var(--db-dur-fast) var(--db-ease); }
-.db-ui-active a:hover { color: #0854b0; }
+.db-ui-active a { color: var(--db-blue); transition: color var(--db-dur-base) var(--db-ease); }
+.db-ui-active a:hover { color: var(--db-blue-dk); }
 :focus-visible { outline: 2px solid var(--db-blue); outline-offset: 3px; border-radius: var(--db-r-sm); }
+.db-ui-active ::selection { background: var(--db-blue-lt); color: var(--db-gray-900); }
 
 /* ==========================================================================
    2. TYPOGRAPHY
@@ -1360,39 +1389,72 @@ add_action( 'wp_head', function () {
 .db-ui-active h4, .db-ui-active h5, .db-ui-active h6 {
 	font-family: var(--db-font);
 	font-weight: 700;
-	line-height: 1.2;
-	letter-spacing: -0.025em;
+	line-height: 1.18;
+	letter-spacing: -0.028em;
 	color: var(--db-gray-900);
 	margin: 0 0 var(--db-sp-4);
+	text-wrap: balance;
 }
-.db-ui-active h1 { font-size: clamp(28px, 5vw, 48px); }
-.db-ui-active h2 { font-size: clamp(22px, 3.5vw, 36px); }
-.db-ui-active h3 { font-size: clamp(18px, 2.5vw, 26px); }
-.db-ui-active p  { margin: 0 0 var(--db-sp-4); color: var(--db-gray-700); }
+.db-ui-active h1 { font-size: var(--db-fs-h1); }
+.db-ui-active h2 { font-size: var(--db-fs-h2); letter-spacing: -0.024em; }
+.db-ui-active h3 { font-size: var(--db-fs-h3); letter-spacing: -0.018em; line-height: 1.3; }
+.db-ui-active p  { margin: 0 0 var(--db-sp-4); color: var(--db-gray-700); line-height: 1.65; }
+.db-ui-active .entry-content > p,
+.db-ui-active .entry-content > ul,
+.db-ui-active .entry-content > ol { max-width: var(--db-max-prose); }
+.db-ui-active li { margin-bottom: var(--db-sp-2); color: var(--db-gray-700); }
 
 /* ==========================================================================
    3. BUTTONS
    ========================================================================== */
 .db-ui-active .btn-primary,
+.db-ui-active .button:not(.db-hp-btn-primary):not(.db-hp-btn-ghost),
 .db-ui-active input[type="submit"],
 .db-ui-active button[type="submit"] {
 	display: inline-flex; align-items: center; justify-content: center;
 	gap: var(--db-sp-2);
-	padding: 12px 24px;
-	background: var(--db-blue);
+	padding: 12px 26px;
+	background: var(--db-grad-navy);
 	color: #fff !important;
 	font-family: var(--db-font); font-size: 15px; font-weight: 600;
+	letter-spacing: 0.01em;
 	text-decoration: none !important;
 	border: none; border-radius: var(--db-r-md); cursor: pointer;
-	box-shadow: var(--db-shadow-sm);
-	transition: background var(--db-dur-fast) var(--db-ease),
-	            transform var(--db-dur-fast) var(--db-ease),
-	            box-shadow var(--db-dur-fast) var(--db-ease);
+	box-shadow: var(--db-shadow-sm), inset 0 1px 0 rgba(255,255,255,.08);
+	transition: background var(--db-dur-base) var(--db-ease),
+	            transform var(--db-dur-base) var(--db-ease),
+	            box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .btn-primary:hover,
+.db-ui-active .button:not(.db-hp-btn-primary):not(.db-hp-btn-ghost):hover,
 .db-ui-active input[type="submit"]:hover,
 .db-ui-active button[type="submit"]:hover {
-	background: #0854b0; transform: translateY(-1px); box-shadow: var(--db-shadow-md);
+	background: var(--db-blue); transform: translateY(-1px); box-shadow: var(--db-shadow-md);
+}
+.db-ui-active .btn-primary:active,
+.db-ui-active input[type="submit"]:active,
+.db-ui-active button[type="submit"]:active {
+	transform: translateY(0); box-shadow: var(--db-shadow-sm);
+}
+.db-ui-active .btn-secondary {
+	display: inline-flex; align-items: center; justify-content: center;
+	gap: var(--db-sp-2);
+	padding: 11px 26px;
+	background: transparent;
+	color: var(--db-navy) !important;
+	font-family: var(--db-font); font-size: 15px; font-weight: 600;
+	text-decoration: none !important;
+	border: 1.5px solid var(--db-gray-300); border-radius: var(--db-r-pill); cursor: pointer;
+	transition: border-color var(--db-dur-base) var(--db-ease),
+	            background var(--db-dur-base) var(--db-ease),
+	            color var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .btn-secondary:hover {
+	border-color: var(--db-blue); background: var(--db-blue-lt); color: var(--db-blue) !important;
+}
+@media (prefers-color-scheme: dark) {
+	.db-ui-active .btn-secondary { color: var(--db-gray-700) !important; }
+	.db-ui-active .btn-secondary:hover { color: var(--db-accent) !important; }
 }
 
 /* ==========================================================================
@@ -1401,7 +1463,7 @@ add_action( 'wp_head', function () {
 .db-ui-active .domain-listing,
 .db-ui-active .domain-card,
 .db-ui-active .listing-item {
-	background: #fff;
+	background: var(--db-surface);
 	border: 1px solid var(--db-gray-200);
 	border-radius: var(--db-r-lg);
 	box-shadow: var(--db-shadow-sm);
@@ -1415,57 +1477,89 @@ add_action( 'wp_head', function () {
 .db-ui-active .listing-item:hover {
 	transform: translateY(-3px);
 	box-shadow: var(--db-shadow-lg);
-	border-color: var(--db-gray-300);
+	border-color: rgba(37,99,235,.35);
 }
-@media (prefers-color-scheme: dark) {
-	.db-ui-active .domain-listing,
-	.db-ui-active .domain-card,
-	.db-ui-active .listing-item {
-		background: var(--db-gray-100);
-		border-color: var(--db-gray-200);
-	}
+@media (prefers-reduced-motion: reduce) {
+	.db-ui-active .domain-listing:hover,
+	.db-ui-active .domain-card:hover,
+	.db-ui-active .listing-item:hover { transform: none; }
 }
 
-/* Price badges */
+/* Domain name — the hero of every card */
+.db-ui-active .domain-listing h2, .db-ui-active .domain-listing h3,
+.db-ui-active .domain-card h2,    .db-ui-active .domain-card h3,
+.db-ui-active .listing-item h2,   .db-ui-active .listing-item h3,
+.db-ui-active .domain-name,
+.db-ui-active .domain-title {
+	font-size: clamp(1.15rem, 2vw, 1.4rem);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--db-gray-900);
+	margin-bottom: var(--db-sp-2);
+	word-break: break-word;
+}
+
+/* Price — bold navy badge with blue accent */
 .db-ui-active .domain-price,
 .db-ui-active .price,
-.db-ui-active [class*="price"] {
-	font-size: 1.15em; font-weight: 700; color: var(--db-blue);
-	letter-spacing: -0.02em;
+.db-ui-active .listing-price {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 5px 14px;
+	background: var(--db-grad-navy);
+	color: #fff;
+	font-size: 1em; font-weight: 700;
+	letter-spacing: -0.01em;
+	border-radius: var(--db-r-pill);
+	box-shadow: inset 0 0 0 1px rgba(79,156,249,.40), var(--db-shadow-sm);
+}
+.db-ui-active .domain-price::before,
+.db-ui-active .price::before,
+.db-ui-active .listing-price::before {
+	content: ''; width: 6px; height: 6px; border-radius: 50%;
+	background: var(--db-accent); flex: none;
 }
 
 /* Buy / Offer buttons on listing cards */
 .db-ui-active .buy-btn,
 .db-ui-active .btn-buy,
 .db-ui-active .add-to-cart {
-	background: var(--db-blue); color: #fff !important;
+	background: var(--db-grad-navy); color: #fff !important;
 	border: none; border-radius: var(--db-r-md);
-	padding: 10px 18px; font-size: 14px; font-weight: 600;
+	padding: 10px 20px; font-size: 14px; font-weight: 600;
 	text-decoration: none !important; cursor: pointer;
-	transition: background var(--db-dur-fast) var(--db-ease);
+	box-shadow: var(--db-shadow-sm);
+	transition: background var(--db-dur-base) var(--db-ease),
+	            box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .buy-btn:hover,
 .db-ui-active .btn-buy:hover,
-.db-ui-active .add-to-cart:hover { background: #0854b0; }
+.db-ui-active .add-to-cart:hover { background: var(--db-blue); box-shadow: var(--db-shadow-md); }
 
 .db-ui-active .offer-btn {
 	background: transparent; color: var(--db-blue) !important;
-	border: 1.5px solid var(--db-blue); border-radius: var(--db-r-md);
-	padding: 9px 18px; font-size: 14px; font-weight: 600;
+	border: 1.5px solid var(--db-blue); border-radius: var(--db-r-pill);
+	padding: 9px 20px; font-size: 14px; font-weight: 600;
 	text-decoration: none !important; cursor: pointer;
-	transition: background var(--db-dur-fast) var(--db-ease), color var(--db-dur-fast) var(--db-ease);
+	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .offer-btn:hover { background: var(--db-blue-lt); }
 
 /* ==========================================================================
    5. NAVIGATION
    ========================================================================== */
-.db-ui-active header,
 .db-ui-active .site-header,
 .db-ui-active #masthead {
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
+	position: sticky;
+	top: 0;
+	z-index: 200;
+	background: var(--db-header-bg);
+	backdrop-filter: blur(12px) saturate(1.4);
+	-webkit-backdrop-filter: blur(12px) saturate(1.4);
 	border-bottom: 1px solid var(--db-gray-200);
+}
+@supports not (backdrop-filter: blur(12px)) {
+	.db-ui-active .site-header,
+	.db-ui-active #masthead { background: var(--db-surface); }
 }
 .db-ui-active .main-navigation a,
 .db-ui-active .nav-menu a,
@@ -1475,13 +1569,13 @@ add_action( 'wp_head', function () {
 	text-decoration: none;
 	padding: 6px 12px;
 	border-radius: var(--db-r-sm);
-	transition: background var(--db-dur-fast) var(--db-ease), color var(--db-dur-fast) var(--db-ease);
+	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .main-navigation a:hover,
 .db-ui-active .nav-menu a:hover,
 .db-ui-active header nav a:hover {
-	background: var(--db-gray-100);
-	color: var(--db-gray-900) !important;
+	background: var(--db-blue-lt);
+	color: var(--db-blue) !important;
 }
 
 /* ==========================================================================
@@ -1495,30 +1589,36 @@ add_action( 'wp_head', function () {
 .db-ui-active .wpcf7-form textarea,
 .db-ui-active .wpcf7-form select {
 	width: 100%;
-	padding: 12px 14px;
+	padding: 13px 16px;
 	font-family: var(--db-font); font-size: 15px;
 	color: var(--db-gray-900);
-	background: #fff;
+	background: var(--db-surface);
 	border: 1.5px solid var(--db-gray-300);
-	border-radius: var(--db-r-md);
+	border-radius: 12px;
 	outline: none;
-	transition: border-color var(--db-dur-fast) var(--db-ease), box-shadow var(--db-dur-fast) var(--db-ease);
+	box-shadow: var(--db-shadow-sm);
+	transition: border-color var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
+.db-ui-active .wpcf7-form ::placeholder { color: var(--db-gray-500); opacity: 1; }
 .db-ui-active .wpcf7-form input:focus,
 .db-ui-active .wpcf7-form textarea:focus,
 .db-ui-active .wpcf7-form select:focus {
 	border-color: var(--db-blue);
-	box-shadow: 0 0 0 3px rgba(10,110,209,.15);
+	box-shadow: 0 0 0 4px var(--db-focus-ring), var(--db-shadow-sm);
+}
+.db-ui-active .wpcf7-form label {
+	font-size: var(--db-fs-sm); font-weight: 600; color: var(--db-gray-700);
 }
 .db-ui-active .wpcf7-form input[type="submit"] {
-	background: var(--db-blue); color: #fff; border: none;
-	padding: 13px 28px; font-size: 15px; font-weight: 600;
-	border-radius: var(--db-r-md); cursor: pointer;
-	transition: background var(--db-dur-fast) var(--db-ease), transform var(--db-dur-fast) var(--db-ease);
+	background: var(--db-grad-navy); color: #fff; border: none;
+	padding: 14px 30px; font-size: 15px; font-weight: 600;
+	border-radius: 12px; cursor: pointer;
+	box-shadow: var(--db-shadow-sm), inset 0 1px 0 rgba(255,255,255,.08);
+	transition: background var(--db-dur-base) var(--db-ease), transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
-.db-ui-active .wpcf7-form input[type="submit"]:hover { background: #0854b0; transform: translateY(-1px); }
+.db-ui-active .wpcf7-form input[type="submit"]:hover { background: var(--db-blue); transform: translateY(-1px); box-shadow: var(--db-shadow-md); }
 .db-ui-active .wpcf7-not-valid-tip { color: var(--db-red); font-size: 13px; margin-top: 4px; }
-.db-ui-active .wpcf7-response-output { border-radius: var(--db-r-md); padding: 12px 16px; margin-top: 16px; }
+.db-ui-active .wpcf7-response-output { border-radius: 12px; padding: 12px 16px; margin-top: 16px; border-width: 1px !important; }
 
 /* ==========================================================================
    7. FOOTER
@@ -1526,14 +1626,25 @@ add_action( 'wp_head', function () {
 .db-ui-active footer,
 .db-ui-active .site-footer,
 .db-ui-active #colophon {
-	background: var(--db-navy);
-	color: rgba(255,255,255,.65);
-	border-top: none;
+	background: #0a1628;
+	color: rgba(233,240,251,.78);
+	border-top: 1px solid rgba(79,156,249,.18);
 }
 .db-ui-active footer a,
-.db-ui-active .site-footer a { color: rgba(255,255,255,.70); }
+.db-ui-active .site-footer a,
+.db-ui-active #colophon a {
+	color: rgba(233,240,251,.85);
+	text-decoration: none;
+	text-underline-offset: 3px;
+	transition: color var(--db-dur-base) var(--db-ease);
+}
 .db-ui-active footer a:hover,
-.db-ui-active .site-footer a:hover { color: #fff; }
+.db-ui-active .site-footer a:hover,
+.db-ui-active #colophon a:hover { color: #7ab6fb; text-decoration: underline; }
+.db-ui-active footer h2, .db-ui-active footer h3, .db-ui-active footer h4,
+.db-ui-active .site-footer h2, .db-ui-active .site-footer h3, .db-ui-active .site-footer h4 {
+	color: #ffffff;
+}
 
 /* ==========================================================================
    8. LAYOUT
@@ -1549,16 +1660,57 @@ add_action( 'wp_head', function () {
 }
 
 /* ==========================================================================
-   9. TABLES
+   9. TABLES + PAGINATION
    ========================================================================== */
 .db-ui-active table {
-	width: 100%; border-collapse: collapse; font-size: 14px;
+	width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px;
+	border: 1px solid var(--db-gray-200); border-radius: var(--db-r-md);
+	overflow: hidden;
+	box-shadow: var(--db-shadow-sm);
+	background: var(--db-surface);
 }
 .db-ui-active th, .db-ui-active td {
-	text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--db-gray-200);
+	text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--db-gray-200);
 }
-.db-ui-active th { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--db-gray-500); }
+.db-ui-active th {
+	font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+	color: var(--db-gray-500); background: var(--db-gray-50);
+}
+.db-ui-active tr:last-child td { border-bottom: none; }
+.db-ui-active tbody tr { transition: background var(--db-dur-base) var(--db-ease); }
 .db-ui-active tr:hover td { background: var(--db-gray-50); }
+
+.db-ui-active .pagination,
+.db-ui-active .nav-links,
+.db-ui-active .page-numbers-wrap {
+	display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+	gap: var(--db-sp-2); margin: var(--db-sp-8) 0;
+}
+.db-ui-active a.page-numbers,
+.db-ui-active span.page-numbers,
+.db-ui-active .pagination a,
+.db-ui-active .pagination span {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 38px; height: 38px; padding: 0 12px;
+	font-size: 14px; font-weight: 600;
+	color: var(--db-gray-700);
+	background: var(--db-surface);
+	border: 1px solid var(--db-gray-200);
+	border-radius: var(--db-r-md);
+	text-decoration: none;
+	transition: border-color var(--db-dur-base) var(--db-ease),
+	            color var(--db-dur-base) var(--db-ease),
+	            background var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active a.page-numbers:hover,
+.db-ui-active .pagination a:hover {
+	border-color: var(--db-blue); color: var(--db-blue); background: var(--db-blue-lt);
+}
+.db-ui-active span.page-numbers.current,
+.db-ui-active .pagination .current {
+	background: var(--db-grad-navy); border-color: transparent; color: #fff;
+	box-shadow: var(--db-shadow-sm);
+}
 
 /* ==========================================================================
    10. MOBILE
