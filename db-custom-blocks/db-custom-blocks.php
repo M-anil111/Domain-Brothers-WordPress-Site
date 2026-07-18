@@ -1840,7 +1840,7 @@ add_action( 'wp_head', function () {
  * Trigger: /?db_make_service_pages=1 (admin only, nonce-protected confirm).
  *
  * Each page gets: slug, title, a featured image placeholder, and rich content
- * matching Domain Brothers' service offering + 25 yrs agency network.
+ * matching Domain Brothers' service offering + 27+ yrs agency network.
  */
 
 if ( ! function_exists( 'db_service_page_defs' ) ) {
@@ -1849,88 +1849,228 @@ if ( ! function_exists( 'db_service_page_defs' ) ) {
 			array(
 				'slug'    => 'website-design-development',
 				'title'   => 'Website Design & Development',
-				'excerpt' => 'Custom, high-performance websites built for conversion — from domain acquisition to launch.',
-				'content' => '<h2>Websites That Convert</h2>
-<p>Your domain is just the start. Domain Brothers works with agency partners including <strong>Mindshare Consulting Inc.</strong>, <strong>Jay Mehta Digital</strong>, and <strong>Netclues</strong> — a network with <strong>25+ years of combined experience</strong> — to deliver websites that are fast, accessible, and built to rank.</p>
-<h3>What We Deliver</h3>
-<ul>
-<li>Custom WordPress and headless CMS development</li>
-<li>E-commerce and marketplace builds</li>
-<li>Landing page and conversion rate optimisation</li>
-<li>ADA/WCAG accessibility compliance</li>
-<li>Core Web Vitals and speed optimisation</li>
-</ul>
-<h3>Ready to Build?</h3>
-<p><a href="/contact/" class="button">Get a Free Quote</a></p>',
+				'excerpt' => 'Custom, high-performance websites designed and built by vetted agency partners with 27+ years of combined experience — from domain to launch in as little as 4 weeks.',
+				'content' => <<<'HTML'
+<p>A premium domain deserves a website that lives up to it. Domain Brothers connects you with a network of vetted agency partners — including <strong>Mindshare Consulting Inc.</strong>, <strong>Jay Mehta Digital</strong>, and <strong>Netclues</strong> — with <strong>27+ years of combined experience</strong> building websites that rank, convert, and scale. You get one point of contact, a fixed scope, and a team that has already shipped hundreds of sites; we handle the coordination so you never have to manage an agency yourself.</p>
+
+<h2>Custom WordPress &amp; CMS Development</h2>
+<p>Most business sites we deliver are built on WordPress or a headless CMS, so your team can update content without a developer. Every build is custom-designed — no recycled templates — with clean, documented code that any future developer can maintain. You own the site and the code outright.</p>
+
+<h2>E-Commerce &amp; Marketplace Builds</h2>
+<p>From WooCommerce stores to full multi-vendor marketplaces, our partners build stores around the way you actually sell: product configurators, subscriptions, wholesale pricing tiers, and payment plans. Checkout flows are tested against real user behaviour to reduce cart abandonment before launch, not after.</p>
+
+<h2>Landing Pages &amp; Conversion Optimization</h2>
+<p>A landing page has one job: turn a visitor into a lead. We write the copy, structure the page around a single call to action, and instrument it with analytics so you can see exactly where visitors drop off. For paid-traffic campaigns, we A/B test headlines and layouts until the numbers improve.</p>
+
+<h2>Performance &amp; Core Web Vitals</h2>
+<p>Site speed is a ranking factor and a revenue factor. Every site we ship is optimized to pass Google's Core Web Vitals — compressed images, cached pages, minimal scripts — because a one-second delay in load time measurably cuts conversions.</p>
+
+<h2>Accessibility &amp; Compliance</h2>
+<p>We build to WCAG 2.1 AA standards: keyboard navigation, screen-reader support, sufficient colour contrast. Accessible sites reach more customers and reduce legal exposure under ADA and similar legislation.</p>
+
+<h2>How We Work</h2>
+<h3>1. Discovery call</h3>
+<p>A free 30-minute call to understand your goals, audience, and budget. No pitch deck, no obligation.</p>
+<h3>2. Fixed-scope proposal</h3>
+<p>Within 48 hours you receive a written proposal with a fixed price, a page-by-page scope, and a delivery date.</p>
+<h3>3. Design and build</h3>
+<p>You review designs before a line of code is written, then see staged progress weekly until launch.</p>
+<h3>4. Launch and support</h3>
+<p>We deploy, test, and hand over full credentials — with 30 days of post-launch support included.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>How much does a custom website cost?</h3>
+<p>A custom-designed business website typically costs $3,500–$8,000; e-commerce builds run $8,000–$25,000 depending on catalogue size and integrations. You get an exact fixed quote within 48 hours of the discovery call, and 0% interest payment plans are available.</p>
+<h3>How long does a website take to build?</h3>
+<p>A standard business site takes 4–6 weeks from kickoff to launch. E-commerce and custom-functionality builds take 8–12 weeks. The timeline is written into your proposal.</p>
+<h3>Can you build on a domain I already own?</h3>
+<p>Yes. You do not need to buy a domain from Domain Brothers to use our web design services — we build on any domain you own, and we can also help you upgrade to a stronger domain as part of the project.</p>
+<h3>Who owns the website when it's done?</h3>
+<p>You do. On final payment you receive full ownership of the design, code, content, and all accounts — no lock-in, no ongoing licence fees.</p>
+
+<p>Ready to build on your domain? <a href="/contact/" class="button">Get a Free Quote</a> — we respond within one business day.</p>
+HTML
+				,
 			),
 			array(
 				'slug'    => 'digital-marketing',
 				'title'   => 'Digital Marketing',
-				'excerpt' => 'SEO, PPC, content strategy — full-funnel digital marketing that drives qualified traffic and revenue.',
-				'content' => '<h2>Marketing That Pays for Itself</h2>
-<p>A premium domain is a head-start, not a guarantee. Our agency partners provide full-funnel digital marketing — from organic search to paid acquisition — to make sure the right visitors find your new domain.</p>
-<h3>Our Services</h3>
-<ul>
-<li>Search Engine Optimisation (technical, on-page, off-page)</li>
-<li>Google Ads and Meta Ads management</li>
-<li>Content strategy and copywriting</li>
-<li>Email marketing automation</li>
-<li>Social media management</li>
-<li>Analytics setup and reporting (GA4, Search Console)</li>
-</ul>
-<h3>Start Growing</h3>
-<p><a href="/contact/" class="button">Book a Strategy Call</a></p>',
+				'excerpt' => 'SEO, Google and Meta ads, content, and email automation — full-funnel digital marketing run by vetted agency partners, reported in numbers you can act on.',
+				'content' => <<<'HTML'
+<p>A premium domain gives you a head start in search and instant credibility with customers — but traffic still has to be earned. Domain Brothers works with a network of vetted marketing partners with <strong>27+ years of combined experience</strong> running campaigns for businesses from local services to national e-commerce brands. Because we broker domains for a living, we understand better than most agencies how domain authority, branding, and search behaviour fit together.</p>
+
+<h2>Search Engine Optimization</h2>
+<p>We cover all three layers of SEO: technical (crawlability, site speed, structured data), on-page (content targeting the queries your customers actually type), and off-page (earning links from relevant, reputable sites). Campaigns start with a keyword and competitor audit so budget goes to the terms most likely to produce revenue — not vanity rankings.</p>
+
+<h2>Google Ads &amp; Meta Ads Management</h2>
+<p>Paid search and social put you in front of buyers on day one. Our partners build campaigns around tracked conversions — calls, form fills, purchases — and report cost per lead, not clicks. Accounts are audited weekly; underperforming ads are paused and budgets shift to what works.</p>
+
+<h2>Content Strategy &amp; Copywriting</h2>
+<p>Search engines and AI assistants now reward pages that answer questions directly. We plan and write content mapped to real customer questions — service pages, comparison guides, FAQs — written by humans, edited for accuracy, and structured so both Google and answer engines can cite it.</p>
+
+<h2>Email Marketing Automation</h2>
+<p>Email remains the highest-ROI channel in digital marketing. We set up automated sequences — welcome flows, abandoned-cart recovery, post-purchase follow-ups — in platforms like Mailchimp and Klaviyo, so revenue arrives while you sleep.</p>
+
+<h2>Analytics &amp; Reporting</h2>
+<p>Every engagement includes GA4 and Search Console configured correctly, conversion tracking verified end-to-end, and a monthly plain-English report: what we did, what it produced, and what happens next.</p>
+
+<h2>How We Work</h2>
+<h3>1. Audit</h3>
+<p>We review your current traffic, rankings, ad accounts, and competitors, and identify the fastest wins.</p>
+<h3>2. Strategy</h3>
+<p>You receive a 90-day plan with specific targets — traffic, leads, cost per acquisition — and a fixed monthly price.</p>
+<h3>3. Execute and report</h3>
+<p>We run the campaigns and send a monthly performance report; you keep full ownership and admin access to every account.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>How long does SEO take to show results?</h3>
+<p>Expect meaningful movement in 3–6 months for most markets. Quick technical fixes can lift traffic within weeks, but competitive rankings are earned over months — any agency promising page one in 30 days is guessing or gaming.</p>
+<h3>What ad budget do I need to start?</h3>
+<p>For most local and niche campaigns, $1,000–$2,500 per month in media spend is enough to gather reliable data and produce leads. We tell you honestly if your market needs more before you commit.</p>
+<h3>Do you require long-term contracts?</h3>
+<p>No. Engagements start with a 90-day initial term — the minimum needed to show real results — then continue month to month. You can leave any time after that with 30 days' notice and keep all accounts and data.</p>
+<h3>How will I know it's working?</h3>
+<p>Every campaign is tied to tracked conversions. Your monthly report shows leads generated, cost per lead, and revenue attributed — the same numbers we use to judge our own work.</p>
+
+<p>Want the traffic your domain deserves? <a href="/contact/" class="button">Book a Free Strategy Call</a> and get a 90-day plan with no obligation.</p>
+HTML
+				,
 			),
 			array(
 				'slug'    => 'software-development',
 				'title'   => 'Software Development',
-				'excerpt' => 'Bespoke software solutions — APIs, SaaS platforms, custom tools — built by experienced engineers.',
-				'content' => '<h2>Custom Software for Ambitious Brands</h2>
-<p>Whether you need a proprietary platform, a REST API, or a complex integration, our software development partners bring enterprise-grade engineering to businesses of every size.</p>
-<h3>Expertise</h3>
-<ul>
-<li>SaaS platform architecture and development</li>
-<li>REST and GraphQL API design</li>
-<li>Third-party integrations (Stripe, Salesforce, HubSpot, etc.)</li>
-<li>Database design and optimisation</li>
-<li>DevOps, CI/CD, and cloud infrastructure (AWS, GCP)</li>
-</ul>
-<h3>Have a Project?</h3>
-<p><a href="/contact/" class="button">Discuss Your Requirements</a></p>',
+				'excerpt' => 'SaaS platforms, APIs, and integrations engineered by senior developers from a 27+ year agency network — fixed scopes, weekly demos, and code you own outright.',
+				'content' => <<<'HTML'
+<p>Custom software is where good ideas either become products or become expensive lessons. Domain Brothers' engineering partners — drawn from an agency network with <strong>27+ years of combined experience</strong> — have shipped SaaS platforms, internal tools, and integrations for startups and established businesses alike. Every project gets a senior engineer from day one, a written scope, and working software demonstrated every week, so you always know exactly where your budget is going.</p>
+
+<h2>SaaS Platform Development</h2>
+<p>From first prototype to paying customers: multi-tenant architecture, subscription billing through Stripe, role-based access, and an admin panel your team can actually use. We design for the load you will have in two years, not just the demo next month.</p>
+
+<h2>API Design &amp; Integrations</h2>
+<p>Well-designed REST and GraphQL APIs let your product plug into the tools your customers already use. We build APIs with versioning, authentication, and documentation included by default, and we integrate with third-party platforms — Stripe, Salesforce, HubSpot, QuickBooks, shipping carriers — without the brittle glue code that breaks at 2 a.m.</p>
+
+<h2>Database Design &amp; Architecture</h2>
+<p>Most slow software is slow because of its data layer. Our engineers design schemas around your real query patterns, index deliberately, and load-test before launch, so the application that is fast with 100 records stays fast with 10 million.</p>
+
+<h2>Cloud Infrastructure &amp; DevOps</h2>
+<p>We deploy to AWS and Google Cloud with infrastructure defined as code, automated CI/CD pipelines, monitoring, and daily backups. Deployments become a non-event: push, test, release — with instant rollback if anything looks wrong.</p>
+
+<h2>Maintenance &amp; Long-Term Support</h2>
+<p>Software is never finished. We offer monthly support retainers covering security patches, dependency updates, small features, and priority bug fixes — with guaranteed response times in writing.</p>
+
+<h2>How We Work</h2>
+<h3>1. Technical discovery</h3>
+<p>A working session to map requirements, integrations, and risks. You get a written technical brief even if you build elsewhere.</p>
+<h3>2. Scope and estimate</h3>
+<p>A milestone-based plan with a price and delivery date for each stage — you approve every milestone before it starts.</p>
+<h3>3. Build in weekly sprints</h3>
+<p>Working software demonstrated every week in a staging environment you can click through yourself.</p>
+<h3>4. Launch and handover</h3>
+<p>Deployment, documentation, and a full handover of code and infrastructure credentials. The IP is yours.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>How much does custom software development cost?</h3>
+<p>A focused MVP typically costs $20,000–$60,000; larger platforms range higher. Because we quote per milestone, you can fund the first stage, evaluate the result, and decide whether to continue — you are never locked into the full budget up front.</p>
+<h3>How long does it take to build an MVP?</h3>
+<p>Most MVPs ship in 8–16 weeks. The discovery phase produces a week-by-week plan, and weekly demos mean you see progress from the second week — not a big reveal at the end.</p>
+<h3>What technologies do you use?</h3>
+<p>Primarily PHP/Laravel, Node.js, and Python on the backend, React and Vue on the frontend, and PostgreSQL or MySQL for data — mature, widely supported stacks that any competent developer can maintain after handover.</p>
+<h3>Who owns the intellectual property?</h3>
+<p>You do. Every contract assigns full IP ownership of the code, designs, and documentation to you on payment. We keep nothing proprietary in your stack.</p>
+
+<p>Have a product in mind? <a href="/contact/" class="button">Discuss Your Requirements</a> — a senior engineer reviews every enquiry.</p>
+HTML
+				,
 			),
 			array(
 				'slug'    => 'mobile-app-development',
 				'title'   => 'Mobile App Development',
-				'excerpt' => 'iOS and Android apps — from MVP to App Store launch, built with React Native or native stacks.',
-				'content' => '<h2>Mobile Apps Built to Launch</h2>
-<p>Turn your domain into a product. Our mobile development partners build consumer and enterprise apps using React Native, Swift, and Kotlin — with a track record of successful App Store and Google Play launches.</p>
-<h3>What We Build</h3>
-<ul>
-<li>Cross-platform apps (React Native / Flutter)</li>
-<li>Native iOS (Swift) and Android (Kotlin) apps</li>
-<li>MVP development with rapid iteration</li>
-<li>App Store Optimisation (ASO)</li>
-<li>Post-launch maintenance and updates</li>
-</ul>
-<h3>Let\'s Build Your App</h3>
-<p><a href="/contact/" class="button">Get Started</a></p>',
+				'excerpt' => 'iOS and Android apps from concept to App Store launch — React Native, Swift, and Kotlin builds with store submission and post-launch support handled for you.',
+				'content' => <<<'HTML'
+<p>Turning a domain into a product often means putting it in your customers' pockets. Domain Brothers' mobile development partners — part of an agency network with <strong>27+ years of combined experience</strong> — have taken consumer and business apps from first sketch to live App Store and Google Play listings. We handle the parts most first-time founders underestimate: store review guidelines, push notification infrastructure, analytics, and the updates that keep an app alive after launch.</p>
+
+<h2>Cross-Platform Development</h2>
+<p>For most products, React Native or Flutter is the right call: one codebase runs on both iOS and Android, cutting build cost and time by 30–40% compared with two native apps, while still delivering native-feeling performance for the vast majority of use cases.</p>
+
+<h2>Native iOS &amp; Android</h2>
+<p>When your app depends on heavy device features — camera pipelines, Bluetooth hardware, background processing, ARKit — we build native in Swift and Kotlin. You get the full performance and platform integration that only native code provides.</p>
+
+<h2>MVP Development &amp; Prototyping</h2>
+<p>The cheapest mistake is the one you catch before building. We start with clickable prototypes you can put in front of real users within two weeks, then build a focused first version around the features those users actually respond to.</p>
+
+<h2>App Store Launch &amp; ASO</h2>
+<p>We prepare listings, screenshots, and metadata; manage TestFlight and Play Console beta programs; handle Apple's review process (including the rejections that stall most first submissions); and optimize your store listing so the right users find it.</p>
+
+<h2>Post-Launch Maintenance</h2>
+<p>iOS and Android each ship major updates every year, and an unmaintained app breaks within one or two cycles. Our maintenance retainers cover OS compatibility updates, crash monitoring, security patches, and incremental feature releases.</p>
+
+<h2>How We Work</h2>
+<h3>1. Product workshop</h3>
+<p>We define the core user journey, cut the feature list to what launch actually requires, and agree success metrics.</p>
+<h3>2. Prototype and validate</h3>
+<p>A clickable design prototype in about two weeks — test it with real users before committing to development.</p>
+<h3>3. Build and beta</h3>
+<p>Development in two-week sprints with a new installable build on your own phone at the end of each one.</p>
+<h3>4. Launch and iterate</h3>
+<p>We manage store submission and release, then use live analytics and crash data to plan the next versions.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>How much does it cost to build a mobile app?</h3>
+<p>A cross-platform MVP typically costs $25,000–$60,000; complex or fully native apps run higher. The product workshop produces a fixed, milestone-based quote, and 0% interest payment plans are available on development fees.</p>
+<h3>Should I build native or cross-platform?</h3>
+<p>Cross-platform (React Native or Flutter) is right for roughly 80% of apps — it is faster and cheaper with near-native quality. Go native when you rely heavily on device hardware or need every millisecond of performance. We recommend the cheaper option whenever it genuinely fits.</p>
+<h3>How long does app development take?</h3>
+<p>From workshop to App Store launch, plan for 12–20 weeks for an MVP. You will have an installable beta on your own device around the halfway mark.</p>
+<h3>Do you handle App Store and Google Play submission?</h3>
+<p>Yes — accounts, certificates, listings, review responses, and release management are all included. Both store listings are registered under your accounts, so you keep full control.</p>
+
+<p>Ready to put your brand on the home screen? <a href="/contact/" class="button">Start Your App Project</a> with a free product workshop consultation.</p>
+HTML
+				,
 			),
 			array(
 				'slug'    => 'other-services',
 				'title'   => 'Other Services',
-				'excerpt' => 'Domain consulting, valuation, brand strategy, and more — the full stack of services beyond the domain itself.',
-				'content' => '<h2>Beyond the Domain</h2>
-<p>Domain Brothers and our agency network offer a wide range of supporting services to ensure your new domain translates into a thriving online presence.</p>
-<h3>Additional Services</h3>
-<ul>
-<li><strong>Domain Portfolio Consulting</strong> — strategy for buying, selling, and managing domain portfolios</li>
-<li><strong>Brand Name Development</strong> — naming, trademark check, and brand identity</li>
-<li><strong>Domain Valuation Reports</strong> — certified market valuations for financing, sale, or insurance</li>
-<li><strong>DNS & Email Setup</strong> — professional DNS configuration and business email launch</li>
-<li><strong>Domain Monitoring</strong> — watch for expiring or infringing domains in your niche</li>
-</ul>
-<h3>Get in Touch</h3>
-<p><a href="/contact/" class="button">Contact Us</a></p>',
+				'excerpt' => 'Domain valuations, portfolio consulting, brand naming, DNS and email setup, and acquisition monitoring — everything around the domain, handled by the brokers who trade them daily.',
+				'content' => <<<'HTML'
+<p>Buying the domain is one decision; making it work for your business involves a dozen more. Domain Brothers — backed by an agency network with <strong>27+ years of combined experience</strong> — offers the supporting services that turn a domain purchase into a working brand: honest valuations, portfolio strategy, naming, technical setup, and ongoing monitoring. These are services delivered by people who broker domains every day, not generalists reading the same public price guides you can.</p>
+
+<h2>Domain Valuation Reports</h2>
+<p>Whether you are selling, buying, insuring, or raising finance against a domain, you need a defensible number. Our written valuation reports combine comparable-sale data, search volume, TLD strength, and brandability into a documented market value you can hand to a buyer, a bank, or a tax adviser.</p>
+
+<h2>Domain Portfolio Consulting</h2>
+<p>Most portfolios carry dead weight — renewals on names that will never sell, while strong names sit unlisted. We audit your holdings, tell you plainly which domains to sell, hold, or drop, and set realistic pricing so your portfolio produces income instead of renewal invoices.</p>
+
+<h2>Brand Name Development</h2>
+<p>Naming a company backwards — falling in love with a name whose domain is taken — is expensive. We run naming the right way: shortlists screened against available (or acquirable) domains, preliminary trademark checks, and social handle availability, so the name you choose is a name you can actually own everywhere.</p>
+
+<h2>DNS &amp; Business Email Setup</h2>
+<p>A new domain is only useful once it resolves. We configure DNS correctly the first time — including SPF, DKIM, and DMARC records so your email lands in inboxes rather than spam folders — and set up business email on Google Workspace or Microsoft 365, with migration from your old addresses handled for you.</p>
+
+<h2>Domain Monitoring &amp; Acquisition Watch</h2>
+<p>The domain you want today may expire or come to market tomorrow. We monitor target domains for expiry, ownership changes, and listing events, and can open anonymous negotiations the moment an opportunity appears — before the name hits public auction.</p>
+
+<h2>How We Work</h2>
+<h3>1. Tell us what you need</h3>
+<p>Send the domain, portfolio, or naming brief through our contact form — we respond within one business day.</p>
+<h3>2. Fixed quote</h3>
+<p>Every service is quoted as a fixed fee in writing before any work begins. No hourly surprises.</p>
+<h3>3. Delivery</h3>
+<p>Valuations and audits are delivered as written reports; technical setups are tested end-to-end and documented before handover.</p>
+
+<h2>Frequently Asked Questions</h2>
+<h3>How much does a domain valuation cost?</h3>
+<p>A single-domain written valuation report starts at $199 and is delivered within 3–5 business days. Portfolio valuations are quoted by size, and the fee is credited back if you later sell the domain through Domain Brothers.</p>
+<h3>Can you manage my domain portfolio for me?</h3>
+<p>Yes. We offer ongoing portfolio management covering renewals, listings, inbound offers, and negotiation, under a simple agreement where you approve every sale before it happens.</p>
+<h3>Do you handle trademark registration?</h3>
+<p>We run preliminary trademark screening as part of every naming project to flag obvious conflicts early, then refer you to a licensed trademark attorney for filing. We tell you when you need a lawyer — we don't pretend to be one.</p>
+<h3>How quickly can you set up DNS and email on a new domain?</h3>
+<p>Standard DNS and business email setup completes within 24–48 hours of receiving access, including SPF, DKIM, and DMARC configuration and deliverability testing.</p>
+
+<p>Need something around your domain rather than the domain itself? <a href="/contact/" class="button">Contact Us</a> and tell us what you're trying to do — we'll point you straight even if it's not a service we sell.</p>
+HTML
+				,
 			),
 		);
 	}
