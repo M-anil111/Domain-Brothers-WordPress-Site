@@ -74,11 +74,22 @@ add_action( 'wp_footer', function () {
 		document.documentElement.appendChild(curtain);
 
 		function done() { curtain.classList.add('is-done'); }
-		requestAnimationFrame(function () { curtain.classList.add('is-revealing'); });
+		function reveal() {
+			if (curtain.classList.contains('is-revealing')) { return; }
+			requestAnimationFrame(function () { curtain.classList.add('is-revealing'); });
+		}
+		// Wait for the logo to actually load before wiping the curtain away,
+		// so the Domain Brothers logo is always seen (not an empty flash).
+		if (img.complete && img.naturalWidth) { reveal(); }
+		else {
+			img.addEventListener('load', reveal);
+			img.addEventListener('error', reveal);
+			setTimeout(reveal, 900); // don't wait forever on a slow logo
+		}
 		curtain.addEventListener('animationend', function (e) {
 			if (e.target === curtain && curtain.classList.contains('is-revealing')) { done(); }
 		});
-		setTimeout(done, 2000); // safety net
+		setTimeout(done, 2600); // safety net
 
 		window.addEventListener('pageshow', function (e) {
 			if (e.persisted) { curtain.classList.remove('is-leaving'); curtain.classList.add('is-revealing', 'is-done'); }

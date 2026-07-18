@@ -40,6 +40,9 @@ add_action( 'wp_footer', function () {
 	</button>
 	<nav id="db-mnav" class="db-mnav" aria-label="Mobile" aria-hidden="true">
 		<div class="db-mnav-inner">
+			<a class="db-mnav-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home">
+				<img src="<?php echo esc_url( home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' ) ); ?>" alt="Domain Brothers" width="200" height="64" decoding="async">
+			</a>
 			<ul>
 				<?php foreach ( $links as $label => $href ) : ?>
 					<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
@@ -82,7 +85,9 @@ add_action( 'wp_footer', function () {
 			overflow-y: auto; -webkit-overflow-scrolling: touch;
 		}
 		.db-mnav.is-open { transform: translateX(0); }
-		.db-mnav-inner { padding: 78px 18px 28px; }
+		.db-mnav-inner { padding: 26px 18px 28px; }
+		.db-mnav-logo { display: block; margin: 0 6px 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(157,199,251,.15); }
+		.db-mnav-logo img { height: 46px; width: auto; max-width: 200px; display: block; }
 		.db-mnav ul { list-style: none; margin: 0; padding: 0; }
 		.db-mnav li {
 			opacity: 0; transform: translateX(14px);
