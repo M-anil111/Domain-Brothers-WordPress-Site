@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.5.2
+ * Version:     3.6.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.5.2' );
+define( 'DB_BLOCKS_LOADED', '3.6.0' );
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -1981,14 +1981,18 @@ if ( ! function_exists( 'db_ui_css' ) ) {
    10b. BELOW-HERO — section rhythm + domain listing cards + decor
    ========================================================================== */
 
-/* Soft blue canvas below the hero so white cards read as elevated. */
-.home.db-ui-active #primary,
-.home.db-ui-active .site-content,
-.home.db-ui-active .content-area {
+/* Soft blue canvas on EVERY front-end page (home, About, Contact, all CMS
+   pages, search, domain listing/single, buy, offer). This is purely a
+   background-color change — no layout/structure is touched elsewhere. */
+.db-ui-active #primary,
+.db-ui-active .site-content,
+.db-ui-active .content-area,
+.db-ui-active #main,
+.db-ui-active .site-main {
 	background: linear-gradient(180deg, #f4f8fe 0%, #eef4fc 100%);
 }
-/* Section headings below the hero */
-.home.db-ui-active h2 {
+/* Section headings */
+.db-ui-active h2 {
 	color: var(--db-navy); letter-spacing: -0.02em;
 }
 

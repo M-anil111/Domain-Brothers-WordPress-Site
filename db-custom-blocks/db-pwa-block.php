@@ -75,55 +75,28 @@ if ( ! function_exists( 'db_pwa_serve_manifest' ) ) {
 if ( ! function_exists( 'db_pwa_serve_sw' ) ) {
 	function db_pwa_serve_sw() {
 		header( 'Content-Type: application/javascript; charset=UTF-8' );
-		header( 'Cache-Control: public, max-age=3600' );
-		// Lets a query-string SW control the whole origin scope.
+		header( 'Cache-Control: no-cache, no-store, must-revalidate' );
 		header( 'Service-Worker-Allowed: /' );
-		$version = DB_PWA_CACHE_VERSION;
-		// Never cache admin, checkout, or API traffic — payments and
-		// dashboards must always hit the network.
+		// SELF-DESTRUCTING worker. A previous caching SW served stale page
+		// HTML to visitors even after they cleared cookies/cache. Any browser
+		// that still fetches this script now installs a worker that, on
+		// activate, wipes every cache, unregisters itself, and reloads open
+		// tabs — leaving no service worker in control so pages load fresh.
 		echo <<<JS
 'use strict';
-const CACHE = '{$version}';
-const NEVER_CACHE = ['/wp-admin', '/wp-login', '/buy-now', '/wp-json', 'wc-ajax', 'admin-ajax'];
-
-self.addEventListener('install', (e) => { self.skipWaiting(); });
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
-	e.waitUntil(
-		caches.keys().then((keys) =>
-			Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-		).then(() => self.clients.claim())
-	);
+	e.waitUntil((async () => {
+		try {
+			const keys = await caches.keys();
+			await Promise.all(keys.map((k) => caches.delete(k)));
+			await self.registration.unregister();
+			const clients = await self.clients.matchAll({ type: 'window' });
+			clients.forEach((c) => { try { c.navigate(c.url); } catch (e) {} });
+		} catch (e) {}
+	})());
 });
-
-self.addEventListener('fetch', (e) => {
-	const req = e.request;
-	if (req.method !== 'GET') { return; }
-	const url = new URL(req.url);
-	if (url.origin !== self.location.origin) { return; }
-	if (NEVER_CACHE.some((p) => url.pathname.indexOf(p) !== -1 || url.search.indexOf(p) !== -1)) { return; }
-
-	const isAsset = /\.(css|js|png|jpe?g|gif|svg|webp|woff2?)$/.test(url.pathname);
-
-	if (isAsset) {
-		// Stale-while-revalidate: serve cached instantly, refresh in background.
-		e.respondWith(
-			caches.open(CACHE).then(async (cache) => {
-				const cached = await cache.match(req);
-				const network = fetch(req).then((res) => {
-					if (res && res.status === 200) { cache.put(req, res.clone()); }
-					return res;
-				}).catch(() => cached);
-				return cached || network;
-			})
-		);
-	} else {
-		// Pages: NEVER cache HTML. The page markup carries inline
-		// enhancer JS that changes with each release; caching it made
-		// visitors run stale scripts (e.g. old domain-card rendering).
-		// Always go to network; only fall back to cache when fully offline.
-		e.respondWith(fetch(req).catch(() => caches.match(req)));
-	}
-});
+JS;
 JS;
 		exit;
 	}
@@ -146,6 +119,12 @@ add_action( 'wp_head', function () {
 }, 2 );
 
 add_action( 'wp_footer', function () {
-	$sw = wp_json_encode( home_url( '/?db_sw=1' ) );
-	echo "<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register({$sw}).catch(function(){});});}</script>\n";
+	// KILL SWITCH: a previously-installed service worker was caching page
+	// HTML on visitors' devices and serving stale markup (old domain-card
+	// rendering) even after they cleared cookies/cache — a clear doesn't
+	// unregister a service worker. Unregister any existing worker and wipe
+	// its Cache Storage on every load, so the page is always served fresh
+	// straight from the network. (Re-enable a caching SW later once the
+	// design has settled.)
+	echo "<script>if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}</script>\n";
 }, 99 );
