@@ -179,16 +179,6 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 				'desc'  => 'Follow our EPP code guidelines for GoDaddy, Namecheap, UniRegistry and more to unlock and move a domain without delay. Read the steps for your registrar.',
 				'kw'    => 'epp code guidelines',
 			),
-			'payment-plan-setup' => array(
-				'title' => 'Domain Payment Plan Setup: 0% Interest | Domain Brothers',
-				'desc'  => 'Set up a domain payment plan over 3, 6, 9 or 12 months at 0% interest, with equal instalments and no hidden fees. Spread the cost and secure your name today.',
-				'kw'    => 'domain payment plan',
-			),
-			'check-domain' => array(
-				'title' => 'Check Domain Availability Instantly | Domain Brothers',
-				'desc'  => 'Check domain availability across popular extensions in seconds, then see which premium alternatives we already hold in stock. Search a name and find out now.',
-				'kw'    => 'check domain availability',
-			),
 			'3-character-domains' => array(
 				'title' => '3 Character Domains for Sale, Ultra Rare | Domain Brothers',
 				'desc'  => 'Shop 3 character domains for sale, the scarcest asset class online, with escrow transfer and instalments available. Claim one before it is gone for good.',
@@ -316,9 +306,66 @@ if ( ! function_exists( 'db_seo_utility_slugs' ) ) {
 			'all-domains-sitemap'       => 'Domain Sitemap' . DB_SEO_SUFFIX,
 			'all-categories-sitemap'    => 'Category Sitemap' . DB_SEO_SUFFIX,
 			'domains-under-review'      => 'Domains Under Review' . DB_SEO_SUFFIX,
+			'payment-plan-setup'        => 'Set Up Your Payment Plan' . DB_SEO_SUFFIX,
+			// The theme's availability checker renders a 4-byte "Done" body
+			// and nothing else — there is no page here to rank.
+			'check-domain'              => 'Check a Domain' . DB_SEO_SUFFIX,
 		);
 	}
 }
+
+/* ─── Keep utility endpoints out of the XML sitemap ────────────────────────── */
+
+/**
+ * WordPress core's sitemap lists every published page, which meant Google
+ * was being handed 19 URLs that are checkout steps, payment-gateway
+ * callbacks, internal installment tooling, legacy theme sitemaps, or simply
+ * broken: /plugnpay/ returns a zero-byte body and /check-domain/ returns the
+ * four bytes "Done". Submitting those alongside the real content dilutes
+ * crawl budget and invites thin-content penalties. They are noindexed above;
+ * this stops them being advertised in the first place.
+ */
+if ( ! function_exists( 'db_seo_utility_page_ids' ) ) {
+	/**
+	 * Post IDs for the utility slugs.
+	 *
+	 * WP_Query has post_name__in but no post_name__not_in — passing one is
+	 * silently ignored, so the exclusion has to be done by ID.
+	 *
+	 * @return int[]
+	 */
+	function db_seo_utility_page_ids() {
+		static $ids = null;
+		if ( null !== $ids ) {
+			return $ids;
+		}
+		$slugs = array_keys( db_seo_utility_slugs() );
+		$ids   = $slugs ? get_posts( array(
+			'post_type'        => 'page',
+			'post_status'      => 'publish',
+			'post_name__in'    => $slugs,
+			'numberposts'      => count( $slugs ),
+			'fields'           => 'ids',
+			'no_found_rows'    => true,
+			'suppress_filters' => false,
+		) ) : array();
+		$ids = array_map( 'intval', (array) $ids );
+		return $ids;
+	}
+}
+
+add_filter( 'wp_sitemaps_posts_query_args', function ( $args, $post_type ) {
+	if ( 'page' !== $post_type ) {
+		return $args;
+	}
+	$ids = db_seo_utility_page_ids();
+	if ( ! $ids ) {
+		return $args;
+	}
+	$existing = isset( $args['post__not_in'] ) ? (array) $args['post__not_in'] : array();
+	$args['post__not_in'] = array_values( array_unique( array_merge( $existing, $ids ) ) );
+	return $args;
+}, 10, 2 );
 
 if ( ! function_exists( 'db_seo_is_utility' ) ) {
 	/**

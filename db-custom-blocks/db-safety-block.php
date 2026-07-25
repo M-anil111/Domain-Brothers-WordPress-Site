@@ -98,10 +98,11 @@ add_filter( 'wp_php_error_message', function ( $message ) {
 
 if ( ! function_exists( 'db_safety_template_guards' ) ) {
 	/**
-	 * Slug => guard config for DomainFolio page templates that throw a
-	 * TypeError when they render without the query parameters they assume.
-	 * PHP 7 coerced the missing values silently; PHP 8 raises, so each of
-	 * these returned HTTP 500 to every direct visitor and to Googlebot.
+	 * Slug => guard config for DomainFolio page templates that break when
+	 * they render without the query parameters they assume — either by
+	 * throwing (PHP 7 coerced the missing values silently; PHP 8 raises, so
+	 * these returned HTTP 500 to every direct visitor and to Googlebot) or
+	 * by rendering a meaningless order.
 	 *
 	 * The theme cannot be patched from here (and a theme update would revert
 	 * it anyway), so the request is redirected somewhere useful *before*
@@ -127,6 +128,14 @@ if ( ! function_exists( 'db_safety_template_guards' ) ) {
 	function db_safety_template_guards() {
 		return array(
 			'checkout' => array(
+				'require' => array( 'd', 'p' ),
+				'to'      => '/all-domains/',
+				'code'    => 302,
+			),
+			// Not a fatal: without a domain this renders a live-looking
+			// order form reading "Pay in full $0.00" and "Monthly: (
+			// Payments)", which was both in the XML sitemap and indexable.
+			'payment-plan-setup' => array(
 				'require' => array( 'd', 'p' ),
 				'to'      => '/all-domains/',
 				'code'    => 302,
