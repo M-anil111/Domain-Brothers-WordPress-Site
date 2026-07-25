@@ -203,7 +203,13 @@ add_action( 'template_redirect', static function () {
 	// phpcs:enable
 
 	if ( ! $d_raw || ! $p_raw ) {
-		return; // No params — let WordPress render the normal page.
+		// Never fall through to the theme here. DomainFolio's buy-now template
+		// fatals when it renders without a selected domain, so a bare
+		// /buy-now/ returned HTTP 500 to every direct visitor and to
+		// Googlebot. There is nothing meaningful to show without a domain
+		// anyway, so send the visitor to the marketplace.
+		wp_safe_redirect( home_url( '/all-domains/' ), 302 );
+		exit;
 	}
 
 	// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode

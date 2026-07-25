@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.8.2
+ * Version:     3.9.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.8.2' );
+define( 'DB_BLOCKS_LOADED', '3.9.1' );
+
+if ( ! function_exists( 'db_brand_logo_url' ) ) {
+	/**
+	 * The Domain Brothers logo URL, resolved once for the hero, the nav
+	 * drawer and the page curtain.
+	 *
+	 * The three of them each hardcoded the same uploads path built from
+	 * home_url(), which is the wrong base for an uploads file — it breaks
+	 * whenever WP_CONTENT_URL or UPLOADS is customized, WordPress lives in a
+	 * subdirectory, or uploads are offloaded — and it meant a single media
+	 * re-upload would silently break two of the three. Prefers the theme's
+	 * configured custom logo, then the known uploads file via the real
+	 * uploads base URL.
+	 */
+	function db_brand_logo_url() {
+		$id = get_theme_mod( 'custom_logo' );
+		if ( $id ) {
+			$src = wp_get_attachment_image_url( $id, 'full' );
+			if ( $src ) {
+				return $src;
+			}
+		}
+		$upload = wp_upload_dir();
+		if ( empty( $upload['error'] ) && ! empty( $upload['baseurl'] ) ) {
+			return $upload['baseurl'] . '/2017/03/Domain-Brothers.png';
+		}
+		return home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
+	}
+}
 
 if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	/**
@@ -258,7 +287,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 			$trust_html .= '<span class="db-hp-titem">' . esc_html( $item ) . '</span>';
 		}
-		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
+		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : db_brand_logo_url();
 
 		// Burger menu links (no WP nav menu is registered on this theme).
 		$menu = array(
@@ -2358,36 +2387,13 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	return esc_html( $domain_name ) . $price_str . ' | Domain Brothers';
 } );
 
-/* Domain listing's richer, price-inclusive description — consumed by both
- * the plain <meta name="description"> below and by the AEO block's OG/Twitter
- * tags (via the db_aeo_description filter) so there's one description, not
- * two competing ones. */
-if ( ! function_exists( 'db_domain_meta_description' ) ) {
-	function db_domain_meta_description( $post ) {
-		$domain_name = get_post_meta( $post->ID, 'domain_name', true ) ?: $post->post_title;
-		$price       = get_post_meta( $post->ID, 'domain_price', true );
-		$price_fmt   = $price ? '$' . number_format( (float) $price, 0 ) : 'Contact for price';
-		return 'Buy ' . $domain_name . ' for ' . $price_fmt . '. Premium domain brokerage — expert transfer, secure escrow, flexible payment plans. Domain Brothers.';
-	}
-}
-
-add_filter( 'db_aeo_description', function ( $description ) {
-	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
-		return $description;
-	}
-	return db_domain_meta_description( get_queried_object() );
-} );
-
-/* Inject the plain SEO <meta name="description"> tag. Open Graph/Twitter
- * tags for domain pages are handled once, by the AEO block (Block 9) —
- * see the db_aeo_description filter above. */
-add_action( 'wp_head', function () {
-	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
-		return;
-	}
-	$desc = db_domain_meta_description( get_queried_object() );
-	echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
-}, 1 ); // priority 1 so theme can override at default priority
+/*
+ * This block no longer emits <meta name="description"> or its own
+ * db_aeo_description filter. The SEO Meta block is now the single owner of
+ * the description tag for every URL on the site, domain listings included;
+ * while both emitted, every listing page shipped two competing descriptions.
+ * See db_seo_domain_def() in db-seo-meta-block.php.
+ */
 
 
 /* ============================================================
@@ -2749,3 +2755,8 @@ require_once __DIR__ . '/db-mobilenav-block.php';
    PAGE CURTAIN — branded transition overlay
    ============================================================ */
 require_once __DIR__ . '/db-curtain-block.php';
+
+/* ============================================================
+   SAFETY — fatal-error recorder + branded failure page
+   ============================================================ */
+require_once __DIR__ . '/db-safety-block.php';
