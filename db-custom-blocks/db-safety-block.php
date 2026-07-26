@@ -158,6 +158,58 @@ add_action( 'template_redirect', function () {
 	}
 }, 20 );
 
+/* ─── Broken /landing-css/ and /landing-images/ asset references ───────────── */
+
+/**
+ * Domain listing pages opened with ?lis=y (the "developed by" attribution
+ * marker the theme's own sitemap already links to — see Block 14 above)
+ * render a completely separate, hand-rolled landing-page document instead
+ * of the normal single-domain.php template: its own <html><head>, no
+ * wp_head()/body_class(), referencing THREE stylesheets plus a favicon
+ * under /landing-css/ and /landing-images/. None of that directory exists
+ * on this server — confirmed live, a raw webserver 404 (not even a
+ * WordPress 404), meaning the request never reaches PHP at all and can't
+ * be caught with a normal WordPress hook. Every one of those files IS
+ * reachable at the exact same path on the production apex domain.
+ *
+ * The template's own asset references are themselves inconsistent — some
+ * already point at production correctly, some point at this (beta) host
+ * (the ones that 404), and at least one is missing the path separator
+ * entirely (".comlanding-css/..."). All are normalized here to the one
+ * confirmed-working host, by matching the landing-css/ or landing-images/
+ * path segment itself rather than trying to special-case every variant of
+ * what precedes it.
+ */
+if ( ! function_exists( 'db_safety_fix_landing_assets' ) ) {
+	function db_safety_fix_landing_assets( $html ) {
+		if ( ! is_string( $html ) || '' === $html ) {
+			return $html;
+		}
+		if ( false === strpos( $html, 'landing-css/' ) && false === strpos( $html, 'landing-images/' ) ) {
+			return $html;
+		}
+		return preg_replace_callback(
+			'#(href|src)=(["\'])(?:https?:)?//?[^"\']*?(landing-(?:css|images)/[^"\']*)\2#i',
+			function ( $m ) {
+				// Already pointing at production, or at the separate (and
+				// working) CDN host — leave it exactly as-is.
+				if ( false !== stripos( $m[0], 'www.domainbrothers.com' ) || false !== stripos( $m[0], 'cdn.domainbrothers.com' ) ) {
+					return $m[0];
+				}
+				return $m[1] . '=' . $m[2] . 'https://www.domainbrothers.com/' . $m[3] . $m[2];
+			},
+			$html
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_fix_landing_assets' );
+}, 21 );
+
 /* ─── Branded failure page ─────────────────────────────────────────────────── */
 
 add_filter( 'wp_php_error_message', function ( $message ) {
@@ -218,9 +270,22 @@ if ( ! function_exists( 'db_safety_fix_domain_links' ) ) {
 			return $html;
 		}
 
-		$html = preg_replace(
+		$html = preg_replace_callback(
 			'#(href=["\'])https?://(?:www\.)?domainbrothers\.com(/[^"\']*)?(["\'])#i',
-			'${1}https://' . $host . '${2}${3}',
+			function ( $m ) use ( $host ) {
+				// Exception: /landing-css/ and /landing-images/ are NOT
+				// migrated to this host at all (confirmed 404 — see
+				// db_safety_fix_landing_assets() below, which deliberately
+				// points those at production because nothing else serves
+				// them). Rewriting this href back to the current host would
+				// undo that fix — these two functions are the one place on
+				// the site where "point at production" is the correct
+				// answer, everywhere else it's the bug being fixed.
+				if ( isset( $m[2] ) && ( false !== stripos( $m[2], 'landing-css/' ) || false !== stripos( $m[2], 'landing-images/' ) ) ) {
+					return $m[0];
+				}
+				return $m[1] . 'https://' . $host . $m[2] . $m[3];
+			},
 			$html
 		);
 
