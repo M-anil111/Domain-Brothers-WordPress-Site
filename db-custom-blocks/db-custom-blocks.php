@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.14.0
+ * Version:     3.14.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.14.0' );
+define( 'DB_BLOCKS_LOADED', '3.14.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2286,6 +2286,37 @@ body.db-ui-active { padding-top: 70px !important; }
    carries the brand). Keep the header search usable. */
 .home.db-ui-active .custom-logo-link,
 .home.db-ui-active .site-header .custom-logo { display: none !important; }
+
+/* Domain listing page hero: #main (id + class, so it normally beats the
+   soft-canvas rule on specificity alone — but that rule targets it by ID
+   too, and rules of equal specificity for the same property fall back to
+   source order) sits INSIDE the dark hero banner (#primary.banner_bg,
+   fixed above), yet it still matched the sitewide "soft blue canvas on
+   every page" rule above and painted a light background over nearly the
+   entire hero — confirmed live: "Present your best offer" and the
+   "get this domain" trust icons are styled by the theme as white text for
+   a dark backdrop, and with #main's own light canvas painted on top of
+   #primary between them, that white text was reading as barely-visible
+   pale-on-pale. Scoped strictly to when #main is actually inside
+   .banner_bg, so every other page's #main keeps the soft canvas exactly as
+   it already had it. */
+.db-ui-active .banner_bg #main,
+.db-ui-active .banner_bg .site-main { background: transparent; }
+
+/* Domain listing page footer: style.css (enqueued only on this template)
+   defines .footer-top with a bright brand-green background — presumably
+   meant to be a payment-icons accent strip, but on its own, next to
+   nothing else on the page in that color, it reads as a jarring, out-of-
+   place green bar. Every other page's footer stays navy (matching
+   the rest of the design) since style.css isn't loaded there and this
+   class isn't present; kept the same navy here for consistency instead of
+   carrying over a leftover brand color from before the redesign.
+   .ft_contant is a second, EMPTY, position:absolute div using the exact
+   same green (confirmed live: fixing .footer-top alone left it fully
+   intact, since it's a separate box painted on top, not a background of
+   .footer-top itself) — same leftover color, same fix. */
+.db-ui-active .footer-top,
+.db-ui-active .ft_contant { background: #0a1628 !important; }
 
 /* ==========================================================================
    10b. BELOW-HERO — section rhythm + domain listing cards + decor
