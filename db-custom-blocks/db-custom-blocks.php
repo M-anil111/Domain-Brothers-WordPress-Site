@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.13.2
+ * Version:     3.14.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.13.2' );
+define( 'DB_BLOCKS_LOADED', '3.14.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2095,6 +2095,18 @@ body.db-ui-active { padding-top: 70px !important; }
    #masthead's — that one is the only header on every other page too)
    removes the duplicate without touching the text column next to it. */
 .db-ui-active .header_billing .inner_billing_logo { display: none !important; }
+/* Now that real Bootstrap CSS is loaded (see below), this heading's plain
+   browser-default size is replaced by Bootstrap's own fixed h1 size (36px)
+   — confirmed live: at that size "Sales@DomainBrothers.com" (one unbroken
+   word, an email link) runs a few px past the edge of a narrow phone
+   viewport and is silently clipped by the site-wide overflow-x:hidden
+   fix (db-mobilenav-block.php) rather than wrapping, with no scrollbar to
+   hint at it. Sized down and given somewhere to break as a word if a
+   narrower device ever repeats this. */
+.db-ui-active .header_billing .ques_title h1 {
+	font-size: clamp(18px, 5vw, 28px);
+	overflow-wrap: break-word; word-break: break-word;
+}
 
 .db-ui-active header form,
 .db-ui-active form.search-form,

@@ -1,24 +1,40 @@
 <?php
 /**
- * DB Domain Page Block — restores the single domain listing template
+ * DB Domain Page Block — restores the theme's own grid CSS + the single
+ * domain listing template
  *
- * The domain single-page template ("Gizmofreak.ca is for sale!", the actual
- * product page a buyer lands on) never received the theme's own CSS: no
- * <link> for the theme's assets/css/style.css or assets/css/bootstrap.min.css
- * is enqueued for is_singular('domain'), even though both files exist on
- * the server and every other content-heavy page style rule is defined only
- * in them. The effect, verified against the live HTML:
+ * bootstrap.min.css exists on the server and is fully functional — it was
+ * simply never enqueued anywhere except (as of this block, previously) the
+ * single-domain template. Every other page's markup still uses Bootstrap's
+ * .row / .col-md-* / .col-sm-* grid classes throughout (the homepage
+ * header, the checkout flow's billing header, the domain-listing sidebar,
+ * more we likely haven't hit yet), and with no grid CSS behind them those
+ * classes are plain unstyled <div>s: columns meant to sit side-by-side
+ * instead stack full-width, one on top of the other. That is the root
+ * cause of a whole class of bugs patched one at a time this session (a
+ * duplicate logo on the checkout page, an empty header gap on the
+ * homepage, more) — every one of them was this same missing stylesheet.
+ * Loading it site-wide fixes the class of bug at the source instead of
+ * requiring a new targeted CSS patch every time another instance surfaces.
  *
- *   - The page renders with zero theme styling — plain black-on-white text,
- *     no card/spacing treatment, clashing hard with every other page.
- *   - style.css is what hides one of each .desktop_view / .mobile_view pair
- *     (a legacy "render both, CSS shows only one per breakpoint" pattern
- *     used throughout this template) — without it, BOTH copies of the
+ * The theme's own style.css is NOT loaded site-wide by this — only for
+ * is_singular('domain'), unchanged from before. That file's specific job
+ * there (documented below) was verified only for that one template; the
+ * open question of whether other templates have the same .desktop_view /
+ * .mobile_view duplicate-content pattern is separate from this fix and
+ * hasn't been checked, so widening that one stays out of scope here.
+ *
+ * On the single domain listing template ("Gizmofreak.ca is for sale!", the
+ * actual product page a buyer lands on) specifically, style.css also:
+ *
+ *   - Hides one of each .desktop_view / .mobile_view pair (a legacy
+ *     "render both, CSS shows only one per breakpoint" pattern used
+ *     throughout this template) — without it, BOTH copies of the
  *     "Get this domain in less than 2 hours" icon row, and both of the
  *     "we take privacy seriously" notices, show stacked on top of each
  *     other, reading as duplicated content.
- *   - The "Make an Offer" button is completely non-functional. It only
- *     sets data-toggle="modal"/data-target="#first" (Bootstrap's own
+ *   - The "Make an Offer" button is completely non-functional there. It
+ *     only sets data-toggle="modal"/data-target="#first" (Bootstrap's own
  *     modal-trigger convention) and relies on Bootstrap's core JS to
  *     actually show that modal — but no such file was ever migrated to
  *     this theme's local assets (only bootstrap-select.min.js, a dropdown
@@ -31,13 +47,30 @@
  * saves, the same obstacle as the other theme-file fixes this session),
  * this enqueues the theme's own existing CSS and a small, dependency-free
  * replacement for just the one Bootstrap 3 behavior actually used here
- * (data-toggle="modal" / data-dismiss="modal"), scoped to domain singular
- * pages only so it can't affect anything else on the site.
+ * (data-toggle="modal" / data-dismiss="modal").
  *
  * @package DomainBrothers
  */
 
 defined( 'ABSPATH' ) || exit;
+
+add_action( 'wp_enqueue_scripts', function () {
+	if ( is_admin() ) {
+		return;
+	}
+	// Early (before the "ui" design-system stylesheet, which has no
+	// explicit priority and so registers at the default 10): every rule in
+	// db_ui_css() needs to keep winning the cascade the same way it already
+	// does today, by loading after this rather than by fighting it with
+	// !important. Already exists on the server, reachable directly
+	// (verified: HTTP 200) — it was simply never enqueued.
+	wp_enqueue_style(
+		'db-domainfolio-bootstrap',
+		get_template_directory_uri() . '/assets/css/bootstrap.min.css',
+		array(),
+		null
+	);
+}, 5 );
 
 add_action( 'wp_enqueue_scripts', function () {
 	if ( ! is_singular( 'domain' ) ) {
@@ -46,10 +79,10 @@ add_action( 'wp_enqueue_scripts', function () {
 
 	$theme_uri = get_template_directory_uri();
 
-	// The theme's own stylesheets. Both already exist on the server and are
-	// reachable directly (verified: HTTP 200) — they were simply never
-	// enqueued for this one template. Bootstrap first so style.css, which
-	// depends on and overrides parts of it, wins the cascade.
+	// style.css depends on and overrides parts of Bootstrap, so it must load
+	// after it — declaring the dependency here works whether that handle was
+	// registered by the site-wide hook above or (if that hook is ever
+	// removed) freshly by this one.
 	wp_enqueue_style( 'db-domainfolio-bootstrap', $theme_uri . '/assets/css/bootstrap.min.css', array(), null );
 	wp_enqueue_style( 'db-domainfolio-style', $theme_uri . '/assets/css/style.css', array( 'db-domainfolio-bootstrap' ), null );
 
