@@ -29,6 +29,15 @@
  *      human to clear it) — so it is fixed where the plugin already has a
  *      hook: CF7's own wpcf7_form_elements output filter.
  *
+ * A fourth job lives here too: db_safety_fix_domain_links() rewrites the
+ * theme's homepage "Start Search" CTA, which is hardcoded to
+ * http://domainbrothers.com/all-domains/ — the production apex domain, not
+ * this (beta) site — so every click sent a visitor away entirely. The same
+ * pass upgrades any same-host http:// reference to https:// found in the
+ * theme's markup (several image tags and one internal link shipped as
+ * plain http://), on top of the CSP upgrade-insecure-requests header that
+ * already handles this for browsers that honor it.
+ *
  * @package DomainBrothers
  */
 
@@ -126,6 +135,54 @@ if ( ! function_exists( 'db_safety_strip_dead_cf7_tags' ) ) {
 	}
 }
 add_filter( 'wpcf7_form_elements', 'db_safety_strip_dead_cf7_tags', 20 );
+
+/* ─── Wrong-host links and mixed content in theme markup ───────────────────── */
+
+if ( ! function_exists( 'db_safety_fix_domain_links' ) ) {
+	/**
+	 * Rewrites the theme's hardcoded production-domain links to the current
+	 * host, and upgrades same-host http:// references to https://.
+	 *
+	 * The homepage's "Start Search" button (class="easysteps-search") is
+	 * hardcoded in the DomainFolio theme template as
+	 * href="http://domainbrothers.com/all-domains/" — the live production
+	 * apex domain — instead of a relative path or home_url(). On this (beta)
+	 * site every click on that CTA sent the visitor to a different domain
+	 * entirely. The regex only matches an href pointing at that exact apex
+	 * domain, so it can't touch an email address or a plain-text mention of
+	 * the company name elsewhere on the page.
+	 */
+	function db_safety_fix_domain_links( $html ) {
+		if ( ! is_string( $html ) || '' === $html ) {
+			return $html;
+		}
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( ! $host ) {
+			return $html;
+		}
+
+		$html = preg_replace(
+			'#(href=["\'])https?://(?:www\.)?domainbrothers\.com(/[^"\']*)?(["\'])#i',
+			'${1}https://' . $host . '${2}${3}',
+			$html
+		);
+
+		// Belt-and-suspenders on top of the CSP upgrade-insecure-requests
+		// header: several theme <img> tags and one internal link ship as
+		// plain http:// for this exact host, which browsers that don't
+		// honor CSP (older UAs, some crawlers) would fetch unencrypted.
+		$html = str_replace( 'http://' . $host, 'https://' . $host, $html );
+
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_fix_domain_links' );
+}, 0 );
 
 /* ─── Guards for theme templates that fatal under PHP 8 ────────────────────── */
 
