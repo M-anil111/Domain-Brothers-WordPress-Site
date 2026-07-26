@@ -39,8 +39,16 @@ if ( ! function_exists( 'db_analytics_get_stats' ) ) {
 		$won      = 0.0;
 		$total    = 0;
 		foreach ( (array) $rows as $r ) {
-			$by_status[ $r->status ] = (int) $r->n;
-			$total                  += (int) $r->n;
+			// Only count a status into the funnel if it's one of the 5 the
+			// chart actually renders. A status column value outside that
+			// set (possible on a row written before every save path
+			// whitelisted it) would still inflate funnel_max below while
+			// never appearing as a bar, silently compressing every visible
+			// stage's percentage.
+			if ( array_key_exists( $r->status, $by_status ) ) {
+				$by_status[ $r->status ] = (int) $r->n;
+			}
+			$total += (int) $r->n;
 			if ( 'won' === $r->status ) {
 				$won += (float) $r->amt;
 			} elseif ( 'lost' !== $r->status ) {

@@ -78,6 +78,45 @@ add_action( 'init', 'db_crm_create_table' );
    2. CREATE / VALIDATE LEAD
    ========================================================================== */
 
+if ( ! function_exists( 'db_crm_allowed_statuses' ) ) {
+	/**
+	 * The single source of truth for valid `status` values — matches the
+	 * ENUM('new','contacted','negotiating','won','lost') column definition.
+	 * Previously inlined separately at 4 call sites; the Edit Lead save
+	 * handler had no copy of this list at all, so it wrote whatever string
+	 * a submitted form (or a forged request) carried straight into the
+	 * ENUM column with no validation.
+	 */
+	function db_crm_allowed_statuses() {
+		return array( 'new', 'contacted', 'negotiating', 'won', 'lost' );
+	}
+}
+
+if ( ! function_exists( 'db_crm_allowed_sources' ) ) {
+	function db_crm_allowed_sources() {
+		return array( 'offer_form', 'direct', 'referral' );
+	}
+}
+
+if ( ! function_exists( 'db_crm_clean_offer_amount' ) ) {
+	/**
+	 * Strips currency symbols/thousands separators before casting —
+	 * floatval('$2,500') is 0.00 and floatval('2,500') is 2.00, silently
+	 * corrupting every offer typed with a $ or comma. Shared so the Add/Edit
+	 * Lead form and the quick-edit AJAX handler clean input exactly like the
+	 * CF7 capture path does, instead of each parsing it differently.
+	 *
+	 * @return float|null
+	 */
+	function db_crm_clean_offer_amount( $raw ) {
+		if ( null === $raw || '' === $raw ) {
+			return null;
+		}
+		$clean = preg_replace( '/[^0-9.]/', '', (string) $raw );
+		return is_numeric( $clean ) ? (float) $clean : null;
+	}
+}
+
 if ( ! function_exists( 'db_crm_create_lead' ) ) {
 	/**
 	 * Insert a new lead into wp_db_leads.
@@ -98,24 +137,15 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
 			return new WP_Error( 'missing_domain', __( 'Domain name is required.', 'db-blocks' ) );
 		}
 
-		$allowed_statuses = array( 'new', 'contacted', 'negotiating', 'won', 'lost' );
-		$status           = isset( $data['status'] ) && in_array( $data['status'], $allowed_statuses, true )
+		$status = isset( $data['status'] ) && in_array( $data['status'], db_crm_allowed_statuses(), true )
 			? $data['status']
 			: 'new';
 
-		$allowed_sources = array( 'offer_form', 'direct', 'referral' );
-		$source          = isset( $data['source'] ) && in_array( $data['source'], $allowed_sources, true )
+		$source = isset( $data['source'] ) && in_array( $data['source'], db_crm_allowed_sources(), true )
 			? $data['source']
 			: 'offer_form';
 
-		$offer_amount = null;
-		if ( isset( $data['offer_amount'] ) && $data['offer_amount'] !== '' ) {
-			// Strip currency symbols/thousands separators first — floatval('$2,500')
-			// is 0.00 and floatval('2,500') is 2.00, silently corrupting every
-			// offer typed with a $ or comma.
-			$clean = preg_replace( '/[^0-9.]/', '', (string) $data['offer_amount'] );
-			$offer_amount = is_numeric( $clean ) ? (float) $clean : null;
-		}
+		$offer_amount = isset( $data['offer_amount'] ) ? db_crm_clean_offer_amount( $data['offer_amount'] ) : null;
 
 		$insert = array(
 			'domain'       => $domain,
@@ -196,9 +226,13 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 		'domain'       => $domain,
 		'name'         => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'name' ) : ( $posted['your-name'] ?? '' ),
 		'email'        => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'email' ) : ( $posted['your-email'] ?? '' ),
-		'phone'        => trim( (string) ( $posted['your-phone'] ?? $posted['phone'] ?? $posted['tel'] ?? '' ) ),
+		// Reuse Block 6's map here too, not a third ad-hoc field-name list —
+		// it didn't recognize the live "Offer Contact" form's offer-phone/
+		// offer-msg fields, so every real submission had a blank phone
+		// number and message regardless of what the customer actually typed.
+		'phone'        => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'phone' ) : trim( (string) ( $posted['your-phone'] ?? $posted['phone'] ?? $posted['tel'] ?? '' ) ),
 		'offer_amount' => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'amount' ) : ( $posted['amount'] ?? '' ),
-		'message'      => trim( (string) ( $posted['your-message'] ?? $posted['message'] ?? $posted['comments'] ?? '' ) ),
+		'message'      => function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'message' ) : trim( (string) ( $posted['your-message'] ?? $posted['message'] ?? $posted['comments'] ?? '' ) ),
 		'source'       => 'offer_form',
 		'status'       => 'new',
 	);
@@ -377,7 +411,7 @@ if ( ! function_exists( 'db_crm_handle_bulk_action' ) ) {
 		global $wpdb;
 		$table = $wpdb->prefix . 'db_leads';
 
-		$allowed_statuses = array( 'contacted', 'negotiating', 'won', 'lost', 'new' );
+		$allowed_statuses = db_crm_allowed_statuses();
 		$new_status       = sanitize_text_field( wp_unslash( $_POST['bulk_action'] ) );
 		if ( in_array( $new_status, $allowed_statuses, true ) ) {
 			$ids = array_map( 'absint', $_POST['lead_ids'] );
@@ -671,22 +705,38 @@ if ( ! function_exists( 'db_crm_handle_save_lead' ) ) {
 
 		global $wpdb;
 		$table     = $wpdb->prefix . 'db_leads';
+		$raw_status = sanitize_text_field( wp_unslash( $_POST['status'] ?? 'new' ) );
+		$raw_source = sanitize_text_field( wp_unslash( $_POST['source'] ?? 'direct' ) );
 		$post_data = array(
 			'domain'       => sanitize_text_field( wp_unslash( $_POST['domain'] ?? '' ) ),
 			'name'         => sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ),
 			'email'        => sanitize_email( wp_unslash( $_POST['email'] ?? '' ) ),
 			'phone'        => sanitize_text_field( wp_unslash( $_POST['phone'] ?? '' ) ),
-			'offer_amount' => isset( $_POST['offer_amount'] ) && $_POST['offer_amount'] !== ''
-				? floatval( $_POST['offer_amount'] )
-				: null,
+			// db_crm_clean_offer_amount(), not a bare floatval(): this save
+			// path previously corrupted any offer typed with a $ or comma
+			// straight to 0.00, unlike the CF7-capture path which already
+			// cleaned it — same class of bug as the field-name divergence
+			// fixed above, just for the currency format instead of the name.
+			'offer_amount' => isset( $_POST['offer_amount'] ) ? db_crm_clean_offer_amount( wp_unslash( $_POST['offer_amount'] ) ) : null,
 			'message'      => sanitize_textarea_field( wp_unslash( $_POST['message'] ?? '' ) ),
-			'status'       => sanitize_text_field( wp_unslash( $_POST['status'] ?? 'new' ) ),
-			'source'       => sanitize_text_field( wp_unslash( $_POST['source'] ?? 'direct' ) ),
+			// Whitelisted against the ENUM column, like every other write
+			// path already does — this one was the sole exception, writing
+			// whatever string the request carried straight into the ENUM.
+			'status'       => in_array( $raw_status, db_crm_allowed_statuses(), true ) ? $raw_status : 'new',
+			'source'       => in_array( $raw_source, db_crm_allowed_sources(), true ) ? $raw_source : 'direct',
 			'notes'        => sanitize_textarea_field( wp_unslash( $_POST['notes'] ?? '' ) ),
 			'admin_notes'  => sanitize_textarea_field( wp_unslash( $_POST['admin_notes'] ?? '' ) ),
 		);
 
 		if ( $lead_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$exists = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $lead_id ) );
+			if ( ! $exists ) {
+				$errors[] = __( 'Lead not found — it may have been deleted.', 'db-blocks' );
+				db_crm_form_errors( $errors );
+				return;
+			}
+
 			// Update
 			$update_data = $post_data;
 			$formats     = array( '%s', '%s', '%s', '%s', '%f', '%s', '%s', '%s', '%s', '%s' );
@@ -695,7 +745,12 @@ if ( ! function_exists( 'db_crm_handle_save_lead' ) ) {
 				$update_data['offer_amount'] = null;
 			}
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->update( $table, $update_data, array( 'id' => $lead_id ) );
+			$updated = $wpdb->update( $table, $update_data, array( 'id' => $lead_id ), $formats, array( '%d' ) );
+			if ( false === $updated ) {
+				$errors[] = __( 'Could not save changes to the database.', 'db-blocks' );
+				db_crm_form_errors( $errors );
+				return;
+			}
 			wp_safe_redirect( admin_url( 'admin.php?page=db-crm-leads&lead_saved=1' ) );
 			exit;
 		}
@@ -740,7 +795,10 @@ if ( ! function_exists( 'db_crm_page_add_lead' ) ) {
 			'source' => 'direct', 'notes' => '', 'admin_notes' => '',
 		);
 		$lead = $lead ? array_merge( $defaults, $lead ) : $defaults;
-		$page_title = $lead_id ? 'Edit Lead — ' . esc_html( $lead['domain'] ) : 'Add Lead';
+		// Escaped once, at output — building this with esc_html() already
+		// applied and then escaping the whole string again at echo time
+		// turned a domain containing "&" into a literal "&amp;amp;".
+		$page_title = $lead_id ? 'Edit Lead — ' . $lead['domain'] : 'Add Lead';
 		?>
 		<div class="wrap db-crm-wrap">
 			<h1><?php echo esc_html( $page_title ); ?></h1>
@@ -940,8 +998,11 @@ add_action( 'admin_init', function() {
 			db_crm_csv_safe( $lead['email'] ),
 			db_crm_csv_safe( $lead['phone'] ),
 			$lead['offer_amount'] !== null ? number_format( (float) $lead['offer_amount'], 2 ) : '',
-			$lead['status'],
-			$lead['source'],
+			// Belt-and-suspenders: status/source are now whitelisted at
+			// every write path, but any row written before that guard
+			// existed everywhere could still carry an arbitrary string.
+			db_crm_csv_safe( $lead['status'] ),
+			db_crm_csv_safe( $lead['source'] ),
 			db_crm_csv_safe( $lead['message'] ),
 			db_crm_csv_safe( $lead['admin_notes'] ),
 			$lead['created_at'],
@@ -976,22 +1037,31 @@ add_action( 'wp_ajax_db_crm_quick_edit', function() {
 	global $wpdb;
 	$table = $wpdb->prefix . 'db_leads';
 
-	$allowed_statuses = array( 'new', 'contacted', 'negotiating', 'won', 'lost' );
+	$allowed_statuses = db_crm_allowed_statuses();
 	$status           = sanitize_text_field( wp_unslash( $_POST['status'] ?? 'new' ) );
 	if ( ! in_array( $status, $allowed_statuses, true ) ) {
 		wp_send_json_error( 'Invalid status.' );
 	}
 
 	$admin_notes  = sanitize_textarea_field( wp_unslash( $_POST['admin_notes'] ?? '' ) );
-	$offer_raw    = isset( $_POST['offer_amount'] ) && $_POST['offer_amount'] !== '' ? $_POST['offer_amount'] : null;
-	$offer_amount = $offer_raw !== null ? floatval( $offer_raw ) : null;
+	// db_crm_clean_offer_amount(), matching the create and edit-lead-save
+	// paths — a type="number" input mostly keeps this clean client-side,
+	// but $_POST is scriptable and some locales render a number input's
+	// decimal separator as a comma, which a bare floatval() truncates at.
+	$offer_amount = isset( $_POST['offer_amount'] ) ? db_crm_clean_offer_amount( wp_unslash( $_POST['offer_amount'] ) ) : null;
 
 	$data    = array( 'status' => $status, 'admin_notes' => $admin_notes );
 	$formats = array( '%s', '%s' );
 
-	if ( $offer_amount !== null ) {
+	// Include offer_amount whenever the field was submitted at all — even
+	// when it resolves to null (the admin cleared it). The previous
+	// `if ($offer_amount !== null)` guard meant clearing the field only
+	// ever updated the admin's own browser: the key was never added to
+	// $data, so the UPDATE never touched the column and the old value
+	// stayed in the database while the UI reported success.
+	if ( isset( $_POST['offer_amount'] ) ) {
 		$data['offer_amount'] = $offer_amount;
-		$formats[]            = '%f';
+		$formats[]            = $offer_amount !== null ? '%f' : null;
 	}
 
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -1055,7 +1125,7 @@ add_action( 'wp_ajax_db_crm_bulk_action', function() {
 		wp_send_json_error( 'Security check failed.' );
 	}
 
-	$allowed_statuses = array( 'new', 'contacted', 'negotiating', 'won', 'lost' );
+	$allowed_statuses = db_crm_allowed_statuses();
 	$new_status       = sanitize_text_field( wp_unslash( $_POST['status'] ?? '' ) );
 	if ( ! in_array( $new_status, $allowed_statuses, true ) ) {
 		wp_send_json_error( 'Invalid status.' );

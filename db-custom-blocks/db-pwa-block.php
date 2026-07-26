@@ -97,7 +97,6 @@ self.addEventListener('activate', (e) => {
 	})());
 });
 JS;
-JS;
 		exit;
 	}
 }

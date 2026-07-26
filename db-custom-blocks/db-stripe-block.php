@@ -994,7 +994,16 @@ if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 			] );
 
 			if ( function_exists( 'db_send_branded_email' ) ) {
-				db_send_branded_email( $customer_email, $subj, $body );
+				// db_send_branded_email() sends Content-Type: text/html, but
+				// $body above is plain text joined with "\n" — a literal
+				// newline is not a line break in HTML, so every customer
+				// receipt rendered as one run-on paragraph. nl2br() only
+				// here, not inside db_send_branded_email() itself, since
+				// other callers already pass real HTML through that
+				// function and a blanket nl2br() there would double up on
+				// their intentional <p>/<br> tags. The plain-text wp_mail()
+				// fallback below is correct as-is.
+				db_send_branded_email( $customer_email, $subj, nl2br( esc_html( $body ) ) );
 			} else {
 				wp_mail( $customer_email, $subj, $body );
 			}
@@ -1013,7 +1022,7 @@ if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 		] );
 
 		if ( function_exists( 'db_send_branded_email' ) ) {
-			db_send_branded_email( $admin_email, $admin_subj, $admin_body );
+			db_send_branded_email( $admin_email, $admin_subj, nl2br( esc_html( $admin_body ) ) );
 		} else {
 			wp_mail( $admin_email, $admin_subj, $admin_body );
 		}
@@ -1042,7 +1051,7 @@ if ( ! function_exists( 'db_stripe_on_payment_failed' ) ) {
 			] );
 
 			if ( function_exists( 'db_send_branded_email' ) ) {
-				db_send_branded_email( $customer_email, $subj, $body );
+				db_send_branded_email( $customer_email, $subj, nl2br( esc_html( $body ) ) );
 			} else {
 				wp_mail( $customer_email, $subj, $body );
 			}
@@ -1060,7 +1069,7 @@ if ( ! function_exists( 'db_stripe_on_payment_failed' ) ) {
 		] );
 
 		if ( function_exists( 'db_send_branded_email' ) ) {
-			db_send_branded_email( $admin_email, $admin_subj, $admin_body );
+			db_send_branded_email( $admin_email, $admin_subj, nl2br( esc_html( $admin_body ) ) );
 		} else {
 			wp_mail( $admin_email, $admin_subj, $admin_body );
 		}

@@ -101,6 +101,63 @@ if ( ! function_exists( 'db_safety_record_fatal' ) ) {
 
 register_shutdown_function( 'db_safety_record_fatal' );
 
+/* ─── 'p' query-var collision with the theme's shared footer ───────────────── */
+
+/**
+ * The DomainFolio theme's footer.php — included on EVERY page via
+ * get_footer() — independently reads $_REQUEST['p'] expecting a
+ * base64-encoded price (the same convention db-stripe-block.php uses for
+ * its own checkout: ?d=<base64 domain>&p=<base64 price>), for its own GST
+ * line-item calculation:
+ *
+ *   $temp_request_price = str_replace("$", "", base64_decode($_REQUEST['p']));
+ *   $GSTPrice = $temp_request_price * GST_Rate / 100;
+ *
+ * 'p' is ALSO WordPress's own reserved query var for a numeric post ID
+ * (?p=123) — one of the most common URL patterns on the web, probed by
+ * search engines, scanners, and old bookmarked links. Any ?p=<value> that
+ * doesn't happen to base64-decode to a clean number — including the exact
+ * WordPress convention it collides with — makes that line multiply a
+ * non-numeric string, which is a fatal TypeError on PHP 8 (PHP 7 silently
+ * coerced it to 0). Since footer.php runs globally, this crashed the
+ * front page and every 404 template with a plain ?p=<id> on it.
+ *
+ * Neutralized here rather than at the theme source (blocked by Wordfence's
+ * WAF, same obstacle as the other theme-file fixes this session) by
+ * replacing an unsafe value with a harmless base64-encoded "0" — matching
+ * footer.php's own no-p-supplied fallback of $GSTPrice = 0 — everywhere
+ * except the pages that legitimately rely on this exact value: buy-now
+ * (rendered entirely by this plugin), and checkout / payment-plan-setup
+ * (the theme's own legacy templates, already guarded elsewhere to require
+ * a real d+p pair before rendering at all).
+ */
+add_action( 'template_redirect', function () {
+	if ( ! isset( $_REQUEST['p'] ) || is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	if ( is_page( array( 'buy-now', 'checkout', 'payment-plan-setup' ) ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$raw     = (string) wp_unslash( $_REQUEST['p'] );
+	$decoded = base64_decode( $raw, true );
+	$clean   = ( false !== $decoded ) ? preg_replace( '/[^0-9.]/', '', (string) $decoded ) : '';
+	if ( '' !== $clean && is_numeric( $clean ) ) {
+		return; // Already a validly-encoded number — nothing to fix.
+	}
+
+	$safe = base64_encode( '0' );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$_REQUEST['p'] = $safe;
+	if ( isset( $_GET['p'] ) ) {
+		$_GET['p'] = $safe;
+	}
+	if ( isset( $_POST['p'] ) ) {
+		$_POST['p'] = $safe;
+	}
+}, 20 );
+
 /* ─── Branded failure page ─────────────────────────────────────────────────── */
 
 add_filter( 'wp_php_error_message', function ( $message ) {

@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.9.4
+ * Version:     3.9.7
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.9.4' );
+define( 'DB_BLOCKS_LOADED', '3.9.7' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -979,12 +979,28 @@ if ( ! defined( 'DB_OFFER_FORM_ID' ) ) {
 }
 
 if ( ! function_exists( 'db_offer_field_map' ) ) {
+	/**
+	 * The live site actually runs two differently-named CF7 "offer" forms:
+	 * "Offer Form" (your-name/your-email/your-phone/your-offer) and "Offer
+	 * Contact" — the one actually embedded on /offer/ — whose fields are
+	 * offer-name/offer-email/offer-doamin-name/offer-price/offer-phone/
+	 * offer-msg (note the "doamin" typo — that is the real, live field
+	 * name, not a mistake here). Before offer-doamin-name/offer-price/
+	 * offer-phone/offer-msg were added below, every real submission through
+	 * that form silently lost the domain, the offer amount, the phone
+	 * number and the message — only name and email happened to already
+	 * match. The confirmation email, the CRM lead, and the client-side
+	 * thank-you-page redirect all read through this one map, so fixing it
+	 * here fixes all three at once.
+	 */
 	function db_offer_field_map() {
 		return array(
-			'email'  => array( 'your-email', 'email', 'offer-email', 'customer-email' ),
-			'name'   => array( 'your-name', 'name', 'offer-name', 'customer-name' ),
-			'domain' => array( 'your-domain', 'domain', 'offer-domain', 'domain-name' ),
-			'amount' => array( 'your-offer', 'offer', 'amount', 'offer-amount', 'price' ),
+			'email'   => array( 'your-email', 'email', 'offer-email', 'customer-email' ),
+			'name'    => array( 'your-name', 'name', 'offer-name', 'customer-name' ),
+			'domain'  => array( 'your-domain', 'domain', 'offer-domain', 'domain-name', 'offer-doamin-name', 'offer-domain-name' ),
+			'amount'  => array( 'your-offer', 'offer', 'amount', 'offer-amount', 'price', 'offer-price' ),
+			'phone'   => array( 'your-phone', 'phone', 'tel', 'customer-phone', 'offer-phone' ),
+			'message' => array( 'your-message', 'message', 'comments', 'offer-msg', 'offer-message' ),
 		);
 	}
 }

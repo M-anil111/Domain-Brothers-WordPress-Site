@@ -33,8 +33,17 @@ add_action( 'init', function () {
 	if ( 'localhost' === strtok( $host, ':' ) || 0 === strpos( $host, '127.0.0.1' ) ) {
 		return;
 	}
-	// Behind Hostinger's proxy the forwarded header is authoritative.
-	if ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO'] ) {
+	// Behind Hostinger's proxy the forwarded header is authoritative. Widened
+	// past just X-Forwarded-Proto to also cover $_SERVER['HTTPS'] and port
+	// 443 directly: is_ssl() alone already checks the first of those, but
+	// checking all three here too means a single missing/renamed header from
+	// the proxy can't make every one of these false at once and 301-redirect
+	// an already-HTTPS request to itself forever.
+	if ( ( isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO'] )
+		|| ( isset( $_SERVER['HTTP_X_FORWARDED_SSL'] ) && 'on' === $_SERVER['HTTP_X_FORWARDED_SSL'] )
+		|| ( isset( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] )
+		|| ( isset( $_SERVER['SERVER_PORT'] ) && '443' === (string) $_SERVER['SERVER_PORT'] )
+	) {
 		return;
 	}
 	if ( empty( $_SERVER['HTTP_HOST'] ) || empty( $_SERVER['REQUEST_URI'] ) ) {
