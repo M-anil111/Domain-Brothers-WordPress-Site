@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.11.0
+ * Version:     3.12.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.11.0' );
+define( 'DB_BLOCKS_LOADED', '3.12.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1974,22 +1974,75 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	max-height: 52px; width: auto; height: auto;
 }
 
-/* Header search: consistent pill treatment for the theme's search forms. */
+/* Header search — was effectively unusable on every page except the
+   homepage: the theme hides .domain-search outright below 991px
+   (display:none in two separate media queries) and only reveals it via a
+   button wired to Bootstrap's data-toggle="collapse", which isn't loaded
+   anywhere on the site. Worse, that button's data-target=".find-box"
+   doesn't even match the actual wrapper's class (.domain-search), so the
+   toggle was broken twice over even before the missing-JS problem. Net
+   effect: search was reachable only from the homepage. Forced permanently
+   visible here instead of trying to repair a toggle nothing should have
+   depended on, then restyled as a single pill-shaped bar with a search
+   icon, kept reachable while scrolling a long listing page. */
+.db-ui-active .domain-search,
+.db-ui-active .find-box {
+	display: block !important; float: none !important;
+	position: static !important; top: auto !important; width: 100% !important;
+	max-width: var(--db-max-content); margin: 0 auto; padding: var(--db-sp-3) var(--db-sp-4);
+}
+.db-ui-active .site-header .domain-search {
+	position: sticky !important; top: 0; z-index: 400;
+	background: var(--db-header-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+	box-shadow: var(--db-shadow-sm);
+}
+/* The toggle buttons this replaces are dead weight now that search is
+   always visible — one opened this now-permanently-open bar, the other
+   (.filters_ic) points at a #secondary sidebar id that doesn't exist on
+   this theme's listing templates. */
+.db-ui-active .find-toggle { display: none !important; }
+
+.db-ui-active header form,
+.db-ui-active form.search-form,
+.db-ui-active .widget_search form {
+	display: flex; align-items: center; gap: var(--db-sp-2);
+	max-width: 480px; margin: 0 auto;
+}
+.db-ui-active header form label,
+.db-ui-active form.search-form label {
+	flex: 1 1 auto; position: relative; display: block;
+}
 .db-ui-active header form input[type="text"],
 .db-ui-active header form input[type="search"],
 .db-ui-active form.search-form input[type="text"],
 .db-ui-active form.search-form input[type="search"] {
-	height: 44px; padding: 0 16px;
-	border: 1px solid var(--db-gray-200); border-radius: var(--db-r-md);
-	font-size: 15px;
+	width: 100%; height: 46px; padding: 0 18px 0 42px;
+	border: 1px solid var(--db-gray-200); border-radius: var(--db-r-pill);
+	font-size: 15px; background: #fff;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.3-4.3'/%3E%3C/svg%3E");
+	background-repeat: no-repeat; background-position: 16px center; background-size: 17px;
+	transition: border-color var(--db-dur-fast) var(--db-ease), box-shadow var(--db-dur-fast) var(--db-ease);
+}
+.db-ui-active header form input[type="text"]:focus,
+.db-ui-active header form input[type="search"]:focus,
+.db-ui-active form.search-form input[type="text"]:focus,
+.db-ui-active form.search-form input[type="search"]:focus {
+	outline: none; border-color: var(--db-accent); box-shadow: 0 0 0 4px var(--db-focus-ring);
 }
 .db-ui-active header form input[type="submit"],
 .db-ui-active header form button[type="submit"],
 .db-ui-active form.search-form input[type="submit"] {
-	height: 44px; padding: 0 22px;
+	flex: 0 0 auto; height: 46px; padding: 0 24px;
 	background: var(--db-grad-navy); color: #fff;
-	border: none; border-radius: var(--db-r-md);
-	font-size: 15px; font-weight: 600; cursor: pointer;
+	border: none; border-radius: var(--db-r-pill);
+	font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+@media (max-width: 480px) {
+	.db-ui-active header form input[type="submit"],
+	.db-ui-active header form button[type="submit"],
+	.db-ui-active form.search-form input[type="submit"] {
+		padding: 0 18px;
+	}
 }
 
 /* "Featured Domains" + inline "View All": give the crammed inline link
@@ -2027,6 +2080,58 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 .social-media .db-icon-badge svg {
 	width: 18px; height: 18px;
 }
+
+/* "Why Users Choose Domain Brothers" — same stacked-list problem as Our
+   Services below, same card-grid fix. */
+.db-ui-active .icon_section {
+	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-6);
+	margin: var(--db-sp-8) 0;
+}
+@media (min-width: 780px) {
+	.db-ui-active .icon_section { grid-template-columns: repeat(3, 1fr); }
+}
+.db-ui-active .iconBox {
+	background: #fff; border-radius: var(--db-r-lg); padding: var(--db-sp-6);
+	box-shadow: var(--db-shadow-sm); border: 1px solid var(--db-gray-100);
+	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .iconBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
+.db-ui-active .iconBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 1.15rem; }
+.db-ui-active .iconBox p { color: var(--db-gray-700); margin: 0; }
+.db-ui-active .iconBox:nth-child(1) .db-icon-badge { background: linear-gradient(160deg, #b45309 0%, #d97706 100%); }
+.db-ui-active .iconBox:nth-child(2) .db-icon-badge { background: linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%); }
+.db-ui-active .iconBox:nth-child(3) .db-icon-badge { background: linear-gradient(160deg, #137a3e 0%, #1e9c54 100%); }
+
+/* "Our Services": was six identical rows stacked one below the other, all
+   the way down the homepage — a long scroll of near-duplicate blocks with
+   no visual distinction between them. Turned into a proper card grid with
+   a distinct accent color per card (drawn from the existing palette plus
+   two complementary tones, not six random colors) so each service reads
+   as its own thing at a glance instead of one undifferentiated list. */
+.db-ui-active .service_section {
+	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-6);
+	margin: var(--db-sp-8) 0;
+}
+@media (min-width: 640px) {
+	.db-ui-active .service_section { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 980px) {
+	.db-ui-active .service_section { grid-template-columns: repeat(3, 1fr); }
+}
+.db-ui-active .serviceBox {
+	background: #fff; border-radius: var(--db-r-lg); padding: var(--db-sp-6);
+	box-shadow: var(--db-shadow-sm); border: 1px solid var(--db-gray-100);
+	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .serviceBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
+.db-ui-active .serviceBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 1.15rem; }
+.db-ui-active .serviceBox p { color: var(--db-gray-700); margin: 0; }
+.db-ui-active .serviceBox:nth-child(1) .db-icon-badge { background: linear-gradient(160deg, #0a1628 0%, #16305a 100%); }
+.db-ui-active .serviceBox:nth-child(2) .db-icon-badge { background: linear-gradient(160deg, #137a3e 0%, #1e9c54 100%); }
+.db-ui-active .serviceBox:nth-child(3) .db-icon-badge { background: linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%); }
+.db-ui-active .serviceBox:nth-child(4) .db-icon-badge { background: linear-gradient(160deg, #0e6f78 0%, #14939f 100%); }
+.db-ui-active .serviceBox:nth-child(5) .db-icon-badge { background: linear-gradient(160deg, #4338ca 0%, #6d28d9 100%); }
+.db-ui-active .serviceBox:nth-child(6) .db-icon-badge { background: linear-gradient(160deg, #b45309 0%, #d97706 100%); }
 
 /* Domain price-table actions: tagged by the enhancer JS below. */
 .db-ui-active a.db-act-buy {
@@ -2125,6 +2230,11 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 }
 .db-domain-card:hover { transform: translateY(-4px); box-shadow: 0 6px 14px rgba(8,23,58,.10), 0 20px 44px rgba(8,23,58,.14); border-color: #cfe0f7; }
 .db-domain-card:hover::before { opacity: 1; }
+.db-domain-card__mono {
+	display: flex; align-items: center; justify-content: center;
+	width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto;
+	color: #fff; font-weight: 700; font-size: 17px; font-family: var(--db-font);
+}
 .db-domain-card__name {
 	font-size: 19px; font-weight: 700; color: var(--db-navy); word-break: break-word;
 	text-decoration: none; line-height: 1.25;
@@ -2294,10 +2404,26 @@ add_action( 'wp_footer', function () {
 
 					var card = document.createElement('div');
 					card.className = 'db-domain-card';
+					var domainText = (nameLink.textContent || '').trim();
+					// A small colored monogram per card — not a real per-domain
+					// logo (these are plain listings, not branded assets like
+					// BrandBucket's), but enough of a distinct visual anchor
+					// that a page of cards doesn't read as one undifferentiated
+					// list of blue text links. Color is derived from the
+					// domain name itself so the same domain always gets the
+					// same color rather than a random one on every reload.
+					var mono = document.createElement('span');
+					mono.className = 'db-domain-card__mono';
+					mono.setAttribute('aria-hidden', 'true');
+					var letter = (domainText.replace(/[^a-zA-Z0-9]/, '')[0] || '?').toUpperCase();
+					var hash = 0;
+					for (var ci = 0; ci < domainText.length; ci++) { hash = (hash * 31 + domainText.charCodeAt(ci)) % 360; }
+					mono.style.background = 'linear-gradient(160deg, hsl(' + hash + ',58%,42%), hsl(' + ((hash + 40) % 360) + ',58%,32%))';
+					mono.textContent = letter;
 					var name = document.createElement('a');
 					name.className = 'db-domain-card__name';
 					name.href = nameLink.getAttribute('href') || '#';
-					name.textContent = (nameLink.textContent || '').trim();
+					name.textContent = domainText;
 					var row = document.createElement('div');
 					row.className = 'db-domain-card__row';
 					var price = document.createElement('span');
@@ -2310,6 +2436,7 @@ add_action( 'wp_footer', function () {
 					}
 					row.appendChild(price);
 					row.appendChild(action);
+					card.appendChild(mono);
 					card.appendChild(name);
 					card.appendChild(row);
 					grid.appendChild(card);
