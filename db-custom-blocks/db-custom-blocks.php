@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.13.1
+ * Version:     3.13.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.13.1' );
+define( 'DB_BLOCKS_LOADED', '3.13.2' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2067,6 +2067,34 @@ body.db-ui-active { padding-top: 70px !important; }
 .home.db-ui-active #masthead.site-header {
 	background: transparent; border-bottom: none; padding: 0; min-height: 0;
 }
+
+/* Homepage "Featured Top Domains" / "Newly Added" / "Latest Additions"
+   section headings all carry a hardcoded style="float: left" (confirmed in
+   the live markup, all three) with no clearing element after them — the
+   theme's own "View All" link that would have sat to its right, floated,
+   is commented out of the template on every one of them. Bootstrap's own
+   CSS isn't loaded on this site (see above) so nothing ever clears the
+   float either. Net effect: the domain-listing grid that immediately
+   follows renders BESIDE the floated heading instead of below it, wrapping
+   tight against its right edge and overflowing the viewport on mobile —
+   the "heading crammed to the left with cards cut off on the right" bug.
+   The float serves no purpose left in this markup, so it's neutralized
+   outright rather than added to a clearfix everything else has to remember
+   to use. */
+.db-ui-active .page-title { float: none !important; clear: both; }
+
+/* Checkout: payment-plan-setup ships its own header block
+   (.header_billing > .inner_billing_logo) with a second copy of the exact
+   same logo #masthead already renders above it on every page — two
+   identical "Domain Brothers" logos stacked back-to-back, confirmed in the
+   live markup. Same root cause as the #masthead fix above: it's built as
+   a Bootstrap .row > .col-md-6/.col-md-6 (logo | "Questions? We're here to
+   help" text) meant to sit side-by-side, but with no Bootstrap loaded to
+   give those columns a width/float, they just stack — logo, full width,
+   directly above the text. Hiding the redundant logo here (not
+   #masthead's — that one is the only header on every other page too)
+   removes the duplicate without touching the text column next to it. */
+.db-ui-active .header_billing .inner_billing_logo { display: none !important; }
 
 .db-ui-active header form,
 .db-ui-active form.search-form,
