@@ -10,13 +10,24 @@
  * 500. WordPress does not persist those errors anywhere readable, which made
  * them impossible to diagnose from outside.
  *
- * This block does two things:
+ * This block does three things:
  *
  *   1. Records the last DB_SAFETY_KEEP fatal errors (message, file, line,
  *      request URI, timestamp) into a non-autoloaded option, viewable at
  *      Tools → DB Fatal Log. Nothing is exposed on the front end.
  *   2. Replaces the white-screen WSOD with a branded, on-brand page that
  *      still returns 500 so monitoring and search engines see the truth.
+ *   3. Strips unresolved Contact Form 7 tags — see db_safety_strip_dead_cf7_tags()
+ *      below — from six live forms (Contact, Offer, Sell Your Domain, Acquire
+ *      Domain Form, Acquire a Handle Now) that were rendering the literal
+ *      text "[recaptcha recaptcha-833]" to every visitor. CF7 only registers
+ *      the recaptcha tag type when Settings → Integration has a site key; with
+ *      none configured, an unresolved tag is left as raw bracket text in the
+ *      final markup instead of being replaced. Fixing it at the source means
+ *      editing 6 form templates through wp-admin, which Wordfence's WAF
+ *      blocked outright (a false-positive form submission still needs a
+ *      human to clear it) — so it is fixed where the plugin already has a
+ *      hook: CF7's own wpcf7_form_elements output filter.
  *
  * @package DomainBrothers
  */
@@ -93,6 +104,28 @@ add_filter( 'wp_php_error_message', function ( $message ) {
 		. '<a href="' . $home . '" style="color:#1f6fd0;font-weight:600">return to the homepage</a>.</p>'
 		. '</div>';
 }, 10, 1 );
+
+/* ─── Dead Contact Form 7 tags ──────────────────────────────────────────────── */
+
+if ( ! function_exists( 'db_safety_strip_dead_cf7_tags' ) ) {
+	/**
+	 * Removes any [recaptcha ...] tag left unresolved in a rendered CF7 form.
+	 *
+	 * This does NOT add a working CAPTCHA — that requires a Google reCAPTCHA
+	 * site key and secret only the site owner can create at
+	 * google.com/recaptcha/admin, entered under CF7 → Integration. It only
+	 * stops broken markup from being shown; the honeypot fields already
+	 * present in these forms (EPPSupport/EPPSupportCode, db_hp_website) are
+	 * the actual spam defense in the meantime.
+	 */
+	function db_safety_strip_dead_cf7_tags( $html ) {
+		if ( false === strpos( $html, '[recaptcha' ) ) {
+			return $html;
+		}
+		return preg_replace( '/\[recaptcha\b[^\]]*\]/', '', $html );
+	}
+}
+add_filter( 'wpcf7_form_elements', 'db_safety_strip_dead_cf7_tags', 20 );
 
 /* ─── Guards for theme templates that fatal under PHP 8 ────────────────────── */
 
