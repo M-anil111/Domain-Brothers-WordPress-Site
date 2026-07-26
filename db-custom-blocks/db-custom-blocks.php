@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.14.1
+ * Version:     3.15.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.14.1' );
+define( 'DB_BLOCKS_LOADED', '3.15.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -968,6 +968,115 @@ add_action( 'wp_head', function () {
 		echo "<style>.theme-payment-plan,.payment-plan-default{display:none!important;}</style>\n";
 	}
 } );
+
+/*
+ * The theme's own page-templates/payment-plan-setup.php computes its
+ * per-term price with:
+ *     $DomainPrice = explode( "$", base64_decode( $_REQUEST['p'] ) );
+ *     ... $DomainPrice[1] ...
+ * — which only produces a second array element if the decoded price
+ * string actually contains a literal "$". It never does: every link that
+ * reaches this page encodes a bare number (confirmed against the live
+ * request), so $DomainPrice[1] is always undefined. Two real, separate
+ * breakages follow from that one undefined index, both confirmed against
+ * live-fetched output rather than assumed from source alone:
+ *
+ *   1. The 3/6/9/12-month price table is rendered directly by PHP from
+ *      $DomainPrice[1] and always shows $0.00 for every term, and $0.00
+ *      (5%) / $0.00 (10%) for the 9- and 12-month interest columns,
+ *      regardless of the real price.
+ *   2. Both inline <script> blocks that are supposed to compute and
+ *      display the monthly amount echo $DomainPrice[1] bare into a JS
+ *      statement — "var price = <?php echo $DomainPrice[1]; ?>;" — which
+ *      with nothing there renders as the literal, invalid
+ *      "var price = ;". That's a JavaScript syntax error, and it silently
+ *      kills every other line in that same <script> tag: not just the
+ *      displayed "Monthly: ( Payments)Now" text, but the term-selector
+ *      clicks, the pay-in-full/pay-monthly toggle, and the final
+ *      "Buy Domain With The Payment Plan" submit button all stop working
+ *      too. Confirmed with a real browser (jQuery loaded fine; the fields
+ *      stayed empty because of the syntax error, not a missing library).
+ *
+ * NOT fixed by rewriting $_REQUEST['p'] before the template runs: that
+ * same value is forwarded as-is into the checkout URL a step later
+ * (?p=... on /buy-now/), and db-stripe-block.php's own parser does
+ * (float) $price_raw — which requires the bare-number format and would
+ * itself return 0.0 if a "$" were prepended here. The two pages disagree
+ * about the format, so the input can't be "fixed" for one without
+ * breaking the other; this rewrites the rendered OUTPUT of this one
+ * template instead, using the same bare-number parse buy-now already
+ * relies on (db_plan_b64() above), leaving the shared input alone.
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! db_is_plan_page() ) {
+		return;
+	}
+	ob_start( function ( $html ) {
+		if ( false === strpos( $html, 'var price = ;' ) && false === strpos( $html, 'termList3' ) ) {
+			return $html;
+		}
+		$price_raw = db_plan_b64( 'p' );
+		$price     = 0.0;
+		if ( preg_match( '/[0-9]+(?:\.[0-9]+)?/', preg_replace( '/[^0-9.]/', '', $price_raw ), $m ) ) {
+			$price = (float) $m[0];
+		}
+		if ( $price <= 0 ) {
+			return $html;
+		}
+
+		$html = str_replace( 'var price = ;', 'var price = ' . $price . ';', $html );
+
+		$html = preg_replace_callback(
+			'/(<tr id="termList(\d+)"[^>]*>)(.*?)(<\/tr>)/s',
+			function ( $m ) use ( $price ) {
+				$months = (int) $m[2];
+				if ( $months <= 0 ) {
+					return $m[0];
+				}
+				$row = $m[3];
+				// preg_replace_callback, not preg_replace: the replacement
+				// string here contains "$" immediately followed by digits
+				// (a dollar amount), and preg_replace's REPLACEMENT syntax
+				// treats "$" + digits as a backreference regardless of
+				// intent — "$833.33" silently became "3.33" in testing
+				// (interpreted as an out-of-range backreference eating the
+				// leading digits). A callback's return value is inserted
+				// literally, with no backreference parsing.
+				if ( 9 === $months ) {
+					$row = preg_replace_callback(
+						'/\$0\.00 \(5%\)/',
+						function () use ( $price ) {
+							return '$' . number_format( $price * 0.05, 2 ) . ' (5%)';
+						},
+						$row,
+						1
+					);
+				} elseif ( 12 === $months ) {
+					$row = preg_replace_callback(
+						'/\$0\.00 \(10%\)/',
+						function () use ( $price ) {
+							return '$' . number_format( $price * 0.10, 2 ) . ' (10%)';
+						},
+						$row,
+						1
+					);
+				}
+				$row = preg_replace_callback(
+					'/\$0\.00(\s*)<\/td>/',
+					function ( $rm ) use ( $price, $months ) {
+						return '$' . number_format( round( $price / $months, 2 ), 2 ) . $rm[1] . '</td>';
+					},
+					$row,
+					1
+				);
+				return $m[1] . $row . $m[4];
+			},
+			$html
+		);
+
+		return $html;
+	} );
+}, 25 );
 
 
 /* ============================================================
@@ -2187,6 +2296,37 @@ body.db-ui-active { padding-top: 70px !important; }
 	width: 18px; height: 18px;
 }
 
+/* Homepage founder photos (built by the enhancer script above) */
+.db-ui-active .db-founders-row {
+	display: flex; justify-content: center; gap: var(--db-sp-8);
+	margin: var(--db-sp-6) 0 var(--db-sp-8);
+}
+.db-ui-active .db-founder {
+	display: flex; flex-direction: column; align-items: center; gap: var(--db-sp-2);
+}
+.db-ui-active .db-founder img {
+	width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+	box-shadow: var(--db-shadow-md); border: 3px solid #fff;
+}
+.db-ui-active .db-founder span {
+	font-size: 14px; font-weight: 600; color: var(--db-navy);
+}
+
+/* /offer/ page trust steps (built by the enhancer script above) */
+.db-ui-active .db-offer-steps {
+	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-5);
+	margin: 0 0 var(--db-sp-8);
+}
+@media (min-width: 700px) {
+	.db-ui-active .db-offer-steps { grid-template-columns: repeat(3, 1fr); }
+}
+.db-ui-active .db-offer-step {
+	background: #fff; border: 1px solid var(--db-gray-100); border-radius: var(--db-r-lg);
+	padding: var(--db-sp-5); box-shadow: var(--db-shadow-sm);
+}
+.db-ui-active .db-offer-step h4 { margin: 0 0 var(--db-sp-2); font-size: 1.05rem; color: var(--db-navy); }
+.db-ui-active .db-offer-step p { margin: 0; color: var(--db-gray-700); font-size: 14px; line-height: 1.55; }
+
 /* "Why Users Choose Domain Brothers" — same stacked-list problem as Our
    Services below, same card-grid fix. Below the 3-up grid breakpoint this
    becomes a horizontal scroll-snap carousel (a peek of the next card, one
@@ -2367,6 +2507,21 @@ body.page:not(.home) .entry-content a { color: var(--db-blue); }
 body.page:not(.home) .entry-content img { border-radius: 12px; }
 /* Numbered "How We Work" style steps read as a subtle divided list */
 body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
+
+/* .cta_box (style.css, the theme's own dark closing-CTA panel used on
+   Services/About/etc.) sets its own white text on a dark navy-teal
+   background — but the generic ".entry-content p{color:#334155}" /
+   ".entry-content a{color:var(--db-blue)}" rules just above it happen to
+   win that fight: same class-count (3 each), and CSS specificity breaks a
+   class-count tie by comparing type-selector count next, where "body p"/
+   "body a" (2 types) beats the theme's own class-only selector (0 types)
+   — regardless of which rule was written more narrowly for the job.
+   Confirmed live: near-black text on a near-black box, and the "Contact
+   Us Now" button rendered in the same blue every other body link uses
+   instead of the white the button's own green background needs. */
+.db-ui-active .cta_box .cta_heading,
+.db-ui-active .cta_box .cta_para { color: #fff !important; }
+.db-ui-active .cta_box .cta_cstm_btn { color: #fff !important; text-decoration: none !important; }
 
 /* Domain listing card grid (built from the theme's tables by the enhancer) */
 .db-domain-grid {
@@ -2741,6 +2896,108 @@ add_action( 'wp_footer', function () {
 					if (i === 0) { sec.classList.add('is-active'); }
 					bWrap.appendChild(sec);
 				});
+			}
+
+			/* 9. /our-services/ page: each .shadowBox card (Buy Domains,
+			   Sell Domains, Website Design & Development) is plain text —
+			   heading, two paragraphs, a button, no icon at all, unlike the
+			   homepage's own "Our Services" section covering the same three
+			   services with a colored icon badge apiece. Reuses the exact
+			   same icon per service name so the two pages read as the same
+			   design system rather than two different treatments of
+			   identical content. */
+			var SERVICE_ICONS = {
+				'buy domains': { svg: ICON_SVGS['service1.png'], bg: 'linear-gradient(160deg, #0a1628 0%, #16305a 100%)' },
+				'sell domains': { svg: ICON_SVGS['service2.png'], bg: 'linear-gradient(160deg, #137a3e 0%, #1e9c54 100%)' },
+				'website design & development': { svg: ICON_SVGS['service3.png'], bg: 'linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%)' },
+			};
+			document.querySelectorAll('.shadowBox > h5.wp-block-heading').forEach(function (h) {
+				var key = (h.textContent || '').trim().toLowerCase();
+				var icon = SERVICE_ICONS[key];
+				if (!icon) { return; }
+				var span = document.createElement('span');
+				span.className = 'db-icon-badge';
+				span.style.background = icon.bg;
+				span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon.svg + '</svg>';
+				h.parentNode.insertBefore(span, h);
+			});
+
+			/* 10. Homepage "Welcome to Domain Brothers" intro names the two
+			   founders by name but has never shown their faces — the only
+			   photography anywhere on the homepage is decorative background
+			   glyphs. Their real photos already exist on the server (Our
+			   Team page uses them), so this reuses those instead of any
+			   stock or placeholder image. */
+			var founderPara = Array.prototype.find.call(
+				document.querySelectorAll('.pageNewContent p'),
+				function (p) { return /founded by the accomplished Kartik and Jay Mehta/i.test(p.textContent || ''); }
+			);
+			if (founderPara && !document.querySelector('.db-founders-row')) {
+				var uploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var founders = [
+					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
+					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
+				];
+				var row = document.createElement('div');
+				row.className = 'db-founders-row';
+				founders.forEach(function (f) {
+					var item = document.createElement('div');
+					item.className = 'db-founder';
+					var img = document.createElement('img');
+					img.src = uploads + f.file;
+					img.alt = f.name + ', Co-Founder, Domain Brothers';
+					img.loading = 'lazy';
+					var name = document.createElement('span');
+					name.textContent = f.name;
+					item.appendChild(img);
+					item.appendChild(name);
+					row.appendChild(item);
+				});
+				founderPara.parentNode.insertBefore(row, founderPara.nextSibling);
+			}
+
+			/* 11. /offer/ ("Make an Offer on a Premium Domain") is a bare
+			   page title directly above a form — no context on how the
+			   process actually works, unlike the equivalent flow on a
+			   domain's own listing page ("Present your best offer / Domain
+			   Brothers will negotiate with the domain owner for you").
+			   Identified by the offer form's own unique field name rather
+			   than a URL or page ID, so it can't misfire on any other CF7
+			   form on the site. */
+			var offerNameField = document.querySelector('input[name="offer-name"]');
+			if (offerNameField && !document.querySelector('.db-offer-intro')) {
+				var offerForm = offerNameField.closest('.wpcf7, form') || offerNameField.closest('div');
+				if (offerForm && offerForm.parentNode) {
+					var intro = document.createElement('div');
+					intro.className = 'db-offer-intro';
+					var steps = [
+						{ svg: ICON_SVGS['service1.png'], bg: 'linear-gradient(160deg, #0a1628 0%, #16305a 100%)', title: 'Tell us your offer', text: 'Share the domain and the price you’d like to offer — no obligation, no cost to submit.' },
+						{ svg: ICON_SVGS['TailoredServices.png'], bg: 'linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%)', title: 'We negotiate for you', text: 'Domain Brothers presents your offer to the domain owner and works to get you the best deal.' },
+						// A dedicated lock glyph, not one of the ICON_SVGS keys above —
+						// service4.png (the only otherwise-unused entry) is a
+						// megaphone used elsewhere for "Digital Marketing", not
+						// a fit for "escrow-protected", so this defines its own.
+						{ svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', bg: 'linear-gradient(160deg, #137a3e 0%, #1e9c54 100%)', title: 'Escrow-protected transfer', text: 'If it’s accepted, the sale completes through a secure, escrow-protected transfer.' }
+					];
+					var grid = document.createElement('div');
+					grid.className = 'db-offer-steps';
+					steps.forEach(function (s) {
+						var box = document.createElement('div');
+						box.className = 'db-offer-step';
+						var badge = document.createElement('span');
+						badge.className = 'db-icon-badge';
+						badge.style.background = s.bg;
+						badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + s.svg + '</svg>';
+						var h = document.createElement('h4');
+						h.textContent = s.title;
+						var p = document.createElement('p');
+						p.textContent = s.text;
+						box.appendChild(badge); box.appendChild(h); box.appendChild(p);
+						grid.appendChild(box);
+					});
+					intro.appendChild(grid);
+					offerForm.parentNode.insertBefore(intro, offerForm);
+				}
 			}
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();

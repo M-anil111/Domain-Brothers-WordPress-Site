@@ -73,7 +73,16 @@ add_action( 'wp_enqueue_scripts', function () {
 }, 5 );
 
 add_action( 'wp_enqueue_scripts', function () {
-	if ( ! is_singular( 'domain' ) ) {
+	// /our-services/ is built from Gutenberg blocks using .shadowBox card
+	// styling and a .cta_box closing panel — both defined in this same
+	// style.css, unreachable without it (confirmed live: without this, the
+	// whole page was an unstyled wall of text with no card treatment at
+	// all). Scoped to this one page rather than site-wide for the same
+	// reason bootstrap.min.css above stayed scoped for as long as it did:
+	// style.css is a large, opinionated stylesheet, and every other page
+	// already looks right without it — no reason to introduce a new
+	// variable everywhere at once when only one page actually needs it.
+	if ( ! is_singular( 'domain' ) && ! is_page( 'our-services' ) ) {
 		return;
 	}
 
@@ -85,6 +94,10 @@ add_action( 'wp_enqueue_scripts', function () {
 	// removed) freshly by this one.
 	wp_enqueue_style( 'db-domainfolio-bootstrap', $theme_uri . '/assets/css/bootstrap.min.css', array(), null );
 	wp_enqueue_style( 'db-domainfolio-style', $theme_uri . '/assets/css/style.css', array( 'db-domainfolio-bootstrap' ), null );
+
+	if ( ! is_singular( 'domain' ) ) {
+		return;
+	}
 
 	// jQuery is already loaded by WordPress core / this theme on every page.
 	wp_enqueue_script( 'jquery' );
