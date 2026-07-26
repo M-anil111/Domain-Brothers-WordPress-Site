@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.12.0
+ * Version:     3.13.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.12.0' );
+define( 'DB_BLOCKS_LOADED', '3.13.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1984,7 +1984,15 @@ if ( ! function_exists( 'db_ui_css' ) ) {
    effect: search was reachable only from the homepage. Forced permanently
    visible here instead of trying to repair a toggle nothing should have
    depended on, then restyled as a single pill-shaped bar with a search
-   icon, kept reachable while scrolling a long listing page. */
+   icon.
+   position: sticky here does NOT survive scrolling (verified): .domain-search
+   sits inside #masthead > .row > .site-branding, and none of those ancestors
+   span the full page height, so the moment .site-branding itself scrolls out
+   of view the "stuck" child leaves with it — sticky only holds an element
+   inside the bounds of its own parent box, not the whole document. That's
+   the actual "search isn't sticky" bug. position: fixed sidesteps the whole
+   containing-block problem: it always pins to the viewport regardless of
+   how tall (or short) the element it's nested in happens to be. */
 .db-ui-active .domain-search,
 .db-ui-active .find-box {
 	display: block !important; float: none !important;
@@ -1992,15 +2000,73 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	max-width: var(--db-max-content); margin: 0 auto; padding: var(--db-sp-3) var(--db-sp-4);
 }
 .db-ui-active .site-header .domain-search {
-	position: sticky !important; top: 0; z-index: 400;
+	/* top/left/right need !important too: the shared rule just above sets
+	   "top: auto !important" for the static/in-flow case, and an !important
+	   declaration always wins over a non-important one regardless of which
+	   selector is more specific or comes later — confirmed live, this exact
+	   fixed-position rule silently did nothing without it. */
+	position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important;
+	z-index: 400;
 	background: var(--db-header-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 	box-shadow: var(--db-shadow-sm);
+	/* The hamburger toggle (db-mobilenav-block.php) is ALSO fixed, top:12px
+	   right:12px, 46px square, on every page — reserve that corner so the
+	   search field's own submit button doesn't render underneath it. */
+	padding-right: 78px;
+}
+.admin-bar .db-ui-active .site-header .domain-search { top: 46px !important; }
+@media screen and (min-width: 783px) {
+	.admin-bar .db-ui-active .site-header .domain-search { top: 32px !important; }
+}
+/* Fixed removes .domain-search from normal flow, so nothing pushes the
+   content below it down anymore — every page needs that ~70px (the pill's
+   own 46px input plus its var(--db-sp-3) padding top/bottom) reserved up
+   top instead, or the fixed bar sits on top of the logo / hero.
+   !important: a separate, pre-existing inline stylesheet (the CF7
+   multi-step module's own <style> block, confirmed live) sets
+   "body, html { padding: 0px !important }" — without matching it here this
+   rule is silently discarded the same way the sticky-search fix above was. */
+body.db-ui-active { padding-top: 70px !important; }
+.admin-bar body.db-ui-active { padding-top: 116px !important; }
+@media screen and (min-width: 783px) {
+	.admin-bar body.db-ui-active { padding-top: 102px !important; }
 }
 /* The toggle buttons this replaces are dead weight now that search is
    always visible — one opened this now-permanently-open bar, the other
    (.filters_ic) points at a #secondary sidebar id that doesn't exist on
    this theme's listing templates. */
 .db-ui-active .find-toggle { display: none !important; }
+/* .find-box (search_id_mobile) is a second, identical search widget kept
+   only for that same broken collapse toggle — with .domain-search forced
+   permanently visible everywhere, showing this too means two search bars
+   stacked on every single page. The site-wide enhancer script below
+   already hides the second <form> it finds by content, but that only fires
+   after JS runs and only touches the <form>, leaving this wrapper's own
+   padding behind as an empty box. Hiding the whole wrapper outright removes
+   both problems immediately, no JS required. */
+.db-ui-active .find-box { display: none !important; }
+
+/* Bootstrap's grid (.row / .col-md-*), which #masthead's markup depends on
+   for its two-column layout, is not enqueued on ANY template on this site
+   except the single-domain page (see db-domain-page-block.php) — confirmed
+   by fetching the live homepage and an inner page: neither request loads
+   bootstrap.min.css or the theme's style.css. Without it .row/.col-md-7/
+   .col-md-5 are plain unstyled <div>s. Now that .domain-search floats free
+   as a fixed bar and .find-box is hidden, #masthead's only remaining
+   content is the logo — a flex row keeps that centered instead of relying
+   on Bootstrap column math that was never actually there. */
+.db-ui-active #masthead.site-header .row {
+	display: flex; flex-wrap: wrap; align-items: center; margin: 0;
+}
+/* Front page only: the hero above #masthead already carries the brand
+   (logo + nav), so the logo here would be a second one a few pixels below
+   it. With the logo hidden and search/find-box/toggles already handled
+   above, #masthead has no visible content left on the homepage — collapse
+   it to nothing instead of leaving an empty bordered bar between the hero
+   and the page content. */
+.home.db-ui-active #masthead.site-header {
+	background: transparent; border-bottom: none; padding: 0; min-height: 0;
+}
 
 .db-ui-active header form,
 .db-ui-active form.search-form,
@@ -2082,13 +2148,25 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 }
 
 /* "Why Users Choose Domain Brothers" — same stacked-list problem as Our
-   Services below, same card-grid fix. */
+   Services below, same card-grid fix. Below the 3-up grid breakpoint this
+   becomes a horizontal scroll-snap carousel (a peek of the next card, one
+   swipe per card) instead of a tall single-column stack — the "use scroll
+   or tabs wherever u can" request. */
 .db-ui-active .icon_section {
-	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-6);
-	margin: var(--db-sp-8) 0;
+	display: flex; flex-wrap: nowrap; gap: var(--db-sp-4);
+	margin: var(--db-sp-8) calc(-1 * var(--db-sp-4)) var(--db-sp-8);
+	padding: 4px var(--db-sp-4) 14px;
+	overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
 }
+.db-ui-active .icon_section::-webkit-scrollbar { display: none; }
+.db-ui-active .iconBox { flex: 0 0 82%; scroll-snap-align: start; }
 @media (min-width: 780px) {
-	.db-ui-active .icon_section { grid-template-columns: repeat(3, 1fr); }
+	.db-ui-active .icon_section {
+		display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--db-sp-6);
+		margin: var(--db-sp-8) 0; padding: 0; overflow: visible;
+	}
+	.db-ui-active .iconBox { flex: initial; }
 }
 .db-ui-active .iconBox {
 	background: #fff; border-radius: var(--db-r-lg); padding: var(--db-sp-6);
@@ -2109,11 +2187,20 @@ if ( ! function_exists( 'db_ui_css' ) ) {
    two complementary tones, not six random colors) so each service reads
    as its own thing at a glance instead of one undifferentiated list. */
 .db-ui-active .service_section {
-	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-6);
-	margin: var(--db-sp-8) 0;
+	display: flex; flex-wrap: nowrap; gap: var(--db-sp-4);
+	margin: var(--db-sp-8) calc(-1 * var(--db-sp-4)) var(--db-sp-8);
+	padding: 4px var(--db-sp-4) 14px;
+	overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
 }
+.db-ui-active .service_section::-webkit-scrollbar { display: none; }
+.db-ui-active .serviceBox { flex: 0 0 82%; scroll-snap-align: start; }
 @media (min-width: 640px) {
-	.db-ui-active .service_section { grid-template-columns: 1fr 1fr; }
+	.db-ui-active .service_section {
+		display: grid; grid-template-columns: 1fr 1fr; gap: var(--db-sp-6);
+		margin: var(--db-sp-8) 0; padding: 0; overflow: visible;
+	}
+	.db-ui-active .serviceBox { flex: initial; }
 }
 @media (min-width: 980px) {
 	.db-ui-active .service_section { grid-template-columns: repeat(3, 1fr); }
@@ -2279,6 +2366,35 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 	.db-ui-active .site-content,
 	.db-ui-active .entry-content { padding-left: var(--db-sp-3); padding-right: var(--db-sp-3); }
 }
+
+/* ==========================================================================
+   12. BROWSE-BY TABS — sidebar "By TLD / By Characters / By Numeric"
+   (built by the enhancer script above from three stacked tables)
+   ========================================================================== */
+.db-ui-active .db-browse-tabs {
+	background: #fff; border: 1px solid var(--db-gray-100); border-radius: var(--db-r-lg);
+	box-shadow: var(--db-shadow-sm); padding: var(--db-sp-4); margin: var(--db-sp-6) 0;
+}
+.db-ui-active .db-browse-tabbar {
+	display: flex; gap: var(--db-sp-2); margin-bottom: var(--db-sp-4);
+	overflow-x: auto; scrollbar-width: none;
+}
+.db-ui-active .db-browse-tabbar::-webkit-scrollbar { display: none; }
+.db-ui-active .db-browse-tab {
+	flex: 0 0 auto; padding: 8px 16px; font-size: 13px; font-weight: 600;
+	color: var(--db-gray-700); background: var(--db-gray-50); border: 1px solid var(--db-gray-200);
+	border-radius: var(--db-r-pill); cursor: pointer; white-space: nowrap;
+	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease),
+	            border-color var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .db-browse-tab:hover { border-color: var(--db-blue); color: var(--db-blue); }
+.db-ui-active .db-browse-tab.is-active { background: var(--db-grad-navy); border-color: transparent; color: #fff; }
+.db-ui-active .db-browse-panel { display: none; }
+.db-ui-active .db-browse-panel.is-active { display: block; }
+/* The heading span ("By TLD ") is now redundant — its text became the tab
+   label above. */
+.db-ui-active .db-browse-panel > span { display: none; }
+.db-ui-active .db-browse-panel table { margin: 0; }
 
 		<?php
 		return (string) ob_get_clean();
@@ -2516,6 +2632,45 @@ add_action( 'wp_footer', function () {
 				span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON_SVGS[key] + '</svg>';
 				img.parentNode.replaceChild(span, img);
 			});
+
+			/* 8. "By TLD" / "By Characters" / "By Numeric" — three separate
+			   stacked tables in the sidebar (sharing the same, invalid,
+			   duplicate id "browse_by_domain"), one under the other. Turned
+			   into a single tabbed widget: one table visible at a time,
+			   switched by tab, instead of a long stack of near-identical
+			   little tables. */
+			var browseSections = document.querySelectorAll('.custom-sidebar #browse_by_domain');
+			if (browseSections.length > 1) {
+				var bWrap = document.createElement('div');
+				bWrap.className = 'db-browse-tabs';
+				var bBar = document.createElement('div');
+				bBar.className = 'db-browse-tabbar';
+				bBar.setAttribute('role', 'tablist');
+				bWrap.appendChild(bBar);
+				browseSections[0].parentNode.insertBefore(bWrap, browseSections[0]);
+				browseSections.forEach(function (sec, i) {
+					var label = sec.querySelector('span');
+					var text = label ? label.textContent.trim() : ('Tab ' + (i + 1));
+					var btn = document.createElement('button');
+					btn.type = 'button';
+					btn.className = 'db-browse-tab' + (i === 0 ? ' is-active' : '');
+					btn.textContent = text;
+					btn.setAttribute('role', 'tab');
+					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+					btn.addEventListener('click', function () {
+						bBar.querySelectorAll('.db-browse-tab').forEach(function (b) {
+							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+						});
+						browseSections.forEach(function (s) { s.classList.remove('is-active'); });
+						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						sec.classList.add('is-active');
+					});
+					bBar.appendChild(btn);
+					sec.classList.add('db-browse-panel');
+					if (i === 0) { sec.classList.add('is-active'); }
+					bWrap.appendChild(sec);
+				});
+			}
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
 	</script>
