@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.15.0
+ * Version:     3.16.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.15.0' );
+define( 'DB_BLOCKS_LOADED', '3.16.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1676,7 +1676,7 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	--db-fs-sm:   0.875rem;
 
 	--db-sp-1:  4px;  --db-sp-2:  8px;  --db-sp-3:  12px; --db-sp-4:  16px;
-	--db-sp-6:  24px; --db-sp-8:  32px; --db-sp-12: 48px; --db-sp-16: 64px;
+	--db-sp-5:  20px; --db-sp-6:  24px; --db-sp-8:  32px; --db-sp-12: 48px; --db-sp-16: 64px;
 
 	--db-r-sm:   8px;
 	--db-r-md:   12px;
@@ -2002,6 +2002,51 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 .db-ui-active .site-footer h2, .db-ui-active .site-footer h3, .db-ui-active .site-footer h4 {
 	color: #ffffff;
 }
+/* The rest of the footer (logo row, social icons, copyright + link list)
+   had no layout styling at all beyond color — Bootstrap's own .col-md-*
+   stacks it correctly on mobile, but the <ul> link list was still a plain
+   bulleted list with no spacing, and the logo/social row had no alignment.
+   Turned into a clean wrapped row of links (no bullets) and a proper
+   spaced-out social icon row, matching the rest of the site's design
+   system instead of falling back to browser defaults. */
+.db-ui-active .site-footer .footer-top,
+.db-ui-active #colophon .footer-top {
+	padding: var(--db-sp-8) 0 var(--db-sp-6); border-bottom: 1px solid rgba(79,156,249,.14);
+}
+/* .footer-payment is a plain div wrapping Bootstrap's floated col-md-6/
+   col-xs-12 columns — not a .row, so it has none of Bootstrap's own
+   clearfix and collapses to 0px tall, letting both floated columns escape
+   its box entirely. That in turn breaks the very next sibling, .site-info:
+   a block box starting beside an unresolved float that spans the full
+   row width computes to 0 width instead of wrapping below it (confirmed
+   live: .site-info measured 0px wide, its two link columns pushed off
+   the right edge of the viewport). flow-root establishes a new block
+   formatting context that contains the floats without touching their
+   layout, fixing both the collapse and the sibling regression at once. */
+.db-ui-active .footer-payment { display: flow-root; }
+.db-ui-active .footer-logo img { max-width: 180px; width: auto; height: auto; }
+.db-ui-active .footer-sociallinks ul,
+.db-ui-active .footer-links ul {
+	list-style: none; margin: var(--db-sp-3) 0 0; padding: 0;
+	display: flex; flex-wrap: wrap; gap: var(--db-sp-2) var(--db-sp-5);
+}
+.db-ui-active .footer-sociallinks ul { gap: var(--db-sp-3); }
+.db-ui-active .footer-sociallinks ul li a {
+	display: flex; align-items: center; justify-content: center;
+	width: 38px; height: 38px; border-radius: 50%;
+	background: rgba(255,255,255,.08); transition: background var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .footer-sociallinks ul li a:hover { background: rgba(79,156,249,.28); }
+.db-ui-active .footer-sociallinks .db-icon-badge {
+	width: 20px; height: 20px; background: none !important; margin-bottom: 0;
+}
+.db-ui-active .footer-sociallinks .db-icon-badge svg { width: 18px; height: 18px; }
+.db-ui-active .site-info {
+	clear: both; padding: var(--db-sp-6) 0 var(--db-sp-8); display: flex; flex-wrap: wrap;
+	gap: var(--db-sp-4) var(--db-sp-6); align-items: flex-start;
+}
+.db-ui-active .site-info > div:first-child { font-size: 13px; color: rgba(233,240,251,.6); }
+.db-ui-active .footer-links ul { margin-top: 0; font-size: 14px; }
 
 /* ==========================================================================
    8. LAYOUT
@@ -2015,6 +2060,18 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	padding-left: var(--db-sp-6);
 	padding-right: var(--db-sp-6);
 }
+
+/* The homepage's Google AdSense slot (theme markup, between the sidebar's
+   trust badges and "Welcome to Domain Brothers") has no height constraint
+   on this page — style.css defines one (.google_adsense{height:90px}) but
+   isn't enqueued here, and isn't sitewide for the reasons noted elsewhere
+   in this file. Confirmed live: a large blank gap in exactly that spot,
+   consistent with an ad slot reserving space for a unit that never fills
+   on a beta subdomain no AdSense account is approved for. Capping the
+   height (and clipping anything larger) bounds the gap regardless of
+   whether an ad ever renders there, without deciding for the owner
+   whether the ad slot itself should stay or go. */
+.db-ui-active .google_adsense { max-height: 100px; overflow: hidden; }
 
 /* ==========================================================================
    9. TABLES + PAGINATION
@@ -2312,6 +2369,19 @@ body.db-ui-active { padding-top: 70px !important; }
 	font-size: 14px; font-weight: 600; color: var(--db-navy);
 }
 
+/* Homepage "Welcome to Domain Brothers" intro: the generic sitewide h2
+   rule clamps down hard on mobile (20-28px, tuned for section headings
+   throughout the rest of the site) — too small for what's meant to read
+   as the homepage's own second headline, right under the hero. Scoped to
+   .pageNewContent specifically rather than raising every h2 on every page. */
+.db-ui-active .pageNewContent h2.wp-block-heading {
+	font-size: clamp(28px, 7vw, 40px) !important;
+}
+.db-ui-active .pageNewContent > p.has-text-align-center {
+	font-size: 17px; line-height: 1.7; color: var(--db-gray-700);
+	max-width: 640px; margin-left: auto; margin-right: auto;
+}
+
 /* /offer/ page trust steps (built by the enhancer script above) */
 .db-ui-active .db-offer-steps {
 	display: grid; grid-template-columns: 1fr; gap: var(--db-sp-5);
@@ -2591,6 +2661,24 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 @media (max-width: 480px) {
 	.db-ui-active .site-content,
 	.db-ui-active .entry-content { padding-left: var(--db-sp-3); padding-right: var(--db-sp-3); }
+
+	/* Domain listing cards: 2 per row instead of one wide column filling
+	   the whole screen — reads as a shopping grid rather than a single-file
+	   list. Price and the Buy Now/Make an Offer button no longer fit side
+	   by side at this width, so they stack, with the button spanning the
+	   card's full width as one clear tap target instead of shrinking down
+	   to squeeze in next to the price. */
+	.db-ui-active .db-domain-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+	.db-ui-active .db-domain-card { padding: 14px 12px 12px; gap: 8px; }
+	.db-ui-active .db-domain-card__mono { width: 34px; height: 34px; font-size: 14px; border-radius: 10px; }
+	.db-ui-active .db-domain-card__name { font-size: 15px; }
+	.db-ui-active .db-domain-card__row { flex-direction: column; align-items: stretch; gap: 8px; }
+	.db-ui-active .db-domain-card__price,
+	.db-ui-active .db-domain-card__price--offer { font-size: 15px; }
+	.db-ui-active .db-domain-card .db-act-buy,
+	.db-ui-active .db-domain-card .db-act-offer {
+		width: 100%; justify-content: center; padding: 9px 12px; font-size: 13.5px;
+	}
 }
 
 /* ==========================================================================
@@ -2648,6 +2736,33 @@ add_action( 'wp_footer', function () {
 	(function () {
 		'use strict';
 		try {
+			// Icon replacements (several steps below, plus the footer social
+			// links fix) all draw from this one SVG set — declared up front
+			// so every step can use it regardless of execution order, rather
+			// than each one only being safe to run after whichever step
+			// used to declare it first (a `var` declared partway through the
+			// script is hoisted, but stays undefined until that line
+			// actually runs, so any earlier step reading it throws).
+			var ICON_SVGS = {
+				'ProvenExpertise.png': '<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z"/>',
+				'TailoredServices.png': '<path d="M4 6h10M4 12h16M4 18h10"/><circle cx="17" cy="6" r="2"/><circle cx="9" cy="18" r="2"/>',
+				'All-in-OneSolutions.png': '<path d="M12 3l8 4.5-8 4.5-8-4.5z"/><path d="M4 12l8 4.5 8-4.5"/><path d="M4 16.5l8 4.5 8-4.5"/>',
+				'service1.png': '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.3 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.3-3.8-8.5S9.5 5.8 12 3.5z"/>',
+				'service2.png': '<path d="M3 12l8-8h9v9l-8 8z"/><circle cx="14.5" cy="9.5" r="1.6"/>',
+				'service3.png': '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M13.5 5.5l-3 13"/>',
+				'service4.png': '<path d="M3 10v4h4l6 4V6l-6 4z"/><path d="M18 9.5a4 4 0 0 1 0 5M20.5 7a7.5 7.5 0 0 1 0 10"/>',
+				'service5.png': '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 19h2"/>',
+				'service6.png': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/>',
+				// Contact page: an official-brand-colored square logo for
+				// each social network sat next to plain black phone/email
+				// glyphs — same fix, same consistent badge treatment.
+				'db-email.png': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+				'db-telephone.png': '<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.1-2.1c.3-.3.7-.4 1.1-.2 1.1.4 2.3.6 3.5.6.6 0 1.1.5 1.1 1.1v3.3c0 .6-.5 1.1-1.1 1.1C10.8 21.2 2.8 13.2 2.8 3.6c0-.6.5-1.1 1.1-1.1H7.2c.6 0 1.1.5 1.1 1.1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1.1z"/>',
+				'db-facebook.png': '<circle cx="12" cy="12" r="9"/><path d="M14 8.7h1.6V5.6H14c-2 0-3.3 1.4-3.3 3.4v1.6H9v3h1.7v6.9h3v-6.9h2l.4-3h-2.4V9.3c0-.4.2-.6.7-.6z" fill="currentColor" stroke="none"/>',
+				'db-twitterx.png': '<path d="M5 5l14 14M19 5L5 19"/>',
+				'db-instagram.png': '<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.3" cy="7.7" r="1" fill="currentColor" stroke="none"/>',
+			};
+
 			/* 1. Hide duplicate search forms — keep the first visible one. */
 			var seen = 0;
 			document.querySelectorAll('form').forEach(function (f) {
@@ -2683,11 +2798,32 @@ add_action( 'wp_footer', function () {
 				}
 			});
 
+			/* 3.5. Footer social links (Facebook/Twitter/Instagram) use Font
+			   Awesome icon classes (<i class="fa fa-facebook">), but
+			   font-awesome.min.css is never enqueued anywhere on the site —
+			   confirmed live, zero references to it in the page head. Every
+			   one of those icons paints nothing, which step 4 below would
+			   otherwise detect and hide as an empty link with no visible
+			   glyph — so this MUST run before step 4, replacing the icon
+			   with a real, correctly-sized SVG before that check ever looks
+			   at it. Uses the same SVG icon set the contact page already
+			   uses for these exact three networks. */
+			var FA_ICON_MAP = { 'fa-facebook': 'db-facebook.png', 'fa-twitter': 'db-twitterx.png', 'fa-instagram': 'db-instagram.png' };
+			document.querySelectorAll('.footer-sociallinks a').forEach(function (a) {
+				var i = a.querySelector('i.fa');
+				if (!i) { return; }
+				var key = Object.keys(FA_ICON_MAP).filter(function (k) { return i.classList.contains(k); })[0];
+				if (!key) { return; }
+				var span = document.createElement('span');
+				span.className = 'db-icon-badge';
+				span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON_SVGS[FA_ICON_MAP[key]] + '</svg>';
+				i.parentNode.replaceChild(span, i);
+			});
+
 			/* 4. Hide elements that render as empty stray bullets/pills: the
-			   blank header nav-toggle and the footer social icons whose
-			   Font Awesome glyphs aren't loading (so the <i> exists but paints
-			   nothing). We test ACTUAL rendered size of any icon child rather
-			   than just its presence. */
+			   blank header nav-toggle and any icon that still fails to
+			   render after step 3.5 above. We test ACTUAL rendered size of
+			   any icon child rather than just its presence. */
 			var iconRenders = function (el) {
 				var ic = el.querySelector('img, svg, i, [class*="icon"], .dashicons');
 				if (!ic) {
@@ -2828,26 +2964,8 @@ add_action( 'wp_footer', function () {
 			// next to each other. Swapped for one consistent, minimal icon
 			// set (matching the circular navy-badge treatment already used
 			// on the domain listing page) instead of leaving clip-art-level
-			// inconsistency on the page a buyer sees first.
-			var ICON_SVGS = {
-				'ProvenExpertise.png': '<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z"/>',
-				'TailoredServices.png': '<path d="M4 6h10M4 12h16M4 18h10"/><circle cx="17" cy="6" r="2"/><circle cx="9" cy="18" r="2"/>',
-				'All-in-OneSolutions.png': '<path d="M12 3l8 4.5-8 4.5-8-4.5z"/><path d="M4 12l8 4.5 8-4.5"/><path d="M4 16.5l8 4.5 8-4.5"/>',
-				'service1.png': '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.3 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.3-3.8-8.5S9.5 5.8 12 3.5z"/>',
-				'service2.png': '<path d="M3 12l8-8h9v9l-8 8z"/><circle cx="14.5" cy="9.5" r="1.6"/>',
-				'service3.png': '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M13.5 5.5l-3 13"/>',
-				'service4.png': '<path d="M3 10v4h4l6 4V6l-6 4z"/><path d="M18 9.5a4 4 0 0 1 0 5M20.5 7a7.5 7.5 0 0 1 0 10"/>',
-				'service5.png': '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 19h2"/>',
-				'service6.png': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/>',
-				// Contact page: an official-brand-colored square logo for
-				// each social network sat next to plain black phone/email
-				// glyphs — same fix, same consistent badge treatment.
-				'db-email.png': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
-				'db-telephone.png': '<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.1-2.1c.3-.3.7-.4 1.1-.2 1.1.4 2.3.6 3.5.6.6 0 1.1.5 1.1 1.1v3.3c0 .6-.5 1.1-1.1 1.1C10.8 21.2 2.8 13.2 2.8 3.6c0-.6.5-1.1 1.1-1.1H7.2c.6 0 1.1.5 1.1 1.1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1.1z"/>',
-				'db-facebook.png': '<circle cx="12" cy="12" r="9"/><path d="M14 8.7h1.6V5.6H14c-2 0-3.3 1.4-3.3 3.4v1.6H9v3h1.7v6.9h3v-6.9h2l.4-3h-2.4V9.3c0-.4.2-.6.7-.6z" fill="currentColor" stroke="none"/>',
-				'db-twitterx.png': '<path d="M5 5l14 14M19 5L5 19"/>',
-				'db-instagram.png': '<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.3" cy="7.7" r="1" fill="currentColor" stroke="none"/>',
-			};
+			// inconsistency on the page a buyer sees first. (ICON_SVGS itself
+			// is declared up front, above item 1.)
 			var iconSelector = Object.keys(ICON_SVGS).map(function (k) { return 'img[src*="' + k + '"]'; }).join(', ');
 			var iconImgs = document.querySelectorAll(iconSelector);
 			iconImgs.forEach(function (img) {
