@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.10.3
+ * Version:     3.11.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.10.3' );
+define( 'DB_BLOCKS_LOADED', '3.11.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2004,6 +2004,30 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	vertical-align: middle;
 }
 
+/* Replaces the mismatched trust-badge / service raster icons (a photo
+   illustration, an emoji-style graphic and plain line art all side by
+   side) — tagged by the enhancer JS below into one consistent circular
+   badge, regardless of how large or oddly-shaped the original image was. */
+.db-icon-badge {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 60px; height: 60px; border-radius: 50%; flex: 0 0 auto;
+	background: linear-gradient(160deg, #0a1628 0%, #16305a 100%);
+	box-shadow: 0 6px 16px rgba(10,22,40,.18);
+	margin-bottom: 14px;
+}
+.db-icon-badge svg { width: 28px; height: 28px; color: #ffffff; }
+/* Contact page's phone/email/social icons are small inline utility icons
+   next to a text link, not a headline trust badge — the default size reads
+   as oversized there. */
+.cd-email-telephone-img .db-icon-badge,
+.social-media .db-icon-badge {
+	width: 38px; height: 38px; margin-bottom: 0;
+}
+.cd-email-telephone-img .db-icon-badge svg,
+.social-media .db-icon-badge svg {
+	width: 18px; height: 18px;
+}
+
 /* Domain price-table actions: tagged by the enhancer JS below. */
 .db-ui-active a.db-act-buy {
 	display: inline-flex; align-items: center; justify-content: center;
@@ -2328,6 +2352,43 @@ add_action( 'wp_footer', function () {
 					});
 				}, { passive: true });
 			}
+			// The homepage "Why Users Choose" trust badges and "Our Services"
+			// icons are theme-supplied raster images in wildly mismatched
+			// styles side by side — a full-color photographic illustration,
+			// an emoji-style graphic, and plain black-and-white line art all
+			// next to each other. Swapped for one consistent, minimal icon
+			// set (matching the circular navy-badge treatment already used
+			// on the domain listing page) instead of leaving clip-art-level
+			// inconsistency on the page a buyer sees first.
+			var ICON_SVGS = {
+				'ProvenExpertise.png': '<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z"/>',
+				'TailoredServices.png': '<path d="M4 6h10M4 12h16M4 18h10"/><circle cx="17" cy="6" r="2"/><circle cx="9" cy="18" r="2"/>',
+				'All-in-OneSolutions.png': '<path d="M12 3l8 4.5-8 4.5-8-4.5z"/><path d="M4 12l8 4.5 8-4.5"/><path d="M4 16.5l8 4.5 8-4.5"/>',
+				'service1.png': '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.3 3.8 5.3 3.8 8.5s-1.3 6.2-3.8 8.5c-2.5-2.3-3.8-5.3-3.8-8.5S9.5 5.8 12 3.5z"/>',
+				'service2.png': '<path d="M3 12l8-8h9v9l-8 8z"/><circle cx="14.5" cy="9.5" r="1.6"/>',
+				'service3.png': '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M13.5 5.5l-3 13"/>',
+				'service4.png': '<path d="M3 10v4h4l6 4V6l-6 4z"/><path d="M18 9.5a4 4 0 0 1 0 5M20.5 7a7.5 7.5 0 0 1 0 10"/>',
+				'service5.png': '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 19h2"/>',
+				'service6.png': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/>',
+				// Contact page: an official-brand-colored square logo for
+				// each social network sat next to plain black phone/email
+				// glyphs — same fix, same consistent badge treatment.
+				'db-email.png': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+				'db-telephone.png': '<path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.1-2.1c.3-.3.7-.4 1.1-.2 1.1.4 2.3.6 3.5.6.6 0 1.1.5 1.1 1.1v3.3c0 .6-.5 1.1-1.1 1.1C10.8 21.2 2.8 13.2 2.8 3.6c0-.6.5-1.1 1.1-1.1H7.2c.6 0 1.1.5 1.1 1.1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1.1z"/>',
+				'db-facebook.png': '<circle cx="12" cy="12" r="9"/><path d="M14 8.7h1.6V5.6H14c-2 0-3.3 1.4-3.3 3.4v1.6H9v3h1.7v6.9h3v-6.9h2l.4-3h-2.4V9.3c0-.4.2-.6.7-.6z" fill="currentColor" stroke="none"/>',
+				'db-twitterx.png': '<path d="M5 5l14 14M19 5L5 19"/>',
+				'db-instagram.png': '<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.3" cy="7.7" r="1" fill="currentColor" stroke="none"/>',
+			};
+			var iconSelector = Object.keys(ICON_SVGS).map(function (k) { return 'img[src*="' + k + '"]'; }).join(', ');
+			var iconImgs = document.querySelectorAll(iconSelector);
+			iconImgs.forEach(function (img) {
+				var key = Object.keys(ICON_SVGS).filter(function (k) { return img.src.indexOf(k) !== -1; })[0];
+				if (!key) { return; }
+				var span = document.createElement('span');
+				span.className = 'db-icon-badge';
+				span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON_SVGS[key] + '</svg>';
+				img.parentNode.replaceChild(span, img);
+			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
 	</script>

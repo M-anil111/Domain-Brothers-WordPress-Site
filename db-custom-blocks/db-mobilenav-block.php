@@ -67,6 +67,13 @@ add_action( 'wp_footer', function () {
 	<div id="db-mnav-scrim" class="db-mnav-scrim" hidden></div>
 
 	<style>
+	/* The drawer sits off-screen via a translateX on a position:fixed box,
+	   not a negative offset — some browsers still count that post-transform
+	   box in the page's scrollable area, adding ~30px of real horizontal
+	   scroll on every page even though the drawer is invisible. That let a
+	   sideways swipe/scroll on mobile reveal blank space past the right
+	   edge, which is the opposite of a clean, non-janky feel. */
+	html, body { overflow-x: hidden; }
 	.db-mnav-toggle {
 		position: fixed; top: 12px; right: 12px; z-index: 100001;
 		width: 46px; height: 46px; padding: 12px 11px; border: 0; cursor: pointer;
