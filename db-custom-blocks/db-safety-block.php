@@ -306,6 +306,41 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_fix_domain_links' );
 }, 0 );
 
+/* ─── Dead Tawk.to embed ─────────────────────────────────────────────────── */
+
+if ( ! function_exists( 'db_safety_strip_tawk' ) ) {
+	/**
+	 * Removes the theme's "Tawk.to Script" block from every page.
+	 *
+	 * The block itself is already inert — the actual <script> tag it wraps is
+	 * nested inside a second, unclosed-looking HTML comment, so no browser has
+	 * ever executed it or shown a chat bubble from it (confirmed against the
+	 * live HTML: the only two references to tawk.to on the page are both
+	 * inside this dead comment). Removed anyway per the owner's request —
+	 * it's inert but it's still ~700 bytes of dead markup shipped on every
+	 * single page load for a chat widget nothing on the site actually wires
+	 * up. If a floating chat/media-style widget is still visible after this
+	 * ships, it is not this — something else is producing it.
+	 */
+	function db_safety_strip_tawk( $html ) {
+		if ( false === stripos( $html, 'Tawk.to Script' ) ) {
+			return $html;
+		}
+		return preg_replace(
+			'#<!--\s*Start of Tawk\.to Script\s*-->.*?<!--\s*End of Tawk\.to Script\s*-->#is',
+			'',
+			$html
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_strip_tawk' );
+}, 22 );
+
 /* ─── Guards for theme templates that fatal under PHP 8 ────────────────────── */
 
 if ( ! function_exists( 'db_safety_template_guards' ) ) {
