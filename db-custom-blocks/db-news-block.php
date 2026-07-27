@@ -57,6 +57,38 @@ add_action( 'init', function () {
 	wp_die( 'DB news cache cleared (' . (int) $cleared . ' feed(s)). <a href="' . esc_url( home_url( '/news/' ) ) . '">View /news/</a>', 'DB News', array( 'response' => 200 ) );
 } );
 
+if ( ! function_exists( 'db_news_og_image' ) ) {
+	/**
+	 * These RSS feeds carry no <enclosure>/<media:content>/<img> at all
+	 * (checked all three sources' raw XML directly — description is plain
+	 * text) so there is no feed-provided image to show. This fetches the
+	 * linked article once and reads its own og:image instead. Cached under
+	 * the same TTL as the feed itself so a page view doesn't pay for 6 live
+	 * fetches every time — only the first visitor after each cache window
+	 * does, exactly like the feed fetch it sits next to. An empty string is
+	 * itself cached (a real "no image" result), so a source with no
+	 * og:image isn't re-checked on every miss either.
+	 */
+	function db_news_og_image( $article_url ) {
+		$key    = 'db_news_img_' . md5( $article_url );
+		$cached = get_transient( $key );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+		$image = '';
+		$resp  = wp_remote_get( $article_url, array( 'timeout' => 3, 'redirection' => 3 ) );
+		if ( ! is_wp_error( $resp ) && 200 === (int) wp_remote_retrieve_response_code( $resp ) ) {
+			$body = wp_remote_retrieve_body( $resp );
+			if ( preg_match( '#<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']#i', $body, $m )
+				|| preg_match( '#<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']#i', $body, $m ) ) {
+				$image = $m[1];
+			}
+		}
+		set_transient( $key, $image, DB_NEWS_TTL );
+		return $image;
+	}
+}
+
 if ( ! function_exists( 'db_render_news' ) ) {
 	function db_render_news( $limit = 6 ) {
 		if ( ! function_exists( 'fetch_feed' ) ) {
@@ -102,27 +134,43 @@ if ( ! function_exists( 'db_render_news' ) ) {
 		$html .= '<div class="db-news-grid">';
 		foreach ( $items as $it ) {
 			$date_str = $it['date'] ? date_i18n( get_option( 'date_format' ), $it['date'] ) : '';
+			$image    = db_news_og_image( $it['link'] );
+			// A single click target for the whole card that opens the
+			// on-site preview (db-ui-enhancer.js) instead of navigating away
+			// — the actual external link only appears once, inside that
+			// preview, clearly labelled as leaving the site. data-* carries
+			// everything the preview needs so no second network round trip
+			// is needed to build it.
 			$html .= '<article class="db-news-card">';
-			$html .= '<a class="db-news-title" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener nofollow">' . esc_html( $it['title'] ) . '</a>';
-			$html .= '<div class="db-news-meta">';
+			$html .= '<button type="button" class="db-news-card__trigger"'
+				. ' data-title="' . esc_attr( $it['title'] ) . '"'
+				. ' data-excerpt="' . esc_attr( $it['excerpt'] ) . '"'
+				. ' data-source="' . esc_attr( $it['source'] ) . '"'
+				. ' data-date="' . esc_attr( $date_str ) . '"'
+				. ' data-link="' . esc_url( $it['link'] ) . '"'
+				. ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' )
+				. '>';
+			if ( $image ) {
+				$html .= '<span class="db-news-thumb"><img src="' . esc_url( $image ) . '" alt="" loading="lazy" decoding="async"></span>';
+			}
+			$html .= '<span class="db-news-title">' . esc_html( $it['title'] ) . '</span>';
+			$html .= '<span class="db-news-meta">';
 			if ( $it['source'] ) {
 				$html .= '<span class="db-news-source">' . esc_html( $it['source'] ) . '</span>';
 			}
 			if ( $date_str ) {
 				$html .= '<span class="db-news-date">' . esc_html( $date_str ) . '</span>';
 			}
-			$html .= '</div>';
+			$html .= '</span>';
 			if ( $it['excerpt'] ) {
-				$html .= '<p class="db-news-excerpt">' . esc_html( $it['excerpt'] ) . '</p>';
+				$html .= '<span class="db-news-excerpt">' . esc_html( $it['excerpt'] ) . '</span>';
 			}
-			$html .= '<a class="db-news-readmore" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener nofollow">Read more &rarr;</a>';
+			$html .= '<span class="db-news-readmore">Read more</span>';
+			$html .= '</button>';
 			$html .= '</article>';
 		}
 		$html .= '</div></div>';
 
-		// Styled via db_ui_css() (the ".db-news-*" rules there) — no inline
-		// <style> here, so this doesn't compete with the rest of the design
-		// system the way a second, hardcoded stylesheet would.
 		return $html;
 	}
 }

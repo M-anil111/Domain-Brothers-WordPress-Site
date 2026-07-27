@@ -70,6 +70,25 @@ add_action( 'wp_footer', function () {
 	<button id="db-mnav-toggle" class="db-mnav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="db-mnav">
 		<span class="db-mnav-bar"></span><span class="db-mnav-bar"></span><span class="db-mnav-bar"></span>
 	</button>
+	<?php
+	/**
+	 * Desktop-width horizontal nav: the drawer above is this site's only
+	 * navigation at every width, including desktop, where a hamburger-only
+	 * header reads as broken rather than minimal. Rendered as real, always-
+	 * in-the-DOM links (not JS-cloned from the drawer) so it's crawlable
+	 * and works with JS disabled; db-ui-enhancer.js moves it (and the theme's
+	 * own logo) into the fixed search bar at the top of every page so logo +
+	 * menu + search sit in one row on desktop, and CSS hides it below the
+	 * 992px breakpoint where the drawer takes over instead.
+	 */
+	?>
+	<nav id="db-desktop-nav" class="db-desktop-nav" aria-label="Primary">
+		<ul>
+			<?php foreach ( $links as $label => $href ) : ?>
+				<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
+			<?php endforeach; ?>
+		</ul>
+	</nav>
 	<nav id="db-mnav" class="db-mnav" aria-label="Primary" aria-hidden="true" inert>
 		<div class="db-mnav-inner">
 			<a class="db-mnav-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home">

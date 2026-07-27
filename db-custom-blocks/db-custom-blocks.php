@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.24.0
+ * Version:     3.25.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.24.0' );
+define( 'DB_BLOCKS_LOADED', '3.25.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2053,6 +2053,59 @@ body.db-ui-active { padding-top: 70px !important; }
 	background: transparent; border-bottom: none; padding: 0; min-height: 0;
 }
 
+/* ── Desktop header: logo + menu + search together, no hamburger ────────────
+   Below 992px the fixed bar stays search-only and the hamburger drawer
+   (db-mobilenav-block.php) is the real navigation, unchanged. At 992px+,
+   db-ui-enhancer.js moves the theme's own logo and the #db-desktop-nav
+   links (rendered server-side in db-mobilenav-block.php) into this same
+   fixed bar, and the hamburger is hidden — a logo-only, menu-less header
+   with just a search field read as broken on desktop, not minimal. */
+.db-ui-active .site-header .domain-search {
+	justify-content: center; gap: var(--db-sp-5);
+}
+.db-ui-active .site-header .domain-search .custom-logo-link {
+	display: none; flex: 0 0 auto; align-items: center; line-height: 0;
+}
+.db-ui-active .site-header .domain-search .widget { flex: 1 1 auto; max-width: 420px; }
+.db-ui-active .db-desktop-nav { display: none; }
+@media (min-width: 992px) {
+	.db-ui-active .site-header .domain-search { padding-right: var(--db-sp-5); justify-content: flex-start; }
+	.db-ui-active .site-header .domain-search .custom-logo-link { display: flex; }
+	.db-ui-active .site-header .domain-search .custom-logo-link img { height: 38px; width: auto; }
+	.db-ui-active .site-header .domain-search .widget { flex: 0 1 320px; max-width: 320px; margin-left: auto; }
+	.db-ui-active .db-desktop-nav {
+		display: flex; flex: 1 1 auto; justify-content: center;
+	}
+	.db-ui-active .db-desktop-nav ul {
+		display: flex; align-items: center; gap: var(--db-sp-5);
+		list-style: none; margin: 0; padding: 0;
+	}
+	.db-ui-active .db-desktop-nav a {
+		color: var(--db-gray-700) !important; font-weight: 600; font-size: 14.5px;
+		text-decoration: none !important; white-space: nowrap;
+	}
+	.db-ui-active .db-desktop-nav a:hover { color: var(--db-blue) !important; }
+	/* The hamburger is redundant once the menu above is visible inline. */
+	.db-ui-active .db-mnav-toggle { display: none !important; }
+}
+
+/* A domain's own sale page has one job — get the visitor to buy or make an
+   offer on THIS domain — and the header search bar is the one exit path
+   that competes with it, inviting a visitor mid-decision to go browse
+   something else instead. Hidden on that template only; every other page
+   (where search is the actual point) keeps it. The drawer/desktop-nav
+   above is untouched, so Home / Browse Domains / etc. are still reachable. */
+body.single-domain.db-ui-active .site-header .domain-search { display: none !important; }
+body.single-domain.db-ui-active { padding-top: 0 !important; }
+@media (min-width: 992px) {
+	/* The logo (and, on desktop, the nav) still need to render somewhere
+	   now that the bar they were moved into is hidden — db-ui-enhancer.js
+	   detects body.single-domain and skips the move for this one template
+	   instead, leaving the logo in its original spot in #masthead and the
+	   nav appended there beside it. */
+	body.single-domain.db-ui-active #masthead .db-desktop-nav { display: flex; margin-left: var(--db-sp-6); }
+}
+
 /* Homepage "Featured Top Domains" / "Newly Added" / "Latest Additions"
    section headings all carry a hardcoded style="float: left" (confirmed in
    the live markup, all three) with no clearing element after them — the
@@ -2386,13 +2439,23 @@ body.db-ui-active { padding-top: 70px !important; }
 
 /* Soft blue canvas on EVERY front-end page (home, About, Contact, all CMS
    pages, search, domain listing/single, buy, offer). This is purely a
-   background-color change — no layout/structure is touched elsewhere. */
+   background-color change — no layout/structure is touched elsewhere.
+   Also set on <body> itself, one shade deeper: #primary/.site-main etc.
+   only ever span their own content height, so on a short page (or one
+   where a child's margin collapses oddly) the canvas ran out before the
+   viewport did, leaving a plain white strip below/beside it — reported
+   live as "part of the page is blue, part is white". Body's copy is the
+   permanent floor colour under everything; nothing can show through past
+   it because it has no parent to run out of. */
+body.db-ui-active {
+	background: linear-gradient(180deg, #e9f0fb 0%, #dfe9fa 100%);
+}
 .db-ui-active #primary,
 .db-ui-active .site-content,
 .db-ui-active .content-area,
 .db-ui-active #main,
 .db-ui-active .site-main {
-	background: linear-gradient(180deg, #f4f8fe 0%, #eef4fc 100%);
+	background: linear-gradient(180deg, #f0f5fc 0%, #e6eefb 100%);
 }
 /* Section headings */
 .db-ui-active h2 {
@@ -2686,24 +2749,153 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 	display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	gap: var(--db-sp-5);
 }
-.db-ui-active .db-news-card {
-	display: flex; flex-direction: column;
+/* Each card is a single <button> (see db_render_news()) so the whole card —
+   image, title, excerpt — is one click target that opens the on-site
+   preview in db-ui-enhancer.js rather than navigating off-site. The one
+   real external link lives inside that preview, not here. */
+.db-ui-active .db-news-card__trigger {
+	display: flex; flex-direction: column; width: 100%; text-align: left;
 	background: var(--db-surface); border: 1px solid var(--db-gray-200); border-radius: var(--db-r-lg);
-	padding: var(--db-sp-5); box-shadow: var(--db-shadow-sm);
+	padding: var(--db-sp-5); box-shadow: var(--db-shadow-sm); cursor: pointer;
+	font-family: inherit; color: inherit;
+	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
+.db-ui-active .db-news-card__trigger:hover {
+	transform: translateY(-2px); box-shadow: var(--db-shadow-lg);
+}
+.db-ui-active .db-news-thumb {
+	display: block; margin: calc(var(--db-sp-5) * -1) calc(var(--db-sp-5) * -1) var(--db-sp-4);
+	aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--db-r-lg) var(--db-r-lg) 0 0;
+	background: var(--db-gray-100);
+}
+.db-ui-active .db-news-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .db-ui-active .db-news-title {
-	font-size: 16px; font-weight: 700; line-height: 1.35; color: var(--db-navy) !important;
-	text-decoration: none !important;
+	display: block; font-size: 16px; font-weight: 700; line-height: 1.35; color: var(--db-navy);
 }
-.db-ui-active .db-news-title:hover { color: var(--db-blue) !important; }
+.db-ui-active .db-news-card__trigger:hover .db-news-title { color: var(--db-blue); }
 .db-ui-active .db-news-meta {
 	display: flex; gap: var(--db-sp-3); flex-wrap: wrap; font-size: 12px;
 	color: var(--db-gray-500); margin: var(--db-sp-2) 0 var(--db-sp-3);
 }
 .db-ui-active .db-news-source { font-weight: 600; }
-.db-ui-active .db-news-excerpt { font-size: 14px; color: var(--db-gray-700); line-height: 1.55; flex: 1; margin: 0 0 var(--db-sp-4); }
-.db-ui-active .db-news-readmore { font-size: 14px; font-weight: 600; color: var(--db-blue) !important; text-decoration: none !important; }
-.db-ui-active .db-news-readmore:hover { text-decoration: underline !important; }
+.db-ui-active .db-news-excerpt { display: block; font-size: 14px; color: var(--db-gray-700); line-height: 1.55; flex: 1; margin: 0 0 var(--db-sp-4); }
+.db-ui-active .db-news-readmore { font-size: 14px; font-weight: 600; color: var(--db-blue); }
+.db-ui-active .db-news-card__trigger:hover .db-news-readmore { text-decoration: underline; }
+
+/* On-site preview modal that a card click opens (built once by
+   db-ui-enhancer.js, reused for every card). */
+.db-ui-active .db-news-modal-scrim {
+	position: fixed; inset: 0; z-index: 10000; background: rgba(8,16,32,.6);
+	display: flex; align-items: center; justify-content: center; padding: var(--db-sp-5);
+	opacity: 0; visibility: hidden; transition: opacity .2s ease;
+}
+.db-ui-active .db-news-modal-scrim.is-open { opacity: 1; visibility: visible; }
+.db-ui-active .db-news-modal {
+	background: var(--db-surface); border-radius: var(--db-r-lg); max-width: 620px; width: 100%;
+	max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(8,16,32,.35);
+	transform: translateY(12px); transition: transform .2s ease;
+}
+.db-ui-active .db-news-modal-scrim.is-open .db-news-modal { transform: translateY(0); }
+.db-ui-active .db-news-modal-close {
+	position: absolute; top: var(--db-sp-4); right: var(--db-sp-4); width: 34px; height: 34px;
+	border-radius: 50%; border: none; background: rgba(0,0,0,.45); color: #fff; font-size: 18px;
+	line-height: 1; cursor: pointer; z-index: 1;
+}
+.db-ui-active .db-news-modal-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block;
+	border-radius: var(--db-r-lg) var(--db-r-lg) 0 0; background: var(--db-gray-100); }
+.db-ui-active .db-news-modal-body { padding: var(--db-sp-6); position: relative; }
+.db-ui-active .db-news-modal-title { font-size: clamp(20px, 3vw, 24px); font-weight: 700; color: var(--db-navy); margin: 0 0 var(--db-sp-3); line-height: 1.3; }
+.db-ui-active .db-news-modal-excerpt { font-size: 15px; line-height: 1.65; color: var(--db-gray-700); margin: 0 0 var(--db-sp-5); }
+.db-ui-active .db-news-modal-link {
+	display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px;
+	color: #fff !important; background: var(--db-navy); padding: 10px 18px; border-radius: var(--db-r-pill);
+	text-decoration: none !important;
+}
+.db-ui-active .db-news-modal-link:hover { background: var(--db-blue); }
+.db-ui-active .db-news-modal-note { font-size: 12px; color: var(--db-gray-500); margin-top: var(--db-sp-3); }
+
+/* ==========================================================================
+   14b. BREADCRUMBS (db-breadcrumbs-block.php)
+   ========================================================================== */
+.db-ui-active .db-breadcrumbs { margin: 0 0 var(--db-sp-5); }
+.db-ui-active .db-breadcrumbs ol {
+	display: flex; flex-wrap: wrap; align-items: center; gap: var(--db-sp-2);
+	list-style: none; margin: 0; padding: 0; font-size: 13px;
+}
+.db-ui-active .db-breadcrumbs li { display: flex; align-items: center; gap: var(--db-sp-2); }
+.db-ui-active .db-breadcrumbs li:not(:first-child)::before {
+	content: ''; width: 5px; height: 5px; border-top: 1.5px solid var(--db-gray-300);
+	border-right: 1.5px solid var(--db-gray-300); transform: rotate(45deg);
+}
+.db-ui-active .db-breadcrumbs a { color: var(--db-gray-500); text-decoration: none; }
+.db-ui-active .db-breadcrumbs a:hover { color: var(--db-blue); text-decoration: underline; }
+.db-ui-active .db-breadcrumbs span[aria-current] { color: var(--db-gray-700); font-weight: 600; }
+/* On the CMS "sheet" pages the sheet's own padding already sits the
+   breadcrumb comfortably inside it; on everything else (domain, category,
+   news, all-domains) #main renders full-width, so the trail needs its own
+   inline gutter to line up with the H1/content below rather than pinning
+   to the very edge. */
+body.page:not(.home) .db-ui-active .db-breadcrumbs { margin-bottom: var(--db-sp-6); }
+body:not(.page):not(.home) .db-ui-active .db-breadcrumbs,
+.single-domain.db-ui-active .db-breadcrumbs {
+	padding: var(--db-sp-4) var(--db-sp-6) 0;
+}
+@media (max-width: 768px) {
+	body:not(.page):not(.home) .db-ui-active .db-breadcrumbs,
+	.single-domain.db-ui-active .db-breadcrumbs { padding: var(--db-sp-3) var(--db-sp-4) 0; }
+	.db-ui-active .db-breadcrumbs ol { font-size: 12px; }
+}
+
+/* ==========================================================================
+   14c. DOMAIN ARCHIVES (/all-domains/, /domain-category/*) — page header +
+   sidebar polish. The theme's own .page-title is a 20px line with no
+   breathing room, and the "By TLD" / "By Characters" / "By Numeric" /
+   payment-icons sidebar sections are plain unstyled boxes — both read as
+   an unfinished page even though the domain cards themselves (styled
+   above) don't.
+   ========================================================================== */
+.db-ui-active .page-header {
+	padding: var(--db-sp-6) 0; margin-bottom: var(--db-sp-6) !important;
+	border-bottom: 1px solid var(--db-gray-200);
+}
+.db-ui-active .page-header .page-title {
+	font-size: clamp(26px, 4vw, 36px) !important; font-family: inherit !important;
+	color: var(--db-navy) !important; font-weight: 800 !important; letter-spacing: -0.02em;
+	margin: 0 !important; padding: 0 !important; float: none !important;
+}
+/* The em-dash before this <span> is a literal text node in the theme's
+   markup ("Technology Names &mdash; <span>8 Domains</span>") — kept
+   inline rather than wrapped to its own line, or the dash would dangle
+   at the end of the title with nothing visually following it. */
+.db-ui-active .page-header .page-title span {
+	display: inline-block; font-size: 14px; font-weight: 700; color: var(--db-blue) !important;
+	letter-spacing: 0; vertical-align: middle;
+}
+.db-ui-active #secondary.sidebar section {
+	background: var(--db-surface); border: 1px solid var(--db-gray-200); border-radius: var(--db-r-lg);
+	padding: var(--db-sp-5); margin-bottom: var(--db-sp-5); box-shadow: var(--db-shadow-sm);
+}
+.db-ui-active #secondary.sidebar section > span:first-child {
+	display: block; font-size: 13px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: .04em; color: var(--db-gray-500); margin-bottom: var(--db-sp-4);
+}
+.db-ui-active #secondary.sidebar .sidebar-table,
+.db-ui-active #secondary.sidebar .sidebar-table tbody,
+.db-ui-active #secondary.sidebar .sidebar-table tr {
+	display: block; border: none;
+}
+.db-ui-active #secondary.sidebar .sidebar-table {
+	display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--db-sp-3);
+}
+.db-ui-active #secondary.sidebar .sidebar-table td {
+	display: block; border: none; padding: 0;
+}
+.db-ui-active #secondary.sidebar .sidebar-table a {
+	display: block; text-align: center; padding: 10px 8px; border-radius: var(--db-r-md);
+	background: var(--db-gray-100); font-weight: 600; font-size: 14px; color: var(--db-navy) !important;
+	text-decoration: none !important; transition: background var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active #secondary.sidebar .sidebar-table a:hover { background: var(--db-blue-lt); color: var(--db-blue) !important; }
 
 /* ==========================================================================
    14. SINGLE-DOMAIN PAGE — downgraded H1s keep their original look as H2
@@ -2882,6 +3074,29 @@ add_action( 'wp_footer', function () {
 				});
 			}
 
+			/* 5.5. Desktop header: move the theme's real logo link and the
+			   server-rendered #db-desktop-nav into the fixed search bar so
+			   logo + menu + search render together in one row — moved, not
+			   cloned, so the logo keeps working as the same single element
+			   (no duplicate #masthead logo left behind) and the nav stays
+			   the same real links the drawer uses, just relocated. CSS
+			   hides #db-desktop-nav and the logo below 992px, where the
+			   drawer stays the only navigation. */
+			var fixedBar = document.querySelector('.site-header .domain-search');
+			var logoLink = document.querySelector('.site-branding .custom-logo-link');
+			var desktopNav = document.getElementById('db-desktop-nav');
+			if (document.body.classList.contains('single-domain')) {
+				// The fixed bar is hidden on this template (search doesn't
+				// belong on a single domain's own sale page) — the logo
+				// stays where it already is; just bring the nav to sit
+				// beside it instead of leaving it orphaned in the footer.
+				var branding = document.querySelector('.site-branding');
+				if (branding && desktopNav) { branding.appendChild(desktopNav); }
+			} else if (fixedBar) {
+				if (desktopNav) { fixedBar.insertBefore(desktopNav, fixedBar.firstChild); }
+				if (logoLink) { fixedBar.insertBefore(logoLink, fixedBar.firstChild); }
+			}
+
 			/* 6. Turn the theme's plain domain tables into a card grid.
 			   A domain table is any <table> containing a Buy Now / Make an
 			   Offer action (tagged in step 2). */
@@ -2892,8 +3107,16 @@ add_action( 'wp_footer', function () {
 				table.querySelectorAll('tr').forEach(function (tr) {
 					var action = tr.querySelector('.db-act-buy, .db-act-offer');
 					if (!action) { return; }
-					var nameLink = tr.querySelector('a:not(.db-act-buy):not(.db-act-offer)');
-					if (!nameLink) { return; }
+					// Prefer a link to the domain's own page specifically —
+					// a row can also contain an icon-only "visit the live
+					// site" link (href to the domain itself, e.g.
+					// http://example.com, no text, just an <i> glyph) that
+					// "a:not(.db-act-buy):not(.db-act-offer)" matched first
+					// on some rows, leaving domainText empty and the card
+					// showing a bare "?" with no name (confirmed live).
+					var nameLink = tr.querySelector('a[href*="/domains/"]:not(.db-act-buy):not(.db-act-offer)')
+						|| tr.querySelector('a:not(.db-act-buy):not(.db-act-offer)');
+					if (!nameLink || !(nameLink.textContent || '').trim()) { return; }
 
 					// Extract the price by scanning the price cell's text and
 					// removing the button's own label — robust whether the
@@ -3300,6 +3523,59 @@ add_action( 'wp_footer', function () {
 					offerForm.parentNode.insertBefore(intro, offerForm);
 				}
 			}
+
+			/* 12. Live news card preview modal (db-news-block.php's
+			   .db-news-card__trigger buttons). Built once, reused for every
+			   card; the one real external link lives inside it, clearly
+			   labelled, instead of the card itself navigating off-site. */
+			var newsScrim = null;
+			function openNewsPreview(btn) {
+				if (!newsScrim) {
+					newsScrim = document.createElement('div');
+					newsScrim.className = 'db-news-modal-scrim';
+					newsScrim.innerHTML = '<div class="db-news-modal" role="dialog" aria-modal="true">' +
+						'<button type="button" class="db-news-modal-close" aria-label="Close">&times;</button>' +
+						'<img class="db-news-modal-img" alt="" hidden>' +
+						'<div class="db-news-modal-body">' +
+							'<h3 class="db-news-modal-title"></h3>' +
+							'<p class="db-news-modal-excerpt"></p>' +
+							'<a class="db-news-modal-link" target="_blank" rel="noopener nofollow"><span class="db-news-modal-link__label">Continue reading</span> <span aria-hidden="true">&rarr;</span></a>' +
+							'<p class="db-news-modal-note"></p>' +
+						'</div></div>';
+					document.body.appendChild(newsScrim);
+					newsScrim.addEventListener('click', function (e) {
+						if (e.target === newsScrim || e.target.closest('.db-news-modal-close')) { closeNewsPreview(); }
+					});
+					document.addEventListener('keydown', function (e) {
+						if (e.key === 'Escape' && newsScrim.classList.contains('is-open')) { closeNewsPreview(); }
+					});
+				}
+				var img = newsScrim.querySelector('.db-news-modal-img');
+				var image = btn.getAttribute('data-image');
+				if (image) { img.src = image; img.hidden = false; } else { img.hidden = true; img.removeAttribute('src'); }
+				newsScrim.querySelector('.db-news-modal-title').textContent = btn.getAttribute('data-title') || '';
+				newsScrim.querySelector('.db-news-modal-excerpt').textContent = btn.getAttribute('data-excerpt') || '';
+				var link = btn.getAttribute('data-link') || '#';
+				var source = btn.getAttribute('data-source') || 'the source';
+				var linkEl = newsScrim.querySelector('.db-news-modal-link');
+				linkEl.href = link;
+				linkEl.querySelector('.db-news-modal-link__label').textContent = 'Continue reading at ' + source;
+				var host = '';
+				try { host = new URL(link).hostname.replace(/^www\./, ''); } catch (e) {}
+				newsScrim.querySelector('.db-news-modal-note').textContent = host
+					? 'This article is published by ' + source + ' (' + host + '), not Domain Brothers — the link above leaves this site.'
+					: '';
+				newsScrim.classList.add('is-open');
+				document.body.classList.add('db-mnav-open'); // reuses the drawer's existing scroll-lock rule
+			}
+			function closeNewsPreview() {
+				if (newsScrim) { newsScrim.classList.remove('is-open'); }
+				document.body.classList.remove('db-mnav-open');
+			}
+			document.addEventListener('click', function (e) {
+				var trigger = e.target.closest && e.target.closest('.db-news-card__trigger');
+				if (trigger) { openNewsPreview(trigger); }
+			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
 	</script>
@@ -3845,3 +4121,8 @@ require_once __DIR__ . '/db-domain-page-block.php';
    NEWS — live RSS feed on /news/, duplicate-image fix on posts
    ============================================================ */
 require_once __DIR__ . '/db-news-block.php';
+
+/* ============================================================
+   BREADCRUMBS — real trail on every front-end template
+   ============================================================ */
+require_once __DIR__ . '/db-breadcrumbs-block.php';
