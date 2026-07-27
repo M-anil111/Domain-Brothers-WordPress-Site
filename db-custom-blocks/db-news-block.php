@@ -281,14 +281,51 @@ if ( ! function_exists( 'db_fix_post_images_https_map' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_fix_post_images_uploads_index' ) ) {
+	/**
+	 * lowercased-basename => real relative path, for every file under
+	 * uploads/YYYY/MM/. Built once per run (a single two-level glob) instead
+	 * of once per broken image reference — with 802 posts referencing dead
+	 * images in one pass, a glob() per reference was both slow and, worse,
+	 * case-sensitive: several "dead" images turned out to exist under a
+	 * different case (post content says "GoDaddy-reports-Q4...jpg", the
+	 * actual file on disk is "godaddy-reports-q4...jpg" — WordPress
+	 * lower-cases on upload; whatever generated the original import HTML
+	 * didn't match that). A case-sensitive glob() reported these as
+	 * unfixable and would have deleted the image from the post outright.
+	 */
+	function db_fix_post_images_uploads_index() {
+		$uploads = wp_get_upload_dir();
+		$index   = array();
+		$seen    = array();
+		foreach ( (array) glob( $uploads['basedir'] . '/*/*/*' ) as $path ) {
+			$key = strtolower( wp_basename( $path ) );
+			// A basename that exists more than once anywhere in uploads/ is
+			// ambiguous — picking either one risks matching a post to a
+			// completely unrelated image with a common name (e.g. a generic
+			// "logo.png" reused across years). Only ever resolve unique
+			// basenames automatically; leave collisions alone.
+			if ( isset( $seen[ $key ] ) ) {
+				unset( $index[ $key ] );
+				continue;
+			}
+			$seen[ $key ]  = true;
+			$index[ $key ] = str_replace( $uploads['basedir'], '', $path );
+		}
+		return $index;
+	}
+}
+
 if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 	/**
 	 * Applies all three fixes to one post's content and returns
 	 * array( $new_content, $changes ) — $changes is a list of human-readable
 	 * strings describing what changed, empty if nothing did. $https_map is
-	 * the pre-computed url => bool result of db_fix_post_images_https_map().
+	 * the pre-computed url => bool result of db_fix_post_images_https_map();
+	 * $uploads_index is the pre-computed result of
+	 * db_fix_post_images_uploads_index().
 	 */
-	function db_fix_post_images_in_content( $content, array $https_map = array() ) {
+	function db_fix_post_images_in_content( $content, array $https_map = array(), array $uploads_index = array() ) {
 		$changes = array();
 		if ( ! is_string( $content ) || '' === $content ) {
 			return array( $content, $changes );
@@ -331,11 +368,12 @@ if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 					continue; // exists after all — an earlier fix in this same pass may have moved it.
 				}
 				$basename = wp_basename( $path );
-				$found    = glob( $uploads['basedir'] . '/*/*/' . $basename );
-				if ( ! empty( $found ) && 1 === count( $found ) ) {
-					$new_path = str_replace( $uploads['basedir'], '', $found[0] );
-					$content  = str_replace( $path, $new_path, $content );
+				$new_path = isset( $uploads_index[ strtolower( $basename ) ] ) ? $uploads_index[ strtolower( $basename ) ] : '';
+				if ( $new_path && $new_path !== $path ) {
+					$content   = str_replace( $path, $new_path, $content );
 					$changes[] = "relocated {$basename} to {$new_path}";
+				} elseif ( $new_path ) {
+					continue; // already correct — case-insensitive match found itself.
 				} else {
 					$content   = str_replace( $whole[0], '', $content );
 					$changes[] = "removed dead image reference: {$basename}";
@@ -366,11 +404,12 @@ add_action( 'init', function () {
 	}
 	// One reachability probe per unique external URL for the whole run
 	// (see db_fix_post_images_https_map() docblock for why this matters).
-	$https_map = db_fix_post_images_https_map( db_fix_post_images_find_http_urls( $contents ) );
+	$https_map     = db_fix_post_images_https_map( db_fix_post_images_find_http_urls( $contents ) );
+	$uploads_index = db_fix_post_images_uploads_index();
 
 	$report = array();
 	foreach ( $posts as $post_id ) {
-		list( $new, $changes ) = db_fix_post_images_in_content( $contents[ $post_id ], $https_map );
+		list( $new, $changes ) = db_fix_post_images_in_content( $contents[ $post_id ], $https_map, $uploads_index );
 		if ( empty( $changes ) ) {
 			continue;
 		}
