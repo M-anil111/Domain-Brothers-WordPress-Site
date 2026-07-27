@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.20.0
+ * Version:     3.21.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.20.0' );
+define( 'DB_BLOCKS_LOADED', '3.21.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2455,15 +2455,22 @@ body.db-ui-active { padding-top: 70px !important; }
 }
 .db-ui-active .service_section::-webkit-scrollbar { display: none; }
 .db-ui-active .serviceBox { flex: 0 0 82%; scroll-snap-align: start; }
+/* flex-wrap + justify-content:center rather than a fixed-track grid: the
+   card count here isn't always a clean multiple of the column count (one
+   card was removed sitewide elsewhere in this file, leaving 5 — an odd
+   number against 3 columns), and a grid's unfilled tracks on a partial
+   last row stay put on the left, reading as a lopsided 3-then-2 layout.
+   Flex-wrap simply runs out of row and starts a new one, and centering
+   that new row costs nothing when it happens to be full anyway. */
 @media (min-width: 640px) {
 	.db-ui-active .service_section {
-		display: grid; grid-template-columns: 1fr 1fr; gap: var(--db-sp-6);
+		display: flex; flex-wrap: wrap; justify-content: center; gap: var(--db-sp-6);
 		margin: var(--db-sp-8) 0; padding: 0; overflow: visible;
 	}
-	.db-ui-active .serviceBox { flex: initial; }
+	.db-ui-active .serviceBox { flex: 0 1 calc(50% - var(--db-sp-6) / 2); }
 }
 @media (min-width: 980px) {
-	.db-ui-active .service_section { grid-template-columns: repeat(3, 1fr); }
+	.db-ui-active .serviceBox { flex-basis: calc(33.333% - var(--db-sp-6) * 2 / 3); }
 }
 .db-ui-active .serviceBox {
 	background: #fff; border-radius: var(--db-r-lg); padding: var(--db-sp-6);
@@ -2808,6 +2815,28 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 }
 .home.db-ui-active #main.site-main {
 	padding-left: var(--db-sp-6); padding-right: var(--db-sp-6);
+}
+/* This row originally held three equal Bootstrap col-lg-4 columns
+   (Featured, Newly Added, the trust-badge/browse-by-TLD sidebar) that
+   sat side by side on desktop. Merging the first two into one full-width
+   .db-home-tabs block (above) left the third — still col-lg-4, since it
+   isn't a domain listing and the enhancer script never touches it — as
+   an orphaned 33%-wide box on its own line below, with nothing beside
+   it: on a wide screen that reads as a small floating card next to a
+   large dead patch of empty canvas. Turning the row into a flex
+   container puts .db-home-tabs and that remaining sidebar column back
+   side by side, same as the original 3-column intent, just with the two
+   domain lists now sharing one wider slot instead of two narrower ones. */
+@media (min-width: 992px) {
+	.home.db-ui-active #main.homepage-listing > .row {
+		display: flex; align-items: flex-start; gap: var(--db-sp-8);
+	}
+	.home.db-ui-active #main.homepage-listing > .row > .db-home-tabs {
+		flex: 1 1 auto; min-width: 0;
+	}
+	.home.db-ui-active #main.homepage-listing > .row > .col-lg-4 {
+		flex: 0 0 320px; width: 320px; float: none;
+	}
 }
 .db-ui-active .db-home-tabs { width: 100%; margin: var(--db-sp-8) 0 var(--db-sp-6); }
 .db-ui-active .db-home-tabbar {
