@@ -227,13 +227,68 @@ if ( ! function_exists( 'db_fix_post_images_known_moves' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_fix_post_images_find_http_urls' ) ) {
+	/**
+	 * Every distinct http:// image URL referenced across a batch of post
+	 * content strings — a pure string scan, no network I/O.
+	 */
+	function db_fix_post_images_find_http_urls( array $contents ) {
+		$urls = array();
+		foreach ( $contents as $content ) {
+			if ( ! is_string( $content ) || ! preg_match_all( '#(?:src|srcset)="(http://[^"]+)"#i', $content, $m ) ) {
+				continue;
+			}
+			foreach ( $m[1] as $raw ) {
+				// srcset can hold several "url widthw" entries.
+				foreach ( preg_split( '/\s*,\s*/', $raw ) as $entry ) {
+					$url = strtok( trim( $entry ), ' ' );
+					if ( $url && 0 === stripos( $url, 'http://' ) ) {
+						$urls[ $url ] = true;
+					}
+				}
+			}
+		}
+		return array_keys( $urls );
+	}
+}
+
+if ( ! function_exists( 'db_fix_post_images_https_map' ) ) {
+	/**
+	 * Checks each unique http:// URL exactly once (short timeout — this is a
+	 * reachability probe, not a real page load) and returns url => bool,
+	 * true meaning the https:// counterpart is safe to switch to.
+	 *
+	 * Deliberately checked ONCE per unique URL for the whole run rather than
+	 * once per post that references it — with the same image often hotlinked
+	 * across dozens of old syndicated posts, per-post checking multiplied a
+	 * handful of real URLs into a live-request count large enough to run the
+	 * whole trigger past PHP's execution time limit (confirmed: an earlier
+	 * version of this hung for 280+ seconds on this exact site).
+	 */
+	function db_fix_post_images_https_map( array $urls ) {
+		$map = array();
+		// Hard cap so a surprise long tail of distinct hotlinked hosts can't
+		// run this past PHP's execution time limit — 40 URLs at a 4s timeout
+		// each is at most ~160s. Any URL past the cap is simply left as
+		// bare http:// for a follow-up run rather than checked.
+		$urls = array_slice( $urls, 0, 40 );
+		foreach ( $urls as $url ) {
+			$https      = 'https://' . substr( $url, 7 );
+			$resp       = wp_remote_head( $https, array( 'timeout' => 4 ) );
+			$map[ $url ] = ! is_wp_error( $resp ) && wp_remote_retrieve_response_code( $resp ) < 400;
+		}
+		return $map;
+	}
+}
+
 if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 	/**
 	 * Applies all three fixes to one post's content and returns
 	 * array( $new_content, $changes ) — $changes is a list of human-readable
-	 * strings describing what changed, empty if nothing did.
+	 * strings describing what changed, empty if nothing did. $https_map is
+	 * the pre-computed url => bool result of db_fix_post_images_https_map().
 	 */
-	function db_fix_post_images_in_content( $content ) {
+	function db_fix_post_images_in_content( $content, array $https_map = array() ) {
 		$changes = array();
 		if ( ! is_string( $content ) || '' === $content ) {
 			return array( $content, $changes );
@@ -250,25 +305,13 @@ if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 			}
 		}
 
-		// 2) Bare http:// images — upgrade to https:// only after confirming
-		// the https version actually loads; leave alone otherwise.
-		if ( preg_match_all( '#(?:src|srcset)="(http://[^"]+)"#i', $content, $m ) ) {
-			$checked = array();
-			foreach ( array_unique( $m[1] ) as $raw ) {
-				// srcset can hold several "url widthw" entries.
-				foreach ( preg_split( '/\s*,\s*/', $raw ) as $entry ) {
-					$url = strtok( trim( $entry ), ' ' );
-					if ( ! $url || 0 !== stripos( $url, 'http://' ) || isset( $checked[ $url ] ) ) {
-						continue;
-					}
-					$checked[ $url ] = true;
-					$https            = 'https://' . substr( $url, 7 );
-					$resp             = wp_remote_head( $https, array( 'timeout' => 8 ) );
-					if ( ! is_wp_error( $resp ) && wp_remote_retrieve_response_code( $resp ) < 400 ) {
-						$content   = str_replace( $url, $https, $content );
-						$changes[] = "upgraded {$url} to https";
-					}
-				}
+		// 2) Bare http:// images — upgrade to https:// wherever the batch
+		// probe above confirmed the https version actually loads.
+		foreach ( $https_map as $url => $ok ) {
+			if ( $ok && false !== strpos( $content, $url ) ) {
+				$https     = 'https://' . substr( $url, 7 );
+				$content   = str_replace( $url, $https, $content );
+				$changes[] = "upgraded {$url} to https";
 			}
 		}
 
@@ -315,12 +358,19 @@ add_action( 'init', function () {
 		wp_die( 'Repair dead/mixed-content images in post content? <a href="' . esc_url( $dry_url ) . '">Dry run (no changes saved)</a>', 'DB Post Image Repair', array( 'response' => 200 ) );
 	}
 
-	$commit = ! empty( $_GET['commit'] );
-	$posts  = get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+	$commit    = ! empty( $_GET['commit'] );
+	$posts     = get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+	$contents  = array();
+	foreach ( $posts as $post_id ) {
+		$contents[ $post_id ] = get_post_field( 'post_content', $post_id );
+	}
+	// One reachability probe per unique external URL for the whole run
+	// (see db_fix_post_images_https_map() docblock for why this matters).
+	$https_map = db_fix_post_images_https_map( db_fix_post_images_find_http_urls( $contents ) );
+
 	$report = array();
 	foreach ( $posts as $post_id ) {
-		$content            = get_post_field( 'post_content', $post_id );
-		list( $new, $changes ) = db_fix_post_images_in_content( $content );
+		list( $new, $changes ) = db_fix_post_images_in_content( $contents[ $post_id ], $https_map );
 		if ( empty( $changes ) ) {
 			continue;
 		}
