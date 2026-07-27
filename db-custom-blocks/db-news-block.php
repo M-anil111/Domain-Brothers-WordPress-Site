@@ -397,7 +397,11 @@ add_action( 'init', function () {
 	}
 
 	$commit    = ! empty( $_GET['commit'] );
-	$posts     = get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+	// Not just blog posts: the same wrong-upload-date-folder bug that hits
+	// old news posts also turned up on at least one static Page
+	// (sell-social-media-handles, a services page with an embedded team
+	// photo grid) — confirmed live, so both post types are scanned.
+	$posts     = get_posts( array( 'post_type' => array( 'post', 'page' ), 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
 	$contents  = array();
 	foreach ( $posts as $post_id ) {
 		$contents[ $post_id ] = get_post_field( 'post_content', $post_id );
