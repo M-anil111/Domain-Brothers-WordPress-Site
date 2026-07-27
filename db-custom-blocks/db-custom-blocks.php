@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.17.0
+ * Version:     3.18.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.17.0' );
+define( 'DB_BLOCKS_LOADED', '3.18.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -408,7 +408,7 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	}
 	.db-hp-hero {
 		position: relative; width: 100vw; left: 50%; right: 50%;
-		margin-left: -50vw; margin-right: -50vw; margin-top: 0; margin-bottom: 48px;
+		margin-left: -50vw; margin-right: -50vw; margin-top: 0; margin-bottom: 0;
 		background: linear-gradient(150deg, #0a1628 0%, #08173a 42%, #132b52 100%);
 		overflow: hidden;
 		padding: 0 24px clamp(64px, 10vw, 124px);
@@ -530,7 +530,6 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		.db-hp-btn-primary:hover, .db-hp-btn-ghost:hover { transform: none; }
 	}
 	@media (max-width: 580px) {
-		.db-hp-hero { margin-bottom: 32px; }
 		.db-hp-ctas { flex-direction: column; align-items: center; gap: 12px; margin-bottom: 44px; }
 		.db-hp-btn-primary, .db-hp-btn-ghost { width: 100%; max-width: 340px; text-align: center; }
 		.db-hp-tdot { display: none; }
@@ -2738,7 +2737,35 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
    13. HOME LISTING TABS — "Featured Top Domains" / "Newly Added"
    (built by the enhancer script above from two stacked homepage columns)
    ========================================================================== */
-.db-ui-active .db-home-tabs { width: 100%; margin: var(--db-sp-6) 0; }
+/* #page (Bootstrap .container), #content (.row), and #primary (Bootstrap
+   .col-lg-9/.col-md-8/.col-sm-12) each carry their own unconditional
+   15px left/right gutter now that bootstrap.min.css loads site-wide —
+   Bootstrap 3's grid applies that gutter padding to every col-* class at
+   every viewport, only the width/float rules are breakpoint-gated. Three
+   of those gutters stacked (plus .row's own negative margins fighting
+   them unevenly) left roughly 30-40px of dead space down each side of
+   this tab section below the hero, on top of a visible seam where
+   #page's own (unstyled) white background showed between the hero and
+   the blue canvas beneath it. Neutralized on the homepage specifically —
+   every other page still needs Bootstrap's grid math for its own layout
+   (the header row, the checkout columns, etc.) — and replaced with one
+   single, consistent gutter on #main itself, matching the same 24px the
+   hero above already uses, so the two sections read as one continuous
+   layout instead of a narrower box floating inside a wider one. */
+.home.db-ui-active #page.container,
+.home.db-ui-active #primary.content-area {
+	padding-left: 0; padding-right: 0;
+}
+.home.db-ui-active #content.site-content.row {
+	margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0;
+}
+.home.db-ui-active #main.homepage-listing > .row {
+	margin-left: 0; margin-right: 0;
+}
+.home.db-ui-active #main.site-main {
+	padding-left: var(--db-sp-6); padding-right: var(--db-sp-6);
+}
+.db-ui-active .db-home-tabs { width: 100%; margin: var(--db-sp-8) 0 var(--db-sp-6); }
 .db-ui-active .db-home-tabbar {
 	display: flex; gap: var(--db-sp-3); margin-bottom: var(--db-sp-5);
 	overflow-x: auto; scrollbar-width: none;
