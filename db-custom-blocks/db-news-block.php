@@ -309,8 +309,19 @@ if ( ! function_exists( 'db_fix_post_images_uploads_index' ) ) {
 				unset( $index[ $key ] );
 				continue;
 			}
-			$seen[ $key ]  = true;
-			$index[ $key ] = str_replace( $uploads['basedir'], '', $path );
+			$seen[ $key ] = true;
+			// Stored as the URL-style path post content actually uses
+			// ("/wp-content/uploads/2024/04/file.jpg"), not basedir-relative
+			// ("/2024/04/file.jpg") — the two content-rewrite call sites
+			// below match/replace full "/wp-content/uploads/..." strings, so
+			// a basedir-relative value here silently dropped that prefix
+			// when substituted back in (confirmed live: it shipped a broken
+			// "https://host/2024/04/file.jpg" URL missing the segment
+			// entirely — caught and fixed before any further posts ran the
+			// buggy version, but 807 already had; see the repair pass this
+			// same file's docblock points to).
+			$cut            = strpos( $path, '/wp-content/uploads' );
+			$index[ $key ] = false !== $cut ? substr( $path, $cut ) : $path;
 		}
 		return $index;
 	}
@@ -329,6 +340,21 @@ if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 		$changes = array();
 		if ( ! is_string( $content ) || '' === $content ) {
 			return array( $content, $changes );
+		}
+
+		// 0) Self-repair for a bug in an earlier version of this exact
+		// function: it once built $uploads_index without the
+		// "/wp-content/uploads" prefix, then substituted that bare value
+		// straight into src="..." — shipping "https://host/2024/04/x.jpg"
+		// (missing the whole /wp-content/uploads/ segment) to 807 posts
+		// before this was caught. srcset attributes on the same <img> were
+		// untouched, so the fix is unambiguous: an img src whose path starts
+		// directly with a 4-digit year is always this corruption, never a
+		// legitimate URL on this site (no date-based permalinks exist here).
+		$repaired = preg_replace( '#(src=")(https?://[^/"]+)?(/\d{4}/\d{2}/[^"]+\.(?:jpg|jpeg|png|gif|svg|webp))"#i', '$1$2/wp-content/uploads$3"', $content, -1, $repair_count );
+		if ( $repair_count > 0 ) {
+			$changes[] = "repaired {$repair_count} src attribute(s) missing /wp-content/uploads/ (see 2026-07-27 fix note)";
+			$content   = $repaired;
 		}
 		$host = wp_parse_url( home_url(), PHP_URL_HOST );
 
@@ -363,7 +389,13 @@ if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
 				if ( '' === $path || isset( $replaced[ $whole[0] ] ) ) {
 					continue;
 				}
-				$local = $uploads['basedir'] . $path;
+				// $path is URL-style ("/wp-content/uploads/2023/12/x.jpg");
+				// $uploads['basedir'] is a filesystem path that ALREADY ends
+				// in ".../wp-content/uploads" — concatenating them verbatim
+				// double-counts that segment and file_exists() never finds
+				// anything real, even when the file is fine. Strip the
+				// duplicated prefix from $path first.
+				$local = $uploads['basedir'] . preg_replace( '#^/wp-content/uploads#', '', $path );
 				if ( file_exists( $local ) ) {
 					continue; // exists after all — an earlier fix in this same pass may have moved it.
 				}
