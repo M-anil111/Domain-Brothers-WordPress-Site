@@ -120,6 +120,46 @@ add_action( 'wp_enqueue_scripts', function () {
 	' );
 }, 20 );
 
+/* ─── Multiple <h1> tags on every domain page ───────────────────────────── */
+
+if ( ! function_exists( 'db_domain_page_fix_multiple_h1' ) ) {
+	/**
+	 * This template renders three real <h1> tags on every domain page — "You
+	 * are looking to purchase X" (.main-title, the actual page title), "The
+	 * domain name X is for sale!" (.domain-detail), and "About X"
+	 * (.about_cnt) — a multiple-H1 defect flagged on 383 pages in the 2026-07
+	 * site audit. Only the first is a real page title; the other two are
+	 * section headings mistagged as h1. Keeps the first <h1> untouched and
+	 * downgrades every later one on the page to <h2>; matching CSS in
+	 * db_ui_css() (".domain-detail h2", ".about_cnt h2") keeps them pixel-
+	 * identical to how they rendered as <h1>.
+	 */
+	function db_domain_page_fix_multiple_h1( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, '<h1' ) ) {
+			return $html;
+		}
+		$seen = 0;
+		return preg_replace_callback(
+			'#<(h1)\b([^>]*)>(.*?)</h1>#is',
+			function ( $m ) use ( &$seen ) {
+				$seen++;
+				if ( 1 === $seen ) {
+					return $m[0];
+				}
+				return '<h2' . $m[2] . '>' . $m[3] . '</h2>';
+			},
+			$html
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) ) {
+		return;
+	}
+	ob_start( 'db_domain_page_fix_multiple_h1' );
+}, 20 );
+
 if ( ! function_exists( 'db_domain_page_modal_shim_js' ) ) {
 	/**
 	 * Minimal, dependency-free replacement for the one Bootstrap 3 modal

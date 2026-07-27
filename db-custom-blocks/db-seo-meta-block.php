@@ -556,6 +556,26 @@ if ( ! function_exists( 'db_seo_resolve' ) ) {
 				}
 			}
 		}
+
+		// /news/ is WordPress's own posts page (confirmed live: body class
+		// "blog", no page ID — is_home(), not is_page('news')), so without
+		// this branch it fell all the way through to db_seo_fallback_def()'s
+		// generic "is_post_type_archive('domain') || is_home()" case below —
+		// the domain-marketplace title/description on the news archive, and
+		// (worse) the exact same title+description on every one of its 300+
+		// paginated pages. $defs['news'] already has the right copy; it just
+		// never got consulted here. Flagged in the 2026-07 audit as 39
+		// duplicate titles / 39 duplicate descriptions.
+		if ( is_home() ) {
+			$defs  = db_seo_defs();
+			$def   = isset( $defs['news'] ) ? $defs['news'] : array( 'title' => 'News' . DB_SEO_SUFFIX, 'desc' => '', 'kw' => '' );
+			$paged = max( 1, (int) get_query_var( 'paged' ) );
+			if ( $paged > 1 ) {
+				$def['title'] = str_replace( DB_SEO_SUFFIX, ' – Page ' . $paged . DB_SEO_SUFFIX, $def['title'] );
+				$def['desc']  = rtrim( $def['desc'], '. ' ) . '. Page ' . $paged . ' of the latest listings.';
+			}
+			return $def;
+		}
 		return db_seo_fallback_def();
 	}
 }
@@ -707,3 +727,66 @@ if ( ! function_exists( 'db_seo_dedupe_head' ) ) {
 		return $head . $rest;
 	}
 }
+
+/* ─── Heading-structure fixes flagged in the 2026-07 site audit ─────────────── */
+
+if ( ! function_exists( 'db_seo_fix_news_pagination_h1' ) ) {
+	/**
+	 * The theme's own archive header renders <h1 class="page-title
+	 * screen-reader-text">News</h1> — identical text on every one of the
+	 * /news/ archive's 300+ paginated pages (confirmed live). Screen-reader-
+	 * only doesn't mean SEO-invisible: crawlers still read it, and the audit
+	 * flagged 38 duplicate H1s from this exact pattern. Appends the page
+	 * number so each paginated page has a distinct H1, matching the
+	 * pagination-aware title/description added in db_seo_resolve() above.
+	 */
+	function db_seo_fix_news_pagination_h1( $html ) {
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		if ( $paged < 2 || ! is_string( $html ) ) {
+			return $html;
+		}
+		return preg_replace(
+			'#(<h1\b[^>]*\bclass="[^"]*\bpage-title\b[^"]*"[^>]*>)(.*?)(</h1>)#is',
+			'$1$2 – Page ' . $paged . '$3',
+			$html,
+			1
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_home() || max( 1, (int) get_query_var( 'paged' ) ) < 2 ) {
+		return;
+	}
+	ob_start( 'db_seo_fix_news_pagination_h1' );
+}, 20 );
+
+if ( ! function_exists( 'db_seo_promote_archive_h1' ) ) {
+	/**
+	 * The domain-category taxonomy archives and /all-domains/ render their
+	 * only page heading as <h2 class="page-title">, with no <h1> anywhere on
+	 * the page at all (confirmed live on both templates) — the "H1 tag
+	 * missing" defect the audit found on 144 pages. ".page-title" is styled
+	 * purely by class in the theme's CSS (never combined with the "h2"
+	 * element in a compound selector for these pages), so promoting the tag
+	 * itself to <h1> is a visual no-op.
+	 */
+	function db_seo_promote_archive_h1( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'page-title' ) ) {
+			return $html;
+		}
+		return preg_replace(
+			'#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>(.*?)</h2>#is',
+			'<h1$1>$2</h1>',
+			$html,
+			1
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ( ! is_tax( 'domain_category' ) && ! is_page( 'all-domains' ) ) ) {
+		return;
+	}
+	ob_start( 'db_seo_promote_archive_h1' );
+}, 20 );

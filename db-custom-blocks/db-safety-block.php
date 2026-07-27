@@ -210,6 +210,61 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_fix_landing_assets' );
 }, 21 );
 
+/* ─── Legacy ?lis=y landing template: redirect away instead of patching ─────── */
+
+/**
+ * The domain-listing template above renders that entire separate, stale,
+ * hand-rolled landing page whenever ?lis is present — its own <html> with no
+ * lang attribute, four <h1> tags, no Twitter Card meta, and body copy left
+ * over from one specific past webinar date plus an unrelated third-party ad
+ * ("The #1 Social Media Management Tool"). The current single-domain.php
+ * template — the one every domain URL without ?lis already renders — is the
+ * real, maintained page with none of those defects. Patching the legacy
+ * template's SEO problems in place would mean maintaining two parallel
+ * domain-page templates forever; redirecting away is the one-time fix.
+ * Priority -100 so this runs before any ob_start() below opens a buffer —
+ * a redirect this early never has anything queued to flush or discard.
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) || ! isset( $_GET['lis'] ) ) {
+		return;
+	}
+	$canonical = get_permalink();
+	if ( ! $canonical ) {
+		return;
+	}
+	wp_safe_redirect( $canonical, 301 );
+	exit;
+}, -100 );
+
+/**
+ * Every card/list that links to a domain page — the homepage, /all-domains/,
+ * the /domain-category/ archives — generates that ?lis=y link itself, and
+ * always without the trailing slash the permalink actually needs
+ * (/domains/{slug}?lis=y instead of /domains/{slug}/?lis=y), so every click
+ * already cost a 301 before the redirect above even fires. Rewriting those
+ * hrefs to the clean canonical URL fixes both at the source: no redirect hop
+ * at all, and the legacy template is never requested from anywhere on the
+ * site again (confirmed live: this is the only place ?lis=y links are
+ * generated — payment-plan-setup/buy-now links use a different ?d= scheme
+ * untouched by this).
+ */
+if ( ! function_exists( 'db_safety_fix_domain_listing_links' ) ) {
+	function db_safety_fix_domain_listing_links( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'lis=y' ) ) {
+			return $html;
+		}
+		return preg_replace( '#(/domains/[a-z0-9-]+)/?\?lis=y#i', '$1/', $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_fix_domain_listing_links' );
+}, 0 );
+
 /* ─── Branded failure page ─────────────────────────────────────────────────── */
 
 add_filter( 'wp_php_error_message', function ( $message ) {

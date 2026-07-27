@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.23.0
+ * Version:     3.24.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.23.0' );
+define( 'DB_BLOCKS_LOADED', '3.24.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2705,6 +2705,37 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 .db-ui-active .db-news-readmore { font-size: 14px; font-weight: 600; color: var(--db-blue) !important; text-decoration: none !important; }
 .db-ui-active .db-news-readmore:hover { text-decoration: underline !important; }
 
+/* ==========================================================================
+   14. SINGLE-DOMAIN PAGE — downgraded H1s keep their original look as H2
+   ========================================================================== */
+/* db-domain-page-block.php downgrades every <h1> after the page's first one
+   to <h2> — the theme's own style.css only ever styled those two headings
+   by element selector ("The domain name X is for sale!" via ".text_normal
+   h1", "About X" via ".about_cnt h1"; ".domain-detail h1 span.domain_name"
+   also applies to the first via its ancestor .domain-detail wrapper).
+   Without this the retagged headings fall back to the theme's generic h2
+   reset (1.4em, no color) instead of keeping their original look. These
+   mirror style.css's rules verbatim, just retargeted at h2. !important
+   guards against style.css's own ".entry-content h2"/generic "h2" resets
+   winning a same-specificity cascade tie by loading later in <head> than
+   this stylesheet does. Not scoped to .db-ui-active — the class swap needs
+   to look right even if that toggle is ever off. */
+.text_normal h2 {
+	display: inline-block !important; font-size: 36px !important; font-weight: 100 !important;
+	text-align: left !important; color: #FFF !important; font-family: 'latoregular' !important;
+	letter-spacing: 1px !important; margin-bottom: 26px !important;
+	text-shadow: 0 0 2px #0C5378 !important;
+}
+.domain-detail h2 span.domain_name {
+	display: block; font-family: 'latobold'; font-size: 48px; margin: 10px 0;
+	color: #6BE130; text-shadow: none;
+}
+.about_cnt h2 {
+	font-size: 32px !important; line-height: 40px !important; padding: 30px 0 !important;
+	margin: 0 !important; font-weight: normal !important; color: #67bd3c !important;
+	text-align: left !important; font-family: latobold !important;
+}
+
 		<?php
 		return (string) ob_get_clean();
 	}
@@ -3748,37 +3779,12 @@ add_action( 'init', function () {
 } );
 
 /* ============================================================
-   BLOCK 14 — DB DevOne logo fix (developed-by footer logo)
-   ============================================================ */
-
-/*
- * On domain listing pages where ?lis=y is present in the URL (the DomainFolio
- * theme appends this for "developed by" attribution pages), the theme renders
- * a generic logo. This block replaces it with the Domain Brothers wordmark
- * served server-side so it's present on first paint (no JS flash).
- *
- * If DomainFolio changes the filter name, update the hook below.
- */
-
-add_filter( 'devone_logo_url', function ( $url ) {
-	if ( isset( $_GET['lis'] ) ) {
-		return esc_url( home_url( '/wp-content/themes/DomainFolio/img/logo.png' ) );
-	}
-	return $url;
-} );
-
-/* Also inject an inline CSS override for the devone footer on ?lis pages. */
-add_action( 'wp_head', function () {
-	if ( ! isset( $_GET['lis'] ) ) {
-		return;
-	}
-	?>
-	<style id="db-devone-css">
-	.devone-footer-logo img { max-height: 28px !important; width: auto !important; }
-	.devone-footer { display: flex !important; align-items: center !important; gap: 8px !important; font-size: 12px !important; color: #888 !important; }
-	</style>
-	<?php
-} );
+   BLOCK 14 — (removed) DB DevOne logo fix for ?lis=y pages
+   ============================================================
+   db-safety-block.php now 301-redirects every ?lis=y domain-page request to
+   the canonical URL before the template (and this filter/wp_head hook) ever
+   runs, so this branding patch for that legacy page's own footer logo is
+   unreachable. Removed rather than left as dead code. */
 
 /* ============================================================
    PHASE 4 — CRM Lead Management

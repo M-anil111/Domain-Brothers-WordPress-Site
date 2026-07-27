@@ -181,3 +181,159 @@ add_action( 'template_redirect', function () {
 		);
 	} );
 }, 21 );
+
+/* ─── One-time repair: dead/mixed-content images inside old imported posts ──
+ *
+ * The 2026-07 site audit flagged 11 posts with mixed content (http:// images
+ * on an https:// page), 39 with 4XX images and 8 with 3XX images — all from
+ * posts imported years ago. Three distinct root causes, confirmed live:
+ *
+ *   1. Six team-member photos referenced in "sell-social-media-handles" (and
+ *      possibly elsewhere) point at /wp-content/uploads/2023/12/{name}.jpg,
+ *      which 404s — the real files sit one folder over, at .../2024/04/. A
+ *      copy/paste from a different post at import time, most likely.
+ *   2. Third-party hotlinked images (domaingang.com, namepros.com, and a very
+ *      old ftjcfx.com affiliate tracking pixel) served over bare http://,
+ *      tripping the browser's mixed-content warning on this https:// site,
+ *      even though every one still loads fine over https.
+ *   3. A handful of local uploads that are just gone (an SVG saved with its
+ *      MIME type accidentally appended to the filename, a GoDaddy earnings
+ *      graphic, a theme icon reference) — no correct URL to redirect them to,
+ *      so the only honest fix is to remove that one broken <img> rather than
+ *      leave a broken-image icon in a customer-facing article.
+ *
+ * This is a one-time content repair, not a per-request patch — it rewrites
+ * the affected posts' stored content directly (like the /?db_fix_services_page=1
+ * and /?db_make_service_pages=1 triggers above it in this codebase), so
+ * there's nothing left running on every page load afterward. Admin-only,
+ * nonce-gated, dry-run by default so the exact diff can be reviewed before
+ * anything is saved: /?db_fix_post_images=1 (dry run) then
+ * /?db_fix_post_images=1&commit=1 (after confirming the dry-run report).
+ */
+if ( ! function_exists( 'db_fix_post_images_known_moves' ) ) {
+	/**
+	 * Filename => correct date folder, for images confirmed live to have
+	 * moved. Matches both the full-size and the "-150x150" thumbnail variant.
+	 */
+	function db_fix_post_images_known_moves() {
+		return array(
+			'kartikmehta.jpg'  => '2024/04',
+			'jaymehta.jpg'     => '2024/04',
+			'ashishkalal.jpg'  => '2024/04',
+			'harshraval.jpg'   => '2024/04',
+			'mayank.jpg'       => '2024/04',
+			'sujitshukla.jpg'  => '2024/04',
+		);
+	}
+}
+
+if ( ! function_exists( 'db_fix_post_images_in_content' ) ) {
+	/**
+	 * Applies all three fixes to one post's content and returns
+	 * array( $new_content, $changes ) — $changes is a list of human-readable
+	 * strings describing what changed, empty if nothing did.
+	 */
+	function db_fix_post_images_in_content( $content ) {
+		$changes = array();
+		if ( ! is_string( $content ) || '' === $content ) {
+			return array( $content, $changes );
+		}
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		// 1) Known moved files — safe, no live check needed, checked above.
+		foreach ( db_fix_post_images_known_moves() as $file => $correct_dir ) {
+			$pattern = '#/wp-content/uploads/\d{4}/\d{2}/(' . preg_quote( pathinfo( $file, PATHINFO_FILENAME ), '#' ) . '(?:-\d+x\d+)?\.' . preg_quote( pathinfo( $file, PATHINFO_EXTENSION ), '#' ) . ')#i';
+			$new     = preg_replace( $pattern, '/wp-content/uploads/' . $correct_dir . '/$1', $content, -1, $count );
+			if ( $count > 0 ) {
+				$changes[] = "moved {$file} reference(s) to /{$correct_dir}/ ({$count}x)";
+				$content   = $new;
+			}
+		}
+
+		// 2) Bare http:// images — upgrade to https:// only after confirming
+		// the https version actually loads; leave alone otherwise.
+		if ( preg_match_all( '#(?:src|srcset)="(http://[^"]+)"#i', $content, $m ) ) {
+			$checked = array();
+			foreach ( array_unique( $m[1] ) as $raw ) {
+				// srcset can hold several "url widthw" entries.
+				foreach ( preg_split( '/\s*,\s*/', $raw ) as $entry ) {
+					$url = strtok( trim( $entry ), ' ' );
+					if ( ! $url || 0 !== stripos( $url, 'http://' ) || isset( $checked[ $url ] ) ) {
+						continue;
+					}
+					$checked[ $url ] = true;
+					$https            = 'https://' . substr( $url, 7 );
+					$resp             = wp_remote_head( $https, array( 'timeout' => 8 ) );
+					if ( ! is_wp_error( $resp ) && wp_remote_retrieve_response_code( $resp ) < 400 ) {
+						$content   = str_replace( $url, $https, $content );
+						$changes[] = "upgraded {$url} to https";
+					}
+				}
+			}
+		}
+
+		// 3) Genuinely dead local uploads — try to find the file elsewhere
+		// under uploads/ by basename; if that fails, remove the <img> (and
+		// its wrapping <figure>/<picture>, if any) so nothing broken ships.
+		if ( $host && preg_match_all( '#<(figure|picture)[^>]*>(?:(?!</\1>).)*?<img[^>]*src="https?://' . preg_quote( $host, '#' ) . '(/wp-content/uploads/[^"]+)"[^>]*>(?:(?!</\1>).)*?</\1>|<img[^>]*src="https?://' . preg_quote( $host, '#' ) . '(/wp-content/uploads/[^"]+)"[^>]*/?>#is', $content, $m2, PREG_OFFSET_CAPTURE ) ) {
+			$uploads  = wp_get_upload_dir();
+			$replaced = array();
+			foreach ( $m2[0] as $i => $whole ) {
+				$path = ! empty( $m2[2][ $i ][0] ) ? $m2[2][ $i ][0] : $m2[3][ $i ][0];
+				if ( '' === $path || isset( $replaced[ $whole[0] ] ) ) {
+					continue;
+				}
+				$local = $uploads['basedir'] . $path;
+				if ( file_exists( $local ) ) {
+					continue; // exists after all — an earlier fix in this same pass may have moved it.
+				}
+				$basename = wp_basename( $path );
+				$found    = glob( $uploads['basedir'] . '/*/*/' . $basename );
+				if ( ! empty( $found ) && 1 === count( $found ) ) {
+					$new_path = str_replace( $uploads['basedir'], '', $found[0] );
+					$content  = str_replace( $path, $new_path, $content );
+					$changes[] = "relocated {$basename} to {$new_path}";
+				} else {
+					$content   = str_replace( $whole[0], '', $content );
+					$changes[] = "removed dead image reference: {$basename}";
+				}
+				$replaced[ $whole[0] ] = true;
+			}
+		}
+
+		return array( $content, $changes );
+	}
+}
+
+add_action( 'init', function () {
+	if ( empty( $_GET['db_fix_post_images'] ) || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'db_fix_post_images' ) ) {
+		$dry_url     = wp_nonce_url( add_query_arg( 'db_fix_post_images', '1', home_url( '/' ) ), 'db_fix_post_images' );
+		$commit_url  = wp_nonce_url( add_query_arg( array( 'db_fix_post_images' => '1', 'commit' => '1' ), home_url( '/' ) ), 'db_fix_post_images' );
+		wp_die( 'Repair dead/mixed-content images in post content? <a href="' . esc_url( $dry_url ) . '">Dry run (no changes saved)</a>', 'DB Post Image Repair', array( 'response' => 200 ) );
+	}
+
+	$commit = ! empty( $_GET['commit'] );
+	$posts  = get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids' ) );
+	$report = array();
+	foreach ( $posts as $post_id ) {
+		$content            = get_post_field( 'post_content', $post_id );
+		list( $new, $changes ) = db_fix_post_images_in_content( $content );
+		if ( empty( $changes ) ) {
+			continue;
+		}
+		$report[] = '#' . $post_id . ' ' . esc_html( get_the_title( $post_id ) ) . '<br>&nbsp;&nbsp;' . implode( '<br>&nbsp;&nbsp;', array_map( 'esc_html', $changes ) );
+		if ( $commit ) {
+			wp_update_post( array( 'ID' => $post_id, 'post_content' => $new ) );
+		}
+	}
+
+	if ( empty( $report ) ) {
+		wp_die( 'No dead or mixed-content images found in any published post.', 'DB Post Image Repair', array( 'response' => 200 ) );
+	}
+	$mode  = $commit ? 'COMMITTED' : 'DRY RUN — nothing saved';
+	$next  = $commit ? '' : '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( array( 'db_fix_post_images' => '1', 'commit' => '1' ), home_url( '/' ) ), 'db_fix_post_images' ) ) . '">Commit these changes</a></p>';
+	wp_die( '<p><strong>' . $mode . '</strong> — ' . count( $report ) . ' post(s) affected:</p><p>' . implode( '</p><p>', $report ) . '</p>' . $next, 'DB Post Image Repair', array( 'response' => 200 ) );
+} );
