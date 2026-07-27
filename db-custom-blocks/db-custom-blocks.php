@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.19.0
+ * Version:     3.20.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.19.0' );
+define( 'DB_BLOCKS_LOADED', '3.20.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -3191,6 +3191,40 @@ add_action( 'wp_footer', function () {
 					hWrap.appendChild(col);
 				});
 			}
+
+			/* 8.6. The business does not accept domain submissions from the
+			   public at this time, so every "Sell Domains" / "sell your
+			   domain" promotion is stale — several separate places
+			   advertise it, each in different theme/page markup with no
+			   shared class to target in one shot:
+			     - Homepage "Our Services": a .serviceBox card.
+			     - /our-services/: a .shadowBox card (hide its whole
+			       .wp-block-column too, or the paired "Buy Domains" card
+			       would leave an empty half in that row).
+			     - /about-us/: one <li> in the "specialize in" list, linking
+			       to the now-orphaned /sell-your-domain/ (a dead link —
+			       that page 404s).
+			     - /site-map/: the auto-generated page list still links the
+			       one dedicated page this points to, /sell-domains-service/
+			       (left live and reachable by direct URL rather than
+			       unpublished — a CMS content decision, not a display fix
+			       this plugin should make on its own — just no longer
+			       promoted anywhere a visitor would actually browse into
+			       it).
+			   Matched by heading text / link target rather than any class,
+			   since none of these share one. */
+			document.querySelectorAll('.serviceBox, .shadowBox').forEach(function (card) {
+				var h = card.querySelector('h4.wp-block-heading, h5.wp-block-heading');
+				if (h && /^sell domains$/i.test((h.textContent || '').trim())) {
+					var col = card.closest('.wp-block-column') || card;
+					col.style.display = 'none';
+				}
+			});
+			document.querySelectorAll('.entry-content li').forEach(function (li) {
+				if (li.querySelector('a[href*="/sell-your-domain/"], a[href*="/sell-domains-service/"]')) {
+					li.style.display = 'none';
+				}
+			});
 
 			/* 9. /our-services/ page: each .shadowBox card (Buy Domains,
 			   Sell Domains, Website Design & Development) is plain text —
