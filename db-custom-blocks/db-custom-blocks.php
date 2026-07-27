@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.16.0
+ * Version:     3.17.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.16.0' );
+define( 'DB_BLOCKS_LOADED', '3.17.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2062,16 +2062,19 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 }
 
 /* The homepage's Google AdSense slot (theme markup, between the sidebar's
-   trust badges and "Welcome to Domain Brothers") has no height constraint
-   on this page — style.css defines one (.google_adsense{height:90px}) but
-   isn't enqueued here, and isn't sitewide for the reasons noted elsewhere
-   in this file. Confirmed live: a large blank gap in exactly that spot,
-   consistent with an ad slot reserving space for a unit that never fills
-   on a beta subdomain no AdSense account is approved for. Capping the
-   height (and clipping anything larger) bounds the gap regardless of
-   whether an ad ever renders there, without deciding for the owner
-   whether the ad slot itself should stay or go. */
-.db-ui-active .google_adsense { max-height: 100px; overflow: hidden; }
+   trust badges and "Welcome to Domain Brothers") reported a large blank
+   gap even after capping .google_adsense's height — confirmed why: the
+   real adsbygoogle.js (reachable from a real visitor's browser, not from
+   this sandbox) sets its own inline sizing on the <ins> element once it
+   runs, which can exceed a max-height set on that element's PARENT only
+   if the parent itself is still visible for the <ins> to lay out inside.
+   Hiding the parent outright removes that possibility instead of trying
+   to out-cap whatever the ad script does next: display:none on an
+   ancestor always wins regardless of what inline styles a script sets on
+   the descendant, since a non-rendered ancestor never lays out its
+   children at all. There is no approved AdSense account on this beta
+   subdomain for an ad to ever fill here anyway. */
+.db-ui-active .google_adsense { display: none !important; }
 
 /* ==========================================================================
    9. TABLES + PAGINATION
@@ -2335,12 +2338,12 @@ body.db-ui-active { padding-top: 70px !important; }
    badge, regardless of how large or oddly-shaped the original image was. */
 .db-icon-badge {
 	display: inline-flex; align-items: center; justify-content: center;
-	width: 60px; height: 60px; border-radius: 50%; flex: 0 0 auto;
+	width: 76px; height: 76px; border-radius: 50%; flex: 0 0 auto;
 	background: linear-gradient(160deg, #0a1628 0%, #16305a 100%);
 	box-shadow: 0 6px 16px rgba(10,22,40,.18);
-	margin-bottom: 14px;
+	margin-bottom: 16px;
 }
-.db-icon-badge svg { width: 28px; height: 28px; color: #ffffff; }
+.db-icon-badge svg { width: 34px; height: 34px; color: #ffffff; }
 /* Contact page's phone/email/social icons are small inline utility icons
    next to a text link, not a headline trust badge — the default size reads
    as oversized there. */
@@ -2470,26 +2473,47 @@ body.db-ui-active { padding-top: 70px !important; }
 .db-ui-active .serviceBox:nth-child(5) .db-icon-badge { background: linear-gradient(160deg, #4338ca 0%, #6d28d9 100%); }
 .db-ui-active .serviceBox:nth-child(6) .db-icon-badge { background: linear-gradient(160deg, #b45309 0%, #d97706 100%); }
 
-/* Domain price-table actions: tagged by the enhancer JS below. */
+/* Domain price-table actions: tagged by the enhancer JS below. Flat,
+   solid-fill pills (no lift-on-hover shadow trick) — a plain color/opacity
+   change on hover and press reads calmer and more deliberate than a
+   shadow+translate hover, closer to how a system-native pill button
+   behaves. The theme's own markup wraps the button text in a nested
+   <span class="badge-offer badge ad-cart">/<span class="badge-offer badge">
+   (a leftover Bootstrap "badge" class) — now that bootstrap.min.css loads
+   site-wide, its default .badge{background:#333} skin was painting a
+   second, smaller gray pill inside this one on every page that doesn't
+   also load the theme's own style.css to override it (confirmed live:
+   only the single-domain template and /our-services/ load that file).
+   Neutralized below so only the one pill this CSS draws is ever visible. */
 .db-ui-active a.db-act-buy {
 	display: inline-flex; align-items: center; justify-content: center;
-	padding: 8px 16px; margin-left: 10px;
-	background: var(--db-grad-navy); color: #fff !important;
-	border-radius: 999px; font-size: 13.5px; font-weight: 700;
+	padding: 10px 20px; margin-left: 10px;
+	background: var(--db-navy); color: #fff !important;
+	border-radius: 980px; font-size: 14px; font-weight: 600;
 	text-decoration: none !important; white-space: nowrap;
-	box-shadow: var(--db-shadow-sm);
-	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
+	transition: background var(--db-dur-fast) var(--db-ease), opacity var(--db-dur-fast) var(--db-ease);
 }
-.db-ui-active a.db-act-buy:hover { transform: translateY(-1px); box-shadow: var(--db-shadow-md); }
+.db-ui-active a.db-act-buy:hover { background: #16305a; }
+.db-ui-active a.db-act-buy:active { opacity: 0.7; }
 .db-ui-active a.db-act-offer {
 	display: inline-flex; align-items: center; justify-content: center;
-	padding: 7px 15px;
-	border: 1.5px solid var(--db-blue); color: var(--db-blue) !important;
-	border-radius: 999px; font-size: 13.5px; font-weight: 700;
+	padding: 9px 19px; margin-left: 10px;
+	background: var(--db-gray-100); color: var(--db-navy) !important;
+	border: none; border-radius: 980px; font-size: 14px; font-weight: 600;
 	text-decoration: none !important; white-space: nowrap;
-	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease);
+	transition: background var(--db-dur-fast) var(--db-ease), opacity var(--db-dur-fast) var(--db-ease);
 }
-.db-ui-active a.db-act-offer:hover { background: var(--db-blue); color: #fff !important; }
+.db-ui-active a.db-act-offer:hover { background: var(--db-gray-200); }
+.db-ui-active a.db-act-offer:active { opacity: 0.7; }
+.db-ui-active a.db-act-buy .badge,
+.db-ui-active a.db-act-offer .badge,
+.db-ui-active a.db-act-buy .badge-offer,
+.db-ui-active a.db-act-offer .badge-offer {
+	background: transparent !important; color: inherit !important;
+	padding: 0 !important; margin: 0 !important; border-radius: 0 !important;
+	font: inherit !important; display: inline !important; float: none !important;
+	min-width: 0 !important;
+}
 .db-ui-active td .db-price-strong { font-weight: 800; color: var(--db-navy); font-variant-numeric: tabular-nums; }
 
 /* Front page only: hide the theme's duplicate logo (the hero already
@@ -2709,6 +2733,30 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
    label above. */
 .db-ui-active .db-browse-panel > span { display: none; }
 .db-ui-active .db-browse-panel table { margin: 0; }
+
+/* ==========================================================================
+   13. HOME LISTING TABS — "Featured Top Domains" / "Newly Added"
+   (built by the enhancer script above from two stacked homepage columns)
+   ========================================================================== */
+.db-ui-active .db-home-tabs { width: 100%; margin: var(--db-sp-6) 0; }
+.db-ui-active .db-home-tabbar {
+	display: flex; gap: var(--db-sp-3); margin-bottom: var(--db-sp-5);
+	overflow-x: auto; scrollbar-width: none;
+}
+.db-ui-active .db-home-tabbar::-webkit-scrollbar { display: none; }
+.db-ui-active .db-home-tab {
+	flex: 0 0 auto; padding: 11px 22px; font-size: 15px; font-weight: 600;
+	color: var(--db-gray-700); background: var(--db-gray-50); border: 1px solid var(--db-gray-200);
+	border-radius: 980px; cursor: pointer; white-space: nowrap;
+	transition: background var(--db-dur-base) var(--db-ease), color var(--db-dur-base) var(--db-ease),
+	            border-color var(--db-dur-base) var(--db-ease);
+}
+.db-ui-active .db-home-tab:hover { border-color: var(--db-blue); color: var(--db-blue); }
+.db-ui-active .db-home-tab.is-active { background: var(--db-navy); border-color: transparent; color: #fff; }
+.db-ui-active .db-home-panel { display: none; width: 100%; }
+.db-ui-active .db-home-panel.is-active { display: block; }
+.db-ui-active .db-home-panel .View-all { display: block; margin: 0 0 var(--db-sp-4); }
+.db-ui-active .db-home-panel .View-all a { margin-left: 0; }
 
 		<?php
 		return (string) ob_get_clean();
@@ -3013,6 +3061,63 @@ add_action( 'wp_footer', function () {
 					sec.classList.add('db-browse-panel');
 					if (i === 0) { sec.classList.add('is-active'); }
 					bWrap.appendChild(sec);
+				});
+			}
+
+			/* 8.5. Homepage "Featured Top Domains" / "Newly Added": two
+			   separate Bootstrap col-lg-4 columns (each its own heading +
+			   table, already turned into a card grid by step 6 above) meant
+			   to sit in a 3-across row with the trust-badge sidebar on
+			   desktop — but col-lg-4 only takes effect at 1200px+, so below
+			   that (every phone and most tablets) they simply stack as two
+			   full-width sections one after another: a heading, a grid, a
+			   second heading, a second grid. Merged into one tabbed
+			   component instead — switch between "Featured Top Domains" and
+			   "Newly Added" rather than scrolling through both stacked in
+			   full — and dropped the col-lg-4 width class so the visible
+			   panel always uses the full row width, not one third of it.
+			   A third column with the same markup ("Latest Addition for
+			   Technology") is deliberately style="display:none" in the
+			   theme's own markup — the site owner's own call to keep that
+			   category off the homepage, not a bug to fix — so it's
+			   excluded rather than forced into the tab set. */
+			var homeListingCols = document.querySelectorAll('#main.homepage-listing .col-lg-4');
+			var homeDomainCols = Array.prototype.filter.call(homeListingCols, function (col) {
+				return col.style.display !== 'none'
+					&& col.querySelector('h2.page-title')
+					&& col.querySelector('.db-domain-grid, table');
+			});
+			if (homeDomainCols.length > 1) {
+				var hWrap = document.createElement('div');
+				hWrap.className = 'db-home-tabs';
+				var hBar = document.createElement('div');
+				hBar.className = 'db-home-tabbar';
+				hBar.setAttribute('role', 'tablist');
+				hWrap.appendChild(hBar);
+				homeDomainCols[0].parentNode.insertBefore(hWrap, homeDomainCols[0]);
+				homeDomainCols.forEach(function (col, i) {
+					var heading = col.querySelector('h2.page-title');
+					var label = heading ? heading.textContent.trim() : ('Tab ' + (i + 1));
+					var btn = document.createElement('button');
+					btn.type = 'button';
+					btn.className = 'db-home-tab' + (i === 0 ? ' is-active' : '');
+					btn.textContent = label;
+					btn.setAttribute('role', 'tab');
+					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+					btn.addEventListener('click', function () {
+						hBar.querySelectorAll('.db-home-tab').forEach(function (b) {
+							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+						});
+						homeDomainCols.forEach(function (c) { c.classList.remove('is-active'); });
+						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						col.classList.add('is-active');
+					});
+					hBar.appendChild(btn);
+					col.classList.add('db-home-panel');
+					col.classList.remove('col-lg-4', 'pe-0');
+					if (i === 0) { col.classList.add('is-active'); }
+					if (heading) { heading.style.display = 'none'; }
+					hWrap.appendChild(col);
 				});
 			}
 
