@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.21.0
+ * Version:     3.22.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.21.0' );
+define( 'DB_BLOCKS_LOADED', '3.22.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2181,7 +2181,22 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	   right:12px, 46px square, on every page — reserve that corner so the
 	   search field's own submit button doesn't render underneath it. */
 	padding-right: 78px;
+	/* Pinned to a fixed height instead of letting the search widget's own
+	   content set it: the widget's default WordPress/theme spacing made
+	   this render at 92px on non-home pages, not the ~70px this bar was
+	   built around — body's own padding-top compensation below (also
+	   70px) is what reserves room for it in normal flow, so any mismatch
+	   between the two isn't just a wrong number, it's this translucent,
+	   blurred bar overlapping and partly washing out the real header
+	   directly underneath it for however many px they disagree by
+	   (confirmed live: the masthead's logo showing faded through the
+	   blur). Centering the form inside a fixed-height box keeps the
+	   two numbers structurally equal instead of two guesses that can
+	   drift apart again the next time the widget's markup changes. */
+	height: 70px; box-sizing: border-box;
+	display: flex !important; align-items: center; overflow: hidden;
 }
+.db-ui-active .site-header .domain-search .widget { margin: 0; width: 100%; }
 .admin-bar .db-ui-active .site-header .domain-search { top: 46px !important; }
 @media screen and (min-width: 783px) {
 	.admin-bar .db-ui-active .site-header .domain-search { top: 32px !important; }
@@ -2480,6 +2495,11 @@ body.db-ui-active { padding-top: 70px !important; }
 .db-ui-active .serviceBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
 .db-ui-active .serviceBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 1.15rem; }
 .db-ui-active .serviceBox p { color: var(--db-gray-700); margin: 0; }
+.db-ui-active .serviceBox .db-service-learnmore {
+	display: inline-block; margin-top: var(--db-sp-4); font-size: 14px; font-weight: 600;
+	color: var(--db-blue) !important; text-decoration: none !important;
+}
+.db-ui-active .serviceBox .db-service-learnmore:hover { text-decoration: underline !important; }
 .db-ui-active .serviceBox:nth-child(1) .db-icon-badge { background: linear-gradient(160deg, #0a1628 0%, #16305a 100%); }
 .db-ui-active .serviceBox:nth-child(2) .db-icon-badge { background: linear-gradient(160deg, #137a3e 0%, #1e9c54 100%); }
 .db-ui-active .serviceBox:nth-child(3) .db-icon-badge { background: linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%); }
@@ -2858,6 +2878,39 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 .db-ui-active .db-home-panel .View-all { display: block; margin: 0 0 var(--db-sp-4); }
 .db-ui-active .db-home-panel .View-all a { margin-left: 0; }
 
+/* ==========================================================================
+   14. LIVE NEWS FEED — /news/ (db-news-block.php)
+   ========================================================================== */
+.db-ui-active .db-news-live {
+	margin: 0 0 var(--db-sp-8); padding-bottom: var(--db-sp-6);
+	border-bottom: 1px solid var(--db-gray-200);
+}
+.db-ui-active .db-news-live-heading {
+	font-size: clamp(20px, 3vw, 26px); margin: 0 0 var(--db-sp-5); color: var(--db-navy);
+}
+.db-ui-active .db-news-grid {
+	display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: var(--db-sp-5);
+}
+.db-ui-active .db-news-card {
+	display: flex; flex-direction: column;
+	background: var(--db-surface); border: 1px solid var(--db-gray-200); border-radius: var(--db-r-lg);
+	padding: var(--db-sp-5); box-shadow: var(--db-shadow-sm);
+}
+.db-ui-active .db-news-title {
+	font-size: 16px; font-weight: 700; line-height: 1.35; color: var(--db-navy) !important;
+	text-decoration: none !important;
+}
+.db-ui-active .db-news-title:hover { color: var(--db-blue) !important; }
+.db-ui-active .db-news-meta {
+	display: flex; gap: var(--db-sp-3); flex-wrap: wrap; font-size: 12px;
+	color: var(--db-gray-500); margin: var(--db-sp-2) 0 var(--db-sp-3);
+}
+.db-ui-active .db-news-source { font-weight: 600; }
+.db-ui-active .db-news-excerpt { font-size: 14px; color: var(--db-gray-700); line-height: 1.55; flex: 1; margin: 0 0 var(--db-sp-4); }
+.db-ui-active .db-news-readmore { font-size: 14px; font-weight: 600; color: var(--db-blue) !important; text-decoration: none !important; }
+.db-ui-active .db-news-readmore:hover { text-decoration: underline !important; }
+
 		<?php
 		return (string) ob_get_clean();
 	}
@@ -2901,6 +2954,7 @@ add_action( 'wp_footer', function () {
 				'service4.png': '<path d="M3 10v4h4l6 4V6l-6 4z"/><path d="M18 9.5a4 4 0 0 1 0 5M20.5 7a7.5 7.5 0 0 1 0 10"/>',
 				'service5.png': '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 19h2"/>',
 				'service6.png': '<rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/>',
+				'db-gear.png': '<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
 				// Contact page: an official-brand-colored square logo for
 				// each social network sat next to plain black phone/email
 				// glyphs — same fix, same consistent badge treatment.
@@ -3267,6 +3321,10 @@ add_action( 'wp_footer', function () {
 				'buy domains': { svg: ICON_SVGS['service1.png'], bg: 'linear-gradient(160deg, #0a1628 0%, #16305a 100%)' },
 				'sell domains': { svg: ICON_SVGS['service2.png'], bg: 'linear-gradient(160deg, #137a3e 0%, #1e9c54 100%)' },
 				'website design & development': { svg: ICON_SVGS['service3.png'], bg: 'linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%)' },
+				'digital marketing': { svg: ICON_SVGS['service4.png'], bg: 'linear-gradient(160deg, #0e6f78 0%, #14939f 100%)' },
+				'software development': { svg: ICON_SVGS['db-gear.png'], bg: 'linear-gradient(160deg, #4338ca 0%, #6d28d9 100%)' },
+				'mobile app development': { svg: ICON_SVGS['service5.png'], bg: 'linear-gradient(160deg, #b45309 0%, #d97706 100%)' },
+				'other services': { svg: ICON_SVGS['service6.png'], bg: 'linear-gradient(160deg, #9d174d 0%, #db2777 100%)' },
 			};
 			document.querySelectorAll('.shadowBox > h5.wp-block-heading').forEach(function (h) {
 				var key = (h.textContent || '').trim().toLowerCase();
@@ -3277,6 +3335,29 @@ add_action( 'wp_footer', function () {
 				span.style.background = icon.bg;
 				span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon.svg + '</svg>';
 				h.parentNode.insertBefore(span, h);
+			});
+
+			/* 9.5. Homepage "Our Services" cards (.serviceBox) — unlike the
+			   .shadowBox cards above, these never had a "Learn More" link
+			   to their dedicated page at all, on any of the services that
+			   have one. Same lookup by heading text, added only where a
+			   matching dedicated page actually exists. */
+			var SERVICE_PAGE_LINKS = {
+				'web development & design': 'website-design-development',
+				'digital marketing': 'digital-marketing',
+				'software & app development': 'software-development',
+				'additional services': 'other-services',
+			};
+			document.querySelectorAll('.serviceBox').forEach(function (box) {
+				var h = box.querySelector('h4.wp-block-heading');
+				if (!h || box.querySelector('.db-service-learnmore')) { return; }
+				var slug = SERVICE_PAGE_LINKS[(h.textContent || '').trim().toLowerCase()];
+				if (!slug) { return; }
+				var a = document.createElement('a');
+				a.className = 'db-service-learnmore';
+				a.href = '/' + slug + '/';
+				a.textContent = 'Learn More';
+				box.appendChild(a);
 			});
 
 			/* 10. Homepage "Welcome to Domain Brothers" intro names the two
@@ -3759,6 +3840,118 @@ add_action( 'init', function () {
 	wp_die( 'DB Service Pages — Done:<br>' . $list . '<br><a href="' . esc_url( home_url( '/about-us/' ) ) . '">View About Us</a>', 'DB Service Pages', array( 'response' => 200 ) );
 } );
 
+/* ============================================================
+   BLOCK 13.5 — DB /our-services/ overview: add the missing cards
+   ============================================================ */
+
+/*
+ * /our-services/ only ever listed 3 of the 5 real services as .shadowBox
+ * cards (Buy Domains, Sell Domains — now hidden site-wide, Website Design
+ * & Development) — Digital Marketing, Software Development, Mobile App
+ * Development, and Other Services all already have their own live,
+ * fully-written, SEO-tagged pages (see db_service_page_defs() above and
+ * db_seo_defs() in db-seo-meta-block.php — those pages already have real
+ * <title>/<meta description>/<meta keywords> confirmed live), they were
+ * simply never linked to from this overview page, so a visitor landing
+ * here would never find them. Adds the 4 missing cards, each linking to
+ * its already-existing dedicated page, idempotently (checked by heading
+ * text so re-running this never duplicates a card).
+ * Trigger: /?db_fix_services_page=1 (admin only, nonce-protected confirm).
+ */
+
+if ( ! function_exists( 'db_missing_service_cards' ) ) {
+	function db_missing_service_cards() {
+		return array(
+			array(
+				'heading' => 'Digital Marketing',
+				'slug'    => 'digital-marketing',
+				'p1'      => 'SEO, Google and Meta advertising, content marketing, and email automation — run by the same vetted agency network behind everything else we offer. We report in numbers you can act on: traffic, leads, and revenue, not vanity metrics.',
+				'p2'      => 'Every engagement starts with a free strategy call, so the plan matches your budget and goals before anything is booked.',
+			),
+			array(
+				'heading' => 'Software Development',
+				'slug'    => 'software-development',
+				'p1'      => 'SaaS platforms, APIs, and system integrations engineered by a senior development team from our 27+ year agency network. Fixed scopes and weekly demos, with code you own outright when the project is done.',
+				'p2'      => 'From a single integration to a full platform rebuild, you get one point of contact and a written scope before any work starts.',
+			),
+			array(
+				'heading' => 'Mobile App Development',
+				'slug'    => 'mobile-app-development',
+				'p1'      => 'iOS and Android apps from concept to App Store launch, built in React Native, Swift, or Kotlin depending on what the project actually needs. Store submission is handled for you.',
+				'p2'      => '30 days of post-launch support are included with every build, so a rough edge after release doesn\'t become your problem to solve alone.',
+			),
+			array(
+				'heading' => 'Other Services',
+				'slug'    => 'other-services',
+				'p1'      => 'Domain valuations, portfolio consulting, brand naming, DNS and email setup, and acquisition monitoring — everything around the domain itself, handled by brokers who trade domains daily.',
+				'p2'      => 'If it touches your domain portfolio and isn\'t listed elsewhere on this page, ask — there\'s a good chance we already handle it.',
+			),
+		);
+	}
+}
+
+add_action( 'init', function () {
+	if ( empty( $_GET['db_fix_services_page'] ) || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'db_fix_services_page' ) ) {
+		$confirm_url = wp_nonce_url( add_query_arg( 'db_fix_services_page', '1', home_url( '/' ) ), 'db_fix_services_page' );
+		wp_die( 'Add the missing service cards to /our-services/? <a href="' . esc_url( $confirm_url ) . '">Confirm</a>', 'DB Services Page', array( 'response' => 200 ) );
+	}
+
+	$page = get_page_by_path( 'our-services' );
+	if ( ! $page ) {
+		wp_die( '/our-services/ page not found.', 'DB Services Page', array( 'response' => 200 ) );
+	}
+
+	$content = $page->post_content;
+	$added   = array();
+	$skipped = array();
+	$pending = array();
+
+	foreach ( db_missing_service_cards() as $card ) {
+		// Idempotent: skip any card whose heading text is already present
+		// (as plain text, ignoring markup) anywhere in the page.
+		if ( false !== stripos( wp_strip_all_tags( $content ), $card['heading'] ) ) {
+			$skipped[] = $card['heading'] . ' (already present)';
+			continue;
+		}
+		$pending[] = $card;
+		$added[]   = $card['heading'];
+	}
+
+	// Two cards per row, same as the existing Buy Domains / Sell Domains
+	// pair — a single card alone in its own row (as the very next one,
+	// Website Design & Development, already sits pre-existing) reads as
+	// half-empty on anything wider than a phone.
+	for ( $i = 0; $i < count( $pending ); $i += 2 ) {
+		$pair = array_slice( $pending, $i, 2 );
+		$cols = '';
+		foreach ( $pair as $card ) {
+			$cols .= sprintf(
+				'<div class="wp-block-column is-layout-flow wp-block-column-is-layout-flow"><div class="shadowBox mb-25 mt-25"><h5 class="wp-block-heading"><strong>%1$s</strong></h5><p>%2$s</p><p>%3$s</p><div class="mb-25"><div class="wp-block-buttons"><div class="wp-block-button"><a href="%4$s" class="wp-block-button__link has-text-align-center wp-element-button">Learn More</a></div></div></div></div></div>',
+				esc_html( $card['heading'] ),
+				esc_html( $card['p1'] ),
+				esc_html( $card['p2'] ),
+				esc_url( home_url( '/' . $card['slug'] . '/' ) )
+			);
+		}
+		$content .= "\n\n" . '<div class="wp-block-columns is-layout-flex wp-block-columns-is-layout-flex">' . $cols . '</div>';
+	}
+
+	if ( ! empty( $added ) ) {
+		wp_update_post( array( 'ID' => $page->ID, 'post_content' => $content ) );
+	}
+
+	$msg = '';
+	if ( ! empty( $added ) ) {
+		$msg .= 'Added: ' . implode( ', ', $added ) . '<br>';
+	}
+	if ( ! empty( $skipped ) ) {
+		$msg .= 'Skipped: ' . implode( ', ', $skipped ) . '<br>';
+	}
+	wp_die( 'DB Services Page — Done:<br>' . $msg . '<br><a href="' . esc_url( home_url( '/our-services/' ) ) . '">View /our-services/</a>', 'DB Services Page', array( 'response' => 200 ) );
+} );
 
 /* ============================================================
    BLOCK 14 — DB DevOne logo fix (developed-by footer logo)
@@ -3847,3 +4040,8 @@ require_once __DIR__ . '/db-safety-block.php';
    DOMAIN PAGE — restores theme CSS + Make an Offer modal
    ============================================================ */
 require_once __DIR__ . '/db-domain-page-block.php';
+
+/* ============================================================
+   NEWS — live RSS feed on /news/, duplicate-image fix on posts
+   ============================================================ */
+require_once __DIR__ . '/db-news-block.php';
