@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.22.1
+ * Version:     3.23.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.22.1' );
+define( 'DB_BLOCKS_LOADED', '3.23.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -566,105 +566,6 @@ add_action( 'wp_footer', function () {
 			var t = document.getElementById('db-below-hero');
 			if(!t) return;
 			window.scrollTo({ top: t.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' });
-		});
-	})();
-	</script>
-	<?php
-}, 99 );
-
-
-/* ============================================================
-   BLOCK 4 — DB services navigation menu
-   ============================================================ */
-
-if ( ! defined( 'DB_SERVICES_MENU_LOCATIONS' ) ) {
-	define( 'DB_SERVICES_MENU_LOCATIONS', 'primary,main-menu,header-menu,main,nav,navigation,top-menu,header-nav,menu-1' );
-}
-
-if ( ! function_exists( 'db_services_list' ) ) {
-	function db_services_list() {
-		return array(
-			'Website Design & Development' => '/website-design-development/',
-			'Digital Marketing'            => '/digital-marketing/',
-			'Software Development'         => '/software-development/',
-			'Mobile App Development'       => '/mobile-app-development/',
-			'Other Services'               => '/other-services/',
-		);
-	}
-}
-
-add_filter( 'wp_nav_menu_items', function ( $items, $args ) {
-	$allowed = array_map( 'trim', explode( ',', DB_SERVICES_MENU_LOCATIONS ) );
-	if ( empty( $args->theme_location ) || ! in_array( $args->theme_location, $allowed, true ) ) {
-		return $items;
-	}
-	if ( false !== strpos( $items, 'db-svc-parent' ) ) {
-		return $items;
-	}
-	$children = '';
-	foreach ( db_services_list() as $label => $path ) {
-		$children .= '<li class="menu-item db-svc-child"><a href="' . esc_url( home_url( $path ) ) . '">' . esc_html( $label ) . '</a></li>';
-	}
-	return $items . '
-<li class="menu-item menu-item-has-children db-svc-parent">
-	<a href="#" class="db-svc-toggle" aria-haspopup="true" aria-expanded="false">Services<span class="db-svc-arrow" aria-hidden="true"></span></a>
-	<ul class="sub-menu db-svc-dropdown" role="menu">' . $children . '</ul>
-</li>';
-}, 10, 2 );
-
-add_action( 'wp_head', function () {
-	?>
-	<style id="db-svc-menu-css">
-	.db-svc-parent { position: relative; list-style: none; }
-	.db-svc-arrow { display: inline-block; width: 0; height: 0; margin-left: 5px; vertical-align: middle; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid currentColor; transition: transform 0.2s ease; }
-	.db-svc-dropdown { list-style: none !important; margin: 0 !important; padding: 6px 0 !important; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%) translateY(6px); min-width: 244px; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.06), 0 14px 32px rgba(0,0,0,.11); border: 1px solid rgba(0,0,0,.07); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s 0.18s; z-index: 99999; }
-	.db-svc-parent:hover > .db-svc-dropdown, .db-svc-parent:focus-within > .db-svc-dropdown { opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0); transition-delay: 0s; }
-	.db-svc-parent:hover > a .db-svc-arrow, .db-svc-parent:focus-within > a .db-svc-arrow { transform: rotate(180deg); }
-	.db-svc-child { list-style: none !important; }
-	.db-svc-child a { display: block !important; padding: 10px 20px !important; font-size: 14px !important; color: #1d1d1f !important; text-decoration: none !important; white-space: nowrap; transition: background 0.12s, color 0.12s; }
-	.db-svc-child a:hover, .db-svc-child a:focus { background: #eef2ff; color: #0b3d91 !important; outline: none; }
-	@media (max-width: 900px) {
-		.db-svc-dropdown { position: static !important; transform: none !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; background: rgba(0,0,0,.04) !important; padding: 2px 0 2px 14px !important; display: none; opacity: 1; visibility: visible; pointer-events: auto; transition: none; min-width: 0; }
-		.db-svc-parent.is-open > .db-svc-dropdown { display: block; }
-		.db-svc-parent.is-open > a .db-svc-arrow { transform: rotate(180deg); }
-		.db-svc-parent:hover > .db-svc-dropdown { display: none; }
-		.db-svc-parent.is-open:hover > .db-svc-dropdown { display: block; }
-	}
-	</style>
-	<?php
-} );
-
-add_action( 'wp_footer', function () {
-	?>
-	<script>
-	(function(){
-		'use strict';
-		var toggles = document.querySelectorAll('.db-svc-toggle');
-		if(!toggles.length) return;
-		function isMobile(){ return window.innerWidth <= 900; }
-		toggles.forEach(function(toggle){
-			var parent = toggle.closest ? toggle.closest('.db-svc-parent') : toggle.parentElement;
-			if(!parent) return;
-			toggle.addEventListener('click', function(e){
-				if(!isMobile()) return;
-				e.preventDefault();
-				var open = parent.classList.toggle('is-open');
-				toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-			});
-			document.addEventListener('click', function(e){
-				if(!isMobile()) return;
-				if(parent.classList.contains('is-open') && !parent.contains(e.target)){
-					parent.classList.remove('is-open');
-					toggle.setAttribute('aria-expanded', 'false');
-				}
-			});
-			document.addEventListener('keydown', function(e){
-				if((e.key==='Escape'||e.keyCode===27) && parent.classList.contains('is-open')){
-					parent.classList.remove('is-open');
-					toggle.setAttribute('aria-expanded', 'false');
-					toggle.focus();
-				}
-			});
 		});
 	})();
 	</script>

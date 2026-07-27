@@ -47,6 +47,24 @@ add_action( 'wp_footer', function () {
 		// every menu click doesn't pay for a redirect hop.
 		'Contact'       => esc_url( home_url( '/contact-us/' ) ),
 	);
+	// The 5 dedicated service pages (see db_service_page_defs() in
+	// db-custom-blocks.php — each already has its own real content and SEO
+	// meta) had no path into this drawer at all: an earlier attempt at
+	// this lived in a wp_nav_menu_items filter targeting theme locations
+	// like "primary"/"main-menu", but this theme calls wp_nav_menu()
+	// nowhere — confirmed by this very file's own docblock above ("not a
+	// single menu-item in the markup of any page") — so that filter could
+	// never have fired. This drawer is the site's ONLY real navigation,
+	// so the submenu goes here instead, as an expandable list nested
+	// under "Services" rather than a hover dropdown (nothing here is
+	// hovered — the whole drawer is a touch/click surface).
+	$service_pages = array(
+		'Website Design & Development' => esc_url( home_url( '/website-design-development/' ) ),
+		'Digital Marketing'            => esc_url( home_url( '/digital-marketing/' ) ),
+		'Software Development'         => esc_url( home_url( '/software-development/' ) ),
+		'Mobile App Development'       => esc_url( home_url( '/mobile-app-development/' ) ),
+		'Other Services'               => esc_url( home_url( '/other-services/' ) ),
+	);
 	$logo = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
 	?>
 	<button id="db-mnav-toggle" class="db-mnav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="db-mnav">
@@ -59,7 +77,23 @@ add_action( 'wp_footer', function () {
 			</a>
 			<ul>
 				<?php foreach ( $links as $label => $href ) : ?>
-					<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
+					<?php if ( 'Services' === $label ) : ?>
+						<li class="db-mnav-has-sub">
+							<div class="db-mnav-row">
+								<a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a>
+								<button type="button" class="db-mnav-subtoggle" aria-expanded="false" aria-controls="db-mnav-sub-services" aria-label="Show services submenu">
+									<span class="db-mnav-chevron" aria-hidden="true"></span>
+								</button>
+							</div>
+							<ul id="db-mnav-sub-services" class="db-mnav-sub" hidden>
+								<?php foreach ( $service_pages as $sub_label => $sub_href ) : ?>
+									<li><a href="<?php echo $sub_href; // already escaped ?>"><?php echo esc_html( $sub_label ); ?></a></li>
+								<?php endforeach; ?>
+							</ul>
+						</li>
+					<?php else : ?>
+						<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
+					<?php endif; ?>
 				<?php endforeach; ?>
 			</ul>
 		</div>
@@ -130,6 +164,22 @@ add_action( 'wp_footer', function () {
 	}
 	.db-mnav a:hover, .db-mnav a:focus { color: #7ab6fb; padding-left: 18px; }
 	.db-mnav a:focus-visible { outline: 3px solid #7ab6fb; outline-offset: -3px; }
+	.db-mnav-has-sub { border-bottom: 1px solid rgba(157,199,251,.12); }
+	.db-mnav-row { display: flex; align-items: stretch; }
+	.db-mnav-row a { flex: 1 1 auto; }
+	.db-mnav-subtoggle {
+		flex: 0 0 auto; width: 52px; border: 0; background: none; cursor: pointer;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.db-mnav-chevron {
+		width: 9px; height: 9px; border-right: 2px solid #9dc7fb; border-bottom: 2px solid #9dc7fb;
+		transform: rotate(45deg); transition: transform .22s ease;
+	}
+	.db-mnav-subtoggle[aria-expanded="true"] .db-mnav-chevron { transform: rotate(225deg); }
+	.db-mnav-subtoggle:focus-visible { outline: 3px solid #7ab6fb; outline-offset: -3px; }
+	.db-mnav-sub { list-style: none; margin: 0; padding: 0 0 6px; background: rgba(0,0,0,.16); }
+	.db-mnav-sub li { border-bottom: none; opacity: 1 !important; transform: none !important; }
+	.db-mnav-sub a { padding: 12px 12px 12px 30px; font-size: 15px; font-weight: 500; }
 	.db-mnav-scrim {
 		/* Below #wpadminbar (99999) so a logged-in admin's bar stays usable. */
 		position: fixed; inset: 0; z-index: 99998; background: rgba(6,14,28,.5);
@@ -166,7 +216,12 @@ add_action( 'wp_footer', function () {
 		var lastFocus = null;
 
 		function focusables() {
-			return n.querySelectorAll('a[href], button:not([disabled])');
+			// offsetParent is null for a collapsed (hidden-attribute) submenu's
+			// links — excluding them keeps Tab-trapping honest about what's
+			// actually reachable, instead of cycling focus onto a link that
+			// isn't visible yet.
+			var all = n.querySelectorAll('a[href], button:not([disabled])');
+			return Array.prototype.filter.call(all, function (el) { return el.offsetParent !== null; });
 		}
 		function setOpen(open) {
 			if (open === t.classList.contains('is-open')) { return; }
@@ -201,6 +256,17 @@ add_action( 'wp_footer', function () {
 		t.addEventListener('click', function () { setOpen(!t.classList.contains('is-open')); });
 		s.addEventListener('click', function () { setOpen(false); });
 		n.addEventListener('click', function (e) { if (e.target.closest('a')) { setOpen(false); } });
+
+		var subToggle = document.querySelector('.db-mnav-subtoggle');
+		if (subToggle) {
+			var sub = document.getElementById(subToggle.getAttribute('aria-controls'));
+			subToggle.addEventListener('click', function (e) {
+				e.stopPropagation(); // don't let the "any link click closes the drawer" handler above see this
+				var open = subToggle.getAttribute('aria-expanded') !== 'true';
+				subToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+				if (sub) { sub.hidden = !open; }
+			});
+		}
 		document.addEventListener('keydown', function (e) {
 			if (!t.classList.contains('is-open')) { return; }
 			if (e.key === 'Escape') { setOpen(false); return; }
