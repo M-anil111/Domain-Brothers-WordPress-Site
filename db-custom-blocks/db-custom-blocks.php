@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.18.0
+ * Version:     3.19.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.18.0' );
+define( 'DB_BLOCKS_LOADED', '3.19.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2214,6 +2214,14 @@ body.db-ui-active { padding-top: 70px !important; }
    both problems immediately, no JS required. */
 .db-ui-active .find-box { display: none !important; }
 
+/* Theme markup ("Have an unused Domain? Would you like to sell it?" +
+   a stock photo, linking to Contact Us) — the owner does not buy domains
+   from the public at this time, so this call-to-action doesn't apply and
+   shouldn't be inviting submissions the business won't act on. Hidden
+   outright wherever the theme places it, sitewide, rather than removed
+   page-by-page. */
+.db-ui-active .unusedDomain { display: none !important; }
+
 /* Bootstrap's grid (.row / .col-md-*), which #masthead's markup depends on
    for its two-column layout, is not enqueued on ANY template on this site
    except the single-domain page (see db-domain-page-block.php) — confirmed
@@ -2583,6 +2591,42 @@ body.page:not(.home).db-ui-active #main.site-main {
 	border-radius: 18px;
 	padding: clamp(26px, 5vw, 60px);
 	box-shadow: 0 1px 2px rgba(8,23,58,.05), 0 14px 44px rgba(8,23,58,.07);
+}
+/* On mobile that centered "sheet" reads as a narrow column floating
+   inside a wider, mostly-empty blue frame — the sheet's own side margins
+   stack on top of #primary/#main's Bootstrap gutters (the same
+   compounding-padding issue fixed on the homepage), leaving very little
+   actual width for the card once every layer's margin/padding/border is
+   added up. Below the breakpoint where that stacking starts costing real
+   room, the "sheet" drops its own border/shadow/rounding/margin and
+   spans the full width instead, keeping only a single comfortable inner
+   padding — content still gets a clean paper background, it just isn't
+   trying to also look like a card floating on a canvas when there's no
+   room to read as one. */
+@media (max-width: 768px) {
+	body.page:not(.home) .db-ui-active #main.site-main,
+	body.page:not(.home).db-ui-active #main.site-main {
+		max-width: 100%;
+		margin: 0;
+		border-left: none; border-right: none; border-radius: 0;
+		box-shadow: none;
+		padding: 28px var(--db-sp-6);
+	}
+	/* Same compounding-gutter fix as the homepage (#page/#content/#primary
+	   each still carry their own unconditional Bootstrap gutter now that
+	   bootstrap.min.css loads site-wide), applied everywhere the sheet
+	   above doesn't already absorb it. Mobile-only: some templates put an
+	   actual sidebar next to #primary on desktop, and removing its half
+	   of that gutter there would narrow the visible gap between the two
+	   columns — not a concern once they've already stacked full-width on
+	   mobile, which is the only place this was reported. */
+	.db-ui-active #page.container,
+	.db-ui-active #primary.content-area {
+		padding-left: 0; padding-right: 0;
+	}
+	.db-ui-active #content.site-content.row {
+		margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0;
+	}
 }
 body.page:not(.home) .entry-title {
 	margin-top: 0; margin-bottom: 18px;
@@ -3204,6 +3248,44 @@ add_action( 'wp_footer', function () {
 					row.appendChild(item);
 				});
 				founderPara.parentNode.insertBefore(row, founderPara.nextSibling);
+			}
+
+			/* 10.5. /about-us/ names Kartik and Jay by name in its opening
+			   paragraph (as LinkedIn links) but, like the homepage before
+			   the step above, never shows their faces — the whole page is
+			   otherwise a wall of text. Same real photos, same treatment,
+			   found here by the two LinkedIn links rather than the
+			   homepage's fixed sentence (the wording differs page to
+			   page). */
+			var aboutFounderPara = Array.prototype.find.call(
+				document.querySelectorAll('.entry-content p'),
+				function (p) {
+					return p.querySelector('a[href*="linkedin.com/in/kartik-mehta"]') &&
+						p.querySelector('a[href*="linkedin.com/in/jaynmehta"]');
+				}
+			);
+			if (aboutFounderPara && !document.querySelector('.db-founders-row')) {
+				var auploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var afounders = [
+					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
+					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
+				];
+				var arow = document.createElement('div');
+				arow.className = 'db-founders-row';
+				afounders.forEach(function (f) {
+					var item = document.createElement('div');
+					item.className = 'db-founder';
+					var img = document.createElement('img');
+					img.src = auploads + f.file;
+					img.alt = f.name + ', Co-Founder, Domain Brothers';
+					img.loading = 'lazy';
+					var name = document.createElement('span');
+					name.textContent = f.name;
+					item.appendChild(img);
+					item.appendChild(name);
+					arow.appendChild(item);
+				});
+				aboutFounderPara.parentNode.insertBefore(arow, aboutFounderPara.nextSibling);
 			}
 
 			/* 11. /offer/ ("Make an Offer on a Premium Domain") is a bare
