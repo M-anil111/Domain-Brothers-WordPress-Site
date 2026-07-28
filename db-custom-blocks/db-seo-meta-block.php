@@ -481,17 +481,43 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 			if ( ! $term instanceof WP_Term ) {
 				return null;
 			}
-			$desc = db_seo_trim_desc( $term->description );
+			// is_category()/is_tag() are WordPress's own post taxonomies
+			// (e.g. /category/domain-news/, a blog-post archive) — a
+			// completely different thing from domain_category/domain_tag
+			// (the marketplace's per-domain taxonomy). The shared branch
+			// below used to describe both the same way ("{term} Domains
+			// for Sale"), which on a blog category produced a nonsensical
+			// title like "Domain News Domains for Sale". Confirmed live.
+			$is_blog_term = is_category() || is_tag();
+			$desc         = db_seo_trim_desc( $term->description );
 			if ( '' === $desc ) {
-				$desc = sprintf(
-					'Browse %s domains for sale at Domain Brothers. Every listing includes an escrow-protected transfer and 0%% interest payment plans. Find yours today.',
-					$term->name
-				);
+				$desc = $is_blog_term
+					? sprintf( 'Posts filed under %s on the Domain Brothers blog — domain industry news and market insights.', $term->name )
+					: sprintf(
+						'Browse %s domains for sale at Domain Brothers. Every listing includes an escrow-protected transfer and 0%% interest payment plans. Find yours today.',
+						$term->name
+					);
+			}
+			$title = $is_blog_term
+				? db_seo_trim_desc( $term->name . ' Archives', 60 - mb_strlen( $brand ) ) . $brand
+				: db_seo_trim_desc( $term->name . ' Domains for Sale', 60 - mb_strlen( $brand ) ) . $brand;
+			// Same bug as /news/ (fixed in db_seo_resolve() above, but that
+			// fix only covers is_home() — every OTHER paginated archive,
+			// including this one, still fell through to here with an
+			// identical title/description on every page): confirmed live,
+			// /domain-category/business/page/2/ through /4/ and
+			// /category/domain-news/page/2/ through /300/ all carried the
+			// exact same title and description as page 1. 19 pages flagged
+			// as duplicate titles, 19 as duplicate descriptions.
+			$paged = max( 1, (int) get_query_var( 'paged' ) );
+			if ( $paged > 1 ) {
+				$title = str_replace( DB_SEO_SUFFIX, ' – Page ' . $paged . DB_SEO_SUFFIX, $title );
+				$desc  = rtrim( $desc, '. ' ) . '. Page ' . $paged . ' of the listing.';
 			}
 			return array(
-				'title' => db_seo_trim_desc( $term->name . ' Domains for Sale', 60 - mb_strlen( $brand ) ) . $brand,
+				'title' => $title,
 				'desc'  => $desc,
-				'kw'    => strtolower( $term->name ) . ' domains',
+				'kw'    => $is_blog_term ? strtolower( $term->name ) : strtolower( $term->name ) . ' domains',
 			);
 		}
 
@@ -775,17 +801,31 @@ if ( ! function_exists( 'db_seo_promote_archive_h1' ) ) {
 		if ( ! is_string( $html ) || false === strpos( $html, 'page-title' ) ) {
 			return $html;
 		}
-		return preg_replace(
+		$html = preg_replace(
 			'#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>(.*?)</h2>#is',
 			'<h1$1>$2</h1>',
 			$html,
 			1
 		);
+		// Same identical-across-pagination problem the title/description
+		// fix above addresses, on the H1 itself: page 2+ of a category
+		// archive repeats page 1's exact heading text. Flagged as
+		// "Duplicate H1" (25 pages) in the 2026-07-28 audit.
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		if ( $paged > 1 ) {
+			$html = preg_replace(
+				'#(<h1\b[^>]*\bclass="[^"]*\bpage-title\b[^"]*"[^>]*>)(.*?)(</h1>)#is',
+				'$1$2 – Page ' . $paged . '$3',
+				$html,
+				1
+			);
+		}
+		return $html;
 	}
 }
 
 add_action( 'template_redirect', function () {
-	if ( is_admin() || ( ! is_tax( 'domain_category' ) && ! is_page( 'all-domains' ) ) ) {
+	if ( is_admin() || ( ! is_tax( 'domain_category' ) && ! is_category() && ! is_page( 'all-domains' ) ) ) {
 		return;
 	}
 	ob_start( 'db_seo_promote_archive_h1' );

@@ -265,6 +265,43 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_strip_dead_owl_carousel' );
 }, 21 );
 
+/* ─── Footer social icons with no anchor text ───────────────────────────────── */
+
+/**
+ * The three real footer social links (Facebook/Twitter/Instagram — a
+ * fourth, Google+, is already commented out in the theme markup itself,
+ * long dead) are icon-only: <a title="Facebook" ...><i class="fa
+ * fa-facebook"></i></a>, no text content at all. `title` is a tooltip, not
+ * anchor text — confirmed as the single largest item in the 2026-07-28
+ * audit ("External links missing anchor", ~397 pages = these 3 links times
+ * every page that renders the footer). Adds a real, visually-hidden text
+ * node inside each one instead of only relying on `title`.
+ */
+if ( ! function_exists( 'db_safety_fix_social_link_text' ) ) {
+	function db_safety_fix_social_link_text( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'footer-sociallinks' ) ) {
+			return $html;
+		}
+		$networks = array(
+			'facebook.com'  => 'Facebook',
+			'twitter.com'   => 'Twitter',
+			'instagram.com' => 'Instagram',
+		);
+		foreach ( $networks as $host => $label ) {
+			$pattern = '#(<a\b[^>]*href="https?://(?:www\.)?' . preg_quote( $host, '#' ) . '[^"]*"[^>]*>)(<i\b[^>]*></i>)(</a>)#i';
+			$html    = preg_replace( $pattern, '$1<span class="screen-reader-text">' . $label . '</span>$2$3', $html, 1 );
+		}
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_fix_social_link_text' );
+}, 21 );
+
 /* ─── Legacy ?lis=y landing template: redirect away instead of patching ─────── */
 
 /**
