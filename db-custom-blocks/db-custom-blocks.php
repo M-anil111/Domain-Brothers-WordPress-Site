@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.28.0
+ * Version:     3.29.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.28.0' );
+define( 'DB_BLOCKS_LOADED', '3.29.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -4166,3 +4166,8 @@ require_once __DIR__ . '/db-news-block.php';
    BREADCRUMBS — real trail on every front-end template
    ============================================================ */
 require_once __DIR__ . '/db-breadcrumbs-block.php';
+
+/* ============================================================
+   CACHE — never-cache rules ahead of turning on LiteSpeed Cache
+   ============================================================ */
+require_once __DIR__ . '/db-cache-block.php';
