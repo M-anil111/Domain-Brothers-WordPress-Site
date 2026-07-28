@@ -210,6 +210,61 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_fix_landing_assets' );
 }, 21 );
 
+/* ─── Dead owl.carousel widget, loaded on every page ────────────────────────── */
+
+/**
+ * Every page on the site hardcodes a <script src> and <link> for
+ * owl.carousel.min.js/css from the production apex domain, plus an inline
+ * jQuery(document).ready() call that initializes it against
+ * ".home-slider.owl-carousel" — confirmed live on the homepage, a domain
+ * page, /all-domains/, /news/, /our-services/ and /about-us/: no element
+ * with class "home-slider" or any "owl-*" class exists anywhere in any of
+ * their markup. The plugin call on an empty jQuery selection is a silent
+ * no-op, so this has never rendered a visible carousel on this site; it's
+ * pure dead weight — a cross-origin script+stylesheet fetch and a wasted
+ * jQuery call on every single page load, and the single largest item in
+ * the 2026-07 site audit (flagged as "External JavaScript with
+ * 3XX/4XX/5XX" + "not compressed" + "not minified" on ~368 pages, because
+ * the file is occasionally unreachable from the crawler and was never
+ * minified in the first place). Removed outright rather than swapped for a
+ * locally-hosted copy — there's nothing here for a copy to serve.
+ */
+if ( ! function_exists( 'db_safety_strip_dead_owl_carousel' ) ) {
+	function db_safety_strip_dead_owl_carousel( $html ) {
+		if ( ! is_string( $html ) || false === stripos( $html, 'owl.carousel' ) ) {
+			return $html;
+		}
+		$html = preg_replace( '#<script[^>]+src=["\'][^"\']*owl\.carousel\.min\.js[^"\']*["\'][^>]*>\s*</script>#i', '', $html );
+		$html = preg_replace( '#<link[^>]+href=["\'][^"\']*owl\.carousel\.min\.css[^"\']*["\'][^>]*/?>#i', '', $html );
+		// The one inline initializer. Found and removed by plain string
+		// search rather than a tag-spanning regex — an earlier version used
+		// "(?:(?!</script>).)*?" to hop over every other <script> on the
+		// page to find this one, which is exactly the shape that triggers
+		// catastrophic backtracking on a real ~130KB page: it exhausted
+		// PCRE's JIT stack and preg_replace() returned null, which — fed
+		// straight back into this ob_start() callback — would have blanked
+		// every single page on the site. Caught before deploy; left as a
+		// concrete reminder not to reach for that pattern here again.
+		$marker = 'owlCarousel(';
+		$pos    = strpos( $html, $marker );
+		if ( false !== $pos ) {
+			$tag_start = strrpos( substr( $html, 0, $pos ), '<script' );
+			$tag_end   = strpos( $html, '</script>', $pos );
+			if ( false !== $tag_start && false !== $tag_end ) {
+				$html = substr_replace( $html, '', $tag_start, $tag_end + strlen( '</script>' ) - $tag_start );
+			}
+		}
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_strip_dead_owl_carousel' );
+}, 21 );
+
 /* ─── Legacy ?lis=y landing template: redirect away instead of patching ─────── */
 
 /**
