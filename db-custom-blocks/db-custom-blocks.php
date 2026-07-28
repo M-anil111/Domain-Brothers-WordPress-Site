@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.25.0
+ * Version:     3.26.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.25.0' );
+define( 'DB_BLOCKS_LOADED', '3.26.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2241,17 +2241,40 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	font-size: 14px; font-weight: 600; color: var(--db-navy);
 }
 
-/* Homepage "Welcome to Domain Brothers" intro: the generic sitewide h2
-   rule clamps down hard on mobile (20-28px, tuned for section headings
-   throughout the rest of the site) — too small for what's meant to read
-   as the homepage's own second headline, right under the hero. Scoped to
-   .pageNewContent specifically rather than raising every h2 on every page. */
+/* Homepage "Welcome to Domain Brothers" — wrapped by the enhancer script
+   (item 10) into its own .db-welcome-section so it reads as a distinct
+   block instead of blending into the same canvas as "Why Users Choose" /
+   "Our Services" right below it. A plain white panel, generous padding and
+   a size jump on both the heading and the intro paragraph (17px read as
+   noticeably small at the width this sits at) — the "look like Apple"
+   ask translates concretely to: more air, bigger and bolder type, one
+   clear focal statement instead of a paragraph competing with the founder
+   photos for attention. */
+.db-ui-active .db-welcome-section {
+	background: #fff; border-radius: 28px; box-shadow: var(--db-shadow-lg);
+	padding: clamp(40px, 7vw, 72px) clamp(24px, 6vw, 64px);
+	margin: var(--db-sp-8) 0 var(--db-sp-8); text-align: center;
+}
+.db-ui-active .db-welcome-section h2.wp-block-heading {
+	font-size: clamp(32px, 5.5vw, 48px) !important;
+	font-weight: 800 !important; letter-spacing: -0.03em !important;
+	color: var(--db-navy) !important; margin: 0 0 var(--db-sp-5) !important;
+}
+.db-ui-active .db-welcome-section > p.has-text-align-center {
+	font-size: clamp(18px, 2.2vw, 21px); line-height: 1.65; color: var(--db-gray-700);
+	max-width: 680px; margin: 0 auto; font-weight: 400;
+}
+.db-ui-active .db-welcome-section .db-founders-row { margin: var(--db-sp-8) 0 0; }
+.db-ui-active .db-welcome-section .db-founder img { width: 100px; height: 100px; }
+.db-ui-active .db-welcome-section .db-founder span { font-size: 16px; }
+@media (max-width: 600px) {
+	.db-ui-active .db-welcome-section { border-radius: 20px; }
+}
+/* The heading immediately after this section ("Why Users Choose...") no
+   longer needs to compete with the white panel above it for size — kept
+   at the sitewide h2 scale, just given room to breathe. */
 .db-ui-active .pageNewContent h2.wp-block-heading {
 	font-size: clamp(28px, 7vw, 40px) !important;
-}
-.db-ui-active .pageNewContent > p.has-text-align-center {
-	font-size: 17px; line-height: 1.7; color: var(--db-gray-700);
-	max-width: 640px; margin-left: auto; margin-right: auto;
 }
 
 /* /offer/ page trust steps (built by the enhancer script above) */
@@ -3440,6 +3463,23 @@ add_action( 'wp_footer', function () {
 					row.appendChild(item);
 				});
 				founderPara.parentNode.insertBefore(row, founderPara.nextSibling);
+
+				// Wrap the heading + intro paragraph + founder photos in
+				// their own section so it reads as a distinct block instead
+				// of blending into the same canvas as "Why Users Choose" /
+				// "Our Services" below it.
+				var welcomeHeading = Array.prototype.find.call(
+					document.querySelectorAll('.pageNewContent h2.wp-block-heading'),
+					function (h) { return /Welcome to Domain Brothers/i.test(h.textContent || ''); }
+				);
+				if (welcomeHeading && !document.querySelector('.db-welcome-section')) {
+					var welcomeWrap = document.createElement('div');
+					welcomeWrap.className = 'db-welcome-section';
+					welcomeHeading.parentNode.insertBefore(welcomeWrap, welcomeHeading);
+					welcomeWrap.appendChild(welcomeHeading);
+					welcomeWrap.appendChild(founderPara);
+					welcomeWrap.appendChild(row);
+				}
 			}
 
 			/* 10.5. /about-us/ names Kartik and Jay by name in its opening
