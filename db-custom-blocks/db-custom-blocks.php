@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.29.0
+ * Version:     3.30.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.29.0' );
+define( 'DB_BLOCKS_LOADED', '3.30.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -877,7 +877,15 @@ add_action( 'template_redirect', function () {
    ============================================================ */
 
 if ( ! defined( 'DB_OFFER_FORM_ID' ) ) {
-	define( 'DB_OFFER_FORM_ID', 0 );
+	// Hardcoded to the real "Make an Offer" form (the one embedded on every
+	// /domains/{slug}/ page, field set: your-name/your-email/your-phone/
+	// your-offer). Auto-detection by title (db_offer_resolved_form_id()
+	// below) picked post 16992 instead — a different wpcf7_contact_form post
+	// whose title also happens to contain "offer" — so the offer-confirmation
+	// email and the post-submit thank-you redirect silently fired for the
+	// wrong form. Confirmed 1878 is correct via the live page markup:
+	// <div class="wpcf7" id="wpcf7-f1878-o1" data-wpcf7-id="1878">.
+	define( 'DB_OFFER_FORM_ID', 1878 );
 }
 
 if ( ! function_exists( 'db_offer_field_map' ) ) {

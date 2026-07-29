@@ -302,6 +302,45 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_fix_social_link_text' );
 }, 21 );
 
+/* ─── Hardcoded production thank-you redirect (theme-native CF7 handler) ────── */
+
+if ( ! function_exists( 'db_safety_fix_hardcoded_thankyou_redirect' ) ) {
+	/**
+	 * A theme-native inline script (not ours, emitted straight from the
+	 * DomainFolio footer) redirects two Contact Form 7 forms (IDs 5432 and
+	 * 1878 — the site-wide Contact form and the domain-page Make an Offer
+	 * form) to a literal "https://www.domainbrothers.com/thank-you/" on
+	 * submit. That's fine on production, but on any other host — this beta
+	 * site, or any future staging clone — it silently bounces every visitor
+	 * who submits one of those forms to the live production site instead of
+	 * this one. Confirmed live: a test offer submitted on beta redirected to
+	 * www.domainbrothers.com/thank-you/, which was down at the time.
+	 *
+	 * Wordfence blocks saving theme files through wp-admin, so this is fixed
+	 * the same way as the rest of this file — a literal, non-regex string
+	 * swap of the exact hardcoded URL for the environment's real one. Plain
+	 * str_replace, no backtracking risk.
+	 */
+	function db_safety_fix_hardcoded_thankyou_redirect( $html ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		$hardcoded = 'https://www.domainbrothers.com/thank-you/';
+		$correct   = home_url( '/thank-you/' );
+		if ( $correct === $hardcoded || false === strpos( $html, $hardcoded ) ) {
+			return $html;
+		}
+		return str_replace( $hardcoded, $correct, $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_fix_hardcoded_thankyou_redirect' );
+}, 22 );
+
 /* ─── Legacy ?lis=y landing template: redirect away instead of patching ─────── */
 
 /**

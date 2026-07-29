@@ -78,3 +78,35 @@ add_action( 'template_redirect', function () {
 		}
 	}
 }, 1 );
+
+if ( ! function_exists( 'db_cache_manual_purge' ) ) {
+	/**
+	 * LiteSpeed Cache's own "Purge All" is AJAX-only in its admin UI — there
+	 * is no plain link/form to trigger it, which makes it unreachable from
+	 * anywhere except a real browser click. Deploying a code fix that
+	 * changes page markup (e.g. correcting the hardcoded Make-an-Offer form
+	 * ID) doesn't itself invalidate already-cached pages, so without this,
+	 * visitors would keep getting the stale pre-fix HTML for up to the full
+	 * TTL.
+	 *
+	 * The purge signal LiteSpeed Cache emits for litespeed_purge_all is an
+	 * X-LiteSpeed-Purge response header, added by the plugin's own hook
+	 * somewhere in the normal send_headers -> ... -> shutdown request
+	 * lifecycle. Two earlier versions of this function both failed to
+	 * actually purge anything (confirmed via x-litespeed-cache staying
+	 * "hit" immediately after): calling wp_die() right after do_action()
+	 * short-circuits the request before that header gets attached, and
+	 * deferring to a shutdown callback is too late — wp_die() has already
+	 * flushed headers to the client by then. Firing this at template_redirect
+	 * (same stage db_cache_should_skip() already uses successfully for the
+	 * no-cache signal) and letting the request render normally afterward —
+	 * no wp_die() — is what actually lets LiteSpeed attach the header.
+	 */
+	function db_cache_manual_purge() {
+		if ( ! isset( $_GET['db_purge_cache'] ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		do_action( 'litespeed_purge_all' );
+	}
+}
+add_action( 'template_redirect', 'db_cache_manual_purge', 1 );
