@@ -107,6 +107,16 @@ if ( ! function_exists( 'db_cache_manual_purge' ) ) {
 			return;
 		}
 		do_action( 'litespeed_purge_all' );
+		// litespeed_purge_all alone was confirmed unreliable — the header it
+		// produces (x-litespeed-purge: public,78a_) did get sent, but pages
+		// cached before the deploy kept serving "hit" on the very next
+		// request regardless. Setting LiteSpeed's documented raw purge
+		// header directly (X-LiteSpeed-Purge: *) is the same mechanism the
+		// server-level API uses and doesn't depend on the plugin's own hook
+		// producing the right tag.
+		if ( ! headers_sent() ) {
+			header( 'X-LiteSpeed-Purge: *' );
+		}
 	}
 }
 add_action( 'template_redirect', 'db_cache_manual_purge', 1 );
