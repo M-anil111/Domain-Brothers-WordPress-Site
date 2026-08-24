@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.32.0
+ * Version:     3.33.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.32.0' );
+define( 'DB_BLOCKS_LOADED', '3.33.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1332,10 +1332,31 @@ add_action( 'wp_head', function () {
 		db_aeo_emit( array( '@type' => 'Service', 'name' => $service_name, 'provider' => array( '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url ), 'url' => esc_url( get_permalink() ), 'areaServed' => 'Worldwide', 'description' => get_the_excerpt() ) );
 	}
 
-	if ( ! is_front_page() && ( is_page() || is_singular() || is_category() ) ) {
+	if ( ! is_front_page() && ( is_page() || is_singular() || is_category() || is_tax( 'domain_category' ) ) ) {
 		$items = array( array( '@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => $site_url ) );
-		if ( is_singular( 'domain' ) ) {
+		if ( is_tax( 'domain_category' ) ) {
+			// Same gap as the /news/ single-post one above: domain_category
+			// archives (/domain-category/{slug}/) aren't is_page(),
+			// is_singular(), or is_category() (that's the *native* WP
+			// taxonomy only), so this outer condition never even matched —
+			// zero BreadcrumbList on every domain category archive. Mirrors
+			// db_breadcrumbs_trail()'s Home > All Domains > Category.
+			$term    = get_queried_object();
+			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'All Domains', 'item' => esc_url( home_url( '/all-domains/' ) ) );
+			if ( $term instanceof WP_Term ) {
+				$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => $term->name, 'item' => esc_url( get_term_link( $term ) ) );
+			}
+		} elseif ( is_singular( 'domain' ) ) {
 			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'Domain Listings', 'item' => esc_url( home_url( '/domains/' ) ) );
+			$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title(), 'item' => esc_url( get_permalink() ) );
+		} elseif ( is_singular( 'post' ) ) {
+			// Blog posts under /news/ fell through both branches below (not
+			// a 'domain' CPT, not is_page()) and silently got no
+			// BreadcrumbList at all — caught via QA: /news/ single posts
+			// had zero structured data despite showing a visible breadcrumb
+			// (db-breadcrumbs-block.php's db_breadcrumbs_trail() already
+			// handles this same Home > News > Post pattern correctly).
+			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'News', 'item' => esc_url( home_url( '/news/' ) ) );
 			$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title(), 'item' => esc_url( get_permalink() ) );
 		} elseif ( is_page() ) {
 			global $post;
