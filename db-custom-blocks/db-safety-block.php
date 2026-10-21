@@ -743,3 +743,39 @@ add_action( 'template_redirect', function () {
 	wp_safe_redirect( home_url( '/buy-now/' ) . '?' . http_build_query( $args, '', '&', PHP_QUERY_RFC3986 ), 302 );
 	exit;
 }, -50 );
+
+/* ─── Keep staging out of search indexes ────────────────────────────────────── */
+
+if ( ! function_exists( 'db_is_staging_host' ) ) {
+	/** True on any non-production host (currently beta.*). Production is never affected. */
+	function db_is_staging_host() {
+		$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		return 0 === strpos( $host, 'beta.' ) || 0 === strpos( $host, 'staging.' ) || 0 === strpos( $host, 'dev.' );
+	}
+}
+
+/**
+ * Staging was fully indexable apart from its Basic Auth gate: no robots
+ * meta, no X-Robots-Tag, and robots.txt both allowed crawling and advertised
+ * the *production* sitemap. If the password is ever lifted (or a cache/CDN
+ * serves a copy), the staging copy would compete with production in search
+ * and duplicate its content. Defence in depth, scoped to staging hosts only.
+ */
+add_filter( 'wp_robots', function ( $robots ) {
+	if ( db_is_staging_host() ) {
+		$robots['noindex']  = true;
+		$robots['nofollow'] = true;
+		unset( $robots['follow'], $robots['index'] );
+	}
+	return $robots;
+}, 99 );
+
+add_action( 'send_headers', function () {
+	if ( db_is_staging_host() && ! headers_sent() ) {
+		header( 'X-Robots-Tag: noindex, nofollow', true );
+	}
+} );
+
+add_filter( 'robots_txt', function ( $output ) {
+	return db_is_staging_host() ? "User-agent: *\nDisallow: /\n" : $output;
+}, 99 );
