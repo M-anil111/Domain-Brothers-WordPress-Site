@@ -828,6 +828,17 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		// used to silently resolve to an empty email on every sale.
 		$customer_email = (string) ( $pi['receipt_email'] ?? '' );
 
+		// Stripe retries webhook deliveries (timeouts, 5xx, manual resend) and
+		// can deliver the same event twice; without this every retry re-sent
+		// the receipt + admin alert and double-counted the installment.
+		$pi_id = (string) ( $pi['id'] ?? '' );
+		if ( $pi_id ) {
+			if ( get_transient( 'db_stripe_pi_seen_' . $pi_id ) ) {
+				return;
+			}
+			set_transient( 'db_stripe_pi_seen_' . $pi_id, 1, 14 * DAY_IN_SECONDS );
+		}
+
 		if ( $type === 'full' ) {
 			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full' );
 			return;
@@ -857,7 +868,13 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 			$plan['status'] = 'completed';
 			update_option( $opt_key, $plan, false );
 			db_stripe_plan_index_remove( $domain );
-			db_stripe_on_sale_complete( $domain, $total_price, $customer_email, 'plan' );
+			// "Amount paid" is what the customer actually paid across the whole
+			// plan (listing price + the term's interest), not the listing price.
+			$paid_total = 0.0;
+			foreach ( (array) $plan['history'] as $h ) {
+				$paid_total += (float) ( $h['amount_usd'] ?? 0 );
+			}
+			db_stripe_on_sale_complete( $domain, $paid_total > 0 ? $paid_total : $total_price, $customer_email, 'plan' );
 			return;
 		}
 
@@ -866,6 +883,7 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['next_charge_ts']    = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
 		update_option( $opt_key, $plan, false );
 		db_stripe_plan_index_add( $domain );
+		db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email );
 	}
 }
 
@@ -1023,6 +1041,64 @@ if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 			'Time     : ' . wp_date( 'Y-m-d H:i:s T' ),
 		] );
 
+		if ( function_exists( 'db_send_branded_email' ) ) {
+			db_send_branded_email( $admin_email, $admin_subj, nl2br( esc_html( $admin_body ) ) );
+		} else {
+			wp_mail( $admin_email, $admin_subj, $admin_body );
+		}
+	}
+}
+
+// ─── Email: plan started / installment received ───────────────────────────────
+
+if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
+	/**
+	 * Installments 1..N-1. Until now a customer who started a plan got no
+	 * confirmation from the site at all (only the final installment sent
+	 * anything), and the team was never told a plan had started. Installment
+	 * 1 sends the full schedule; later ones send a short receipt.
+	 */
+	function db_stripe_on_plan_payment( string $domain, float $price, int $months, int $n, float $amount_usd, string $customer_email ) : void {
+		$admin_email = (string) get_option( 'admin_email' );
+		$rate        = db_plan_rate( $months );
+		$rate_label  = rtrim( rtrim( number_format( $rate, 1 ), '0' ), '.' ) . '% interest';
+		$total       = db_plan_total_cents( $price, $months ) / 100;
+		$d           = esc_html( $domain );
+		$paid_fmt    = '$' . number_format( $amount_usd, 2 );
+
+		if ( $customer_email ) {
+			if ( 1 === $n ) {
+				$subj = sprintf( 'Your payment plan for %s has started', $domain );
+				$rows = '';
+				for ( $i = 1; $i <= $months; $i++ ) {
+					$when  = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
+					$rows .= '<tr><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . (int) $i . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . esc_html( $when ) . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;text-align:right;">$' . esc_html( number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '</td></tr>';
+				}
+				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active</p>';
+				$body .= '<p>We received your first payment of <strong>' . esc_html( $paid_fmt ) . '</strong> for <strong>' . $d . '</strong>. Your plan: <strong>' . (int) $months . ' monthly payments</strong>, ' . esc_html( $rate_label ) . ', total <strong>$' . esc_html( number_format( $total, 2 ) ) . '</strong>.</p>';
+				$body .= '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;font-size:14px;"><tr><th align="left" style="padding:8px 14px;background:#f8f9fb;">#</th><th align="left" style="padding:8px 14px;background:#f8f9fb;">Date</th><th align="right" style="padding:8px 14px;background:#f8f9fb;">Amount</th></tr>' . $rows . '</table>';
+				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain is held securely in escrow.</p>';
+				$body .= '<p style="font-size:13px;color:#6b7280;">Questions? Reply to this email or write to <a href="mailto:sales@domainbrothers.com" style="color:#0a6ed1;">sales@domainbrothers.com</a>.</p>';
+			} else {
+				$subj = sprintf( 'Payment %d of %d received for %s', $n, $months, $domain );
+				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Payment received</p>';
+				$body .= '<p>We received installment <strong>' . (int) $n . ' of ' . (int) $months . '</strong> (' . esc_html( $paid_fmt ) . ') for <strong>' . $d . '</strong>. ' . (int) ( $months - $n ) . ' payment(s) remain.</p>';
+			}
+			if ( function_exists( 'db_send_branded_email' ) ) {
+				db_send_branded_email( $customer_email, $subj, $body );
+			}
+		}
+
+		$admin_subj = 1 === $n
+			? sprintf( 'PLAN STARTED: %s — %d months, %s', $domain, $months, $rate_label )
+			: sprintf( 'PLAN PAYMENT %d/%d: %s (%s)', $n, $months, $domain, $paid_fmt );
+		$admin_body = implode( "\n", [
+			'Domain   : ' . $domain,
+			'Payment  : ' . $n . ' of ' . $months . ' (' . $paid_fmt . ')',
+			'Plan     : ' . $rate_label . ', total $' . number_format( $total, 2 ),
+			'Customer : ' . ( $customer_email ?: 'Unknown' ),
+			'Time     : ' . wp_date( 'Y-m-d H:i:s T' ),
+		] );
 		if ( function_exists( 'db_send_branded_email' ) ) {
 			db_send_branded_email( $admin_email, $admin_subj, nl2br( esc_html( $admin_body ) ) );
 		} else {

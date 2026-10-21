@@ -33,7 +33,7 @@ if ( ! function_exists( 'db_mail_wrap' ) ) {
 		$year      = gmdate( 'Y' );
 		$title_esc = esc_html( $subject );
 		$name_esc  = esc_html( $from_name );
-		$contact   = esc_url( home_url( '/contact/' ) );
+		$contact   = esc_url( home_url( '/contact-us/' ) );
 
 		$html  = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
 		$html .= '<html xmlns="http://www.w3.org/1999/xhtml"><head>';
