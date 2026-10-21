@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.38.1
+ * Version:     3.38.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.38.1' );
+define( 'DB_BLOCKS_LOADED', '3.38.2' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -705,7 +705,13 @@ function db_plan_widget_html() {
 		.db-plan-monthly-amount{font-size:clamp(26px,6vw,34px);font-weight:800;line-height:1.1;}
 		.db-plan-monthly-sub{font-size:13px;color:#666;margin-top:2px;}
 		.db-plan-cta{display:inline-block;background:#0a6ed1;color:#fff;font-weight:600;text-decoration:none;padding:14px 22px;border-radius:10px;white-space:nowrap;transition:background .15s;}
-		.db-plan-cta:hover{background:#085bb0;color:#fff;}
+		.db-plan-cta:hover{background:#085bb0;color:#fff !important;}
+		/* Theme link/p rules were winning: blue-on-blue 10px CTA text, and the
+		   terms <p> inheriting display:grid (each phrase became a column). */
+		.db-plan-cta{color:#fff !important;font-size:16px !important;line-height:1.2;}
+		.db-plan .db-plan-terms{display:block !important;}
+		.db-plan{width:100%;box-sizing:border-box;}
+		.db-plan-term .t-per{font-size:13px !important;}
 		.db-plan-schedule-wrap h3{font-size:17px;margin:0 0 10px;}
 		.db-plan-schedule{width:100%;border-collapse:collapse;font-size:14px;}
 		.db-plan-schedule th,.db-plan-schedule td{text-align:left;padding:10px 12px;border-bottom:1px solid #eee;}
@@ -822,7 +828,7 @@ function db_plan_takeover( $html ) {
 	$oend = false === $open ? false : strpos( $html, '>', $open );
 	$close = strripos( $html, '</main>' );
 	if ( false === $oend || false === $close || $close < $oend ) { return $html; }
-	return substr( $html, 0, $oend + 1 ) . '<div class="container">' . $widget . '</div>' . substr( $html, $close );
+	return substr( $html, 0, $oend + 1 ) . $widget . substr( $html, $close );
 }
 
 add_action( 'template_redirect', function () {
