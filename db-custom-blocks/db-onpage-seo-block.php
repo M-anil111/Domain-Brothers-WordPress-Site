@@ -144,3 +144,60 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_onpage_fix_404_page' );
 }, 25 );
+
+/* ─── 4. Pages with no <h1>, and <img> tags with no alt attribute ─────────── */
+
+if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
+	/**
+	 * Crawl of ~170 sampled pages found two static pages (/domain-transfer/,
+	 * /4-character-domains/) whose templates render no <h1> at all, and
+	 * theme images (security/ICANN badges, contact icons) with no alt
+	 * attribute. db_seo_promote_archive_h1() only covers archives, so this
+	 * handles the remaining singular pages: promote a .page-title heading if
+	 * the template has one, otherwise add a screen-reader-only <h1> carrying
+	 * the real page title (a11y text, not extra keywords). Plain string
+	 * work only — no backtracking-prone patterns on page-sized input.
+	 */
+	function db_onpage_fix_h1_and_alt( $html ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		if ( is_singular() && false === stripos( $html, '<h1' ) ) {
+			$done = false;
+			if ( preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+				$html = substr_replace( $html, '<h1' . $m[1][0] . '>' . $m[2][0] . '</h1>', $m[0][1], strlen( $m[0][0] ) );
+				$done = true;
+			}
+			if ( ! $done ) {
+				$pos = stripos( $html, '<main' );
+				$end = false === $pos ? false : strpos( $html, '>', $pos );
+				if ( false !== $end ) {
+					$h1   = '<h1 class="screen-reader-text">' . esc_html( get_the_title() ) . '</h1>';
+					$html = substr_replace( $html, $h1, $end + 1, 0 );
+				}
+			}
+		}
+		if ( false !== stripos( $html, '<img' ) ) {
+			$html = preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) {
+				$tag = $m[0];
+				if ( preg_match( '/\salt\s*=/i', $tag ) ) {
+					return $tag;
+				}
+				$alt = '';
+				if ( preg_match( '/\ssrc="([^"]+)"/i', $tag, $s ) ) {
+					$base = pathinfo( wp_parse_url( $s[1], PHP_URL_PATH ) ?: '', PATHINFO_FILENAME );
+					$alt  = trim( preg_replace( '/[-_]+/', ' ', preg_replace( '/-?\d+x\d+$/', '', $base ) ) );
+				}
+				return substr_replace( $tag, ' alt="' . esc_attr( $alt ) . '"', 4, 0 );
+			}, $html );
+		}
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_onpage_fix_h1_and_alt' );
+}, 26 );
