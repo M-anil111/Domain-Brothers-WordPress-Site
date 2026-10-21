@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.38.0
+ * Version:     3.38.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.38.0' );
+define( 'DB_BLOCKS_LOADED', '3.38.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -2359,6 +2359,12 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
    ask translates concretely to: more air, bigger and bolder type, one
    clear focal statement instead of a paragraph competing with the founder
    photos for attention. */
+/* The homepage listing column (.content-area) is float:left; the section
+   container after it never cleared, so the whole Welcome panel and everything
+   below rendered ON TOP of the Featured / Newly Added cards (a ~4,000px
+   white block hiding the domain inventory). Found with a real-browser
+   screenshot pass; clear the float. */
+.db-ui-active .pageNewContent { clear: both; }
 .db-ui-active .db-welcome-section {
 	background: #fff; border-radius: 28px; box-shadow: var(--db-shadow-lg);
 	padding: clamp(40px, 7vw, 72px) clamp(24px, 6vw, 64px);
