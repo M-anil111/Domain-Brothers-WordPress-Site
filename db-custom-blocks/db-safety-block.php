@@ -714,3 +714,32 @@ if ( ! function_exists( 'db_safety_render_page' ) ) {
 		<?php
 	}
 }
+
+/* ─── Legacy /checkout/ → Stripe /buy-now/ ──────────────────────────────────── */
+
+/**
+ * The theme's own /checkout/ template (the target of the old payment-plan
+ * form) renders a raw "card_number"/"card_name" form with no Stripe.js and a
+ * "Pay with PayPal" tab whose [wp_paypal] shortcode was left as literal text
+ * (the plugin that provided it is not installed). The working, PCI-safe
+ * checkout is the plugin-rendered Stripe flow on /buy-now/, which reads the
+ * same ?d=&p= pair and re-derives the price server-side. Anything that still
+ * lands on /checkout/ with a valid pair is sent there instead of seeing the
+ * broken legacy form. Bare /checkout/ is still redirected by the existing
+ * guard in db_safety_template_guards().
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_page( 'checkout' ) || empty( $_GET['d'] ) || empty( $_GET['p'] ) ) {
+		return;
+	}
+	$args = array(
+		'd' => sanitize_text_field( wp_unslash( $_GET['d'] ) ),
+		'p' => sanitize_text_field( wp_unslash( $_GET['p'] ) ),
+	);
+	if ( ! empty( $_GET['months'] ) ) {
+		$args['months'] = (int) $_GET['months'];
+		$args['t']      = 'plan';
+	}
+	wp_safe_redirect( home_url( '/buy-now/' ) . '?' . http_build_query( $args, '', '&', PHP_QUERY_RFC3986 ), 302 );
+	exit;
+}, -50 );
