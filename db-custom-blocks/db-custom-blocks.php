@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.33.0
+ * Version:     3.33.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.33.0' );
+define( 'DB_BLOCKS_LOADED', '3.33.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1332,9 +1332,13 @@ add_action( 'wp_head', function () {
 		db_aeo_emit( array( '@type' => 'Service', 'name' => $service_name, 'provider' => array( '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url ), 'url' => esc_url( get_permalink() ), 'areaServed' => 'Worldwide', 'description' => get_the_excerpt() ) );
 	}
 
-	if ( ! is_front_page() && ( is_page() || is_singular() || is_category() || is_tax( 'domain_category' ) ) ) {
+	if ( ! is_front_page() && ( is_page() || is_singular() || is_category() || is_home() || is_tax( 'domain_category' ) ) ) {
 		$items = array( array( '@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => $site_url ) );
-		if ( is_tax( 'domain_category' ) ) {
+		if ( is_home() ) {
+			// /news/ is the posts index (is_home), which none of the other
+			// conditions matched — no BreadcrumbList despite a visible one.
+			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'News', 'item' => esc_url( home_url( '/news/' ) ) );
+		} elseif ( is_tax( 'domain_category' ) ) {
 			// Same gap as the /news/ single-post one above: domain_category
 			// archives (/domain-category/{slug}/) aren't is_page(),
 			// is_singular(), or is_category() (that's the *native* WP
