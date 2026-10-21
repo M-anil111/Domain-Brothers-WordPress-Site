@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
 if ( ! function_exists( 'db_onpage_noscript_html' ) ) {
 	function db_onpage_noscript_html() {
 		$html  = '<noscript><div class="db-noscript-fallback" style="max-width:960px;margin:16px auto;padding:16px 20px;font-family:sans-serif;line-height:1.5;">';
-		$html .= '<p>Domain Brothers is a premium domain name marketplace and brokerage — escrow-protected transfers and 0%-interest payment plans on every listing. Some page features on this site need JavaScript; the links below work without it:</p>';
+		$html .= '<p>Domain Brothers is a premium domain name marketplace and brokerage — escrow-protected transfers and flexible payment plans on every listing. Some page features on this site need JavaScript; the links below work without it:</p>';
 		$html .= '<ul>';
 		$html .= '<li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li>';
 		$html .= '<li><a href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse All Domains</a></li>';

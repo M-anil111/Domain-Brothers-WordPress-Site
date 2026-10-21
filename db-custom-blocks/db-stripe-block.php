@@ -254,17 +254,19 @@ add_action( 'template_redirect', static function () {
 
 if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
 	/**
-	 * Cents for installment $n (1-indexed) of a $months-month 0%-interest plan.
+	 * Cents for installment $n (1-indexed) of a $months-month plan (interest per db_plan_rate()).
 	 * Mirrors the widget's installments(total, months) JS exactly: every
-	 * installment is round(total/months, 2) except the last, which absorbs
-	 * the rounding remainder so the sum always equals the domain's price.
+	 * installment is round(total/months) in cents except the last, which absorbs
+	 * the rounding remainder so the sum always equals price + the term's interest.
 	 */
 	function db_stripe_installment_cents( float $price_usd, int $months, int $n ) : int {
-		$monthly_cents = (int) round( $price_usd / $months * 100 );
+		// Total includes the term's interest (db_plan_rate(): 0% for 3/6
+		// months, 5% for 9, 10% for 12) — same figure the plan chooser shows.
+		$total_cents   = db_plan_total_cents( $price_usd, $months );
+		$monthly_cents = (int) round( $total_cents / $months );
 		if ( $n < $months ) {
 			return $monthly_cents;
 		}
-		$total_cents = (int) round( $price_usd * 100 );
 		return $total_cents - $monthly_cents * ( $months - 1 );
 	}
 }
@@ -474,8 +476,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 		<div class="db-stripe-plan-box">
 			<strong><?php echo esc_html( $monthly_display ); ?>/mo</strong>
 			&times; <?php echo esc_html( (string) $months ); ?> months
-			<span class="db-stripe-badge">0% interest</span>
-			<br><small style="opacity:.65;margin-top:4px;display:block">First installment charged today &mdash; remaining <?php echo esc_html( (string) ( $months - 1 ) ); ?> installments billed monthly, 0% interest.</small>
+			<span class="db-stripe-badge"><?php echo esc_html( rtrim( rtrim( number_format( db_plan_rate( $months ), 1 ), '0' ), '.' ) ); ?>% interest</span>
+			<br><small style="opacity:.65;margin-top:4px;display:block">First installment charged today &mdash; remaining <?php echo esc_html( (string) ( $months - 1 ) ); ?> installments billed monthly (<?php echo esc_html( rtrim( rtrim( number_format( db_plan_rate( $months ), 1 ), '0' ), '.' ) ); ?>% interest, total $<?php echo esc_html( number_format( db_plan_total_cents( $price, $months ) / 100, 2 ) ); ?>).</small>
 		</div>
 <?php endif; ?>
 

@@ -46,7 +46,7 @@ if ( ! function_exists( 'db_seo_defs' ) ) {
 		$defs = array(
 			'_front' => array(
 				'title' => 'Buy Premium Domains, Escrow Protected | Domain Brothers',
-				'desc'  => 'Browse premium domains for sale with escrow-protected transfers and 0% interest payment plans. Find the perfect domain for your brand and buy it today.',
+				'desc'  => 'Browse premium domains for sale with escrow-protected transfers and flexible payment plans. Find the perfect domain for your brand and buy it today.',
 				'kw'    => 'buy premium domains',
 			),
 			'website-design-development' => array(
@@ -96,7 +96,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 		return array(
 			'all-domains' => array(
 				'title' => 'Premium Domains for Sale: Browse 200+ | Domain Brothers',
-				'desc'  => 'Browse premium domains for sale across .com, .ca and more, every name backed by escrow-protected transfer and 0% interest payment plans. Start looking today.',
+				'desc'  => 'Browse premium domains for sale across .com, .ca and more, every name backed by escrow-protected transfer and flexible payment plans. Start looking today.',
 				'kw'    => 'premium domains for sale',
 			),
 			'sold' => array(
@@ -121,7 +121,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'faqs' => array(
 				'title' => 'Domain Buying FAQs: Answers for Buyers | Domain Brothers',
-				'desc'  => 'Clear domain buying FAQs on premium pricing, escrow, DNS and 0% interest instalments over 3 to 12 months. Get the answers, then pick your domain.',
+				'desc'  => 'Clear domain buying FAQs on premium pricing, escrow, DNS and flexible instalments over 3 to 12 months. Get the answers, then pick your domain.',
 				'kw'    => 'domain buying faqs',
 			),
 			'contact-us' => array(
@@ -166,7 +166,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'offer' => array(
 				'title' => 'Make an Offer on a Premium Domain | Domain Brothers',
-				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Escrow protection and 0% interest plans apply. Submit your offer now.',
+				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Escrow protection and flexible payment plans apply. Submit your offer now.',
 				'kw'    => 'make an offer',
 			),
 			'domain-transfer' => array(
@@ -211,7 +211,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'buy-domains-service' => array(
 				'title' => 'Buy Domains with Escrow and Payment Plans | Domain Brothers',
-				'desc'  => 'Buy domains from a curated inventory with escrow-protected transfer, 0% interest instalments and strategy advice from 15+ year veterans. Start browsing now.',
+				'desc'  => 'Buy domains from a curated inventory with escrow-protected transfer, flexible instalments and strategy advice from 15+ year veterans. Start browsing now.',
 				'kw'    => 'buy domains',
 			),
 			'sell-domains-service' => array(
@@ -524,7 +524,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 		if ( is_post_type_archive( 'domain' ) || is_home() ) {
 			return array(
 				'title' => 'Premium Domains for Sale' . $brand,
-				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an escrow-protected transfer and 0% interest payment plans. Find your domain today.',
+				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an escrow-protected transfer and flexible payment plans. Find your domain today.',
 				'kw'    => 'premium domains for sale',
 			);
 		}

@@ -140,7 +140,7 @@ if ( ! function_exists( 'db_mail_send_sale_receipt' ) ) {
 		if ( 'plan' === $type ) {
 			$monthly    = ( $plan_months > 0 ) ? '$' . number_format( (float) $amount_usd / (int) $plan_months, 2 ) : $amount_fmt;
 			$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active!</p>';
-			$body .= '<p>Your plan for <strong>' . $domain_safe . '</strong> is now active &mdash; <strong>' . esc_html( $monthly ) . '/month</strong> over <strong>' . (int) $plan_months . ' months</strong>, 0% interest.</p>';
+			$body .= '<p>Your plan for <strong>' . $domain_safe . '</strong> is now active &mdash; <strong>' . esc_html( $monthly ) . '/month</strong> over <strong>' . (int) $plan_months . ' months</strong>, ' . ( db_plan_rate( $plan_months ) > 0 ? esc_html( rtrim( rtrim( number_format( db_plan_rate( $plan_months ), 1 ), '0' ), '.' ) ) . '% interest' : '0% interest' ) . '.</p>';
 			$body .= '<p>Installments bill automatically each month, and we\'ll send a reminder before each one. Domain transfer begins right after your final payment.</p>';
 		} else {
 			$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Congratulations! Your purchase is confirmed.</p>';

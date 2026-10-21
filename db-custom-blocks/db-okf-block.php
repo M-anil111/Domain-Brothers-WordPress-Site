@@ -156,7 +156,7 @@ if ( ! function_exists( 'db_okf_render_root' ) ) {
 			'timestamp'   => current_time( 'c' ),
 		) );
 		$body = "# Domain Brothers — Knowledge Catalog\n\n"
-			. "Domain Brothers is a premium domain name brokerage: acquisition, escrow-protected transfer, and 0%-interest payment plans.\n\n"
+			. "Domain Brothers is a premium domain name brokerage: acquisition, escrow-protected transfer, and flexible payment plans.\n\n"
 			. "## Concepts\n\n"
 			. "- [Domains](/okf/domains/index.md) — domains currently for sale\n"
 			. "- [Categories](/okf/categories/index.md) — domain categories\n"
@@ -210,7 +210,7 @@ if ( ! function_exists( 'db_okf_render_domain' ) ) {
 		$fm = db_okf_frontmatter( array(
 			'type'        => 'Domain Listing',
 			'title'       => $s['name'],
-			'description' => 'Premium domain ' . $s['name'] . ( $s['cat'] ? ' in the ' . $s['cat'] . ' category' : '' ) . ', available for purchase or via a 0%-interest payment plan.',
+			'description' => 'Premium domain ' . $s['name'] . ( $s['cat'] ? ' in the ' . $s['cat'] . ' category' : '' ) . ', available for purchase or via a flexible payment plan.',
 			'resource'    => $url,
 			'tags'        => $s['cat'] ? array( $s['cat'] ) : array(),
 			'timestamp'   => get_post_modified_time( 'c', true, $post ),
@@ -335,7 +335,7 @@ if ( ! function_exists( 'db_okf_render_business' ) ) {
 		$body  = "# Domain Brothers — Business Info\n\n";
 		$body .= "Domain Brothers is a premium domain name brokerage offering expert acquisition, flexible payment plans, and secure escrow services.\n\n";
 		$body .= "**Contact:** sales@domainbrothers.com\n\n";
-		$body .= "## Payment Plans\n\nDomain Brothers offers 0% interest instalment plans over 3, 6, 9, or 12 months. The total price is divided into equal monthly payments. During the payment plan, the domain's DNS can be pointed to the buyer's servers so it can be used immediately; legal ownership transfers once the final payment clears.\n\n";
+		$body .= "## Payment Plans\n\nDomain Brothers offers instalment plans over 3, 6, 9, or 12 months. The 3- and 6-month plans are interest-free; the 9-month plan carries 5% interest and the 12-month plan 10%. The total (price plus any interest) is divided into equal monthly payments. During the payment plan, the domain's DNS can be pointed to the buyer's servers so it can be used immediately; legal ownership transfers once the final payment clears.\n\n";
 		$body .= "## Domain Transfers\n\nMost .com domain transfers complete within 5–7 days. Country-code domains can complete faster, sometimes within 24 hours. Transfers use secure escrow and established registrar transfer protocols.\n\n";
 		$body .= "## Payment Methods\n\nVisa, Mastercard, American Express, Apple Pay, and Google Pay, processed via Stripe (PCI-DSS compliant).\n\n";
 		$body .= "## Related Concepts\n\n- [Domains](/okf/domains/index.md)\n- [Categories](/okf/categories/index.md)\n- [Services](/okf/services/index.md)\n";

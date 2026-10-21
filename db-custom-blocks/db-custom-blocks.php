@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.36.1
+ * Version:     3.37.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.36.1' );
+define( 'DB_BLOCKS_LOADED', '3.37.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -279,7 +279,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 	function db_hp_hero_html() {
 		$browse_href = DB_HERO_BROWSE_URL ? esc_url( DB_HERO_BROWSE_URL ) : '#db-below-hero';
 		$offer_href  = esc_url( home_url( DB_HERO_OFFER_URL ) );
-		$trust_items = array( 'Escrow-Protected Transfers', '0% Interest Payment Plans', '27+ Years Combined Experience', '500+ Domains Sold' );
+		$trust_items = array( 'Escrow-Protected Transfers', 'Flexible Payment Plans', '27+ Years Combined Experience', '500+ Domains Sold' );
 		$trust_html  = '';
 		foreach ( $trust_items as $i => $item ) {
 			if ( $i > 0 ) {
@@ -325,7 +325,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
-		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for 0% interest payment plans.</p>';
+		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for flexible payment plans.</p>';
 		$html .= '<div class="db-hp-ctas">';
 		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
 		$html .= '</div>';
@@ -587,6 +587,26 @@ if ( ! function_exists( 'db_plan_terms' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_plan_rate' ) ) {
+	/**
+	 * Interest rate (percent) per plan term — the live site's published
+	 * schedule: 3 and 6 months are interest-free, 9 months carries 5%, 12
+	 * months 10%. Single source of truth for the plan chooser (JS), the
+	 * Stripe charges (PHP) and every piece of copy that quotes a rate.
+	 */
+	function db_plan_rate( $months ) {
+		$rates = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 );
+		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
+	}
+}
+
+if ( ! function_exists( 'db_plan_total_cents' ) ) {
+	/** Total owed in cents for a plan: listing price plus the term's interest. */
+	function db_plan_total_cents( $price_usd, $months ) {
+		return (int) round( (float) $price_usd * ( 100 + db_plan_rate( $months ) ) );
+	}
+}
+
 if ( ! function_exists( 'db_is_plan_page' ) ) {
 	function db_is_plan_page() {
 		return is_page( DB_PLAN_PAGE_SLUG );
@@ -638,11 +658,12 @@ function db_plan_widget_html() {
 		data-d="<?php echo esc_attr( $d_b64 ); ?>"
 		data-p="<?php echo esc_attr( $p_b64 ); ?>"
 		data-cur="<?php echo esc_attr( $cur ); ?>"
+		data-rates="<?php echo esc_attr( wp_json_encode( array_combine( array_map( 'strval', $terms ), array_map( 'db_plan_rate', $terms ) ) ) ); ?>"
 		data-buynow="<?php echo esc_attr( home_url( '/buy-now/' ) ); ?>">
 
 		<div class="db-plan-head">
 			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
-			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero">0% interest</span></p>
+			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
 		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
 		<div class="db-plan-summary">
@@ -705,12 +726,14 @@ function db_plan_widget_html() {
 		var buynow = root.getAttribute('data-buynow') || '/buy-now/';
 		var active = terms[0];
 		function money(n){ return cur+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+		var rates = {};
+		try { rates = JSON.parse(root.getAttribute('data-rates')||'{}'); } catch(e) {}
+		function rateOf(m){ return parseFloat(rates[m])||0; }
+		/* Cents, mirroring db_plan_total_cents()/db_stripe_installment_cents() in PHP exactly:
+		   total = price + term interest; every payment is round(total/months), the last absorbs the remainder. */
 		function installments(total,months){
-			var monthly=Math.round((total/months)*100)/100,arr=[],sum=0;
-			for(var i=0;i<months;i++){
-				if(i===months-1){arr.push(Math.round((total-sum)*100)/100);}
-				else{arr.push(monthly);sum+=monthly;}
-			}
+			var totalC=Math.round(total*(100+rateOf(months))),monthlyC=Math.round(totalC/months),arr=[];
+			for(var i=0;i<months;i++){ arr.push((i===months-1?totalC-monthlyC*(months-1):monthlyC)/100); }
 			return arr;
 		}
 		function addMonths(date,m){
@@ -730,7 +753,7 @@ function db_plan_widget_html() {
 				b.className='db-plan-term'+(m===active?' is-active':'');
 				b.setAttribute('role','tab');
 				b.setAttribute('aria-selected',m===active?'true':'false');
-				b.innerHTML='<span class="t-months">'+m+' months</span><span class="t-per">'+money(per)+'/mo</span>';
+				b.innerHTML='<span class="t-months">'+m+' months</span><span class="t-per">'+money(per)+'/mo</span><span class="t-per">'+(rateOf(m)?rateOf(m)+'% interest':'0% interest')+'</span>';
 				b.addEventListener('click',function(){active=m;renderTerms();renderSummary();});
 				wrap.appendChild(b);
 			});
@@ -738,7 +761,10 @@ function db_plan_widget_html() {
 		function renderSummary(){
 			var arr=installments(price,active);
 			document.getElementById('db-plan-monthly').textContent=money(arr[0]);
-			document.getElementById('db-plan-monthly-sub').textContent=active+' payments, 0% interest';
+			var rt=rateOf(active),tot=arr.reduce(function(a,b){return a+b;},0);
+			document.getElementById('db-plan-monthly-sub').textContent=active+' payments, '+(rt?rt+'% interest \u00b7 total '+money(tot):'0% interest');
+			var badge=document.getElementById('db-plan-rate-badge');
+			if(badge){ badge.textContent=rt?rt+'% interest':'0% interest'; }
 			var body=document.getElementById('db-plan-schedule-body');
 			body.innerHTML='';
 			var today=new Date();
@@ -1348,7 +1374,7 @@ add_action( 'wp_head', function () {
 	if ( is_front_page() || is_page( 'faq' ) ) {
 		db_aeo_emit( array( '@type' => 'FAQPage', 'mainEntity' => array(
 			array( '@type' => 'Question', 'name' => 'What is domain brokerage?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Domain brokerage is a service where an expert negotiates and acquires a premium domain name on your behalf. The broker handles outreach to the current owner, price negotiation, secure transfer, and escrow.' ) ),
-			array( '@type' => 'Question', 'name' => 'How do payment plans work?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Domain Brothers offers 0% interest instalment plans over 3, 6, 9, or 12 months. The total price is divided into equal monthly payments.' ) ),
+			array( '@type' => 'Question', 'name' => 'How do payment plans work?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Domain Brothers offers instalment plans over 3, 6, 9, or 12 months. The 3- and 6-month plans are interest-free; the 9-month plan carries 5% interest and the 12-month plan 10%. The total (price plus any interest) is divided into equal monthly payments.' ) ),
 			array( '@type' => 'Question', 'name' => 'Can I use a domain while I am still paying for it?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Yes. During the payment plan we can point the domain\'s DNS records to your servers so you can start using the domain immediately. Legal ownership transfers to you once the final payment clears.' ) ),
 			array( '@type' => 'Question', 'name' => 'How long does a domain transfer take?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Most .com domain transfers complete within 5–7 days. Country-code domains can complete faster — sometimes within 24 hours.' ) ),
 			array( '@type' => 'Question', 'name' => 'Is it safe to buy a domain through a broker?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Yes. Domain Brothers uses secure escrow services and established registrar transfer protocols. Payments are processed through Stripe with full PCI-DSS compliance.' ) ),
@@ -3831,7 +3857,7 @@ if ( ! function_exists( 'db_service_page_defs' ) ) {
 
 <h2>Frequently Asked Questions</h2>
 <h3>How much does a custom website cost?</h3>
-<p>A custom-designed business website typically costs $3,500–$8,000; e-commerce builds run $8,000–$25,000 depending on catalogue size and integrations. You get an exact fixed quote within 48 hours of the discovery call, and 0% interest payment plans are available.</p>
+<p>A custom-designed business website typically costs $3,500–$8,000; e-commerce builds run $8,000–$25,000 depending on catalogue size and integrations. You get an exact fixed quote within 48 hours of the discovery call, and flexible payment plans are available.</p>
 <h3>How long does a website take to build?</h3>
 <p>A standard business site takes 4–6 weeks from kickoff to launch. E-commerce and custom-functionality builds take 8–12 weeks. The timeline is written into your proposal.</p>
 <h3>Can you build on a domain I already own?</h3>
@@ -3967,7 +3993,7 @@ HTML
 
 <h2>Frequently Asked Questions</h2>
 <h3>How much does it cost to build a mobile app?</h3>
-<p>A cross-platform MVP typically costs $25,000–$60,000; complex or fully native apps run higher. The product workshop produces a fixed, milestone-based quote, and 0% interest payment plans are available on development fees.</p>
+<p>A cross-platform MVP typically costs $25,000–$60,000; complex or fully native apps run higher. The product workshop produces a fixed, milestone-based quote, and flexible payment plans are available on development fees.</p>
 <h3>Should I build native or cross-platform?</h3>
 <p>Cross-platform (React Native or Flutter) is right for roughly 80% of apps — it is faster and cheaper with near-native quality. Go native when you rely heavily on device hardware or need every millisecond of performance. We recommend the cheaper option whenever it genuinely fits.</p>
 <h3>How long does app development take?</h3>
