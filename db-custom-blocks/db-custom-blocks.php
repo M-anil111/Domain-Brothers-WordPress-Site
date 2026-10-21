@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.36.0
+ * Version:     3.36.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.36.0' );
+define( 'DB_BLOCKS_LOADED', '3.36.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -612,6 +612,15 @@ function db_plan_widget_html() {
 	$price     = 0.0;
 	if ( preg_match( '/[0-9]+(?:\.[0-9]+)?/', preg_replace( '/[^0-9.]/', '', $price_raw ), $m ) ) {
 		$price = (float) $m[0];
+	}
+	// The URL's price is client-supplied. /buy-now/ always charges the
+	// listing's own domain_price (db_stripe_lookup_domain_price), so if the
+	// two differ — a stale link after a price change, or an edited ?p= — the
+	// chooser would advertise one monthly amount and Stripe would bill
+	// another. Show the same authoritative figure the charge will use.
+	if ( $domain && function_exists( 'db_stripe_lookup_domain_price' ) ) {
+		$listed = db_stripe_lookup_domain_price( $domain );
+		if ( null !== $listed ) { $price = $listed; }
 	}
 	if ( $price <= 0 ) { return ''; }
 
