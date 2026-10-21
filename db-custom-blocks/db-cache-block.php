@@ -55,7 +55,7 @@ if ( ! function_exists( 'db_cache_should_skip' ) ) {
 		// Any of these query args mean the response is specific to this
 		// one request (a chosen domain + price + installment plan), not
 		// reusable for the next visitor of the same URL.
-		foreach ( array( 'd', 'p', 'rn', 'm', 'i', 'lis' ) as $key ) {
+		foreach ( array( 'd', 'p', 'rn', 'm', 'i', 'lis', 'db_update_card' ) as $key ) {
 			if ( isset( $_GET[ $key ] ) ) {
 				return true;
 			}

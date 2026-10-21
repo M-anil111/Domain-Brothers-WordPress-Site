@@ -481,6 +481,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 		</div>
 <?php endif; ?>
 
+<?php if ( $is_plan ) : ?>
+		<p class="db-stripe-terms" style="font-size:13px;line-height:1.5;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;margin:0 0 16px;"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
+<?php endif; ?>
+
 		<div id="db-stripe-err" class="db-stripe-err"></div>
 		<form id="db-stripe-form" novalidate>
 			<label class="db-stripe-label" for="db-stripe-email">Email for your receipt</label>

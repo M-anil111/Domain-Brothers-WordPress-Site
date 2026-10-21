@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.37.1
+ * Version:     3.38.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.37.1' );
+define( 'DB_BLOCKS_LOADED', '3.38.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -682,6 +682,7 @@ function db_plan_widget_html() {
 			</table>
 		</div>
 		<div class="db-plan-notes">
+			<p class="db-plan-terms" style="background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;"><?php echo wp_kses( db_plan_terms_html(), array( 'strong' => array(), 'em' => array() ) ); ?></p>
 			<p><strong>When do I get the domain?</strong> Ownership transfers to you once the <em>final</em> payment clears. Until then the domain is held securely in escrow on your behalf.</p>
 			<p><strong>Can I use it in the meantime?</strong> Yes &mdash; during the plan we can point the domain to your hosting (A record / IP) and email (MX records) so you can start using it right away, while ownership transfers at the end.</p>
 		</div>
@@ -4224,6 +4225,7 @@ require_once __DIR__ . '/db-email-thankyou-block.php';
    PHASE 2 — Stripe Checkout, Webhooks & Payment Integration
    ============================================================ */
 require_once __DIR__ . '/db-stripe-block.php';
+require_once __DIR__ . '/db-plan-lifecycle-block.php';
 
 /* ============================================================
    ANALYTICS — CRM dashboard charts (leads, pipeline, sources)
