@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.34.0
+ * Version:     3.35.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.34.0' );
+define( 'DB_BLOCKS_LOADED', '3.35.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -601,18 +601,19 @@ if ( ! function_exists( 'db_plan_b64' ) ) {
 	}
 }
 
-add_filter( 'the_content', function ( $content ) {
-	static $done = false;
-	if ( $done || is_admin() || ! in_the_loop() || ! is_main_query() || ! db_is_plan_page() ) {
-		return $content;
-	}
+/**
+ * Plan-chooser widget markup (or '' when ?d=/?p= don't carry a valid price).
+ * Split out of the_content so the plan page can also render it when the
+ * theme's page template never calls the_content() — see db_plan_takeover().
+ */
+function db_plan_widget_html() {
 	$domain    = sanitize_text_field( db_plan_b64( 'd' ) );
 	$price_raw = db_plan_b64( 'p' );
 	$price     = 0.0;
 	if ( preg_match( '/[0-9]+(?:\.[0-9]+)?/', preg_replace( '/[^0-9.]/', '', $price_raw ), $m ) ) {
 		$price = (float) $m[0];
 	}
-	if ( $price <= 0 ) { return $content; }
+	if ( $price <= 0 ) { return ''; }
 
 	$terms = db_plan_terms();
 	$cur   = DB_PLAN_CURRENCY;
@@ -751,10 +752,49 @@ add_filter( 'the_content', function ( $content ) {
 	})();
 	</script>
 	<?php
-	$widget = ob_get_clean();
-	$done   = true;
+	return ob_get_clean();
+}
+
+add_filter( 'the_content', function ( $content ) {
+	static $done = false;
+	if ( $done || is_admin() || ! in_the_loop() || ! is_main_query() || ! db_is_plan_page() ) {
+		return $content;
+	}
+	$widget = db_plan_widget_html();
+	if ( '' === $widget ) { return $content; }
+	$done = true;
 	return $content . $widget;
 } );
+
+/**
+ * Live finding: the theme's payment-plan-setup template never calls
+ * the_content(), so the widget above never rendered. Visitors got the
+ * theme's legacy order-summary instead ("Monthly: ( Payments)", "$ per
+ * month for Months" with empty values, 5%/10% interest rows that contradict
+ * the site's 0%-interest promise) whose form posts to the legacy /checkout/
+ * (raw card fields, broken PayPal shortcode) — never reaching the Stripe
+ * /buy-now/ flow. With a valid ?d=&p= pair, swap the page's <main> body for
+ * the plan widget, whose CTA goes to /buy-now/?t=plan&months=N.
+ */
+function db_plan_takeover( $html ) {
+	// The widget is built BEFORE this callback runs (see template_redirect
+	// below): db_plan_widget_html() uses ob_start(), which is a fatal inside
+	// an output-buffer handler and would blank the whole page.
+	$widget = isset( $GLOBALS['db_plan_widget_prebuilt'] ) ? (string) $GLOBALS['db_plan_widget_prebuilt'] : '';
+	if ( ! is_string( $html ) || '' === $widget || false !== strpos( $html, 'id="db-plan"' ) ) { return $html; }
+	$open = stripos( $html, '<main' );
+	$oend = false === $open ? false : strpos( $html, '>', $open );
+	$close = strripos( $html, '</main>' );
+	if ( false === $oend || false === $close || $close < $oend ) { return $html; }
+	return substr( $html, 0, $oend + 1 ) . '<div class="container">' . $widget . '</div>' . substr( $html, $close );
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! db_is_plan_page() ) { return; }
+	$GLOBALS['db_plan_widget_prebuilt'] = db_plan_widget_html();
+	if ( '' === $GLOBALS['db_plan_widget_prebuilt'] ) { return; }
+	ob_start( 'db_plan_takeover' );
+}, 27 );
 
 add_action( 'wp_head', function () {
 	if ( DB_PLAN_HIDE_THEME_WIDGET && db_is_plan_page() ) {
