@@ -779,3 +779,108 @@ add_action( 'send_headers', function () {
 add_filter( 'robots_txt', function ( $output ) {
 	return db_is_staging_host() ? "User-agent: *\nDisallow: /\n" : $output;
 }, 99 );
+
+/* ─── QA fixes: AdSense, legacy CF7 wrapper, XML-RPC ────────────────────────── */
+
+if ( ! function_exists( 'db_safety_strip_adsense' ) ) {
+	/**
+	 * The theme loads adsbygoogle.js on every page and puts one ad slot on
+	 * the homepage, which earlier CSS hides (no approved AdSense account
+	 * here, and it left a blank gap). Hidden, the slot has zero width, so
+	 * adsbygoogle.push() throws "No slot size for availableWidth=0" — the
+	 * uncaught "Y" error on every page in tests/qa (UI-*-jserr). Third-party
+	 * ads on a premium-domain sales page also send buyers off-site and cost
+	 * load time, so the script and slot are removed rather than hidden.
+	 */
+	function db_safety_strip_adsense( $html ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'adsbygoogle' ) ) {
+			return $html;
+		}
+		// <script async src="https://pagead2.googlesyndication.com/...adsbygoogle.js..."></script>
+		$pos = strpos( $html, 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' );
+		if ( false !== $pos ) {
+			$start = strrpos( substr( $html, 0, $pos ), '<script' );
+			$end   = strpos( $html, '</script>', $pos );
+			if ( false !== $start && false !== $end ) {
+				$html = substr_replace( $html, '', $start, $end + 9 - $start );
+			}
+		}
+		// <div class="google_adsense"> <ins ...></ins> <script>(adsbygoogle...).push({});</script> </div>
+		// Domain pages use a variant with style="display: none;", so match the
+		// opening tag by prefix and remove every slot, not just the first.
+		$from = 0;
+		while ( false !== ( $pos = strpos( $html, '<div class="google_adsense"', $from ) ) ) {
+			$push = strpos( $html, '.push({});', $pos );
+			$end  = false === $push ? false : strpos( $html, '</div>', $push );
+			if ( false === $end || $end - $pos > 4000 ) {
+				$from = $pos + 1;
+				continue;
+			}
+			$html = substr_replace( $html, '', $pos, $end + 6 - $pos );
+			$from = $pos;
+		}
+		return $html;
+	}
+}
+
+if ( ! function_exists( 'db_safety_fix_legacy_offer_wrapper' ) ) {
+	/**
+	 * Domain pages carry a hard-coded, pre-CF7-5.4 "Make an Offer" box
+	 * (just the amount field + a button that opens the real form 1878 in a
+	 * modal) still wrapped in class="wpcf7". Current CF7 initialises every
+	 * .wpcf7, finds no data-wpcf7-id, requests
+	 * /contact-forms/NaN/feedback/schema (404) and then throws twice
+	 * ("Response", "Cannot set properties of null"). Renaming the wrapper
+	 * class stops CF7 touching it; nothing styles .make_an_offer .wpcf7.
+	 */
+	function db_safety_fix_legacy_offer_wrapper( $html ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		return str_replace( '<div role="form" class="wpcf7" id="wpcf7-f1878-p360-o1"', '<div role="form" class="db-legacy-offer-box" id="wpcf7-f1878-p360-o1"', $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_strip_adsense' );
+	if ( is_singular( 'domain' ) ) {
+		ob_start( 'db_safety_fix_legacy_offer_wrapper' );
+	}
+}, 29 );
+
+/*
+ * XML-RPC answered POST system.listMethods with 200 (tests/qa SEC-xmlrpc).
+ * Nothing on this site uses it (no Jetpack, no mobile-app publishing), and it
+ * is the usual target for password brute-force (system.multicall tries
+ * hundreds of logins per request) and pingback abuse.
+ */
+add_filter( 'xmlrpc_enabled', '__return_false' );
+add_filter( 'xmlrpc_methods', function () { return array(); } );
+add_filter( 'wp_headers', function ( $headers ) { unset( $headers['X-Pingback'] ); return $headers; } );
+add_action( 'init', function () {
+	if ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) {
+		status_header( 403 );
+		header( 'Content-Type: text/plain; charset=UTF-8' );
+		exit( 'XML-RPC is disabled on this site.' );
+	}
+}, 0 );
+
+/*
+ * The DomainFolio theme hard-codes the production table prefix in raw SQL
+ * ("select ID from Dmb_posts where post_title=...", "SELECT * FROM
+ * Dmb_hitDomain_final ..."). On any copy with a different prefix — this
+ * staging site uses wp_ — those queries hit tables that don't exist and fail
+ * silently (domain-page view/inquiry stats, owner lookups). Found by the
+ * tests/qa request profiler. Rewrites the hard-coded prefix to the real one;
+ * a no-op where they already match (production).
+ */
+add_filter( 'query', function ( $sql ) {
+	global $wpdb;
+	if ( 'Dmb_' === $wpdb->prefix || false === strpos( $sql, 'Dmb_' ) ) {
+		return $sql;
+	}
+	return preg_replace( '/(?<![A-Za-z0-9_])Dmb_([A-Za-z0-9_]+)/', $wpdb->prefix . '$1', $sql );
+} );

@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.39.0
+ * Version:     3.41.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.39.0' );
+define( 'DB_BLOCKS_LOADED', '3.41.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1359,7 +1359,15 @@ if ( ! function_exists( 'db_aeo_emit' ) ) {
 if ( ! function_exists( 'db_aeo_canonical' ) ) {
 	function db_aeo_canonical() {
 		global $wp;
-		return esc_url( home_url( add_query_arg( array(), $wp->request ) ) );
+		// $wp->request has no trailing slash, but every permalink on this site
+		// ends in one (/news/ -> /news is a 301). A canonical that points at a
+		// redirect tells search engines the real URL is a different page —
+		// caught by tests/qa (SEO-*-canonical) on archives and the posts index.
+		$path = (string) $wp->request;
+		if ( '' !== $path && false === strpos( basename( $path ), '.' ) ) {
+			$path = user_trailingslashit( $path );
+		}
+		return esc_url( home_url( '' === $path ? '/' : '/' . ltrim( $path, '/' ) ) );
 	}
 }
 
@@ -2009,6 +2017,20 @@ if ( ! function_exists( 'db_ui_css' ) ) {
    children at all. There is no approved AdSense account on this beta
    subdomain for an ad to ever fill here anyway. */
 .db-ui-active .google_adsense { display: none !important; }
+
+/* Theme stylesheet references two images that don't exist (404 on every
+   page that loads it): a decorative ::after on the services CTA box, and the
+   checked-state tick for every theme-styled checkbox/radio (domain transfer
+   "Unlock the domain?", terms consent). The second is a real bug: a ticked
+   box showed nothing. Draw the tick in CSS instead. */
+.db-ui-active .cta_box::after { background-image: none !important; }
+#page .auth-chk input:checked ~ .wpcf7-list-item-label::before,
+.db-ui-active .terms_conditions_radio input:checked ~ .item_label::before,
+.db-ui-active .checkbox_full input:checked ~ .wpcf7-list-item-label::before,
+.db-ui-active .item_label_cnt:before {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2367BD3C'/%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+	background-size: 100% 100% !important; background-repeat: no-repeat !important;
+}
 
 /* ==========================================================================
    9. TABLES + PAGINATION

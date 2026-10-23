@@ -162,7 +162,10 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		if ( ! is_string( $html ) ) {
 			return $html;
 		}
-		if ( is_singular() && false === stripos( $html, '<h1' ) ) {
+		// Not the front page: its hero <h1> is added by a later output buffer,
+		// so at this point the page looked h1-less and "Featured Top Domains"
+		// was promoted too — two <h1>s on the homepage (tests/qa SEO-home-h1).
+		if ( is_singular() && ! is_front_page() && false === stripos( $html, '<h1' ) ) {
 			$done = false;
 			if ( preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
 				$html = substr_replace( $html, '<h1' . $m[1][0] . '>' . $m[2][0] . '</h1>', $m[0][1], strlen( $m[0][0] ) );

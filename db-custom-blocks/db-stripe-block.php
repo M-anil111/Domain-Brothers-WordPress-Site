@@ -245,6 +245,18 @@ add_action( 'template_redirect', static function () {
 	$is_plan    = in_array( $months_raw, [ 3, 6, 9, 12 ], true );
 	$months     = $is_plan ? $months_raw : 0;
 
+	// Never take a second buyer's money for a name that is already sold or on
+	// someone else's active payment plan: the listing stays published until
+	// an admin unpublishes it, so without this two people could pay for the
+	// same domain.
+	if ( db_stripe_domain_unavailable( $domain ) ) {
+		wp_die(
+			'<h1>This domain is no longer available</h1><p>' . esc_html( $domain ) . ' has been sold or is reserved on a payment plan. <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other premium domains</a> or <a href="mailto:sales@domainbrothers.com">contact us</a>.</p>',
+			'Domain unavailable',
+			[ 'response' => 410 ]
+		);
+	}
+
 	$pi = db_stripe_create_payment_intent( $domain, $price, $months );
 	db_stripe_render_checkout_page( $domain, $price, $months, $pi );
 	exit;
@@ -732,7 +744,12 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 			case 'payment_intent.payment_failed':
 				$email      = (string) ( $obj['receipt_email'] ?? '' );
 				$amount_usd = isset( $obj['amount'] ) ? round( (float) $obj['amount'] / 100, 2 ) : 0.0;
-				db_stripe_on_payment_failed( $domain, $email, $amount_usd );
+				if ( 'plan' === (string) ( $obj['metadata']['type'] ?? '' ) && (int) ( $obj['metadata']['installment_number'] ?? 0 ) > 1 && function_exists( 'db_plan_on_installment_failed' ) ) {
+					// A later installment declined: start/continue the grace-period flow.
+					db_plan_on_installment_failed( $domain );
+				} else {
+					db_stripe_on_payment_failed( $domain, $email, $amount_usd );
+				}
 				$log['status'] = 'processed';
 				break;
 
@@ -856,6 +873,15 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 
 		$opt_key = 'db_stripe_plan_' . md5( $domain );
 		$plan    = (array) get_option( $opt_key, [] );
+		// Plans are keyed by domain. If a previous buyer's plan on this domain
+		// ended (defaulted/completed) and a new plan starts, the old record's
+		// history was merged in — the new buyer's "paid so far" and
+		// forfeiture figures included the previous buyer's payments.
+		if ( 1 === $installment_num && ! empty( $plan ) && in_array( $plan['status'] ?? '', [ 'defaulted', 'completed' ], true ) ) {
+			update_option( $opt_key . '_archive_' . time(), $plan, false );
+			$plan = [];
+		}
+		$was_past_due = 'past_due' === ( $plan['status'] ?? '' );
 		$total_price = isset( $meta['total_price_usd'] ) ? (float) $meta['total_price_usd'] : $amount_usd;
 
 		$plan['domain']         = $domain;
@@ -865,6 +891,7 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['customer_id']    = (string) ( $pi['customer'] ?? ( $plan['customer_id'] ?? '' ) );
 		$plan['payment_method'] = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
 		$plan['paid_installments'] = $installment_num;
+		$plan['reminded_for']      = (int) ( $plan['reminded_for'] ?? 0 );
 		$plan['history']        = (array) ( $plan['history'] ?? [] );
 		$plan['history'][]      = [ 'installment' => $installment_num, 'amount_usd' => $amount_usd, 'ts' => time() ];
 
@@ -887,7 +914,11 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['next_charge_ts']    = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
 		update_option( $opt_key, $plan, false );
 		db_stripe_plan_index_add( $domain );
-		db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email );
+		if ( $was_past_due && function_exists( 'db_plan_on_recovered' ) ) {
+			db_plan_on_recovered( $domain, $amount_usd );
+		} else {
+			db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email );
+		}
 	}
 }
 
@@ -914,23 +945,8 @@ if ( ! function_exists( 'db_stripe_plan_index_remove' ) ) {
 
 // ─── Cron: charge due plan installments (2..N) ────────────────────────────────
 
-add_action( 'db_stripe_charge_due_installments', static function () {
-	$keys = db_stripe_keys();
-	if ( empty( $keys['sec'] ) ) {
-		return;
-	}
-	foreach ( (array) get_option( 'db_stripe_active_plans', [] ) as $plan_key ) {
-		$opt_key = 'db_stripe_plan_' . $plan_key;
-		$plan    = (array) get_option( $opt_key, [] );
-		if ( empty( $plan ) || 'active' !== ( $plan['status'] ?? '' ) ) {
-			continue;
-		}
-		if ( (int) ( $plan['next_charge_ts'] ?? 0 ) > time() ) {
-			continue; // Not due yet.
-		}
-		db_stripe_charge_next_installment( $plan );
-	}
-} );
+// The daily handler lives in db-plan-lifecycle-block.php (db_plan_run_daily):
+// reminders, charges, failed-payment retries/notices and termination.
 
 if ( ! function_exists( 'db_stripe_ensure_installment_cron' ) ) {
 	function db_stripe_ensure_installment_cron() : void {
@@ -966,7 +982,7 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 				'amount'                    => $amount_cents,
 				'currency'                  => 'usd',
 				'customer'                  => $plan['customer_id'],
-				'payment_method'            => $plan['payment_method'],
+				'payment_method'            => db_stripe_current_payment_method( $plan ),
 				'off_session'               => 'true',
 				'confirm'                   => 'true',
 				'receipt_email'             => $plan['customer_email'] ?? '',
@@ -988,15 +1004,65 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 			error_log( 'DB Stripe: installment charge request failed for ' . $domain . ' — ' . $response->get_error_message() );
 		}
 
-		$plan['next_charge_ts'] = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		// Re-read: the caller's copy may predate a webhook that just ran.
+		$fresh = (array) get_option( $opt_key, [] );
+		if ( ! empty( $fresh ) ) {
+			$plan = $fresh;
+		}
+		$plan['last_attempt_ts'] = time();
+		// An active plan's due date moves on at the attempt, so a lost webhook
+		// can never cause a second charge the next day. A past-due plan keeps
+		// its own retry schedule (db_plan_run_daily).
+		if ( 'past_due' !== ( $plan['status'] ?? '' ) ) {
+			$plan['next_charge_ts'] = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		}
 		update_option( $opt_key, $plan, false );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_current_payment_method' ) ) {
+	/**
+	 * The card to bill: the customer's default if they updated it through the
+	 * "Update my card" portal link (that's how a failed plan gets fixed),
+	 * otherwise the one saved when the plan started.
+	 */
+	function db_stripe_current_payment_method( array $plan ) : string {
+		$saved = (string) ( $plan['payment_method'] ?? '' );
+		$keys  = db_stripe_keys();
+		if ( empty( $plan['customer_id'] ) || empty( $keys['sec'] ) ) {
+			return $saved;
+		}
+		$r = wp_remote_get( 'https://api.stripe.com/v1/customers/' . rawurlencode( (string) $plan['customer_id'] ), [
+			'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'] ],
+			'timeout' => 15,
+		] );
+		$c       = is_wp_error( $r ) ? [] : json_decode( wp_remote_retrieve_body( $r ), true );
+		$default = (string) ( $c['invoice_settings']['default_payment_method'] ?? '' );
+		return $default ?: $saved;
 	}
 }
 
 // ─── Email: sale complete ──────────────────────────────────────────────────────
 
+if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
+	/** True once a domain is sold, or while a payment plan on it is active or past due. */
+	function db_stripe_domain_unavailable( string $domain ) : bool {
+		if ( get_option( 'db_stripe_sold_' . md5( strtolower( $domain ) ) ) ) {
+			return true;
+		}
+		foreach ( array_unique( [ $domain, strtolower( $domain ) ] ) as $d ) {
+			$plan = (array) get_option( 'db_stripe_plan_' . md5( $d ), [] );
+			if ( in_array( $plan['status'] ?? '', [ 'active', 'past_due', 'completed' ], true ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
 if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type ) : void {
+		update_option( 'db_stripe_sold_' . md5( strtolower( $domain ) ), time(), false );
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );
@@ -1082,6 +1148,10 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 				$body .= '<p>We received your first payment of <strong>' . esc_html( $paid_fmt ) . '</strong> for <strong>' . $d . '</strong>. Your plan: <strong>' . (int) $months . ' monthly payments</strong>, ' . esc_html( $rate_label ) . ', total <strong>$' . esc_html( number_format( $total, 2 ) ) . '</strong>.</p>';
 				$body .= '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;font-size:14px;"><tr><th align="left" style="padding:8px 14px;background:#f8f9fb;">#</th><th align="left" style="padding:8px 14px;background:#f8f9fb;">Date</th><th align="right" style="padding:8px 14px;background:#f8f9fb;">Amount</th></tr>' . $rows . '</table>';
 				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain is held securely in escrow.</p>';
+				if ( function_exists( 'db_plan_terms_html' ) ) {
+					$body .= '<p style="font-size:13px;color:#374151;background:#f8f9fb;padding:12px 14px;border-radius:8px;">' . db_plan_terms_html() . '</p>';
+					$body .= '<p style="font-size:13px;color:#6b7280;">We will email you a reminder ' . (int) DB_PLAN_REMIND_DAYS . ' days before each payment.</p>';
+				}
 				$body .= '<p style="font-size:13px;color:#6b7280;">Questions? Reply to this email or write to <a href="mailto:sales@domainbrothers.com" style="color:#0a6ed1;">sales@domainbrothers.com</a>.</p>';
 			} else {
 				$subj = sprintf( 'Payment %d of %d received for %s', $n, $months, $domain );

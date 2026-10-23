@@ -320,10 +320,11 @@ if ( ! function_exists( 'db_plan_on_installment_failed' ) ) {
 if ( ! function_exists( 'db_plan_on_recovered' ) ) {
 	/** Called from the success webhook when a past-due plan's installment finally clears. */
 	function db_plan_on_recovered( $domain, $amount_usd ) {
+		// Only called by the success webhook when the plan WAS past due; by
+		// then that path has already saved status=active, so no status guard
+		// here (one used to make this return early: no recovery email, and
+		// past_due_since never cleared — caught by tests/plan).
 		$plan = db_plan_get( $domain );
-		if ( 'past_due' !== ( $plan['status'] ?? '' ) ) {
-			return;
-		}
 		$plan['status']         = 'active';
 		$plan['past_due_since'] = 0;
 		$plan['notice_stage']   = 0;
