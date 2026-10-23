@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.38.2
+ * Version:     3.39.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.38.2' );
+define( 'DB_BLOCKS_LOADED', '3.39.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1378,7 +1378,9 @@ add_action( 'wp_head', function () {
 	db_aeo_emit( array( '@type' => 'WebSite', 'name' => $site_name, 'url' => $site_url,
 		'potentialAction' => array( '@type' => 'SearchAction', 'target' => array( '@type' => 'EntryPoint', 'urlTemplate' => $site_url . '?s={search_term_string}' ), 'query-input' => 'required name=search_term_string' ) ) );
 
-	if ( is_front_page() || is_page( 'faq' ) ) {
+	// Home no longer emits FAQPage: its seven questions were never shown on the page,
+	// which Google's structured-data rules don't allow.
+	if ( is_page( 'faq' ) ) {
 		db_aeo_emit( array( '@type' => 'FAQPage', 'mainEntity' => array(
 			array( '@type' => 'Question', 'name' => 'What is domain brokerage?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Domain brokerage is a service where an expert negotiates and acquires a premium domain name on your behalf. The broker handles outreach to the current owner, price negotiation, secure transfer, and escrow.' ) ),
 			array( '@type' => 'Question', 'name' => 'How do payment plans work?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'Domain Brothers offers instalment plans over 3, 6, 9, or 12 months. The 3- and 6-month plans are interest-free; the 9-month plan carries 5% interest and the 12-month plan 10%. The total (price plus any interest) is divided into equal monthly payments.' ) ),
@@ -1388,6 +1390,30 @@ add_action( 'wp_head', function () {
 			array( '@type' => 'Question', 'name' => 'What is a premium domain name?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'A premium domain name is a short, memorable, and often generic name that was registered years ago and carries significant brand equity, direct search traffic, and SEO authority.' ) ),
 			array( '@type' => 'Question', 'name' => 'What payment methods do you accept?', 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => 'We accept all major credit and debit cards (Visa, Mastercard, American Express) as well as Apple Pay and Google Pay through our Stripe-powered secure checkout.' ) ),
 		) ) );
+	}
+
+	if ( is_singular( 'post' ) ) {
+		global $post;
+		$author = get_the_author_meta( 'display_name', $post->post_author );
+		$img    = get_the_post_thumbnail_url( $post, 'large' );
+		$art    = array( '@type' => 'Article', 'headline' => wp_strip_all_tags( get_the_title( $post ) ), 'mainEntityOfPage' => esc_url( get_permalink( $post ) ),
+			'datePublished' => get_post_time( 'c', true, $post ), 'dateModified' => get_post_modified_time( 'c', true, $post ),
+			'author' => $author ? array( '@type' => 'Person', 'name' => $author ) : array( '@type' => 'Organization', 'name' => $site_name ),
+			'publisher' => array( '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url ) );
+		if ( $logo_url ) { $art['publisher']['logo'] = array( '@type' => 'ImageObject', 'url' => $logo_url ); }
+		if ( $img ) { $art['image'] = $img; }
+		db_aeo_emit( $art );
+	}
+
+	if ( is_tax( 'domain_category' ) ) {
+		global $wp_query;
+		$list = array(); $pos = 0;
+		foreach ( (array) $wp_query->posts as $dp ) {
+			$list[] = array( '@type' => 'ListItem', 'position' => ++$pos, 'url' => esc_url( get_permalink( $dp ) ), 'name' => get_the_title( $dp ) );
+		}
+		$qo = get_queried_object();
+		db_aeo_emit( array( '@type' => 'CollectionPage', 'name' => $qo instanceof WP_Term ? $qo->name . ' domains for sale' : 'Domains for sale', 'url' => db_aeo_canonical(),
+			'mainEntity' => array( '@type' => 'ItemList', 'numberOfItems' => count( $list ), 'itemListElement' => $list ) ) );
 	}
 
 	if ( is_singular( 'domain' ) ) {
@@ -2723,6 +2749,12 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 	font-size: 20px; font-weight: 800; color: var(--db-navy); font-variant-numeric: tabular-nums;
 }
 .db-domain-card__price--offer { font-size: 14px; font-weight: 600; color: #64748b; }
+.db-domain-card__pricewrap { display: flex; flex-direction: column; gap: 2px; }
+.db-domain-card__mo { font-size: 12px; font-weight: 600; color: #137a3e; }
+/* Homepage: three columns of 21 cards made a ~4,000px page. Show 8 per column;
+   the rest are one click away on /all-domains/. */
+.home .db-domain-grid .db-domain-card:nth-child(n+9) { display: none; }
+.db-view-all { display: inline-block; margin: 12px 0 4px; font-weight: 700; color: var(--db-blue, #1857e0); text-decoration: none; }
 .db-domain-card .db-act-buy,
 .db-domain-card .db-act-offer { margin-left: 0; }
 
@@ -3299,6 +3331,8 @@ add_action( 'wp_footer', function () {
 					var row = document.createElement('div');
 					row.className = 'db-domain-card__row';
 					var price = document.createElement('span');
+					var priceWrap = document.createElement('div');
+					priceWrap.className = 'db-domain-card__pricewrap';
 					if (priceText) {
 						price.className = 'db-domain-card__price';
 						price.textContent = priceText;
@@ -3306,14 +3340,34 @@ add_action( 'wp_footer', function () {
 						price.className = 'db-domain-card__price--offer';
 						price.textContent = 'Open to offers';
 					}
-					row.appendChild(price);
+					priceWrap.appendChild(price);
+					// "From $X/mo": the 12-month plan (10% interest) is the lowest
+					// monthly payment — same maths as the plan chooser. Only on
+					// names where a plan makes sense.
+					var priceNum = priceText ? Number(priceText.replace(/[^\d]/g, '')) : 0;
+					if (priceNum >= 600) {
+						var mo = document.createElement('span');
+						mo.className = 'db-domain-card__mo';
+						mo.textContent = 'or from $' + Math.round(priceNum * 1.10 / 12).toLocaleString('en-US') + '/mo';
+						priceWrap.appendChild(mo);
+					}
+					row.appendChild(priceWrap);
 					row.appendChild(action);
 					card.appendChild(mono);
 					card.appendChild(name);
 					card.appendChild(row);
 					grid.appendChild(card);
 				});
-				if (grid.children.length) { table.parentNode.replaceChild(grid, table); }
+				if (grid.children.length) {
+					table.parentNode.replaceChild(grid, table);
+					if (document.body.classList.contains('home') && grid.children.length > 8) {
+						var va = document.createElement('a');
+						va.className = 'db-view-all';
+						va.href = '/all-domains/';
+						va.textContent = 'View all domains \u2192';
+						grid.parentNode.insertBefore(va, grid.nextSibling);
+					}
+				}
 			});
 
 			/* 7. Subtle floating domain/web motifs on the below-hero canvas,
@@ -4238,6 +4292,7 @@ require_once __DIR__ . '/db-email-thankyou-block.php';
    ============================================================ */
 require_once __DIR__ . '/db-stripe-block.php';
 require_once __DIR__ . '/db-plan-lifecycle-block.php';
+require_once __DIR__ . '/db-domain-details-block.php';
 
 /* ============================================================
    ANALYTICS — CRM dashboard charts (leads, pipeline, sources)
