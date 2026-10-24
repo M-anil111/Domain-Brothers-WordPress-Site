@@ -25,6 +25,7 @@ function add_action() {} function add_filter() {} function do_action() {} functi
 function add_options_page() {} function add_settings_section() {} function add_settings_field() {} function wp_next_scheduled() { return true; } function wp_schedule_event() {}
 function esc_html( $s ) { return htmlspecialchars( (string) $s ); } function esc_attr( $s ) { return htmlspecialchars( (string) $s ); } function esc_url( $s ) { return (string) $s; }
 function wp_kses( $s ) { return $s; } function sanitize_text_field( $s ) { return trim( (string) $s ); } function wp_unslash( $s ) { return $s; } function nocache_headers() {}
+function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 function home_url( $p = '/' ) { return 'https://beta.example.test' . $p; } function rest_url( $p = '' ) { return home_url( '/wp-json/' . $p ); } function admin_url() { return home_url( '/wp-admin/' ); }
 function wp_salt() { return 'test-salt'; } function add_query_arg( $a, $u ) { return $u . '?' . http_build_query( $a ); } function wp_date( $f, $t = null ) { return gmdate( $f, $t ?: time() ); }
 function get_bloginfo() { return 'Domain Brothers'; } function is_wp_error( $x ) { return false; } function error_log_noop() {}
@@ -51,8 +52,12 @@ function ok( $cond, $msg ) { global $fails, $n; $n++; echo ( $cond ? "PASS " : "
 function mails_since( $i ) { return array_slice( $GLOBALS['MAIL'], $i ); }
 function subj( $i ) { return implode( ' || ', array_map( function ( $m ) { return $m[1]; }, mails_since( $i ) ) ); }
 function pi_ok( $id, $n, $months, $amount, $email = 'buyer@example.test', $domain = 'fatality.ca' ) {
-	db_stripe_handle_pi_succeeded( array( 'id' => $id, 'amount_received' => $amount, 'receipt_email' => $email, 'customer' => 'cus_1', 'payment_method' => 'pm_1',
-		'metadata' => array( 'domain' => $domain, 'type' => 'plan', 'total_months' => $months, 'installment_number' => $n, 'total_price_usd' => '2500' ) ) );
+	$meta = array( 'domain' => $domain, 'type' => 'plan', 'total_months' => $months, 'installment_number' => $n, 'total_price_usd' => '2500' );
+	if ( 1 === $n ) {
+		$meta['terms_accepted_at'] = '2026-10-24T08:00:00+00:00';
+		$meta['terms_sha']         = 'abcdef0123456789';
+	}
+	db_stripe_handle_pi_succeeded( array( 'id' => $id, 'amount_received' => $amount, 'receipt_email' => $email, 'customer' => 'cus_1', 'payment_method' => 'pm_1', 'metadata' => $meta ) );
 }
 $key = 'db_stripe_plan_' . md5( 'fatality.ca' );
 
@@ -61,6 +66,10 @@ $m0 = count( $GLOBALS['MAIL'] );
 pi_ok( 'pi_1', 1, 9, 29167 );
 $p = get_option( $key );
 ok( 'active' === $p['status'] && 2 === $p['next_installment'], 'plan start -> active, next installment 2' );
+ok( '2026-10-24T08:00:00+00:00' === ( $p['terms_accepted_at'] ?? '' ) && 'abcdef0123456789' === ( $p['terms_sha'] ?? '' ), 'terms acceptance from checkout is stored on the plan record' );
+$rb = db_stripe_receipt_body( 'buyer@example.test', true );
+ok( isset( $rb['metadata[terms_accepted_at]'], $rb['metadata[terms_sha]'] ) && 16 === strlen( $rb['metadata[terms_sha]'] ), 'checkout sends acceptance time + terms fingerprint to Stripe' );
+ok( array( 'receipt_email' => 'x@example.test' ) === db_stripe_receipt_body( 'x@example.test', false ), 'no acceptance metadata when the box was not ticked' );
 ok( false !== strpos( subj( $m0 ), 'has started' ) && false !== strpos( subj( $m0 ), 'PLAN STARTED' ), 'plan start emails customer + admin: ' . subj( $m0 ) );
 ok( db_stripe_domain_unavailable( 'fatality.ca' ), 'domain on an active plan is unavailable for a second buyer' );
 $m1 = count( $GLOBALS['MAIL'] );

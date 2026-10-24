@@ -183,7 +183,9 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 	 *    every page, outbound news-source links, domain "visit" links);
 	 *  - http:// links/images to hosts verified to serve valid HTTPS
 	 *    (own domain, domaining.com, domaingang.com, thedomains.com,
-	 *    domainnamewire.com). Hosts without working TLS (domainpulse.com
+	 *    domainnamewire.com, dnqueen.net, morganlinton.com, dnjournal.com,
+	 *    domainingtips.com, circleid.com, tldinvestors.com, blog.101domain.com,
+	 *    domainsherpa.com, dotweekly.com; each checked 2026-10-24). Hosts without working TLS (domainpulse.com
 	 *    expired cert, dropgrabs.com, parked .ca names) are left alone,
 	 *    since rewriting them would break the link;
 	 *  - the theme repeating id="browse_by_domain" on every sidebar table;
@@ -212,7 +214,7 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 
 		if ( false !== stripos( $html, 'http://' ) ) {
 			$home  = preg_quote( (string) wp_parse_url( home_url(), PHP_URL_HOST ), '#' );
-			$hosts = '(?:www\.)?(?:domainbrothers\.com|domaining\.com|domaingang\.com|thedomains\.com|domainnamewire\.com)|' . $home;
+			$hosts = '(?:www\.)?(?:domainbrothers\.com|domaining\.com|domaingang\.com|thedomains\.com|domainnamewire\.com|dnqueen\.net|morganlinton\.com|dnjournal\.com|domainingtips\.com|circleid\.com|tldinvestors\.com|blog\.101domain\.com|domainsherpa\.com|dotweekly\.com)|' . $home;
 			$html  = preg_replace( '#(\s(?:href|src)\s*=\s*["\'])http://(' . $hosts . ')(?=[/"\'?:])#i', '$1https://$2', $html );
 		}
 
@@ -331,3 +333,56 @@ add_action( 'template_redirect', function () {
 	);
 	ob_start( 'db_onpage_fix_h1_and_alt' );
 }, 26 );
+
+/* ─── 5. Imported news content: trackers, affiliate links, pasted ids ─────── */
+
+if ( ! function_exists( 'db_onpage_clean_imported_content' ) ) {
+	/**
+	 * Most news posts were imported from other blogs' RSS feeds (2017–2023)
+	 * and carry that source's markup. A full crawl of staging found:
+	 *  - Commission Junction and Amazon affiliate tracking pixels/widgets
+	 *    (ftjcfx.com, kqzyfj.com, tkqlhce.com, amazon-adsystem.com, …) and
+	 *    a Business Wire tracking pixel: third-party trackers on our pages.
+	 *    Removed;
+	 *  - links through affiliate redirectors: kept, but marked
+	 *    rel="sponsored nofollow" as Google requires for paid links;
+	 *  - images over http:// (110+ posts). The CSP already upgrades them,
+	 *    so this only makes the markup say what the browser does;
+	 *  - pasted ids that clash with the theme (id="main", id="content") or
+	 *    repeat inside a post (Yahoo Mail "yui_…" / "m_…" ids). Stripped.
+	 */
+	function db_onpage_clean_imported_content( $content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+		$trackers = '(?:[a-z0-9-]+\.)*(?:ftjcfx\.com|kqzyfj\.com|tkqlhce\.com|jdoqocy\.com|dpbolvw\.net|anrdoezrs\.net|lduhtrp\.net|tqlkg\.com|awltovhc\.com|yceml\.net|emjcd\.com|amazon-adsystem\.com|cts\.businesswire\.com)';
+		$content  = preg_replace( '#<(?:img|iframe)\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>(?:\s*</iframe>)?#i', '', $content );
+		$content  = preg_replace( '#<script\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>\s*</script>#i', '', $content );
+
+		$content = preg_replace_callback( '#<a\b[^>]*\shref=["\']https?://(?:[a-z0-9-]+\.)*(?:kqzyfj\.com|tkqlhce\.com|jdoqocy\.com|dpbolvw\.net|anrdoezrs\.net|amzn\.to|amazon\.com/[^"\']*tag=)[^>]*>#i', function ( $m ) {
+			$tag = $m[0];
+			if ( preg_match( '/\srel=(["\'])([^"\']*)\1/i', $tag, $r ) ) {
+				$rel = trim( $r[2] . ( false === stripos( $r[2], 'sponsored' ) ? ' sponsored' : '' ) . ( false === stripos( $r[2], 'nofollow' ) ? ' nofollow' : '' ) );
+				return str_replace( $r[0], ' rel=' . $r[1] . $rel . $r[1], $tag );
+			}
+			return substr_replace( $tag, ' rel="sponsored nofollow"', 2, 0 );
+		}, $content );
+
+		// CJ link code fakes the browser status bar (onmouseover="window.status=
+		// 'http://www.godaddy.com'") so the affiliate redirect is hidden.
+		if ( false !== stripos( $content, 'window.status' ) ) {
+			$content = preg_replace( '#\son(?:mouseover|mouseout)\s*=\s*"[^"]*window\.status[^"]*"#i', '', $content );
+		}
+		$content = preg_replace( '#(<img\b[^>]*\ssrc=["\'])http://#i', '$1https://', $content );
+
+		$content = preg_replace( '#\sid=["\'](?:main|content|primary|secondary|page|masthead|colophon|yui_[^"\']*|m_\d[^"\']*)["\']#i', '', $content );
+		return $content;
+	}
+}
+
+add_filter( 'the_content', function ( $content ) {
+	if ( is_admin() || is_feed() ) {
+		return $content;
+	}
+	return db_onpage_clean_imported_content( $content );
+}, 30 );

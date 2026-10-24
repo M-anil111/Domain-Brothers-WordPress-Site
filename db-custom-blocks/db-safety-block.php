@@ -884,3 +884,20 @@ add_filter( 'query', function ( $sql ) {
 	}
 	return preg_replace( '/(?<![A-Za-z0-9_])Dmb_([A-Za-z0-9_]+)/', $wpdb->prefix . '$1', $sql );
 } );
+
+/*
+ * wp-config.php sets WP_AUTO_UPDATE_CORE to false, which also blocks WordPress
+ * security (minor) releases. The filter runs after the constant is read, so
+ * this re-enables minor/security core updates only; major versions still
+ * need a manual upgrade. Has no effect if AUTOMATIC_UPDATER_DISABLED is set.
+ */
+add_filter( 'allow_minor_auto_core_updates', '__return_true', 20 );
+
+/*
+ * 4,926 stored revisions were found in wp_posts (QA_REPORT section 2).
+ * Keep the latest 5 per post from now on; existing revisions are trimmed by
+ * WordPress the next time each post is saved.
+ */
+add_filter( 'wp_revisions_to_keep', function ( $num ) {
+	return ( $num < 0 || $num > 5 ) ? 5 : $num;
+}, 20 );

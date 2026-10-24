@@ -238,6 +238,39 @@ const PAGES = [
 		await page.screenshot({ path: path.join(OUT, 'plan-desktop.png') });
 		await ctx.close();
 	}
+
+	// /all-domains/ filter + sort bar works across every listing, and Clear restores the page.
+	for (const vp of ['desktop', 'mobile']) {
+		const viewport = vp === 'desktop' ? { width: 1366, height: 900 } : { width: 390, height: 844 };
+		const ctx = await browser.newContext({ httpCredentials: { username: USER, password: PASS }, viewport, isMobile: vp === 'mobile' });
+		const page = await ctx.newPage();
+		const errs = [];
+		page.on('pageerror', (e) => errs.push(e.message));
+		await page.goto(`${BASE}/all-domains/`, { waitUntil: 'load' });
+		await page.waitForSelector('.db-dfilter + .db-domain-grid', { timeout: 10000 }).catch(() => {});
+		const before = await page.$$eval('.db-dfilter + .db-domain-grid > .db-domain-card', (r) => r.length);
+		record(`FN-23-${vp}`, 'Filter', `filter bar present (${vp})`, await page.$('.db-dfilter') !== null);
+		await page.selectOption('.db-dfilter select[name="sort"]', 'pa');
+		await page.waitForFunction(() => /of \d+ domains/.test(document.querySelector('.db-dfilter-count').textContent), null, { timeout: 15000 }).catch(() => {});
+		const total = Number(((await page.textContent('.db-dfilter-count')) || '').replace(/.* of (\d+) domains.*/, '$1')) || 0;
+		const prices = await page.$$eval('.db-dfilter + .db-domain-grid .db-domain-card__price, .db-dfilter + .db-domain-grid .db-domain-card__price--offer', (b) => b.map((x) => x.textContent.trim()));
+		const nums = prices.filter((t) => /\$/.test(t)).map((t) => Number(t.replace(/[^0-9]/g, '')));
+		const firstOffer = prices.indexOf('Open to offers');
+		const ascending = nums.every((v, i) => i === 0 || nums[i - 1] <= v) && (firstOffer === -1 || prices.slice(firstOffer).every((t) => t === 'Open to offers'));
+		record(`FN-24-${vp}`, 'Filter', `sort by price covers every listing, low to high, offers last (${vp})`, total > before && prices.length === total && ascending, `rows=${prices.length} total=${total} pagerows=${before}`);
+		await page.selectOption('.db-dfilter select[name="tld"]', '.ca');
+		await page.selectOption('.db-dfilter select[name="max"]', '2500');
+		await page.waitForTimeout(400);
+		const ca = await page.$$eval('.db-dfilter + .db-domain-grid > .db-domain-card', (rows) => rows.map((r) => ({ n: (r.querySelector('.db-domain-card__name') || {}).textContent || '', p: Number(((r.querySelector('.db-domain-card__price') || {}).textContent || '').replace(/[^0-9]/g, '')) })));
+		record(`FN-25-${vp}`, 'Filter', `.ca + max $2,500 returns only matching names (${vp})`, ca.length > 0 && ca.every((r) => /\.ca$/i.test(r.n) && r.p > 0 && r.p <= 2500), `${ca.length} rows`);
+		await page.click('.db-dfilter button[type="reset"]');
+		await page.waitForTimeout(300);
+		const after = await page.$$eval('.db-dfilter + .db-domain-grid > .db-domain-card', (r) => r.length);
+		const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+		record(`FN-26-${vp}`, 'Filter', `Clear restores the page, no overflow, no JS errors (${vp})`, after === before && !overflow && errs.length === 0, `rows=${after}/${before} overflow=${overflow} errs=${errs.join('|')}`);
+		await page.screenshot({ path: path.join(OUT, `filter-${vp}.png`) });
+		await ctx.close();
+	}
 	await browser.close();
 
 	/* ─── Report ────────────────────────────────────────────────────────── */

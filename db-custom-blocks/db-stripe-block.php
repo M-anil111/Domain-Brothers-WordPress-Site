@@ -504,6 +504,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 			<div class="db-stripe-pe-wrap">
 				<div id="db-stripe-payment-element"></div>
 			</div>
+<?php if ( $is_plan ) : ?>
+			<label class="db-stripe-agree" for="db-stripe-agree" style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;margin:0 0 14px;cursor:pointer;">
+				<input type="checkbox" id="db-stripe-agree" required style="margin-top:3px;flex:0 0 auto;width:16px;height:16px;">
+				<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment stays unpaid <?php echo esc_html( (string) ( defined( 'DB_PLAN_GRACE_DAYS' ) ? DB_PLAN_GRACE_DAYS : 10 ) ); ?> days after its due date the plan ends and installments already paid are not refunded.</span>
+			</label>
+<?php endif; ?>
 			<button type="submit" id="db-stripe-btn" class="db-stripe-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg><?php echo esc_html( $btn_label ); ?></button>
 		</form>
 
@@ -552,6 +558,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		var btn      = document.getElementById('db-stripe-btn');
 		var errDiv   = document.getElementById('db-stripe-err');
 		var emailInp = document.getElementById('db-stripe-email');
+		var agreeInp = document.getElementById('db-stripe-agree');
 
 		function showErr(msg) {
 			errDiv.textContent = msg;
@@ -569,6 +576,11 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 				emailInp.focus();
 				return;
 			}
+			if (agreeInp && !agreeInp.checked) {
+				showErr('Please confirm you agree to the payment plan terms.');
+				agreeInp.focus();
+				return;
+			}
 
 			btn.disabled = true;
 			btn.textContent = 'Processing…';
@@ -580,7 +592,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 			fetch(window.DB_EMAIL_REST, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: email })
+				body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: email, terms_accepted: !!(agreeInp && agreeInp.checked) })
 			}).catch(function () { /* non-fatal — still attempt payment */ }).then(function () {
 				return stripe.confirmPayment({
 					elements: elements,
@@ -625,9 +637,27 @@ add_action( 'rest_api_init', static function () {
 		'args'                => [
 			'client_secret' => [ 'required' => true, 'type' => 'string' ],
 			'email'         => [ 'required' => true, 'type' => 'string' ],
+			'terms_accepted' => [ 'required' => false, 'type' => 'boolean' ],
 		],
 	] );
 } );
+
+if ( ! function_exists( 'db_stripe_receipt_body' ) ) {
+	/**
+	 * PaymentIntent update body. When a payment-plan buyer ticks the terms
+	 * box, the acceptance time and a fingerprint of the exact terms text are
+	 * stored on the PaymentIntent's metadata, so there is a record of what
+	 * was agreed if a forfeiture is ever disputed.
+	 */
+	function db_stripe_receipt_body( $email, $terms_accepted ) {
+		$body = [ 'receipt_email' => $email ];
+		if ( $terms_accepted && function_exists( 'db_plan_terms_html' ) ) {
+			$body['metadata[terms_accepted_at]'] = gmdate( 'c' );
+			$body['metadata[terms_sha]']         = substr( hash( 'sha256', wp_strip_all_tags( db_plan_terms_html() ) ), 0, 16 );
+		}
+		return $body;
+	}
+}
 
 if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 	/**
@@ -658,7 +688,7 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 				'Authorization' => 'Bearer ' . $keys['sec'],
 				'Content-Type'  => 'application/x-www-form-urlencoded',
 			],
-			'body'      => [ 'receipt_email' => $email ],
+			'body'      => db_stripe_receipt_body( $email, (bool) $request->get_param( 'terms_accepted' ) ),
 			'timeout'   => 15,
 			'sslverify' => true,
 		] );
@@ -892,6 +922,10 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['payment_method'] = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
 		$plan['paid_installments'] = $installment_num;
 		$plan['reminded_for']      = (int) ( $plan['reminded_for'] ?? 0 );
+		if ( ! empty( $meta['terms_accepted_at'] ) && empty( $plan['terms_accepted_at'] ) ) {
+			$plan['terms_accepted_at'] = sanitize_text_field( (string) $meta['terms_accepted_at'] );
+			$plan['terms_sha']         = sanitize_text_field( (string) ( $meta['terms_sha'] ?? '' ) );
+		}
 		$plan['history']        = (array) ( $plan['history'] ?? [] );
 		$plan['history'][]      = [ 'installment' => $installment_num, 'amount_usd' => $amount_usd, 'ts' => time() ];
 
