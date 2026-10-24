@@ -1,0 +1,125 @@
+# Domain Brothers: full-site QA report (staging)
+
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.41.1 · 2026-10-24
+Commits: `894986a` (fixes and test suites), plus this report.
+
+## Results
+
+| Suite | Before fixes | After fixes |
+|---|---|---|
+| `tests/qa/run-qa.js`: 265 live checks (HTTP + real browser, desktop and mobile) | 242 / 265 | **265 / 265** |
+| `tests/plan/plan-lifecycle-test.php`: 26 offline payment-plan checks | did not exist (would have failed: see 1.1) | **26 / 26** |
+
+How to re-run both suites is in `tests/README.md`.
+
+### What the live suite covers (per page type: home, domain, all-domains, category, news, post, services, service, about, FAQs, contact, offer, privacy)
+- **HTTP:** status code, no PHP error text, response time.
+- **SEO:** title 25–65 characters, description 70–160, canonical points at itself, exactly one `<h1>`, structured data (JSON-LD) parses, noindex on staging.
+- **Accessibility:** every image has alt text.
+- **Browser (desktop 1366px and mobile 390px):** no horizontal scroll, no uncaught JavaScript errors, no broken same-site assets, screenshot, timings.
+- **Security:** HSTS, nosniff, frame, referrer and CSP headers; X-Powered-By hidden; REST user enumeration blocked; `?author=` enumeration; XML-RPC.
+- **Checkout:**
+  - bare `/checkout/`, `/buy-now/` and `/payment-plan-setup/` redirect;
+  - legacy `/checkout/` forwards to Stripe;
+  - `/buy-now/` is never cached and refuses domains that aren't listed;
+  - the thank-you and payment-successful pages work.
+- **Plans:** the chooser shows 4 terms. Each term's schedule has the right number of rows, sums to price plus interest ($2,500 / $2,500 / $2,625 / $2,750), and its checkout link carries the right `months=`.
+- **Other:**
+  - domain-page Buy button carries the right domain and price;
+  - domain details section is 200+ words;
+  - offer form 1878 redirects on-site;
+  - 404 page works, and so does search;
+  - OKF markdown bundle, sitemap, and a forged "update my card" link is rejected.
+
+## 1. Bugs found and fixed
+
+### 1.1 Payment plans: the failed-payment flow was only half connected (critical, my earlier work)
+In the previous round I reported the missed-payment process (grace period, day 3/6/9 notices, termination, recovery) as done. That was wrong. The Stripe-side edit failed partway, so:
+
+- A declined monthly payment went to the generic "payment failed" email. The plan never became past due, so no notices went out and no termination ever happened.
+- Retries still used the card saved at the start, not one the customer updated.
+- The old daily billing job still ran alongside the new one.
+- A late payment that cleared never sent "back on track", and the plan stayed flagged overdue.
+
+**Fixed:** declines now go into the grace-period flow. The duplicate billing job is removed. Retries use the customer's current default card. The recovery step works. `tests/plan` now drives all of it: start → reminder → charge once → decline → day 3/6/9 notices + retries → recovery → termination.
+
+### 1.2 The same domain could be sold twice (high)
+A listing stays published after it is bought, and nothing stopped a second person paying for it.
+- **Fixed:** checkout now refuses (HTTP 410, "This domain is no longer available") once a domain is fully paid or is on an active or past-due plan.
+- **Terminated plans:** a domain whose plan was terminated becomes available again.
+- **Still needed:** unpublish sold listings in wp-admin. Doing that automatically is a separate decision.
+
+### 1.3 A new buyer inherited the previous buyer's payment history (high)
+Plan records are stored per domain. When a new plan started on a domain whose last plan had ended, the old payment history was merged in, so "paid so far" and forfeiture amounts were wrong. **Fixed:** the old record is archived and the new plan starts clean.
+
+### 1.4 JavaScript error on every page (medium)
+The theme loads Google AdSense and places an ad slot that earlier CSS hides. A hidden slot has zero width, so AdSense threw "No slot size for availableWidth=0", which the suite saw as error "Y". **Fixed:** the AdSense script and slots are removed. There's no approved AdSense account here, and ads on a sales page send buyers elsewhere.
+
+### 1.5 Contact Form 7 errors on every domain page (medium)
+An old hard-coded "Make an Offer" box was still wrapped in the CF7 class. CF7 tried to load form "NaN", got a 404, and threw twice. **Fixed:** the wrapper is renamed so CF7 leaves it alone. The real offer form (1878) is unaffected.
+
+### 1.6 XML-RPC was open (medium, security)
+`xmlrpc.php` answered `system.listMethods`. It's a common brute-force and pingback-abuse target, and nothing on the site uses it. **Fixed:** it now returns 403, and the X-Pingback header is removed.
+
+### 1.7 Canonical links pointed at redirects (medium, SEO)
+On category archives and `/news/`, the canonical link had no trailing slash, and that URL 301s to the slashed one. **Fixed:** every canonical now matches the real URL.
+
+### 1.8 Homepage had two `<h1>` headings (low, SEO)
+"Featured Top Domains" was promoted to `<h1>` because the hero heading is added later in rendering. **Fixed:** the front page is excluded from that rule.
+
+### 1.9 Missing theme images (low; one was a real usability bug)
+The theme stylesheet references two files that don't exist:
+- **`cta_1.png`:** a decorative image, now removed.
+- **`slid_ic_hover.png`:** the tick shown when a checkbox or radio is ticked, for example "Unlock the domain? Yes/No" and terms consent. A ticked box showed nothing. Now drawn with CSS.
+
+### 1.10 Theme queries hit tables that don't exist on staging (medium)
+The theme hard-codes production's table prefix (`Dmb_posts`, `Dmb_hitDomain_final`), but staging's prefix is `wp_`. Those queries failed silently, which broke the domain-page view and inquiry stats and the owner lookups. **Fixed:** the hard-coded prefix is rewritten to the real one. Production, where the prefixes already match, is unaffected.
+
+## 2. Database review
+
+The database is 151 MB, with 119 tables, on MariaDB 11.8.
+
+| Finding | Size / count | Action |
+|---|---|---|
+| Autoloaded options (loaded on every request) | 565 KB, of which ~242 KB belonged to uninstalled plugins (WebinarIgnition, WP Automatic) | **Fixed:** autoload switched off for those options, and 72 expired plus 6 orphaned feed transients deleted. Now **181 KB**. Reversible. |
+| Domain posts that aren't live | 17,891 private + 1,781 "unpublish" + 52 trash, against **207 published** | **Recommend.** This is about 90% of `wp_posts` and most of the 438k `wp_postmeta` rows (55 MB). Archive or delete them after a backup. That's your call, since they may be sold-domain history. |
+| Post revisions | 4,926 | **Recommend:** limit revisions in `wp-config.php` (`WP_POST_REVISIONS` 5) and clean the old ones. |
+| Tables from removed plugins | Yoast (~19 MB across 3 tables), WP Automatic, GOTMLS, old PayPal orders | **Recommend:** drop after a backup. |
+| CF7 submissions | 27,580 rows (10 MB) | Keep, since these are leads. Consider a retention policy. |
+| Indexes | `wp_postmeta` has the standard `post_id` and `meta_key` indexes; 10 orphaned meta rows | Fine. |
+| Plan and sale records | Stored per domain in `wp_options`, not autoloaded | Fine at this volume. A dedicated orders table would be cleaner if sales grow. |
+
+New admin-only tools (logged-in administrators only):
+- **`/?db_db_report=1`:** read-only report of table sizes, autoload and bloat.
+- **`/?db_db_maint=1` and `&commit=1`:** the safe clean-up above. It runs as a dry run unless `commit=1` is added.
+- **`?db_perf=1` on any page:** query count, time and the slowest queries, shown as an HTML comment.
+
+## 3. Speed
+
+- **Server time:** about 0.42–0.5 s of PHP per page. No single database query took more than about 30 ms, so the database isn't the bottleneck.
+- **WPForms Lite:** it had 0 forms and 0 uses but ran queries and background jobs on every request, and its scheduled job is the one Site Health reports as failing. **Deactivated on staging.** Homepage PHP time went from 500 to 419 ms and memory from 74 to 53 MB.
+- **Page times:** 0.6–0.9 s to first byte, and 1.3–1.6 s to full load in the browser. All staging timings are uncached: LiteSpeed doesn't cache requests that carry the Basic Auth password, so production with caching will be faster than this. Site Health's "page cache not detected" warning on staging comes from this too.
+- **Recommendations:**
+  - Turn on a persistent object cache (Redis or Memcached via LiteSpeed Cache and hPanel).
+  - Keep the homepage at 8 cards per column.
+  - Consider dropping the theme's unused jQuery plugins later.
+
+## 4. SEO
+Every tested page passes the title, description, canonical, single-H1, structured-data and alt-text checks.
+- **Structured data:** domain pages have product, price and breadcrumb data, news posts have article data, and categories have collection and list data. Organization and website data is on every page. FAQ data is no longer on the homepage, where its questions weren't visible.
+- **Staging:** every page sends noindex.
+- **Still open:** the physical `robots.txt` on staging still says allow. Have the host replace it with `Disallow: /`.
+
+## 5. Security
+- **Fixed this round:** XML-RPC closed, AdSense removed. On staging, five plugins were updated earlier and WPForms is now deactivated.
+- **Already in place and verified:** HSTS, nosniff, frame and referrer headers; X-Powered-By hidden; REST user list blocked; author enumeration blocked; forged card-update links rejected.
+- **Still needs you:**
+  - **PHP patch (critical).** Patch the PHP vulnerabilities CVE-2026-109618 and CVE-2026-109619. Beta needs 8.5.12 (it has 8.5.11) and production needs 8.2.35 (it has 8.2.21). This is done in hPanel or by Hostinger.
+  - **Core security updates are switched off.** `WP_AUTO_UPDATE_CORE` is false. Set it to `'minor'` so security releases install automatically.
+  - **The content security policy is minimal.** It only upgrades insecure requests; a fuller policy would be a later project.
+  - **Production plugins:** update them as was done on staging.
+
+## 6. Not tested
+- **Real Stripe payments:** a card payment, the Stripe notifications reaching the site, or the customer portal. Beta has no Stripe keys, so these are only covered by the offline test.
+- **Live form submissions:** submitting forms would send real emails and create leads.
+- **Emails arriving in inboxes:** only rendering was checked.
