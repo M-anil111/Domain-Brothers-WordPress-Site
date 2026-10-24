@@ -145,6 +145,111 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_onpage_fix_404_page' );
 }, 25 );
 
+/* ─── 3b. Link/markup hygiene from the 2026-10-24 production HTTP audit ────── */
+
+if ( ! function_exists( 'db_onpage_in_comment' ) ) {
+	/** True when byte offset $pos sits inside an HTML comment. */
+	function db_onpage_in_comment( $html, $pos ) {
+		$head  = substr( $html, 0, $pos );
+		$open  = strrpos( $head, '<!--' );
+		$close = strrpos( $head, '-->' );
+		return false !== $open && ( false === $close || $close < $open );
+	}
+}
+
+if ( ! function_exists( 'db_onpage_has_live_h1' ) ) {
+	/**
+	 * True when the page has an <h1> outside an HTML comment. /sold/ ships
+	 * its only heading as "<!--<h1 class="page-title">…-->", which a plain
+	 * stripos() counted as present, so the page went out with no <h1>.
+	 */
+	function db_onpage_has_live_h1( $html ) {
+		$offset = 0;
+		while ( false !== ( $pos = stripos( $html, '<h1', $offset ) ) ) {
+			$next = substr( $html, $pos + 3, 1 );
+			if ( ( '>' === $next || ctype_space( $next ) ) && ! db_onpage_in_comment( $html, $pos ) ) {
+				return true;
+			}
+			$offset = $pos + 3;
+		}
+		return false;
+	}
+}
+
+if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
+	/**
+	 * Fixes the audit's site-wide markup failures in one pass:
+	 *  - target="_blank" links without rel="noopener" (footer social icons on
+	 *    every page, outbound news-source links, domain "visit" links);
+	 *  - http:// links/images to hosts verified to serve valid HTTPS
+	 *    (own domain, domaining.com, domaingang.com, thedomains.com,
+	 *    domainnamewire.com). Hosts without working TLS (domainpulse.com
+	 *    expired cert, dropgrabs.com, parked .ca names) are left alone,
+	 *    since rewriting them would break the link;
+	 *  - the theme repeating id="browse_by_domain" on every sidebar table;
+	 *  - /payment-cancel/'s template, which builds asset URLs as
+	 *    home_url() . 'wp-content/…' ("…domainbrothers.comwp-content", so
+	 *    the page rendered unstyled) and hard-codes <title>DomainBrothers</title>.
+	 */
+	function db_onpage_html_hygiene( $html ) {
+		// Pasted content on /epp-guidelines/ uses curly quotes (rel=”nofollow”),
+		// which browsers read as part of the value, not as a quoted attribute.
+		if ( false !== strpos( $html, '=”' ) ) {
+			$html = preg_replace( '/(<a\b[^>]*\s(?:rel|target))=”([^”"<>]*)”/u', '$1="$2"', $html );
+		}
+		if ( false !== stripos( $html, 'target=' ) ) {
+			$html = preg_replace_callback( '/<a\b[^>]*\btarget\s*=\s*["\']_blank["\'][^>]*>/i', function ( $m ) {
+				$tag = $m[0];
+				if ( preg_match( '/\srel\s*=\s*(["\'])([^"\']*)\1/i', $tag, $r ) ) {
+					if ( false !== stripos( $r[2], 'noopener' ) ) {
+						return $tag;
+					}
+					return str_replace( $r[0], ' rel=' . $r[1] . trim( $r[2] . ' noopener' ) . $r[1], $tag );
+				}
+				return substr_replace( $tag, ' rel="noopener"', 2, 0 );
+			}, $html );
+		}
+
+		if ( false !== stripos( $html, 'http://' ) ) {
+			$home  = preg_quote( (string) wp_parse_url( home_url(), PHP_URL_HOST ), '#' );
+			$hosts = '(?:www\.)?(?:domainbrothers\.com|domaining\.com|domaingang\.com|thedomains\.com|domainnamewire\.com)|' . $home;
+			$html  = preg_replace( '#(\s(?:href|src)\s*=\s*["\'])http://(' . $hosts . ')(?=[/"\'?:])#i', '$1https://$2', $html );
+		}
+
+		$first = strpos( $html, 'id="browse_by_domain"' );
+		if ( false !== $first ) {
+			$n      = 1;
+			$offset = $first + 21;
+			while ( false !== ( $pos = strpos( $html, 'id="browse_by_domain"', $offset ) ) ) {
+				++$n;
+				$html   = substr_replace( $html, 'id="browse_by_domain-' . $n . '"', $pos, 21 );
+				$offset = $pos + 21;
+			}
+		}
+
+		if ( false !== strpos( $html, '.comwp-content/' ) ) {
+			$html = str_replace( '.comwp-content/', '.com/wp-content/', $html );
+		}
+		if ( ! empty( $GLOBALS['db_onpage_ctx']['payment_cancel'] ) && function_exists( 'db_seo_utility_slugs' ) ) {
+			$slugs = db_seo_utility_slugs();
+			$html  = str_replace( '<title>DomainBrothers</title>', '<title>' . esc_html( $slugs['payment-cancel'] ) . '</title>', $html );
+		}
+		return $html;
+	}
+}
+
+/*
+ * Old news posts hotlink third-party images over http://. The site's CSP
+ * (upgrade-insecure-requests) loads them over https, and several source
+ * hosts no longer serve them at all (domainpulse.com: 403/expired cert,
+ * dropgrabs.com: offline), so readers saw broken-image boxes. Hide any
+ * image that fails to load; registered in <head> so it catches errors that
+ * fire before DOMContentLoaded.
+ */
+add_action( 'wp_head', function () {
+	echo "<script>document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG'&&t.closest&&t.closest('.site-main, main, article')){t.style.display='none';var c=t.closest('.wp-caption');if(c){c.style.display='none';}}},true);</script>\n";
+}, 2 );
+
 /* ─── 4. Pages with no <h1>, and <img> tags with no alt attribute ─────────── */
 
 if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
@@ -165,17 +270,33 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		// Not the front page: its hero <h1> is added by a later output buffer,
 		// so at this point the page looked h1-less and "Featured Top Domains"
 		// was promoted too — two <h1>s on the homepage (tests/qa SEO-home-h1).
-		if ( is_singular() && ! is_front_page() && false === stripos( $html, '<h1' ) ) {
+		$html = db_onpage_html_hygiene( $html );
+		// Context captured at template_redirect: templates such as /sold/
+		// call query_posts(), so is_singular() is false by flush time.
+		$ctx = isset( $GLOBALS['db_onpage_ctx'] ) ? $GLOBALS['db_onpage_ctx'] : array( 'singular' => false, 'title' => '' );
+		if ( $ctx['singular'] && ! db_onpage_has_live_h1( $html ) ) {
 			$done = false;
-			if ( preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			// Skip commented-out copies: /sold/ keeps its old heading as
+			// "<!--<h2 class="page-title">…-->" just above the live one.
+			$offset = 0;
+			while ( ! $done && preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $html, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
+				if ( db_onpage_in_comment( $html, $m[0][1] ) ) {
+					$offset = $m[0][1] + strlen( $m[0][0] );
+					continue;
+				}
 				$html = substr_replace( $html, '<h1' . $m[1][0] . '>' . $m[2][0] . '</h1>', $m[0][1], strlen( $m[0][0] ) );
 				$done = true;
 			}
 			if ( ! $done ) {
+				// Templates with no <main> (e.g. /paypal-ipn/) get it straight
+				// after <body>.
 				$pos = stripos( $html, '<main' );
+				if ( false === $pos ) {
+					$pos = stripos( $html, '<body' );
+				}
 				$end = false === $pos ? false : strpos( $html, '>', $pos );
 				if ( false !== $end ) {
-					$h1   = '<h1 class="screen-reader-text">' . esc_html( get_the_title() ) . '</h1>';
+					$h1   = '<h1 class="screen-reader-text">' . esc_html( $ctx['title'] ) . '</h1>';
 					$html = substr_replace( $html, $h1, $end + 1, 0 );
 				}
 			}
@@ -202,5 +323,11 @@ add_action( 'template_redirect', function () {
 	if ( is_admin() || is_feed() || is_robots() ) {
 		return;
 	}
+	// Not the front page: its hero <h1> is added by a later output buffer.
+	$GLOBALS['db_onpage_ctx'] = array(
+		'singular'       => is_singular() && ! is_front_page(),
+		'title'          => is_singular() ? get_the_title( get_queried_object_id() ) : '',
+		'payment_cancel' => is_page( 'payment-cancel' ),
+	);
 	ob_start( 'db_onpage_fix_h1_and_alt' );
 }, 26 );

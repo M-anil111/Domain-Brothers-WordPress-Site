@@ -63,6 +63,8 @@ const PAGES = [
 	['contact', '/contact-us/'],
 	['offer', '/offer/'],
 	['privacy', '/privacy-policy/'],
+	['sold', '/sold/'],
+	['epp', '/epp-guidelines/'],
 ];
 
 (async () => {
@@ -78,7 +80,8 @@ const PAGES = [
 		record(`SEO-${name}-desc`, 'SEO', `${p} meta description 70–160 chars`, desc.length >= 70 && desc.length <= 160, desc.length);
 		const canon = (h.match(/<link rel="canonical" href="([^"]+)"/) || [])[1] || '';
 		record(`SEO-${name}-canonical`, 'SEO', `${p} canonical is self`, canon === BASE + p, canon);
-		const h1 = (h.match(/<h1[\s>]/g) || []).length;
+		const live = h.replace(/<!--[\s\S]*?-->/g, '');
+		const h1 = (live.match(/<h1[\s>]/g) || []).length;
 		record(`SEO-${name}-h1`, 'SEO', `${p} has exactly one <h1>`, h1 === 1, h1);
 		const ld = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
 		let ldOk = ld.length > 0;
@@ -89,6 +92,13 @@ const PAGES = [
 		const imgs = h.match(/<img\b[^>]*>/gi) || [];
 		const noAlt = imgs.filter((t) => !/\salt=/.test(t)).length;
 		record(`A11Y-${name}-alt`, 'A11y', `${p} every <img> has alt`, noAlt === 0, `${noAlt}/${imgs.length} missing`);
+		const titles = (live.match(/<title[\s>]/g) || []).length;
+		record(`SEO-${name}-one-title`, 'SEO', `${p} has exactly one <title>`, titles === 1, titles);
+		const unsafe = (live.match(/<a\b[^>]*>/gi) || []).filter((t) => /target=["']_blank/i.test(t) && !/\srel=["'][^"']*noopener/i.test(t));
+		record(`SEC-${name}-blank-rel`, 'Security', `${p} target=_blank links carry rel=noopener`, unsafe.length === 0, `${unsafe.length} unsafe ${unsafe.slice(0, 2).join(' ')}`);
+		const seen = {}, dup = new Set();
+		for (const m of live.replace(/<script\b[\s\S]*?<\/script>/gi, '').matchAll(/\sid="([^"]+)"/g)) { if (seen[m[1]]) dup.add(m[1]); seen[m[1]] = 1; }
+		record(`A11Y-${name}-unique-ids`, 'A11y', `${p} has no duplicate element ids`, dup.size === 0, [...dup].slice(0, 5).join(','));
 		record(`PERF-${name}-ttfb`, 'Perf', `${p} response < 2.5s`, r.ms < 2500, r.ms + 'ms');
 		await sleep(700);
 	}

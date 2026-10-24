@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.41.1
+ * Version:     3.41.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.41.1' );
+define( 'DB_BLOCKS_LOADED', '3.41.2' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -3453,7 +3453,7 @@ add_action( 'wp_footer', function () {
 			   into a single tabbed widget: one table visible at a time,
 			   switched by tab, instead of a long stack of near-identical
 			   little tables. */
-			var browseSections = document.querySelectorAll('.custom-sidebar #browse_by_domain');
+			var browseSections = document.querySelectorAll('.custom-sidebar [id^="browse_by_domain"]');
 			if (browseSections.length > 1) {
 				var bWrap = document.createElement('div');
 				bWrap.className = 'db-browse-tabs';

@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.41.1 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.41.2 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -8,6 +8,7 @@ Commits: `894986a` (fixes and test suites), plus this report.
 | Suite | Before fixes | After fixes |
 |---|---|---|
 | `tests/qa/run-qa.js`: 265 live checks (HTTP + real browser, desktop and mobile) | 242 / 265 | **265 / 265** |
+| Same suite after section 7 (345 checks: added one-title, `rel=noopener`, duplicate-id checks and `/sold/`, `/epp-guidelines/`) | — | **345 / 345** |
 | `tests/plan/plan-lifecycle-test.php`: 26 offline payment-plan checks | did not exist (would have failed: see 1.1) | **26 / 26** |
 
 How to re-run both suites is in `tests/README.md`.
@@ -123,3 +124,30 @@ Every tested page passes the title, description, canonical, single-H1, structure
 - **Real Stripe payments:** a card payment, the Stripe notifications reaching the site, or the customer portal. Beta has no Stripe keys, so these are only covered by the offline test.
 - **Live form submissions:** submitting forms would send real emails and create leads.
 - **Emails arriving in inboxes:** only rendering was checked.
+
+## 7. Production HTTP audit (132 URLs, 796 failures) checked against staging
+
+The production audit ran against `www.domainbrothers.com`, which doesn't have any of the plugin work. I re-ran the same checks on staging for all 55 URLs named in the report.
+
+**Already passing on staging, no change needed.** These account for most of the 796 failures:
+- `exactly_one_title` (132) and `jsonld_valid` (131);
+- `title_25_65` (112), `exactly_one_h1` (61) and `canonical_self` (33);
+- `all_images_have_alt` (28), `has_viewport` and `html_has_lang`;
+- `production_indexable` (10). On production, the utility list in `db-seo-meta-block.php` already noindexes every flagged page (`/buy-now/`, `/checkout/`, `/domain-transfer/`, `/payment-cancel/`, `/payment-successful/`, `/installment-detail-*`, `/payment-plan-setup/`) and keeps them out of the sitemap.
+
+**Fixed in v3.41.2** (`db-onpage-seo-block.php`):
+| Audit check | Cause | Fix |
+|---|---|---|
+| `blank_links_safe` (122) | Footer social icons on every page, outbound news-source links and domain "visit" links opened in a new tab without `rel="noopener"` | `rel="noopener"` is added to every `target="_blank"` link. Curly-quoted `rel=”nofollow”` on `/epp-guidelines/` is normalised. |
+| `no_duplicate_ids` (26) | The theme repeats `id="browse_by_domain"` on every sidebar table | The second and later copies become `browse_by_domain-2`, `-3` and so on. The tab widget's selector is updated to match. |
+| `exactly_one_h1` on `/sold/` | Two bugs: the theme's commented-out `<!--<h2 class="page-title">` was promoted instead of the visible heading, and the template's `query_posts()` makes `is_singular()` false by flush time | The fixer now skips headings inside comments, and the page context is captured at `template_redirect`. Pages with no `<main>` get the heading after `<body>`. |
+| `no_http_navigation_links` and `no_mixed_content` | `http://` links and images | Rewritten to `https://` for hosts verified to serve valid TLS: own domain, domaining.com, domaingang.com, thedomains.com and domainnamewire.com. |
+| (found while checking) `/payment-cancel/` unstyled | The template builds `…domainbrothers.comwp-content/…` (missing slash), so both stylesheets 404. It also hard-codes `<title>DomainBrothers</title>`. | URL repaired, and the title is now "Payment Cancelled". |
+| Broken images in old news posts | 2017-era hotlinked images from domainpulse.com (403, expired certificate) and dropgrabs.com (offline) | Images that fail to load inside article content are hidden, along with their caption box. |
+
+**Remaining, accepted:**
+- **`http://` links to hosts without working HTTPS:** domainpulse.com (expired certificate) and the parked `.ca` names in the domain list (e.g. holi.ca). Rewriting these would break the link.
+- **Empty meta description on noindex utility pages:** `/thank-you/`, `/payment-successful/`, `/confirm-subscription/`, `/paypal-ipn/`. These pages never appear in search.
+- **`/plugnpay/`:** an empty legacy payment-gateway endpoint. It is noindexed (header) and excluded from the sitemap. Recommendation: delete the page if PlugnPay is no longer used.
+
+**Production:** all of the above, and the earlier sections, take effect on production only when this plugin is installed there.
