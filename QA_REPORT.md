@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.43.0 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.44.1 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -189,3 +189,35 @@ The production audit ran against `www.domainbrothers.com`, which doesn't have an
 - **`http://` links to sites without working HTTPS:** about 590, mostly domainpulse.com (expired certificate) and the parked `.ca` names.
 - **One post with a 63-character description:** its excerpt is naturally short.
 - **Old affiliate links:** they are kept but marked sponsored. Deleting them is a content decision.
+
+## 9. Accessibility and performance pass (v3.44.x)
+
+**Tools:**
+- **axe-core 4.10** (WCAG 2.1 A/AA) on 14 pages at desktop and mobile widths (28 scans).
+- **Lighthouse 12** (mobile) on the home page, a domain page, `/all-domains/` and a post.
+
+**Results:**
+- **axe:** 28 scans had violations at first; now **0 violations on all 28**.
+- **Lighthouse accessibility:** now **99–100** on the domain page and `/all-domains/`, and 98–99 on the home page and the post.
+- **Live suite:** **385 / 385**, after adding zoom and paste checks to every page.
+
+### Fixed
+| Issue | Where | Fix |
+|---|---|---|
+| **Pinch-zoom disabled** (critical): `maximum-scale=1, user-scalable=no` | every page | Removed from the viewport tag. |
+| **Body text rendered at 10px on mobile**: the plugin's design tokens are in `rem`, but the theme's Bootstrap 3 sets `html { font-size: 10px }`. Lighthouse found only 51% of homepage text legible. | site-wide | Body and small-text tokens set in px (16 and 14), card headings 18px. Only an 11px uppercase label remains. |
+| Six form fields with no accessible name: the label sits next to the field, not around it | `/offer/` | Each field gets an `aria-label` taken from its visible label. |
+| Cut, copy and paste blocked on phone and offer fields | domain pages, contact | Inline `onpaste="return false"` handlers and jQuery `cut copy paste` bindings neutralised. |
+| Colour contrast: white on brand green (2.35:1); greys #999, #888, #777; link blue on dark buttons; green headings (2.35:1) | domain pages, services, `/sold/`, plan page | Darker brand green for text and buttons, darker greys. Visually checked. |
+| Links in text distinguished by colour alone (2:1) | about, contact, domain pages, home | Underlined. |
+| Duplicate image links in hidden figures reachable by keyboard | `/news/` | `tabindex="-1"`. |
+| Four "Learn More" links with no context; a "here" link | home, domain pages | Hidden text names the service; "here" becomes "privacy policy". |
+| Trust icons: `alt="happy"` on the best-price badge, a misspelt "Gaurentee", redundant alts | domain pages | Fixed, and decorative icons get empty alt text. |
+| The domain-page banner is a CSS background, so it was discovered late (slow LCP on mobile) | domain pages | `<link rel="preload" fetchpriority="high">`. The production-host rewrite now leaves `/images/detail/` alone. |
+
+### Not fixable in the plugin (for you or your marketing team)
+- **Third-party tags block the main thread for about 860 ms on mobile.** These are Google Tag Manager, gtag (GA4 and Google Ads), Microsoft Clarity, HubSpot, AddToAny and Cloudflare Zaraz. They are the main reason Total Blocking Time is 670–1,220 ms and mobile performance is 42–78.
+  - Removing unused tags, or loading them after the user's first interaction, is a marketing decision, because it affects ad attribution.
+- **Universal Analytics `UA-78917810-32` still loads** (`analytics.js`, `linkid.js`) through Cloudflare Zaraz. Google stopped processing Universal Analytics in July 2024, so it collects nothing. Remove it in the Cloudflare dashboard under Zaraz.
+- **Staging timings run with no page cache,** because of the staging password, and Lighthouse timings varied by up to 3× between runs on the shared host. Measure performance on production after deploy.
+- **Small leftovers:** the theme's `heading-order` (skipped heading levels) and `td-has-header` (sidebar tables without headers) are minor theme-template issues.

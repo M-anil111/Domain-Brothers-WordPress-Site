@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.43.0
+ * Version:     3.44.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.43.0' );
+define( 'DB_BLOCKS_LOADED', '3.44.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1633,8 +1633,11 @@ if ( ! function_exists( 'db_ui_css' ) ) {
 	--db-fs-h1:   clamp(2rem, 5vw, 3.2rem);
 	--db-fs-h2:   clamp(1.5rem, 3.5vw, 2.25rem);
 	--db-fs-h3:   clamp(1.2rem, 2.4vw, 1.55rem);
-	--db-fs-body: 1rem;
-	--db-fs-sm:   0.875rem;
+	/* px, not rem: the theme's Bootstrap 3 sets html { font-size: 10px },
+	   so 1rem was 10px and body copy rendered at 10px on mobile
+	   (Lighthouse: 49% of homepage text below legible size). */
+	--db-fs-body: 16px;
+	--db-fs-sm:   14px;
 
 	--db-sp-1:  4px;  --db-sp-2:  8px;  --db-sp-3:  12px; --db-sp-4:  16px;
 	--db-sp-5:  20px; --db-sp-6:  24px; --db-sp-8:  32px; --db-sp-12: 48px; --db-sp-16: 64px;
@@ -2477,7 +2480,7 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	background: #fff; border: 1px solid var(--db-gray-100); border-radius: var(--db-r-lg);
 	padding: var(--db-sp-5); box-shadow: var(--db-shadow-sm);
 }
-.db-ui-active .db-offer-step h4 { margin: 0 0 var(--db-sp-2); font-size: 1.05rem; color: var(--db-navy); }
+.db-ui-active .db-offer-step h4 { margin: 0 0 var(--db-sp-2); font-size: 17px; color: var(--db-navy); }
 .db-ui-active .db-offer-step p { margin: 0; color: var(--db-gray-700); font-size: 14px; line-height: 1.55; }
 
 /* "Why Users Choose Domain Brothers" — same stacked-list problem as Our
@@ -2507,7 +2510,7 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .iconBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
-.db-ui-active .iconBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 1.15rem; }
+.db-ui-active .iconBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
 .db-ui-active .iconBox p { color: var(--db-gray-700); margin: 0; }
 .db-ui-active .iconBox:nth-child(1) .db-icon-badge { background: linear-gradient(160deg, #b45309 0%, #d97706 100%); }
 .db-ui-active .iconBox:nth-child(2) .db-icon-badge { background: linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%); }
@@ -2551,7 +2554,7 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .serviceBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
-.db-ui-active .serviceBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 1.15rem; }
+.db-ui-active .serviceBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
 .db-ui-active .serviceBox p { color: var(--db-gray-700); margin: 0; }
 .db-ui-active .serviceBox .db-service-learnmore {
 	display: inline-block; margin-top: var(--db-sp-4); font-size: 14px; font-weight: 600;
@@ -3644,6 +3647,12 @@ add_action( 'wp_footer', function () {
 				a.className = 'db-service-learnmore';
 				a.href = '/' + slug + '/';
 				a.textContent = 'Learn More';
+				// Four identical "Learn More" links tell screen-reader and
+				// search users nothing (Lighthouse link-text); name the service.
+				var sr = document.createElement('span');
+				sr.className = 'screen-reader-text';
+				sr.textContent = ' about ' + (h.textContent || '').trim();
+				a.appendChild(sr);
 				box.appendChild(a);
 			});
 

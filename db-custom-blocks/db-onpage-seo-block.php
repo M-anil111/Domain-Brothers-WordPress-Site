@@ -251,6 +251,80 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 			}
 		}
 
+		// Accessibility (axe-core WCAG 2.1 AA scan, 2026-10-24):
+		// - the theme's viewport meta sets maximum-scale=1, user-scalable=no,
+		//   so visitors cannot pinch-zoom (critical, every page);
+		// - Contact Form 7 forms on /offer/ put "<label>Name</label><br>"
+		//   beside the field instead of around it, so fields have no name;
+		// - /news/ cards wrap a duplicate image link in an aria-hidden
+		//   <figure>, which keyboard focus still reaches.
+		if ( false !== stripos( $html, 'user-scalable' ) || false !== stripos( $html, 'maximum-scale' ) ) {
+			$html = preg_replace_callback( '#<meta\s+name=["\']viewport["\']\s+content=["\']([^"\']*)["\']#i', function ( $m ) {
+				$c = preg_replace( '/\s*,?\s*(?:maximum-scale\s*=\s*[\d.]+|user-scalable\s*=\s*(?:no|0))/i', '', $m[1] );
+				return str_replace( $m[1], trim( $c, ' ,' ), $m[0] );
+			}, $html );
+		}
+		if ( false !== strpos( $html, 'wpcf7-form-control-wrap' ) ) {
+			$html = preg_replace_callback( '#<label>([^<]{1,80})</label>((?:\s|<br\s*/?>)*<span class="wpcf7-form-control-wrap"[^>]*>\s*<(?:input|textarea|select)\b)(?![^>]*\saria-label=)#i', function ( $m ) {
+				$text = trim( preg_replace( '/\s+/', ' ', $m[1] ) );
+				return '<label>' . $m[1] . '</label>' . $m[2] . ' aria-label="' . esc_attr( $text ) . '"';
+			}, $html );
+		}
+		if ( false !== strpos( $html, 'aria-hidden="true">' ) ) {
+			$html = preg_replace( '#(<figure\b[^>]*\baria-hidden="true"[^>]*>\s*<a\b)(?![^>]*tabindex)#i', '$1 tabindex="-1"', $html );
+		}
+
+		// "View our privacy policy <a>here</a>" on every domain page: link
+		// text that says nothing out of context (Lighthouse link-text).
+		$html = preg_replace( '#View our privacy policy\s*<a href="([^"]*privacy-policy/?)">here</a>#', 'View our <a href="$1">privacy policy</a>', $html );
+
+		// The theme blocks cut/copy/paste on phone and offer-amount fields
+		// (inline onpaste="return false;" and jQuery .bind("cut copy paste")),
+		// which stops buyers pasting a number and breaks autofill tools
+		// (Lighthouse paste-preventing-inputs). Remove the inline handlers and
+		// rename the jQuery event list so those handlers never fire.
+		if ( false !== stripos( $html, 'paste' ) ) {
+			$html = preg_replace( '#\son(?:paste|copy|cut)\s*=\s*"return false;?"#i', '', $html );
+			$html = str_replace( '.bind("cut copy paste"', '.bind("db-noop-cut-copy-paste"', $html );
+		}
+
+		// Theme trust icons on domain pages: no width/height (layout shift,
+		// CLS 0.08 in Lighthouse), alt="happy" on the best-price badge and a
+		// misspelt "Gaurentee".
+		if ( false !== strpos( $html, 'DomainFolio/assets/images/' ) ) {
+			$icons = array(
+				'Best-Price-icon.png'      => array( 115, 100, 'Best price guarantee' ),
+				// The other four sit beside text that says the same thing, so
+				// their alt is redundant (Lighthouse image-redundant-alt).
+				// No dimensions for these: the theme sizes them in CSS by one
+				// axis, and width/height attributes then distorted them
+				// (payment_icon rendered 71x42).
+				'securityseal-green.png'   => array( 0, 0, '' ),
+				'money_back_guarantee.png' => array( 0, 0, '' ),
+				'domain.png'               => array( 0, 0, '' ),
+				'payment_icon.png'         => array( 0, 0, '' ),
+			);
+			$html = preg_replace_callback( '#<img\b[^>]*DomainFolio/assets/images/(Best-Price-icon|securityseal-green|money_back_guarantee|domain|payment_icon)\.png[^>]*>#', function ( $m ) use ( $icons ) {
+				$tag  = $m[0];
+				$icon = $icons[ $m[1] . '.png' ];
+				if ( $icon[0] && false === stripos( $tag, ' width=' ) ) {
+					$tag = substr_replace( $tag, ' width="' . $icon[0] . '" height="' . $icon[1] . '"', 4, 0 );
+				}
+				$tag = preg_replace( '/\salt="[^"]*"/', ' alt="' . $icon[2] . '"', $tag );
+				return $tag;
+			}, $html );
+		}
+
+		// The domain-page banner is a CSS background (and on another host),
+		// so the browser found it late: LCP 8.3 s on mobile. Preload it.
+		if ( false !== strpos( $html, 'banner_bg' ) && preg_match( '#class="banner_bg[^"]*"[^>]*style="background-image:\s*url\([\'"]?(https?://[^\'")\s]+)#', $html, $bg ) ) {
+			$pre = '<link rel="preload" as="image" href="' . esc_url( $bg[1] ) . '" fetchpriority="high">';
+			$pos = stripos( $html, '</head>' );
+			if ( false !== $pos ) {
+				$html = substr_replace( $html, $pre . "\n", $pos, 0 );
+			}
+		}
+
 		if ( false !== strpos( $html, '.comwp-content/' ) ) {
 			$html = str_replace( '.comwp-content/', '.com/wp-content/', $html );
 		}
@@ -261,6 +335,28 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 		return $html;
 	}
 }
+
+/*
+ * Contrast and link fixes from the axe-core WCAG 2.1 AA scan (2026-10-24):
+ * body links (#2563eb on #334155 text) were distinguishable by colour alone
+ * at 2:1; the theme's green (#67BD3C) with white text is 2.35:1; greys #999,
+ * #888 and #777 on white fail 4.5:1; core button blocks rendered the site's
+ * link blue on their dark default background (2.32:1).
+ */
+add_action( 'wp_head', function () {
+	echo '<style id="db-a11y-css">'
+		. 'main p a:not([class]),.entry-content a:not([class]),.about_cnt p a,.your_Offer p a,.iconBox p a:not([class]){text-decoration:underline;text-underline-offset:2px}'
+		. '.your_Offer p a{color:#1d4ed8}'
+		. '.domain-detail-form>h3{color:#0b1f05!important}'
+		. 'body .cta_box a.cta_cstm_btn{background-color:#2e7d14!important;border-color:#2e7d14!important;color:#fff!important}'
+		. '.about_cnt>h2,.db-dd>h2,.thankyou_right>h2{color:#3a7a1c!important}'
+		. '.amount{color:#5f6368!important}'
+		. '.badge-sold{background-color:#5f5f5f!important}'
+		. '.db-plan-schedule th{color:#4b5563!important}'
+		. '.wp-block-button__link:not(.has-text-color){color:#fff!important}'
+		. 'img[src*="DomainFolio/assets/images/Best-Price-icon"]{height:auto}'
+		. '</style>' . "\n";
+}, 99 );
 
 /*
  * Old news posts hotlink third-party images over http://. The site's CSP

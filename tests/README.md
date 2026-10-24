@@ -1,6 +1,6 @@
 # Tests
 
-## `qa/run-qa.js` — live staging QA suite (353 checks)
+## `qa/run-qa.js` — live staging QA suite (385 checks)
 Real-browser (Playwright/Chromium) and HTTP checks against staging: status codes,
 PHP error leaks, titles/descriptions/canonicals/H1/JSON-LD, noindex on staging,
 image alt text, security headers, XML-RPC, user enumeration, checkout redirects
@@ -35,3 +35,9 @@ New-tab rel, https upgrades, internal link normalisation, duplicate ids,
 commented-out headings, /payment-cancel/ assets, imported-news cleanup.
 
     php tests/seo/html-hygiene-test.php
+
+## `a11y/run-axe.js` — axe-core WCAG 2.1 A/AA scan
+14 key pages at desktop and mobile widths; prints violations per page and
+writes JSON. Needs `npm i axe-core@4.10.2` next to it.
+
+    BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g):./node_modules node tests/a11y/run-axe.js out.json

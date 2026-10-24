@@ -92,6 +92,9 @@ const PAGES = [
 		const imgs = h.match(/<img\b[^>]*>/gi) || [];
 		const noAlt = imgs.filter((t) => !/\salt=/.test(t)).length;
 		record(`A11Y-${name}-alt`, 'A11y', `${p} every <img> has alt`, noAlt === 0, `${noAlt}/${imgs.length} missing`);
+		const vpTag = (live.match(/<meta[^>]+name=["']viewport["'][^>]*>/gi) || []).join(' ');
+		record(`A11Y-${name}-zoom`, 'A11y', `${p} viewport allows pinch-zoom`, vpTag !== '' && !/user-scalable\s*=\s*(no|0)|maximum-scale\s*=\s*1(\.0)?\b/i.test(vpTag), vpTag.slice(0, 120));
+		record(`A11Y-${name}-paste`, 'A11y', `${p} no field blocks paste`, !/onpaste\s*=\s*"return false|\.bind\("cut copy paste"/i.test(live));
 		const titles = (live.match(/<title[\s>]/g) || []).length;
 		record(`SEO-${name}-one-title`, 'SEO', `${p} has exactly one <title>`, titles === 1, titles);
 		const unsafe = (live.match(/<a\b[^>]*>/gi) || []).filter((t) => /target=["']_blank/i.test(t) && !/\srel=["'][^"']*noopener/i.test(t));

@@ -467,7 +467,10 @@ if ( ! function_exists( 'db_safety_fix_domain_links' ) ) {
 				// undo that fix — these two functions are the one place on
 				// the site where "point at production" is the correct
 				// answer, everywhere else it's the bug being fixed.
-				if ( isset( $m[2] ) && ( false !== stripos( $m[2], 'landing-css/' ) || false !== stripos( $m[2], 'landing-images/' ) ) ) {
+				// Same for /images/detail/ (domain-page banners, referenced
+				// as production URLs by the theme and preloaded by
+				// db_onpage_html_hygiene()).
+				if ( isset( $m[2] ) && ( false !== stripos( $m[2], 'landing-css/' ) || false !== stripos( $m[2], 'landing-images/' ) || 0 === stripos( $m[2], '/images/detail/' ) ) ) {
 					return $m[0];
 				}
 				return $m[1] . 'https://' . $host . $m[2] . $m[3];
