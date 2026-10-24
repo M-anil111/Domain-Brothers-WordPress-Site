@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.42.0
+ * Version:     3.43.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.42.0' );
+define( 'DB_BLOCKS_LOADED', '3.43.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -365,12 +365,12 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 				return $html;
 			}
 			$GLOBALS['db_hero_rendered'] = true;
-			return preg_replace(
-				'/(<body[^>]*>)/i',
-				'$1' . db_hp_hero_html(),
-				$html,
-				1
-			);
+			// Callback, not '$1' . $html: any "$<digit>" in the hero (a price)
+			// would be expanded as a backreference.
+			$hero = db_hp_hero_html();
+			return preg_replace_callback( '/<body[^>]*>/i', function ( $m ) use ( $hero ) {
+				return $m[0] . $hero;
+			}, $html, 1 );
 		} );
 	}, 1 );
 } else {
@@ -1359,6 +1359,19 @@ if ( ! function_exists( 'db_aeo_emit' ) ) {
 if ( ! function_exists( 'db_aeo_canonical' ) ) {
 	function db_aeo_canonical() {
 		global $wp;
+		// Imported news duplicates: "/the-good-the-bad-and-the-ugly-enom-2/" is a
+		// second copy of "/…-enom/" with the same title and text (11 pairs
+		// found by the full-site crawl). Point the copy's canonical at the
+		// original so the two don't compete as duplicate content.
+		if ( is_singular( 'post' ) ) {
+			$post = get_queried_object();
+			if ( $post instanceof WP_Post && preg_match( '/^(.+)-\d+$/', $post->post_name, $m ) ) {
+				$orig = get_page_by_path( $m[1], OBJECT, 'post' );
+				if ( $orig && 'publish' === $orig->post_status && $orig->ID !== $post->ID && 0 === strcasecmp( trim( $orig->post_title ), trim( $post->post_title ) ) ) {
+					return esc_url( get_permalink( $orig ) );
+				}
+			}
+		}
 		// $wp->request has no trailing slash, but every permalink on this site
 		// ends in one (/news/ -> /news is a 301). A canonical that points at a
 		// redirect tells search engines the real URL is a different page —
@@ -1370,6 +1383,12 @@ if ( ! function_exists( 'db_aeo_canonical' ) ) {
 		return esc_url( home_url( '' === $path ? '/' : '/' . ltrim( $path, '/' ) ) );
 	}
 }
+
+// Core prints its own rel=canonical earlier in <head>, and the head deduper
+// keeps the first one, so core's URL must agree with db_aeo_canonical().
+add_filter( 'get_canonical_url', function ( $url ) {
+	return is_singular( 'post' ) ? db_aeo_canonical() : $url;
+} );
 
 add_action( 'wp_head', function () {
 	if ( is_admin() ) { return; }

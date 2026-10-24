@@ -1,6 +1,6 @@
 # Tests
 
-## `qa/run-qa.js` — live staging QA suite (265 checks)
+## `qa/run-qa.js` — live staging QA suite (353 checks)
 Real-browser (Playwright/Chromium) and HTTP checks against staging: status codes,
 PHP error leaks, titles/descriptions/canonicals/H1/JSON-LD, noindex on staging,
 image alt text, security headers, XML-RPC, user enumeration, checkout redirects
@@ -22,3 +22,16 @@ recovery, termination, a second buyer on the same domain, the "already sold"
 guard, and installment sums for every term.
 
     php tests/plan/plan-lifecycle-test.php
+
+## `qa/site-crawl.py` — full-site crawl (every sitemap URL)
+Sequential crawl of a list of paths with per-page SEO/markup checks; writes
+JSON with titles, descriptions and internal links for duplicate and broken-link
+analysis. A full run of 1,785 URLs takes about 90 minutes.
+
+    BETA_BASIC=user:pass python3 tests/qa/site-crawl.py paths.txt out.json > out.txt
+
+## `seo/html-hygiene-test.php` — markup fixes, offline (20 checks)
+New-tab rel, https upgrades, internal link normalisation, duplicate ids,
+commented-out headings, /payment-cancel/ assets, imported-news cleanup.
+
+    php tests/seo/html-hygiene-test.php

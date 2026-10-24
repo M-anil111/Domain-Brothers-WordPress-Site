@@ -218,6 +218,28 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 			$html  = preg_replace( '#(\s(?:href|src)\s*=\s*["\'])http://(' . $hosts . ')(?=[/"\'?:])#i', '$1https://$2', $html );
 		}
 
+		// Internal links without a trailing slash ("/domain-category/business",
+		// "/privacy-policy" in the theme's footer and sidebar on every page)
+		// each cost a 301; domain links with capitals ("/domains/skiClub-ca/")
+		// point at a non-canonical URL. Rewrite both to the real permalink.
+		$host = preg_quote( (string) wp_parse_url( home_url(), PHP_URL_HOST ), '#' );
+		$html = preg_replace_callback( '~(\shref=["\'])(https://' . $host . ')?(/[A-Za-z0-9/_-]*[A-Za-z0-9_-])(["\'#?])~', function ( $m ) {
+			if ( '' === $m[2] && 0 === strpos( $m[3], '//' ) ) {
+				return $m[0];
+			}
+			$path = $m[3];
+			if ( 0 === stripos( $path, '/domains/' ) ) {
+				$path = strtolower( $path );
+			}
+			if ( preg_match( '#^/(?:wp-|cdn-cgi/|okf/)#', $path ) ) {
+				return $m[0];
+			}
+			return $m[1] . $m[2] . $path . '/' . $m[4];
+		}, $html );
+		$html = preg_replace_callback( '#(\shref=["\'](?:https://' . $host . ')?/domains/)([^"\'/]*[A-Z][^"\'/]*)#', function ( $m ) {
+			return $m[1] . strtolower( $m[2] );
+		}, $html );
+
 		$first = strpos( $html, 'id="browse_by_domain"' );
 		if ( false !== $first ) {
 			$n      = 1;
@@ -376,6 +398,16 @@ if ( ! function_exists( 'db_onpage_clean_imported_content' ) ) {
 		$content = preg_replace( '#(<img\b[^>]*\ssrc=["\'])http://#i', '$1https://', $content );
 
 		$content = preg_replace( '#\sid=["\'](?:main|content|primary|secondary|page|masthead|colophon|yui_[^"\']*|m_\d[^"\']*)["\']#i', '', $content );
+		// Any other id repeated inside one post (e.g. two id="article-text"
+		// from a pasted source page): keep the first, drop the repeats.
+		$seen    = array();
+		$content = preg_replace_callback( '#\sid=(["\'])([^"\']+)\1#', function ( $m ) use ( &$seen ) {
+			if ( isset( $seen[ $m[2] ] ) ) {
+				return '';
+			}
+			$seen[ $m[2] ] = true;
+			return $m[0];
+		}, $content );
 		return $content;
 	}
 }

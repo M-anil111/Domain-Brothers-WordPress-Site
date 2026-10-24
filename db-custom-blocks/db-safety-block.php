@@ -901,3 +901,53 @@ add_filter( 'allow_minor_auto_core_updates', '__return_true', 20 );
 add_filter( 'wp_revisions_to_keep', function ( $num ) {
 	return ( $num < 0 || $num > 5 ) ? 5 : $num;
 }, 20 );
+
+/*
+ * Every news post's byline read "By admin" and linked /author/admin/, and the
+ * Article schema named "admin" as author: the administrator's login name,
+ * published on 1,500+ pages (found by the full-site crawl). Half of a login
+ * is then public, which undoes the REST and ?author= enumeration blocks.
+ * Where an author's display name is their login name, show the site name
+ * instead; author links go to /about-us/ and author archives 301 to /news/.
+ */
+if ( ! function_exists( 'db_safety_public_author_name' ) ) {
+	function db_safety_public_author_name( $name, $user_id = 0 ) {
+		if ( is_admin() ) {
+			return $name;
+		}
+		$user = $user_id ? get_userdata( $user_id ) : null;
+		if ( ! $user ) {
+			global $authordata;
+			$user = $authordata;
+		}
+		if ( '' === (string) $name || ( $user && 0 === strcasecmp( (string) $name, (string) $user->user_login ) ) || 0 === strcasecmp( (string) $name, 'admin' ) ) {
+			return 'Domain Brothers';
+		}
+		return $name;
+	}
+}
+add_filter( 'the_author', function ( $name ) {
+	return db_safety_public_author_name( $name );
+} );
+add_filter( 'get_the_author_display_name', function ( $name, $user_id ) {
+	return db_safety_public_author_name( $name, (int) $user_id );
+}, 10, 2 );
+add_filter( 'author_link', function ( $link ) {
+	return is_admin() ? $link : home_url( '/about-us/' );
+} );
+add_filter( 'oembed_response_data', function ( $data ) {
+	$data['author_name'] = get_bloginfo( 'name' );
+	$data['author_url']  = home_url( '/' );
+	return $data;
+} );
+add_action( 'template_redirect', function () {
+	// /about-us/ links to /sell-your-domain/, which does not exist (404).
+	if ( is_404() && preg_match( '#^/sell-your-domain/?$#', (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) ) ) {
+		wp_safe_redirect( home_url( '/contact-us/' ), 301 );
+		exit;
+	}
+	if ( is_author() ) {
+		wp_safe_redirect( home_url( '/news/' ), 301 );
+		exit;
+	}
+}, 1 );

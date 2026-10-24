@@ -125,6 +125,13 @@ add_action( 'template_redirect', function () {
 		if ( false === strpos( $html, '<main id="main"' ) || false !== strpos( $html, 'db-breadcrumbs' ) ) {
 			return $html;
 		}
-		return preg_replace( '#(<main id="main"[^>]*>)#', '$1' . db_breadcrumbs_html( $trail ), $html, 1 );
+		// Insert with a callback, not a replacement string: post titles such
+		// as "So $1,999 for 83.com anyone?" contain "$1", which preg_replace
+		// expanded into the captured <main> tag (a second <main id="main">
+		// inside the breadcrumb on 13 posts, found by the full-site crawl).
+		$crumbs = db_breadcrumbs_html( $trail );
+		return preg_replace_callback( '#<main id="main"[^>]*>#', function ( $m ) use ( $crumbs ) {
+			return $m[0] . $crumbs;
+		}, $html, 1 );
 	} );
 }, 19 );

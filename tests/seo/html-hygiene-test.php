@@ -45,6 +45,17 @@ ok( false !== strpos( $out, 'rel="nofollow noopener" href="https://sso.godaddy.c
 ok( 1 === substr_count( $out, 'id="browse_by_domain"' ) && false !== strpos( $out, 'id="browse_by_domain-3"' ), 'repeated id numbered -2, -3' );
 ok( false !== strpos( $out, '.com/wp-content/a.css' ) && false !== strpos( $out, '<title>Payment Cancelled | Domain Brothers</title>' ), '/payment-cancel/ asset URL and title repaired' );
 
+// Internal link normalisation.
+$out = db_onpage_html_hygiene(
+	'<a href="https://beta.domainbrothers.com/domain-category/business">a</a><a href="/privacy-policy">b</a>'
+	. '<a href="/domains/skiClub-ca/">c</a><a href="/buy-now?d=x">d</a><a href="/wp-content/uploads/a.png">e</a>'
+	. '<a href="//cdn.example/x">f</a><a href="https://other.example/path">g</a><a href="/">h</a><a href="/news/">i</a>'
+);
+ok( false !== strpos( $out, 'href="https://beta.domainbrothers.com/domain-category/business/"' ) && false !== strpos( $out, 'href="/privacy-policy/"' ), 'internal links get their trailing slash' );
+ok( false !== strpos( $out, 'href="/domains/skiclub-ca/"' ), 'domain links lower-cased' );
+ok( false !== strpos( $out, 'href="/buy-now/?d=x"' ), 'slash added before a query string' );
+ok( false !== strpos( $out, 'href="/wp-content/uploads/a.png"' ) && false !== strpos( $out, 'href="//cdn.example/x"' ) && false !== strpos( $out, 'href="https://other.example/path"' ) && false !== strpos( $out, 'href="/"' ) && false !== strpos( $out, 'href="/news/"' ), 'files, external, protocol-relative and already-correct links untouched' );
+
 // Headings inside comments.
 ok( ! db_onpage_has_live_h1( '<!--<h1 class="page-title">x</h1>--><h2>y</h2>' ), 'commented-out <h1> does not count' );
 ok( db_onpage_has_live_h1( '<!-- c --><h1>ok</h1>' ), 'live <h1> after a comment counts' );
@@ -69,6 +80,9 @@ ok( false !== strpos( $out, '<a rel="sponsored nofollow" href="http://www.kqzyfj
 ok( false !== strpos( $out, 'rel="noopener sponsored nofollow" href="https://amzn.to/abc"' ), 'existing rel kept on Amazon link' );
 ok( false !== strpos( $out, '<img src="https://techdigg.com/a.jpg">' ), 'http image upgraded to https' );
 ok( false === strpos( $out, 'id="main"' ) && false === strpos( $out, 'yui_' ) && false !== strpos( $out, 'id="pricing"' ), 'clashing/junk ids stripped, real anchors kept' );
+
+$out = db_onpage_clean_imported_content( '<div id="article-text">a</div><div id="article-text">b</div>' );
+ok( 1 === substr_count( $out, 'id="article-text"' ), 'id repeated inside a post kept once' );
 
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );

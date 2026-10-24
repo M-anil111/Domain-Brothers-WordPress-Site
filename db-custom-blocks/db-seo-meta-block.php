@@ -403,12 +403,62 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 		$desc  = $price
 			? sprintf( 'Buy %s for %s. A premium domain with escrow-protected transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
 			: sprintf( 'Buy %s, a premium domain, with an escrow-protected transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name );
+		// Long names (e.g. canadaimmigrationcounsel.ca) pushed this to 162–168
+		// characters, past the 160 that search results show.
+		if ( mb_strlen( $desc ) > 160 ) {
+			$desc = $price
+				? sprintf( 'Buy %s for %s. Escrow-protected transfer and 0%% interest payment plans at Domain Brothers.', $name, $price )
+				: sprintf( 'Buy %s. Escrow-protected transfer and 0%% interest payment plans at Domain Brothers.', $name );
+		}
 
 		return array( 'title' => $title, 'desc' => $desc, 'kw' => strtolower( $name ) );
 	}
 }
 
 /* ─── Fallback description ─────────────────────────────────────────────────── */
+
+if ( ! function_exists( 'db_seo_post_title' ) ) {
+	/**
+	 * <title> for a post. Long titles used to be cut to 42 characters plus
+	 * the brand suffix, so a series like "Domain Shane's Daily List of
+	 * Domains at Auction for Sunday March 11th" / "…March 26th" all became
+	 * the same title (26 duplicate groups in the full-site crawl). Now: keep
+	 * the suffix only when it fits in 65 characters; otherwise drop it
+	 * (search engines show the site name anyway) and, if still too long,
+	 * keep the opening words and the last two words, which is where dates
+	 * and names distinguish one post in a series from the next.
+	 */
+	function db_seo_post_title( $title, $brand ) {
+		$title = trim( preg_replace( '/\s+/u', ' ', html_entity_decode( wp_strip_all_tags( (string) $title ), ENT_QUOTES, 'UTF-8' ) ) );
+		if ( mb_strlen( $title . $brand ) <= 65 ) {
+			return $title . $brand;
+		}
+		if ( mb_strlen( $title ) <= 62 ) {
+			return $title;
+		}
+		// "…Zoom.ca, Psychic.org, Teaklife.com & More": the filler says nothing.
+		$words = explode( ' ', preg_replace( '/[\s,]*(?:&|and)\s+more\s*$/iu', '', $title ) );
+		// A domain name ("gcp.com") is the word that tells series posts
+		// apart ("Sedo … sales and gcp.com led the way"); move it to the tail.
+		foreach ( array_reverse( array_keys( $words ), true ) as $i ) {
+			if ( $i >= 3 && $i < count( $words ) - 2 && preg_match( '/^[a-z0-9-]+\.[a-z]{2,}[,.]?$/i', $words[ $i ] ) ) {
+				$words = array_merge( array_slice( $words, 0, $i ), array( '–', rtrim( $words[ $i ], ',.' ) ) );
+				break;
+			}
+		}
+		$tail  = implode( ' ', array_slice( $words, -2 ) );
+		$keep  = ( mb_strlen( $tail ) <= 26 && count( $words ) >= 6 ) ? 2 : 0;
+		$limit = 61 - ( $keep ? mb_strlen( $tail ) + 1 : 0 );
+		$head  = '';
+		foreach ( array_slice( $words, 0, count( $words ) - $keep ) as $w ) {
+			if ( mb_strlen( trim( $head . ' ' . $w ) ) > $limit ) {
+				break;
+			}
+			$head = trim( $head . ' ' . $w );
+		}
+		return rtrim( $head, ' ,.;:-–&' ) . '…' . ( $keep ? ' ' . $tail : '' );
+	}
+}
 
 if ( ! function_exists( 'db_seo_trim_desc' ) ) {
 	/**
@@ -461,7 +511,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 				);
 			}
 			return array(
-				'title' => db_seo_trim_desc( $post->post_title, 60 - mb_strlen( $brand ) ) . $brand,
+				'title' => db_seo_post_title( $post->post_title, $brand ),
 				'desc'  => $desc,
 				'kw'    => '',
 			);
@@ -749,6 +799,14 @@ if ( ! function_exists( 'db_seo_dedupe_head' ) ) {
 		// to the same URL, so first-wins is safe and avoids depending on
 		// which plugin happened to run last.
 		$head = db_seo_strip_dupes( $head, '#<link\b[^>]*\brel=(?:["\'])?canonical(?:["\'])?[^>]*>#i', 'first' );
+		// Except on news posts: a "-2" duplicate post canonicalizes to its
+		// original (db_aeo_canonical()), which the first emitter doesn't know.
+		if ( is_singular( 'post' ) && function_exists( 'db_aeo_canonical' ) ) {
+			$canon = db_aeo_canonical();
+			$head  = preg_replace_callback( '#(<link\b[^>]*\brel=(?:["\'])?canonical(?:["\'])?[^>]*\bhref=["\'])[^"\']*#i', function ( $m ) use ( $canon ) {
+				return $m[1] . $canon;
+			}, $head, 1 );
+		}
 
 		return $head . $rest;
 	}

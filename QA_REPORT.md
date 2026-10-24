@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.41.2 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.43.0 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -151,3 +151,41 @@ The production audit ran against `www.domainbrothers.com`, which doesn't have an
 - **`/plugnpay/`:** an empty legacy payment-gateway endpoint. It is noindexed (header) and excluded from the sitemap. Recommendation: delete the page if PlugnPay is no longer used.
 
 **Production:** all of the above, and the earlier sections, take effect on production only when this plugin is installed there.
+
+## 8. Pending items done, and a full-site crawl (v3.42.0 to v3.43.0)
+
+**Results:**
+- `tests/qa/run-qa.js`: **353 / 353**.
+- `tests/plan`: **29 / 29**.
+- `tests/seo/html-hygiene-test.php`: **20 / 20**.
+- Full crawl of all **1,785** sitemap URLs: every page returned 200. After the fixes, a re-check of the 282 pages that failed shows no title, H1, schema, id or mixed-content failures.
+
+### Pending items completed
+- **Payment-plan consent:** a required "I agree" checkbox on plan checkout, covering hand-over on the final payment and forfeiture after 10 days unpaid.
+  - The time of acceptance and a fingerprint of the terms text are stored on the Stripe payment and on the plan record.
+  - Tested offline only, because staging has no Stripe keys, so the checkout form isn't shown there.
+- **Filter and sort on `/all-domains/`:** search by name and filter by extension, maximum length and maximum price. Sort by name, price or length.
+  - It works across all 207 listings through a cached `/wp-json/db/v1/domain-index`.
+  - Browser-tested on desktop and mobile.
+  - Without JavaScript the page is unchanged.
+- **WordPress security updates:** minor core releases install automatically again, even though `WP_AUTO_UPDATE_CORE` is false. Major versions remain manual.
+- **Revisions:** limited to 5 per post.
+
+### Bugs found by the crawl and fixed
+| Finding | Pages | Fix |
+|---|---|---|
+| **The admin login name was public**: "By admin" byline, `/author/admin/` links and `"author": "admin"` in the Article schema | 1,515 | Shown as "Domain Brothers". Author links go to `/about-us/`. `/author/*` returns 301 to `/news/`. oEmbed author replaced. |
+| **Titles containing `$1` broke the page**: "So $1,999 for 83.com" had its `$1` replaced with the page's `<main>` tag inside the breadcrumb, giving a second `<main id="main">` | 13 | Breadcrumb insertion uses a callback. The same latent bug in the homepage hero insert is fixed too. |
+| Affiliate tracking pixels and widgets in imported posts (Commission Junction, Amazon, Business Wire), plus links that disguised the affiliate URL as godaddy.com | ~15 | Trackers removed. Affiliate links marked `rel="sponsored nofollow"`. The disguising code is removed. |
+| Duplicate posts (`…-enom` and `…-enom-2`, same title and text) | 13 pairs | The copy's canonical points at the original. |
+| Different posts with the same `<title>`, because long titles were cut to 42 characters | 26 groups | Long titles keep their distinguishing end (a date or domain name), and the brand suffix is dropped when it won't fit. |
+| Internal links without a trailing slash, each a 301 (category links, `/privacy-policy`, `/3-character-domains`), and `/domains/skiClub-ca/` with capitals | every page | Rewritten to the real URL. |
+| `/about-us/` linked `/sell-your-domain/`, which returned 404 | 1 | 301 to `/contact-us/`. |
+| Domain-page descriptions over 160 characters for long names | 5 | A shorter template is used when the full one is too long. |
+| Pasted ids that clash with the theme (`main`, `content`) or repeat inside a post | 26 | Stripped, or de-duplicated. |
+| `http://` images in imported posts | 183 | Upgraded to `https://`. The browser already did this; images that fail to load are hidden. |
+
+### Left as is
+- **`http://` links to sites without working HTTPS:** about 590, mostly domainpulse.com (expired certificate) and the parked `.ca` names.
+- **One post with a 63-character description:** its excerpt is naturally short.
+- **Old affiliate links:** they are kept but marked sponsored. Deleting them is a content decision.
