@@ -30,7 +30,7 @@ analysis. A full run of 1,785 URLs takes about 90 minutes.
 
     BETA_BASIC=user:pass python3 tests/qa/site-crawl.py paths.txt out.json > out.txt
 
-## `seo/html-hygiene-test.php` — markup fixes, offline (20 checks)
+## `seo/html-hygiene-test.php` — markup fixes, offline (30 checks)
 New-tab rel, https upgrades, internal link normalisation, duplicate ids,
 commented-out headings, /payment-cancel/ assets, imported-news cleanup.
 
@@ -41,3 +41,9 @@ commented-out headings, /payment-cancel/ assets, imported-news cleanup.
 writes JSON. Needs `npm i axe-core@4.10.2` next to it.
 
     BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g):./node_modules node tests/a11y/run-axe.js out.json
+
+## `seo/title-test.php` — <title> generation, offline (10 checks)
+Post-title shortening (series stay distinct, long words, "and more" filler,
+empty titles) and escaping of the document-title filter.
+
+    php tests/seo/title-test.php

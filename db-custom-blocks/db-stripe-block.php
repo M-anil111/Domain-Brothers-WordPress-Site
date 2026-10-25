@@ -593,7 +593,14 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: email, terms_accepted: !!(agreeInp && agreeInp.checked) })
-			}).catch(function () { /* non-fatal — still attempt payment */ }).then(function () {
+			}).then(function (res) {
+				// Payment plans: the terms acceptance is recorded by this call,
+				// so it must succeed before the card is charged.
+				if (agreeInp && (!res || !res.ok)) { throw new Error('consent'); }
+			}, function () {
+				if (agreeInp) { throw new Error('consent'); }
+				/* full purchase: non-fatal, still attempt payment */
+			}).then(function () {
 				return stripe.confirmPayment({
 					elements: elements,
 					confirmParams: { return_url: window.DB_RETURN_URL },
@@ -607,8 +614,10 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 				} else {
 					showErr('Payment could not be confirmed. Please contact support.');
 				}
-			}).catch(function () {
-				showErr('An unexpected error occurred. Please refresh and try again.');
+			}).catch(function (err) {
+				showErr(err && err.message === 'consent'
+					? 'We could not record your agreement to the plan terms, so your card was not charged. Please try again.'
+					: 'An unexpected error occurred. Please refresh and try again.');
 			});
 		});
 	});

@@ -84,5 +84,27 @@ ok( false === strpos( $out, 'id="main"' ) && false === strpos( $out, 'yui_' ) &&
 $out = db_onpage_clean_imported_content( '<div id="article-text">a</div><div id="article-text">b</div>' );
 ok( 1 === substr_count( $out, 'id="article-text"' ), 'id repeated inside a post kept once' );
 
+// Regressions from the 2026-10-25 code review.
+$GLOBALS['db_onpage_ctx'] = array( 'singular' => false, 'title' => '', 'payment_cancel' => false );
+$bad = '<a rel=”nofollow” href="/x">a</a>' . "\xC3\x28" . '<p>rest of page</p>';
+$out = db_onpage_fix_h1_and_alt( $bad );
+ok( '' !== $out && false !== strpos( $out, 'rest of page' ), 'invalid UTF-8 byte does not blank the page' );
+$out = db_onpage_html_hygiene( '<script>var h=\'<a href="/news\'+s+\'">\';var g="<a href=\'/all-domains" + "/page/"+p;</script>' );
+ok( false === strpos( $out, '/news/' ) && false === strpos( $out, '/all-domains/' ), 'JS string concatenation not rewritten' );
+$out = db_onpage_html_hygiene( '<a target="_blank" rel=nofollow href="https://x.example/">a</a><a title="see rel=\'me\'" target="_blank" href="https://y.example/">b</a>' );
+ok( false !== strpos( $out, 'rel="nofollow noopener"' ) && 1 === substr_count( substr( $out, 0, strpos( $out, '</a>' ) ), 'rel=' ), 'unquoted rel kept, noopener added once' );
+ok( false !== strpos( $out, 'title="see rel=\'me\'"' ) && false !== strpos( $out, '<a rel="noopener" title=' ), 'rel text inside title attribute untouched, real rel added' );
+$out = db_onpage_html_hygiene( '<a href="/domains/?orderby=Price&Token=AbC">q</a><a href="/domains/Foo-CA/?ref=ABC">r</a>' );
+ok( false !== strpos( $out, 'Token=AbC' ) && false !== strpos( $out, '/domains/foo-ca/?ref=ABC' ), 'domain lower-casing stops at the query string' );
+$out = db_onpage_html_hygiene( '<img src="https://beta.domainbrothers.com/wp-content/themes/DomainFolio/assets/images/securityseal-green.png"><img src="https://beta.domainbrothers.com/wp-content/themes/DomainFolio/assets/images/Best-Price-icon.png">' );
+ok( false !== strpos( $out, 'securityseal-green.png"' ) && false !== strpos( $out, '<img alt="" ' ) && false !== strpos( $out, 'alt="Best price guarantee"' ), 'icon alt set even when the theme gave none' );
+$GLOBALS['db_onpage_ctx'] = array( 'singular' => true, 'title' => 'T', 'payment_cancel' => false );
+$out = db_onpage_fix_h1_and_alt( '<body><script>var s=\'<!--\';</script><main><h1>Real</h1></main></body>' );
+ok( 1 === substr_count( $out, '<h1' ), '"<!--" inside a script does not hide a real <h1>' );
+$out = db_onpage_clean_imported_content( '<iframe src="//ws-na.amazon-adsystem.com/w"><a href="https://amzn.to/x">fallback</a></iframe><p id="page">x</p><a href="#page">top</a><a rel=nofollow href="http://www.kqzyfj.com/c">d</a>' );
+ok( false === strpos( $out, 'iframe' ) && false === strpos( $out, 'fallback' ), 'tracker iframe removed with its fallback content' );
+ok( false !== strpos( $out, 'id="page"' ), 'id kept when the post links to it' );
+ok( 1 === substr_count( $out, 'rel=' ) - substr_count( $out, 'amzn' ) && false !== strpos( $out, 'rel="nofollow sponsored"' ), 'unquoted rel on affiliate link merged, not duplicated' );
+
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );

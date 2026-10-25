@@ -430,6 +430,9 @@ if ( ! function_exists( 'db_seo_post_title' ) ) {
 	 */
 	function db_seo_post_title( $title, $brand ) {
 		$title = trim( preg_replace( '/\s+/u', ' ', html_entity_decode( wp_strip_all_tags( (string) $title ), ENT_QUOTES, 'UTF-8' ) ) );
+		if ( '' === $title ) {
+			return trim( $brand, ' |' );
+		}
 		if ( mb_strlen( $title . $brand ) <= 65 ) {
 			return $title . $brand;
 		}
@@ -437,7 +440,8 @@ if ( ! function_exists( 'db_seo_post_title' ) ) {
 			return $title;
 		}
 		// "…Zoom.ca, Psychic.org, Teaklife.com & More": the filler says nothing.
-		$words = explode( ' ', preg_replace( '/[\s,]*(?:&|and)\s+more\s*$/iu', '', $title ) );
+		// Whitespace before "&"/"and" so "…Demand More" is left alone.
+		$words = explode( ' ', preg_replace( '/[\s,]+(?:&|and)\s+more\s*$/i', '', $title ) );
 		// A domain name ("gcp.com") is the word that tells series posts
 		// apart ("Sedo … sales and gcp.com led the way"); move it to the tail.
 		foreach ( array_reverse( array_keys( $words ), true ) as $i ) {
@@ -456,7 +460,12 @@ if ( ! function_exists( 'db_seo_post_title' ) ) {
 			}
 			$head = trim( $head . ' ' . $w );
 		}
-		return rtrim( $head, ' ,.;:-–&' ) . '…' . ( $keep ? ' ' . $tail : '' );
+		$head = rtrim( $head, ' ,.;:-–&' );
+		if ( '' === $head ) {
+			// One very long word: cut it rather than return a bare "…".
+			return mb_substr( $title, 0, 61 ) . '…';
+		}
+		return $head . '…' . ( $keep ? ' ' . $tail : '' );
 	}
 }
 
@@ -662,7 +671,10 @@ if ( DB_SEO_ACTIVE ) {
 
 	add_filter( 'pre_get_document_title', function ( $title ) {
 		$def = db_seo_current();
-		return ( $def && ! empty( $def['title'] ) ) ? $def['title'] : $title;
+		// pre_get_document_title short-circuits core's escaping, and post titles
+		// are entity-decoded above, so an imported title of
+		// "&lt;/title&gt;&lt;script&gt;…" would otherwise print as real markup.
+		return ( $def && ! empty( $def['title'] ) ) ? esc_html( $def['title'] ) : $title;
 	}, 20 );
 
 	// Fallback for themes that assemble the title from parts rather than

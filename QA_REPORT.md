@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.44.1 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.45.0 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -221,3 +221,35 @@ The production audit ran against `www.domainbrothers.com`, which doesn't have an
 - **Universal Analytics `UA-78917810-32` still loads** (`analytics.js`, `linkid.js`) through Cloudflare Zaraz. Google stopped processing Universal Analytics in July 2024, so it collects nothing. Remove it in the Cloudflare dashboard under Zaraz.
 - **Staging timings run with no page cache,** because of the staging password, and Lighthouse timings varied by up to 3× between runs on the shared host. Measure performance on production after deploy.
 - **Small leftovers:** the theme's `heading-order` (skipped heading levels) and `td-has-header` (sidebar tables without headers) are minor theme-template issues.
+
+## 10. Independent code review of sections 7–9, and fixes (v3.45.0)
+
+A separate reviewer, which hadn't seen my reasoning, audited the ~1,100 lines added in sections 7–9. It reported 10 defects and reproduced 8 of them with test harnesses. All 10 are fixed, and each reproduced case is now a regression test.
+
+| # | Defect | Severity | Fix |
+|---|---|---|---|
+| 1 | One invalid UTF-8 byte on a page containing `=”` blanked the whole page: the curly-quote regex used `/u`, which returns null on bad bytes, and later steps turned null into `''` | high | Byte pattern without `/u`. The output buffer and content filter now fall back to the original markup if any step returns nothing. |
+| 2 | Escaping hole in the page `<title>`: an entity-encoded post title such as `&lt;/title&gt;&lt;script&gt;…` printed as real markup. This predates my change but was kept by it. | high | `esc_html()` on the `pre_get_document_title` result. Existing entities are not double-encoded. |
+| 3 | The `-2` duplicate rule would also canonicalise distinct posts in a series that share a title | medium | The canonical now also requires identical post text. |
+| 4 | The link normaliser could rewrite inside JavaScript strings (`'<a href="/news'+s`), because its closing quote wasn't tied to the opening one | medium | Back-reference to the opening quote. |
+| 5 | Title shortener: a single long word became just "…", and "…Demand More" lost its last letters | low | Word boundaries, and a cut when no word fits. An empty title becomes "Domain Brothers". |
+| 6 | `rel` rewrite dropped an unquoted `rel=nofollow`, and edited `rel` text inside other attributes | low | Attribute-aware `db_onpage_set_rel()`, used for both noopener and sponsored links. |
+| 7 | Icon alt fix did nothing when the theme gave no alt, so the filename became the alt | low | Alt is inserted when missing. |
+| 8 | Domain lower-casing also lower-cased query strings | low | Stops at `?` and `#`. |
+| 9 | Plan terms consent was only best-effort: if the call that records it failed, the payment still went through | medium | For plans, recording the acceptance must succeed before the card is charged, with a clear error if it fails. |
+| 10 | A `<!--` inside a script made a real `<h1>` look commented out | low | Heading and comment checks run on a copy with script and style bodies blanked. |
+
+Also fixed:
+- Tracker iframes are removed together with their fallback content.
+- Ids that a link in the same post points to (`href="#page"`) are kept.
+
+### Theme leftovers, also fixed
+- **Homepage headings:** the feature and service card headings were `<h4>` directly under an `<h2>` (Lighthouse heading-order). They are now `<h3>`. Styling is identical, and the scripts that read them are updated.
+- **Sidebar "Browse by" tables:** marked `role="presentation"`, since they are layout tables (td-has-header).
+- **Domain-page copy:** "Other Domain you might be interested In:" is now "Other domains you might be interested in:".
+
+**Results:**
+- **Suites:** live 385/385; offline plan 29/29, markup 30/30, title 10/10.
+- **axe:** 0 violations across 28 scans.
+- **Lighthouse accessibility:** 100 on the home page and `/all-domains/`.
+- **Crawl re-check:** 282 pages, all 200, none blank or missing a title.

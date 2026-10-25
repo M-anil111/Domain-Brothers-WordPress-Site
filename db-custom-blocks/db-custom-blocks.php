@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.44.1
+ * Version:     3.45.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.44.1' );
+define( 'DB_BLOCKS_LOADED', '3.45.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1367,7 +1367,14 @@ if ( ! function_exists( 'db_aeo_canonical' ) ) {
 			$post = get_queried_object();
 			if ( $post instanceof WP_Post && preg_match( '/^(.+)-\d+$/', $post->post_name, $m ) ) {
 				$orig = get_page_by_path( $m[1], OBJECT, 'post' );
-				if ( $orig && 'publish' === $orig->post_status && $orig->ID !== $post->ID && 0 === strcasecmp( trim( $orig->post_title ), trim( $post->post_title ) ) ) {
+				// Same title AND same text: a recurring series ("Weekly Sales
+				// Report", "…-report-2") has distinct posts that share a title.
+				$norm = function ( $c ) {
+					return md5( preg_replace( '/\s+/', ' ', trim( wp_strip_all_tags( (string) $c ) ) ) );
+				};
+				if ( $orig && 'publish' === $orig->post_status && $orig->ID !== $post->ID
+					&& 0 === strcasecmp( trim( $orig->post_title ), trim( $post->post_title ) )
+					&& $norm( $orig->post_content ) === $norm( $post->post_content ) ) {
 					return esc_url( get_permalink( $orig ) );
 				}
 			}
@@ -2510,7 +2517,7 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .iconBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
-.db-ui-active .iconBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
+.db-ui-active .iconBox h4, .db-ui-active .iconBox h3 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
 .db-ui-active .iconBox p { color: var(--db-gray-700); margin: 0; }
 .db-ui-active .iconBox:nth-child(1) .db-icon-badge { background: linear-gradient(160deg, #b45309 0%, #d97706 100%); }
 .db-ui-active .iconBox:nth-child(2) .db-icon-badge { background: linear-gradient(160deg, #1d4fd7 0%, #2563eb 100%); }
@@ -2554,7 +2561,7 @@ body.single-domain.db-ui-active { padding-top: 0 !important; }
 	transition: transform var(--db-dur-base) var(--db-ease), box-shadow var(--db-dur-base) var(--db-ease);
 }
 .db-ui-active .serviceBox:hover { transform: translateY(-3px); box-shadow: var(--db-shadow-md); }
-.db-ui-active .serviceBox h4 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
+.db-ui-active .serviceBox h4, .db-ui-active .serviceBox h3 { margin: var(--db-sp-2) 0 var(--db-sp-2); font-size: 18px; }
 .db-ui-active .serviceBox p { color: var(--db-gray-700); margin: 0; }
 .db-ui-active .serviceBox .db-service-learnmore {
 	display: inline-block; margin-top: var(--db-sp-4); font-size: 14px; font-weight: 600;
@@ -3587,7 +3594,7 @@ add_action( 'wp_footer', function () {
 			   Matched by heading text / link target rather than any class,
 			   since none of these share one. */
 			document.querySelectorAll('.serviceBox, .shadowBox').forEach(function (card) {
-				var h = card.querySelector('h4.wp-block-heading, h5.wp-block-heading');
+				var h = card.querySelector('h3.wp-block-heading, h4.wp-block-heading, h5.wp-block-heading');
 				if (h && /^sell domains$/i.test((h.textContent || '').trim())) {
 					var col = card.closest('.wp-block-column') || card;
 					col.style.display = 'none';
@@ -3639,7 +3646,7 @@ add_action( 'wp_footer', function () {
 				'additional services': 'other-services',
 			};
 			document.querySelectorAll('.serviceBox').forEach(function (box) {
-				var h = box.querySelector('h4.wp-block-heading');
+				var h = box.querySelector('h3.wp-block-heading, h4.wp-block-heading');
 				if (!h || box.querySelector('.db-service-learnmore')) { return; }
 				var slug = SERVICE_PAGE_LINKS[(h.textContent || '').trim().toLowerCase()];
 				if (!slug) { return; }

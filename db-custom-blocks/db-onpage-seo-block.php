@@ -147,6 +147,49 @@ add_action( 'template_redirect', function () {
 
 /* ─── 3b. Link/markup hygiene from the 2026-10-24 production HTTP audit ────── */
 
+if ( ! function_exists( 'db_onpage_mask_scripts' ) ) {
+	/**
+	 * Copy of $html with every <script>/<style> body blanked to spaces of the
+	 * same length, so offsets still line up but a "<!--" or "<h1" inside a JS
+	 * string can't be mistaken for markup.
+	 */
+	function db_onpage_mask_scripts( $html ) {
+		$masked = preg_replace_callback( '#(<(script|style)\b[^>]*>)(.*?)(</\2>)#is', function ( $m ) {
+			return $m[1] . str_repeat( ' ', strlen( $m[3] ) ) . $m[4];
+		}, $html );
+		return is_string( $masked ) ? $masked : $html;
+	}
+}
+
+if ( ! function_exists( 'db_onpage_set_rel' ) ) {
+	/**
+	 * Adds rel tokens to one <a …> tag. Attributes are read as whole
+	 * name=value units, so rel text inside another attribute (title="rel='me'")
+	 * is not mistaken for rel, and an unquoted rel=nofollow is kept.
+	 *
+	 * @param string   $tag    The opening <a> tag.
+	 * @param string[] $tokens Tokens that must be present.
+	 */
+	function db_onpage_set_rel( $tag, array $tokens ) {
+		if ( preg_match_all( '/\s([a-zA-Z_:][-a-zA-Z0-9_:.]*)(?:\s*=\s*("[^"]*"|\'[^\']*\'|[^\s"\'>]+))?/', $tag, $attrs, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) {
+			foreach ( $attrs as $a ) {
+				if ( 0 !== strcasecmp( $a[1][0], 'rel' ) ) {
+					continue;
+				}
+				$value = isset( $a[2] ) ? trim( $a[2][0], '"\'' ) : '';
+				$have  = preg_split( '/\s+/', strtolower( $value ), -1, PREG_SPLIT_NO_EMPTY );
+				$add   = array_diff( $tokens, $have );
+				if ( ! $add ) {
+					return $tag;
+				}
+				$new = ' rel="' . esc_attr( trim( $value . ' ' . implode( ' ', $add ) ) ) . '"';
+				return substr_replace( $tag, $new, $a[0][1], strlen( $a[0][0] ) );
+			}
+		}
+		return substr_replace( $tag, ' rel="' . implode( ' ', $tokens ) . '"', 2, 0 );
+	}
+}
+
 if ( ! function_exists( 'db_onpage_in_comment' ) ) {
 	/** True when byte offset $pos sits inside an HTML comment. */
 	function db_onpage_in_comment( $html, $pos ) {
@@ -197,18 +240,13 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 		// Pasted content on /epp-guidelines/ uses curly quotes (rel=”nofollow”),
 		// which browsers read as part of the value, not as a quoted attribute.
 		if ( false !== strpos( $html, '=”' ) ) {
-			$html = preg_replace( '/(<a\b[^>]*\s(?:rel|target))=”([^”"<>]*)”/u', '$1="$2"', $html );
+			// Byte pattern, no /u: with /u one invalid UTF-8 byte anywhere on the
+			// page makes preg_replace return null, which blanked the page.
+			$html = preg_replace( '/(<a\b[^>]*\s(?:rel|target))=”([^"<>]*?)”/', '$1="$2"', $html );
 		}
 		if ( false !== stripos( $html, 'target=' ) ) {
-			$html = preg_replace_callback( '/<a\b[^>]*\btarget\s*=\s*["\']_blank["\'][^>]*>/i', function ( $m ) {
-				$tag = $m[0];
-				if ( preg_match( '/\srel\s*=\s*(["\'])([^"\']*)\1/i', $tag, $r ) ) {
-					if ( false !== stripos( $r[2], 'noopener' ) ) {
-						return $tag;
-					}
-					return str_replace( $r[0], ' rel=' . $r[1] . trim( $r[2] . ' noopener' ) . $r[1], $tag );
-				}
-				return substr_replace( $tag, ' rel="noopener"', 2, 0 );
+			$html = preg_replace_callback( '/<a\b[^>]*\btarget\s*=\s*["\']?_blank\b[^>]*>/i', function ( $m ) {
+				return db_onpage_set_rel( $m[0], array( 'noopener' ) );
 			}, $html );
 		}
 
@@ -223,20 +261,24 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 		// each cost a 301; domain links with capitals ("/domains/skiClub-ca/")
 		// point at a non-canonical URL. Rewrite both to the real permalink.
 		$host = preg_quote( (string) wp_parse_url( home_url(), PHP_URL_HOST ), '#' );
-		$html = preg_replace_callback( '~(\shref=["\'])(https://' . $host . ')?(/[A-Za-z0-9/_-]*[A-Za-z0-9_-])(["\'#?])~', function ( $m ) {
-			if ( '' === $m[2] && 0 === strpos( $m[3], '//' ) ) {
+		// The value must end at the same quote that opened it (or at a ?/#
+		// inside it), so a JS string such as '<a href="/news'+s+'">' is not
+		// read as an href that ends at the "'".
+		$html = preg_replace_callback( '~(\shref=(["\']))(https://' . $host . ')?(/[A-Za-z0-9/_-]*[A-Za-z0-9_-])(?=\2|[#?])~', function ( $m ) {
+			if ( '' === $m[3] && 0 === strpos( $m[4], '//' ) ) {
 				return $m[0];
 			}
-			$path = $m[3];
+			$path = $m[4];
 			if ( 0 === stripos( $path, '/domains/' ) ) {
 				$path = strtolower( $path );
 			}
 			if ( preg_match( '#^/(?:wp-|cdn-cgi/|okf/)#', $path ) ) {
 				return $m[0];
 			}
-			return $m[1] . $m[2] . $path . '/' . $m[4];
+			return $m[1] . $m[3] . $path . '/';
 		}, $html );
-		$html = preg_replace_callback( '#(\shref=["\'](?:https://' . $host . ')?/domains/)([^"\'/]*[A-Z][^"\'/]*)#', function ( $m ) {
+		// Path only: stop at ?/# so case-sensitive query values survive.
+		$html = preg_replace_callback( '~(\shref=["\'](?:https://' . $host . ')?/domains/)([^"\'/?#]*[A-Z][^"\'/?#]*)~', function ( $m ) {
 			return $m[1] . strtolower( $m[2] );
 		}, $html );
 
@@ -310,7 +352,11 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 				if ( $icon[0] && false === stripos( $tag, ' width=' ) ) {
 					$tag = substr_replace( $tag, ' width="' . $icon[0] . '" height="' . $icon[1] . '"', 4, 0 );
 				}
-				$tag = preg_replace( '/\salt="[^"]*"/', ' alt="' . $icon[2] . '"', $tag );
+				if ( preg_match( '/\salt\s*=/i', $tag ) ) {
+					$tag = preg_replace( '/\salt\s*=\s*("[^"]*"|\'[^\']*\')/i', ' alt="' . $icon[2] . '"', $tag );
+				} else {
+					$tag = substr_replace( $tag, ' alt="' . $icon[2] . '"', 4, 0 );
+				}
 				return $tag;
 			}, $html );
 		}
@@ -324,6 +370,17 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 				$html = substr_replace( $html, $pre . "\n", $pos, 0 );
 			}
 		}
+
+		// Homepage feature/service cards use <h4> straight under the section
+		// <h2> (Lighthouse heading-order); they are third-level headings.
+		if ( ! empty( $GLOBALS['db_onpage_ctx']['front'] ) && false !== strpos( $html, '<h4 class="wp-block-heading">' ) ) {
+			$html = preg_replace( '#<h4 class="wp-block-heading">([^<]*(?:<(?!/h4)[^<]*)*)</h4>#', '<h3 class="wp-block-heading">$1</h3>', $html );
+		}
+		// The sidebar "Browse by" grids are layout tables (links only, no
+		// header row), announced as data tables (Lighthouse td-has-header).
+		$html = str_replace( '<table class="table table-bordered sidebar-table">', '<table class="table table-bordered sidebar-table" role="presentation">', $html );
+		// Theme copy on every domain page.
+		$html = str_replace( 'Other Domain you might be interested In:', 'Other domains you might be interested in:', $html );
 
 		if ( false !== strpos( $html, '.comwp-content/' ) ) {
 			$html = str_replace( '.comwp-content/', '.com/wp-content/', $html );
@@ -390,17 +447,24 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		// Not the front page: its hero <h1> is added by a later output buffer,
 		// so at this point the page looked h1-less and "Featured Top Domains"
 		// was promoted too — two <h1>s on the homepage (tests/qa SEO-home-h1).
-		$html = db_onpage_html_hygiene( $html );
+		$orig = $html;
+		$h    = db_onpage_html_hygiene( $html );
+		if ( is_string( $h ) && '' !== $h ) {
+			$html = $h;
+		}
 		// Context captured at template_redirect: templates such as /sold/
 		// call query_posts(), so is_singular() is false by flush time.
 		$ctx = isset( $GLOBALS['db_onpage_ctx'] ) ? $GLOBALS['db_onpage_ctx'] : array( 'singular' => false, 'title' => '' );
-		if ( $ctx['singular'] && ! db_onpage_has_live_h1( $html ) ) {
+		// Heading/comment checks run on a copy with script bodies blanked,
+		// so "<!--" or "<h1" inside a JS string is not read as markup.
+		$mask = db_onpage_mask_scripts( $html );
+		if ( $ctx['singular'] && ! db_onpage_has_live_h1( $mask ) ) {
 			$done = false;
 			// Skip commented-out copies: /sold/ keeps its old heading as
 			// "<!--<h2 class="page-title">…-->" just above the live one.
 			$offset = 0;
-			while ( ! $done && preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $html, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
-				if ( db_onpage_in_comment( $html, $m[0][1] ) ) {
+			while ( ! $done && preg_match( '#<h2((?:\s+[a-z-]+="[^"]*")*\s+class="[^"]*\bpage-title\b[^"]*"(?:\s+[a-z-]+="[^"]*")*)>([^<]*(?:<(?!/h2)[^<]*)*)</h2>#i', $mask, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
+				if ( db_onpage_in_comment( $mask, $m[0][1] ) ) {
 					$offset = $m[0][1] + strlen( $m[0][0] );
 					continue;
 				}
@@ -410,11 +474,11 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 			if ( ! $done ) {
 				// Templates with no <main> (e.g. /paypal-ipn/) get it straight
 				// after <body>.
-				$pos = stripos( $html, '<main' );
+				$pos = stripos( $mask, '<main' );
 				if ( false === $pos ) {
-					$pos = stripos( $html, '<body' );
+					$pos = stripos( $mask, '<body' );
 				}
-				$end = false === $pos ? false : strpos( $html, '>', $pos );
+				$end = false === $pos ? false : strpos( $mask, '>', $pos );
 				if ( false !== $end ) {
 					$h1   = '<h1 class="screen-reader-text">' . esc_html( $ctx['title'] ) . '</h1>';
 					$html = substr_replace( $html, $h1, $end + 1, 0 );
@@ -435,7 +499,9 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 				return substr_replace( $tag, ' alt="' . esc_attr( $alt ) . '"', 4, 0 );
 			}, $html );
 		}
-		return $html;
+		// Never send an empty page: if a rewrite failed (PCRE errors return
+		// null), fall back to the original markup.
+		return ( is_string( $html ) && '' !== $html ) ? $html : $orig;
 	}
 }
 
@@ -448,6 +514,7 @@ add_action( 'template_redirect', function () {
 		'singular'       => is_singular() && ! is_front_page(),
 		'title'          => is_singular() ? get_the_title( get_queried_object_id() ) : '',
 		'payment_cancel' => is_page( 'payment-cancel' ),
+		'front'          => is_front_page(),
 	);
 	ob_start( 'db_onpage_fix_h1_and_alt' );
 }, 26 );
@@ -474,16 +541,13 @@ if ( ! function_exists( 'db_onpage_clean_imported_content' ) ) {
 			return $content;
 		}
 		$trackers = '(?:[a-z0-9-]+\.)*(?:ftjcfx\.com|kqzyfj\.com|tkqlhce\.com|jdoqocy\.com|dpbolvw\.net|anrdoezrs\.net|lduhtrp\.net|tqlkg\.com|awltovhc\.com|yceml\.net|emjcd\.com|amazon-adsystem\.com|cts\.businesswire\.com)';
-		$content  = preg_replace( '#<(?:img|iframe)\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>(?:\s*</iframe>)?#i', '', $content );
+		$orig     = $content;
+		$content  = preg_replace( '#<iframe\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>.*?</iframe>#is', '', $content );
+		$content  = preg_replace( '#<img\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>#i', '', $content );
 		$content  = preg_replace( '#<script\b[^>]*\ssrc=["\'](?:https?:)?//' . $trackers . '[/"\'][^>]*>\s*</script>#i', '', $content );
 
 		$content = preg_replace_callback( '#<a\b[^>]*\shref=["\']https?://(?:[a-z0-9-]+\.)*(?:kqzyfj\.com|tkqlhce\.com|jdoqocy\.com|dpbolvw\.net|anrdoezrs\.net|amzn\.to|amazon\.com/[^"\']*tag=)[^>]*>#i', function ( $m ) {
-			$tag = $m[0];
-			if ( preg_match( '/\srel=(["\'])([^"\']*)\1/i', $tag, $r ) ) {
-				$rel = trim( $r[2] . ( false === stripos( $r[2], 'sponsored' ) ? ' sponsored' : '' ) . ( false === stripos( $r[2], 'nofollow' ) ? ' nofollow' : '' ) );
-				return str_replace( $r[0], ' rel=' . $r[1] . $rel . $r[1], $tag );
-			}
-			return substr_replace( $tag, ' rel="sponsored nofollow"', 2, 0 );
+			return db_onpage_set_rel( $m[0], array( 'sponsored', 'nofollow' ) );
 		}, $content );
 
 		// CJ link code fakes the browser status bar (onmouseover="window.status=
@@ -493,7 +557,10 @@ if ( ! function_exists( 'db_onpage_clean_imported_content' ) ) {
 		}
 		$content = preg_replace( '#(<img\b[^>]*\ssrc=["\'])http://#i', '$1https://', $content );
 
-		$content = preg_replace( '#\sid=["\'](?:main|content|primary|secondary|page|masthead|colophon|yui_[^"\']*|m_\d[^"\']*)["\']#i', '', $content );
+		// Keep an id that the post itself links to (href="#page").
+		$content = preg_replace_callback( '#\sid=["\'](main|content|primary|secondary|page|masthead|colophon|yui_[^"\']*|m_\d[^"\']*)["\']#i', function ( $m ) use ( $content ) {
+			return ( false !== strpos( $content, 'href="#' . $m[1] . '"' ) || false !== strpos( $content, "href='#" . $m[1] . "'" ) ) ? $m[0] : '';
+		}, $content );
 		// Any other id repeated inside one post (e.g. two id="article-text"
 		// from a pasted source page): keep the first, drop the repeats.
 		$seen    = array();
@@ -504,7 +571,7 @@ if ( ! function_exists( 'db_onpage_clean_imported_content' ) ) {
 			$seen[ $m[2] ] = true;
 			return $m[0];
 		}, $content );
-		return $content;
+		return ( is_string( $content ) && '' !== $content ) ? $content : $orig;
 	}
 }
 
