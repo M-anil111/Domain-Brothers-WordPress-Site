@@ -448,51 +448,52 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 <title>Checkout — <?php echo esc_html( $domain ); ?> — Domain Brothers</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a2d4f 55%,#0d2140 100%);min-height:100vh;color:#fff;display:flex;flex-direction:column}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f6f8fb;min-height:100vh;color:#0a1628;display:flex;flex-direction:column;line-height:1.5}
 /* Header */
-.db-stripe-header{padding:16px 32px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center}
-.db-stripe-logo{font-size:1.3rem;font-weight:700;letter-spacing:-.5px;color:#fff;text-decoration:none}
-.db-stripe-logo span{color:#4f9cf9}
+.db-stripe-header{padding:14px 32px;border-bottom:1px solid #e5eaf1;background:#fff;display:flex;align-items:center}
+.db-stripe-logo{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}
+.db-stripe-logo img{display:block;height:40px;width:auto}
 /* Layout */
-.db-stripe-main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 64px}
-.db-stripe-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:40px;width:100%;max-width:520px;backdrop-filter:blur(10px)}
+.db-stripe-main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 64px}
+.db-stripe-card{background:#fff;border:1px solid #e5eaf1;border-radius:18px;padding:36px;width:100%;max-width:520px;box-shadow:0 10px 30px rgba(10,22,40,.08)}
 /* Order summary */
-.db-stripe-summary{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;margin-bottom:24px}
-.db-stripe-domain{font-size:1.55rem;font-weight:700;color:#4f9cf9;word-break:break-all;margin-bottom:6px}
-.db-stripe-price{font-size:2.5rem;font-weight:800;line-height:1.1}
-.db-stripe-onetime{font-size:.8rem;color:rgba(255,255,255,.55);margin-top:8px}
+.db-stripe-summary{background:#f6f8fb;border:1px solid #e5eaf1;border-radius:12px;padding:18px 20px;margin-bottom:24px}
+.db-stripe-domain{font-size:1.55rem;font-weight:700;color:#2e7d14;word-break:break-all;margin-bottom:6px}
+.db-stripe-price{font-size:2.5rem;font-weight:800;line-height:1.1;color:#0a1628}
+.db-stripe-onetime{font-size:.8rem;color:#4b5563;margin-top:8px}
 /* Plan info */
-.db-stripe-plan-box{background:rgba(79,156,249,.1);border:1px solid rgba(79,156,249,.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.93rem;color:rgba(255,255,255,.85);line-height:1.5}
-.db-stripe-plan-box strong{color:#4f9cf9;font-size:1.15rem}
-.db-stripe-badge{display:inline-block;background:#16a34a;color:#fff;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
+.db-stripe-plan-box{background:#eaf5e3;border:1px solid #c9e4b8;border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.93rem;color:#1f2937;line-height:1.5}
+.db-stripe-plan-box strong{color:#1f5c0d;font-size:1.15rem}
+.db-stripe-badge{display:inline-block;background:#1f5c0d;color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
 /* Email field */
-.db-stripe-label{display:block;font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
-.db-stripe-input{width:100%;padding:13px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:.95rem;margin-bottom:18px;transition:border-color .15s,box-shadow .15s}
-.db-stripe-input::placeholder{color:rgba(255,255,255,.35)}
-.db-stripe-input:focus{outline:none;border-color:#4f9cf9;box-shadow:0 0 0 3px rgba(79,156,249,.25)}
+.db-stripe-label{display:block;font-size:.75rem;font-weight:700;color:#2e7d14;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.db-stripe-input{width:100%;height:52px;padding:0 14px;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0a1628;font-size:1rem;margin-bottom:18px;transition:border-color .15s,box-shadow .15s}
+.db-stripe-input::placeholder{color:#6b7280}
+.db-stripe-input:focus{outline:none;border-color:#2e7d14;box-shadow:0 0 0 4px rgba(46,125,20,.18)}
 /* Payment element */
-.db-stripe-pe-wrap{background:#fff;border-radius:12px;padding:20px 18px;margin-bottom:18px;min-height:80px}
+.db-stripe-pe-wrap{background:#fff;border:1px solid #e5eaf1;border-radius:12px;padding:18px;margin-bottom:18px;min-height:80px}
 /* Button */
-.db-stripe-btn{width:100%;padding:17px 20px;background:#2563eb;color:#fff;border:none;border-radius:12px;font-size:1.02rem;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
+.db-stripe-btn{width:100%;min-height:54px;padding:15px 20px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:1.02rem;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
 .db-stripe-btn svg{width:15px;height:15px;fill:currentColor;flex-shrink:0}
-.db-stripe-btn:hover:not(:disabled){background:#1d4ed8}
+.db-stripe-btn:hover:not(:disabled){background:#1b2a44}
+.db-stripe-btn:focus-visible{outline:3px solid #2e7d14;outline-offset:2px}
 .db-stripe-btn:active:not(:disabled){transform:scale(.98)}
-.db-stripe-btn:disabled{background:#475569;cursor:not-allowed}
+.db-stripe-btn:disabled{background:#64748b;cursor:not-allowed}
 /* Error */
-.db-stripe-err{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:11px 15px;color:#fca5a5;font-size:.88rem;margin-bottom:14px;display:none}
+.db-stripe-err{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:11px 15px;color:#991b1b;font-size:.88rem;margin-bottom:14px;display:none}
 /* Trust row */
 .db-stripe-trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
-.db-stripe-trust-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:rgba(255,255,255,.55)}
-.db-stripe-trust-item svg{width:13px;height:13px;fill:rgba(255,255,255,.45);flex-shrink:0}
+.db-stripe-trust-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#4b5563}
+.db-stripe-trust-item svg{width:13px;height:13px;fill:#4b5563;flex-shrink:0}
 /* Notice */
-.db-stripe-notice{text-align:center;padding:24px 0;color:rgba(255,255,255,.6);font-size:.95rem;line-height:1.6}
-.db-stripe-notice a{color:#4f9cf9}
-@media(max-width:540px){.db-stripe-card{padding:26px 18px}.db-stripe-domain{font-size:1.25rem}.db-stripe-price{font-size:2rem}}
+.db-stripe-notice{text-align:center;padding:24px 0;color:#374151;font-size:.95rem;line-height:1.6}
+.db-stripe-notice a{color:#1f5c0d;text-decoration:underline}
+@media(max-width:540px){.db-stripe-header{padding:10px 16px}.db-stripe-card{padding:24px 16px}.db-stripe-domain{font-size:1.25rem}.db-stripe-price{font-size:2rem}}
 </style>
 </head>
 <body>
 <header class="db-stripe-header">
-	<a class="db-stripe-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>">Domain<span>Brothers</span></a>
+	<a class="db-stripe-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' ) ); ?>" alt="Domain Brothers" width="148" height="40"></a>
 </header>
 <main class="db-stripe-main">
 	<div class="db-stripe-card">
@@ -584,7 +585,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 	}
 	waitStripe(function () {
 		var stripe   = Stripe(window.DB_PUB_KEY);
-		var elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '6px' } } });
+		var elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '10px', colorPrimary: '#2e7d14', colorText: '#0a1628', colorDanger: '#991b1b' } } });
 		var payEl    = elements.create('payment');
 		payEl.mount('#db-stripe-payment-element');
 

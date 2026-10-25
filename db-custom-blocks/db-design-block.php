@@ -346,6 +346,33 @@ body.db-ui-active .container { width: auto !important; max-width: var(--r-max); 
 /* "Present your best offer" sits beside the floated badge and was forced to 100% width, sticking out 20px. */
 body.db-ui-active .offer_text { width: auto !important; max-width: none; overflow: hidden; box-sizing: border-box; }
 body.db-ui-active .offer_text_info { max-width: 100%; box-sizing: border-box; margin-right: 0; }
+/* Pages built from blocks (Contact): <main> is the card, so give it inner padding. */
+body.db-ui-active.page:not(.home):not(.check-out) #main.site-main:not(:has(.entry-wrapper)) { padding: clamp(20px, 4vw, 44px) !important; }
+/* Floated columns inside page content (Offer): the card must wrap them. */
+body.db-ui-active .entry-content { display: flow-root; }
+/* News post card: inner padding. */
+body.db-ui-active.single-post article.post .entry-wrapper { padding: clamp(20px, 4vw, 44px); }
+body.db-ui-active.single-post article.post .entry-content img { max-width: 100%; height: auto; border-radius: 12px; }
+/* Contact column: breathing room between icon rows. */
+body.db-ui-active main .wp-block-column p { margin: 0 0 16px; }
+/* Sidebar chips fill the card. */
+body.db-ui-active table.sidebar-table, body.db-ui-active table.sidebar-table tbody { display: block !important; width: 100% !important; border: 0; }
+body.db-ui-active table.sidebar-table tr { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important; gap: 8px; margin-bottom: 8px; }
+body.db-ui-active .sidebar-table td { display: block; width: auto; border: 0; padding: 0; }
+body.db-ui-active .wpcf7 input[type="submit"] { margin-left: 0; }
+body.db-ui-active aside#secondary.sidebar { float: none !important; width: min(920px, 100%) !important; max-width: 100%; margin: 24px auto 0 !important; padding: 0 !important; }
+body.db-ui-active aside#secondary .widget, body.db-ui-active aside#secondary > section { margin-bottom: 16px; }
+body.db-ui-active .sidebar-table td a { display: flex; align-items: center; width: 100%; }
+/* Footer social badges: glyph centred in its circle. */
+body.db-ui-active .site-footer .footer-sociallinks a { padding: 0 !important; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+body.db-ui-active .site-footer .db-icon-badge { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.1); color: #fff; }
+body.db-ui-active .site-footer .db-icon-badge svg { width: 18px; height: 18px; display: block; }
+/* 404: centred, footer kept at the bottom of short pages. */
+body.db-ui-active #page { min-height: 100vh; display: flex; flex-direction: column; }
+body.db-ui-active #page > #content { flex: 1 0 auto; }
+body.db-ui-active .error-404 { text-align: center; padding: clamp(32px, 8vw, 72px) 0; }
+body.db-ui-active .error-404 h1, body.db-ui-active .error-404 .btn { margin-left: auto; margin-right: auto; }
+body.db-ui-active .error-404 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; }
 body.db-ui-active #page.check-out #main.site-main { background: none !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; max-width: 760px; margin: 0 auto !important; }
 body.db-ui-active #page.check-out #primary_info, body.db-ui-active #page.check-out .billing_cnt { float: none !important; width: auto !important; max-width: none !important; }
 @media (max-width: 600px) {
@@ -398,3 +425,14 @@ add_action( 'wp_enqueue_scripts', function () {
 		}, 99 );
 	}
 }, 100 );
+
+// An empty text widget still renders as an empty white card in the sidebar.
+add_filter( 'widget_display_callback', function ( $instance, $widget ) {
+	if ( $widget instanceof WP_Widget_Text && is_array( $instance )
+		&& '' === trim( wp_strip_all_tags( (string) ( $instance['text'] ?? '' ) ) )
+		&& '' === trim( (string) ( $instance['title'] ?? '' ) )
+		&& false === stripos( (string) ( $instance['text'] ?? '' ), '<img' ) ) {
+		return false;
+	}
+	return $instance;
+}, 10, 2 );
