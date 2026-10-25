@@ -20,13 +20,13 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'DB_DOMAIN_INDEX_KEY' ) ) {
-	define( 'DB_DOMAIN_INDEX_KEY', 'db_domain_index_v1' );
+	define( 'DB_DOMAIN_INDEX_KEY', 'db_domain_index_v2' );
 }
 
 if ( ! function_exists( 'db_domain_index' ) ) {
 	/**
-	 * Published domain listings as compact rows: n (name), u (URL),
-	 * p (price, 0 = make an offer), c (categories as [name, url]).
+	 * Published domain listings as compact rows: id, n (name), u (URL),
+	 * p (price, 0 = make an offer), c (categories as [name, url]), k (keywords).
 	 * Built with direct, bounded queries and cached for an hour.
 	 *
 	 * @return array<int, array<string, mixed>>
@@ -67,10 +67,13 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 				}
 			}
 			$rows[] = array(
-				'n' => $name,
-				'u' => get_permalink( $id ),
-				'p' => $price,
-				'c' => $cats,
+				'id' => (int) $id,
+				'n'  => $name,
+				'u'  => get_permalink( $id ),
+				'p'  => $price,
+				'c'  => $cats,
+				// Keywords the owner entered (used by the recommendations).
+				'k'  => strtolower( trim( (string) get_post_meta( $id, 'domain_keyword', true ) ) ),
 			);
 		}
 		set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS );

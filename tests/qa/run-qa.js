@@ -289,6 +289,76 @@ const PAGES = [
 		await page.screenshot({ path: path.join(OUT, `filter-${vp}.png`) });
 		await ctx.close();
 	}
+
+	// Exit offer + recommendations on a domain page.
+	{
+		const trigger = (page) => page.evaluate(() => document.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, clientY: -2, relatedTarget: null })));
+		const ctx = await browser.newContext({ ...CREDS, viewport: { width: 1366, height: 900 } });
+		const page = await ctx.newPage();
+		const errs = [];
+		page.on('pageerror', (e) => errs.push(e.message));
+		await page.goto(`${BASE}/domains/fatality-ca/`, { waitUntil: 'load' });
+		await trigger(page);
+		await page.waitForTimeout(300);
+		record('FN-30', 'Exit offer', 'does not appear within the first 6 seconds', await page.$eval('#db-exit', (e) => e.hidden));
+		const recs = await page.$$eval('.db-dd .db-rec-card .db-rec-name', (n) => n.map((x) => x.textContent));
+		record('FN-31', 'Recommendations', 'domain page lists 6 recommended names, not itself', recs.length === 6 && !recs.includes('fatality.ca'), recs.join(','));
+		await page.goto(`${BASE}/domains/mississaugacontractors-ca/`, { waitUntil: 'load' });
+		const sim = await page.$$eval('.db-dd .db-rec-card', (c) => c.map((x) => x.querySelector('.db-rec-name').textContent + ' ' + x.querySelector('.db-rec-why').textContent));
+		record('FN-32', 'Recommendations', 'a similar name outranks a same-category-only name', /mississauga.*Similar name/.test(sim.slice(0, 3).join('|')), sim.slice(0, 3).join(' | '));
+
+		await page.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
+		await trigger(page);
+		await page.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
+		const opened = await page.$eval('#db-exit', (e) => !e.hidden);
+		record('FN-33', 'Exit offer', 'opens when the pointer leaves through the top', opened);
+		const info = await page.evaluate(() => ({
+			focusIn: !!document.activeElement.closest('.db-exit-card'),
+			role: document.querySelector('.db-exit-card').getAttribute('role'),
+			modal: document.querySelector('.db-exit-card').getAttribute('aria-modal'),
+			buy: (document.querySelector('.db-exit-btn--solid') || {}).href || '',
+			plan: (document.querySelector('[data-db-exit-evt=plan]') || {}).href || '',
+			recs: document.querySelectorAll('.db-exit-recs .db-rec-card').length,
+			bodyLocked: document.body.classList.contains('db-exit-open'),
+		}));
+		record('FN-34', 'Exit offer', 'dialog semantics, focus inside, page scroll locked', info.focusIn && info.role === 'dialog' && info.modal === 'true' && info.bodyLocked, JSON.stringify(info));
+		record('FN-35', 'Exit offer', 'buy and plan links carry this domain; 3 recommendations', /buy-now\/\?d=/.test(info.buy) && /payment-plan-setup\/\?d=/.test(info.plan) && info.recs === 3, `${info.buy} ${info.plan} recs=${info.recs}`);
+		await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+		const trapped = await page.evaluate(() => !!document.activeElement.closest('.db-exit-card'));
+		record('FN-36', 'Exit offer', 'Tab stays inside the dialog', trapped);
+		await page.keyboard.press('Escape');
+		record('FN-37', 'Exit offer', 'Escape closes it', await page.$eval('#db-exit', (e) => e.hidden));
+		await trigger(page);
+		await page.waitForTimeout(200);
+		record('FN-38', 'Exit offer', 'does not reopen on the same page view', await page.$eval('#db-exit', (e) => e.hidden));
+
+		await page.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
+		await trigger(page);
+		await page.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
+		await page.click('.db-exit-go');
+		const bad = await page.$eval('#db-exit-err', (e) => !e.hidden);
+		record('FN-39', 'Exit offer', 'empty offer shows an error, stays open', bad && !(await page.$eval('#db-exit', (e) => e.hidden)));
+		await page.fill('#db-exit-amount', '$2,400');
+		await page.click('.db-exit-go');
+		await page.waitForTimeout(600);
+		const hand = await page.evaluate(() => ({ field: document.getElementById('number-99').value, popup: (document.getElementById('offer_popup') || {}).value, modal: !!document.querySelector('.modal.in'), exitHidden: document.getElementById('db-exit').hidden }));
+		record('FN-40', 'Exit offer', 'amount is handed to the page offer form and its confirmation opens', hand.field === '2400' && hand.popup === '2400' && hand.modal && hand.exitHidden, JSON.stringify(hand));
+		record('FN-41', 'Exit offer', 'no JS errors', errs.length === 0, errs.join('|'));
+		await ctx.close();
+
+		for (const dev of [['phone', { width: 390, height: 844 }], ['fold-cover', { width: 344, height: 882 }], ['fold-open', { width: 673, height: 841 }], ['landscape', { width: 844, height: 390 }]]) {
+			const c = await browser.newContext({ ...CREDS, viewport: dev[1], isMobile: true, hasTouch: true });
+			const pg = await c.newPage();
+			await pg.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
+			await trigger(pg);
+			await pg.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
+			await pg.waitForTimeout(500); // let the entrance animation finish before measuring
+			const g = await pg.evaluate(() => { const r = document.querySelector('.db-exit-card').getBoundingClientRect(); const go = document.querySelector('.db-exit-go').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight, goH: go.height, scrollW: document.documentElement.scrollWidth }; });
+			record(`FN-42-${dev[0]}`, 'Exit offer', `fits the screen with 44px+ buttons (${dev[0]} ${dev[1].width}x${dev[1].height})`, g.l >= -1 && g.r <= g.w + 1 && g.t >= -1 && g.b <= g.h + 1 && g.goH >= 44 && g.scrollW <= g.w + 1, JSON.stringify(g));
+			await pg.screenshot({ path: path.join(OUT, `exit-${dev[0]}.png`) });
+			await c.close();
+		}
+	}
 	await browser.close();
 
 	/* ─── Report ────────────────────────────────────────────────────────── */

@@ -39,6 +39,25 @@ if ( ! function_exists( 'db_dd_monthly' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_dd_checkout_urls' ) ) {
+	/**
+	 * Buy-now and payment-plan links for a listing (the same d/p base64
+	 * parameters the checkout reads; the amount charged is always looked up
+	 * server-side, so the p value only selects the listing).
+	 *
+	 * @return array{buy:string,plan:string}
+	 */
+	function db_dd_checkout_urls( $name, $price ) {
+		$d64 = base64_encode( (string) $name );
+		$p64 = base64_encode( (string) (int) round( $price ) );
+		$q   = array( 'd' => rawurlencode( $d64 ), 'p' => rawurlencode( $p64 ) );
+		return array(
+			'buy'  => add_query_arg( $q, home_url( '/buy-now/' ) ),
+			'plan' => add_query_arg( $q, home_url( '/payment-plan-setup/' ) ),
+		);
+	}
+}
+
 if ( ! function_exists( 'db_dd_facts' ) ) {
 	function db_dd_facts( $post ) {
 		$name  = strtolower( get_the_title( $post ) );
@@ -76,7 +95,7 @@ if ( ! function_exists( 'db_dd_intro' ) ) {
 if ( ! function_exists( 'db_dd_html' ) ) {
 	function db_dd_html( $post ) {
 		$f   = db_dd_facts( $post );
-		$d64 = base64_encode( get_the_title( $post ) );
+		$name_for_url = get_the_title( $post );
 		$out = '<section class="db-dd" aria-label="Domain details">';
 		$out .= '<h2>' . esc_html( $f['name'] ) . ' &mdash; details &amp; pricing</h2>';
 		$out .= db_dd_intro( $f );
@@ -101,9 +120,9 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 		$out .= '</tbody></table>';
 
 		if ( $f['price'] > 0 ) {
-			$p64   = base64_encode( (string) (int) round( $f['price'] ) );
-			$buy   = add_query_arg( array( 'd' => rawurlencode( $d64 ), 'p' => rawurlencode( $p64 ) ), home_url( '/buy-now/' ) );
-			$plan  = add_query_arg( array( 'd' => rawurlencode( $d64 ), 'p' => rawurlencode( $p64 ) ), home_url( '/payment-plan-setup/' ) );
+			$urls  = db_dd_checkout_urls( $name_for_url, $f['price'] );
+			$buy   = $urls['buy'];
+			$plan  = $urls['plan'];
 			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" href="' . esc_url( $buy ) . '">Buy now &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
 				. '<a class="db-dd-btn" href="' . esc_url( $plan ) . '">Pay monthly from ' . esc_html( db_dd_monthly( $f['price'] ) ) . '/mo</a></div>';
 		}
@@ -117,23 +136,15 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			$out .= '<p class="db-dd-terms">' . wp_kses( db_plan_terms_html(), array( 'strong' => array(), 'em' => array() ) ) . '</p>';
 		}
 
-		// Related domains: same category, excluding this one.
-		$cat_ids = wp_get_post_terms( $post->ID, 'domain_category', array( 'fields' => 'ids' ) );
-		if ( $cat_ids && ! is_wp_error( $cat_ids ) ) {
-			$q = new WP_Query( array(
-				'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => 6, 'post__not_in' => array( $post->ID ),
-				'orderby' => 'rand', 'no_found_rows' => true,
-				'tax_query' => array( array( 'taxonomy' => 'domain_category', 'field' => 'term_id', 'terms' => $cat_ids ) ),
-			) );
-			if ( $q->have_posts() ) {
-				$out .= '<h3>Similar domains</h3><ul class="db-dd-related">';
-				foreach ( $q->posts as $r ) {
-					$rp   = db_dd_price( $r->ID );
-					$out .= '<li><a href="' . esc_url( get_permalink( $r ) ) . '">' . esc_html( get_the_title( $r ) ) . '</a>' . ( $rp ? ' <span>$' . esc_html( number_format( $rp, 0 ) ) . '</span>' : '' ) . '</li>';
-				}
-				$out .= '</ul>';
+		// Recommended domains: ranked by shared category and name similarity
+		// (db-recommend-block.php), not a random draw.
+		if ( function_exists( 'db_rec_for' ) ) {
+			$recs = db_rec_for( $post->ID, 6 );
+			if ( $recs ) {
+				$out .= '<h3>Recommended domains</h3>'
+					. '<p class="db-dd-rec-intro">Chosen for this name: shared category and similar wording first.</p>'
+					. db_rec_cards_html( $recs );
 			}
-			wp_reset_postdata();
 		}
 
 		$out .= '</section>';
@@ -142,7 +153,7 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			. '.db-dd-cta{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}.db-dd-btn{display:inline-block;padding:13px 22px;border-radius:10px;border:2px solid #0a1628;color:#0a1628 !important;font-weight:700;text-decoration:none !important}'
 			. '.db-dd-btn--primary{background:#0a1628;color:#fff !important}.db-dd-steps{padding-left:22px;list-style:decimal !important}.db-dd-steps li{list-style:decimal !important}.db-dd-steps li{margin:6px 0}'
 			. '.db-dd-terms{font-size:13px;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;display:block !important}'
-			. '.db-dd-related{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}.db-dd-related li{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px}.db-dd-related span{color:#6b7280}</style>';
+			. '.db-dd-rec-intro{font-size:14px;color:#4b5563;margin:0 0 12px}' . db_rec_css() . '</style>';
 		return $out;
 	}
 }
