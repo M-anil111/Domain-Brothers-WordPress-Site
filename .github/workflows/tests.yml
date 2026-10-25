@@ -1,0 +1,52 @@
+name: Plugin tests
+
+# Offline tests only: no network, no WordPress install, no credentials.
+# The live staging suite (tests/qa/run-qa.js) needs the staging password and
+# is run by hand; see tests/README.md.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.2 = production today; 8.3/8.4 = upgrade path.
+        php: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: Lint plugin
+        run: |
+          set -e
+          for f in db-custom-blocks/*.php tests/*/*.php; do php -l "$f" > /dev/null; done
+          echo "lint ok"
+      - name: Payment plans and Stripe (offline)
+        run: php tests/plan/plan-lifecycle-test.php
+      - name: Page markup hygiene
+        run: php tests/seo/html-hygiene-test.php
+      - name: Titles
+        run: php tests/seo/title-test.php
+      - name: Public forms security
+        run: php tests/security/forms-test.php
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check the browser test suites
+        run: |
+          node --check tests/qa/run-qa.js
+          node --check tests/a11y/run-axe.js

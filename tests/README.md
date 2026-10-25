@@ -62,3 +62,9 @@ return), offer confirmation emails can't carry attacker text, and per-recipient
 / per-IP send limits.
 
     php tests/security/forms-test.php
+
+## Continuous integration
+`.github/workflows/tests.yml` runs on every push and pull request: PHP lint of
+the plugin and tests, then the four offline suites (plan, hygiene, titles,
+forms) on PHP 8.2, 8.3 and 8.4, plus a syntax check of the browser suites. It
+needs no secrets and makes no network calls to the site.
