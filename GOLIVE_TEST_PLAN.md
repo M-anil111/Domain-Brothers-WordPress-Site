@@ -1,5 +1,7 @@
 # Domain Brothers — Go-Live Test Plan
 
+> **Superseded (2026-10-25):** this document dates from July 2026 (plugin v3.4.0). For go-live, use `GO_LIVE_CHECKLIST.md`; for what changed since, see `QA_REPORT.md`. Payment plans now carry interest on 9 months (5%) and 12 months (10%).
+
 > **Run this top to bottom before switching to live Stripe keys.**
 > Each section states what to do, what to look for, and what "pass" means.
 

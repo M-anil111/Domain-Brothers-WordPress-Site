@@ -46,12 +46,12 @@ if ( ! defined( 'DB_PLAN_SUPPORT_EMAIL' ) ) define( 'DB_PLAN_SUPPORT_EMAIL', 'sa
 
 if ( ! function_exists( 'db_plan_get' ) ) {
 	function db_plan_get( $domain ) {
-		return (array) get_option( 'db_stripe_plan_' . md5( $domain ), array() );
+		return (array) get_option( db_stripe_store_key( 'plan', (string) $domain ), array() );
 	}
 }
 if ( ! function_exists( 'db_plan_save' ) ) {
 	function db_plan_save( $domain, array $plan ) {
-		update_option( 'db_stripe_plan_' . md5( $domain ), $plan, false );
+		update_option( db_stripe_store_key( 'plan', (string) $domain ), $plan, false );
 	}
 }
 if ( ! function_exists( 'db_plan_paid_so_far' ) ) {
@@ -89,11 +89,21 @@ if ( ! function_exists( 'db_plan_terms_html' ) ) {
 /* ─── Email building blocks ─────────────────────────────────────────────────── */
 
 if ( ! function_exists( 'db_plan_update_card_url' ) ) {
-	/** Signed link that opens Stripe's hosted page for updating the card on file. */
-	function db_plan_update_card_url( $domain ) {
-		$sig = hash_hmac( 'sha256', 'card|' . strtolower( $domain ), wp_salt( 'auth' ) );
+	/**
+	 * Signed link that opens Stripe's hosted page for updating the card on
+	 * file. The signature covers the domain, the plan's Stripe customer and
+	 * an expiry, so an old or forwarded email can't open the portal for a
+	 * later buyer of the same domain, and links stop working after 21 days.
+	 */
+	function db_plan_card_sig( $domain, $customer, $exp ) {
+		return hash_hmac( 'sha256', 'card|' . db_stripe_norm( (string) $domain ) . '|' . (string) $customer . '|' . (int) $exp, wp_salt( 'auth' ) );
+	}
+	function db_plan_update_card_url( $domain, array $plan = array() ) {
+		$domain = db_stripe_norm( (string) $domain );
+		$plan   = $plan ? $plan : db_plan_get( $domain );
+		$exp    = time() + 21 * DAY_IN_SECONDS;
 		return add_query_arg(
-			array( 'db_update_card' => 1, 'd' => rawurlencode( $domain ), 't' => $sig ),
+			array( 'db_update_card' => 1, 'd' => rawurlencode( $domain ), 'e' => $exp, 't' => db_plan_card_sig( $domain, $plan['customer_id'] ?? '', $exp ) ),
 			home_url( '/' )
 		);
 	}
@@ -165,7 +175,7 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 		$fmt      = function ( $ts ) { return wp_date( 'F j, Y', (int) $ts ); };
 		$grace    = (int) DB_PLAN_GRACE_DAYS;
 		$grace_end = isset( $x['grace_end_ts'] ) ? $fmt( $x['grace_end_ts'] ) : '';
-		$card_url = db_plan_update_card_url( $domain );
+		$card_url = db_plan_update_card_url( $domain, $plan );
 		$inst     = sprintf( 'Payment %d of %d', $n, $months );
 
 		$base = array(
@@ -289,10 +299,17 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 /* ─── State transitions ─────────────────────────────────────────────────────── */
 
 if ( ! function_exists( 'db_plan_on_installment_failed' ) ) {
-	/** Called from the payment_intent.payment_failed webhook for plan installments. */
-	function db_plan_on_installment_failed( $domain ) {
+	/**
+	 * A plan installment declined (webhook, or the charge response itself).
+	 * $installment, when given, must be the one the plan is waiting for, so a
+	 * stale failure for an earlier installment can't mark a current plan past due.
+	 */
+	function db_plan_on_installment_failed( $domain, $installment = 0 ) {
 		$plan = db_plan_get( $domain );
 		if ( empty( $plan ) || ! in_array( $plan['status'] ?? '', array( 'active', 'past_due' ), true ) ) {
+			return;
+		}
+		if ( $installment && (int) $installment !== (int) ( $plan['next_installment'] ?? 0 ) ) {
 			return;
 		}
 		if ( 'past_due' === $plan['status'] ) {
@@ -337,7 +354,15 @@ if ( ! function_exists( 'db_plan_on_recovered' ) ) {
 
 if ( ! function_exists( 'db_plan_default' ) ) {
 	function db_plan_default( array $plan ) {
-		$domain           = (string) $plan['domain'];
+		$domain = (string) $plan['domain'];
+		// Re-read: a payment may have cleared since the caller loaded the plan.
+		$fresh = db_plan_get( $domain );
+		if ( ! empty( $fresh ) ) {
+			$plan = $fresh;
+		}
+		if ( 'past_due' !== ( $plan['status'] ?? '' ) ) {
+			return;
+		}
 		$plan['status']   = 'defaulted';
 		$plan['defaulted_ts'] = time();
 		db_plan_save( $domain, $plan );
@@ -366,13 +391,17 @@ if ( ! function_exists( 'db_plan_run_daily' ) ) {
 			return;
 		}
 		$now = time();
-		foreach ( (array) get_option( 'db_stripe_active_plans', array() ) as $plan_key ) {
-			$plan   = (array) get_option( 'db_stripe_plan_' . $plan_key, array() );
+		db_plan_purge_webhook_claims();
+		foreach ( (array) get_option( db_stripe_plan_index_option(), array() ) as $domain ) {
+			$domain = (string) $domain;
+			$plan   = db_plan_get( $domain );
 			$status = (string) ( $plan['status'] ?? '' );
 			if ( empty( $plan ) || ! in_array( $status, array( 'active', 'past_due' ), true ) ) {
 				continue;
 			}
-			$domain = (string) $plan['domain'];
+			if ( ( $plan['mode'] ?? db_stripe_mode() ) !== db_stripe_mode() ) {
+				continue;
+			}
 
 			if ( 'active' === $status ) {
 				$due = (int) ( $plan['next_charge_ts'] ?? 0 );
@@ -381,8 +410,10 @@ if ( ! function_exists( 'db_plan_run_daily' ) ) {
 				if ( $due > $now && $due - $now <= DB_PLAN_REMIND_DAYS * DAY_IN_SECONDS && (int) ( $plan['reminded_for'] ?? 0 ) < $n ) {
 					list( $subj, $html ) = db_plan_message( 'reminder', $plan, array( 'due_ts' => $due ) );
 					db_plan_send( (string) ( $plan['customer_email'] ?? '' ), $subj, $html );
-					$plan['reminded_for'] = $n;
-					db_plan_save( $domain, $plan );
+					$latest                 = db_plan_get( $domain );
+					$latest['reminded_for'] = $n;
+					db_plan_save( $domain, $latest );
+					$plan = $latest;
 				}
 				// Due: charge (de-bounced so a slow webhook can't cause a double charge).
 				if ( $due <= $now && $now - (int) ( $plan['last_attempt_ts'] ?? 0 ) > 20 * HOUR_IN_SECONDS ) {
@@ -410,16 +441,28 @@ if ( ! function_exists( 'db_plan_run_daily' ) ) {
 			foreach ( $schedule as $d_mark => $msg_key ) {
 				$step++;
 				if ( $day >= $d_mark && $stage < $step ) {
-					// Retry the charge first; if the card works the success
-					// webhook flips the plan back to active and sends "recovered".
+					// Retry the charge first; if the card works the plan goes
+					// back to active (and "recovered" is sent) and no notice
+					// goes out.
 					if ( $now - (int) ( $plan['last_attempt_ts'] ?? 0 ) > 20 * HOUR_IN_SECONDS ) {
-						db_stripe_charge_next_installment( $plan );
-						$plan = db_plan_get( $domain );
+						if ( 'succeeded' === db_stripe_charge_next_installment( $plan ) ) {
+							break;
+						}
+					}
+					$plan = db_plan_get( $domain );
+					if ( 'past_due' !== ( $plan['status'] ?? '' ) ) {
+						break;
 					}
 					list( $subj, $html ) = db_plan_message( $msg_key, $plan, array( 'grace_end_ts' => $grace_end, 'days_left' => max( 1, DB_PLAN_GRACE_DAYS - $day ) ) );
 					db_plan_send( (string) ( $plan['customer_email'] ?? '' ), $subj, $html );
-					$plan['notice_stage'] = $step;
-					db_plan_save( $domain, $plan );
+					// Save only the notice stage onto the latest record: a success
+					// webhook can land while the email is being sent, and writing
+					// back the copy read before it re-opened the paid installment.
+					$latest = db_plan_get( $domain );
+					if ( 'past_due' === ( $latest['status'] ?? '' ) ) {
+						$latest['notice_stage'] = $step;
+						db_plan_save( $domain, $latest );
+					}
 					break; // one notice per run
 				}
 			}
@@ -429,6 +472,21 @@ if ( ! function_exists( 'db_plan_run_daily' ) ) {
 
 add_action( 'db_stripe_charge_due_installments', 'db_plan_run_daily' );
 
+if ( ! function_exists( 'db_plan_purge_webhook_claims' ) ) {
+	/** Webhook idempotency claims (db_stripe_evt_*) older than 30 days. */
+	function db_plan_purge_webhook_claims() {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) ) {
+			return;
+		}
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s AND CAST(option_value AS UNSIGNED) < %d",
+			$wpdb->esc_like( 'db_stripe_evt_' ) . '%',
+			time() - 30 * DAY_IN_SECONDS
+		) );
+	}
+}
+
 /* ─── "Update my card": signed link -> Stripe Billing Portal ────────────────── */
 
 add_action( 'template_redirect', function () {
@@ -436,10 +494,14 @@ add_action( 'template_redirect', function () {
 		return;
 	}
 	nocache_headers();
-	$domain = sanitize_text_field( rawurldecode( wp_unslash( $_GET['d'] ) ) );
+	$domain = db_stripe_norm( sanitize_text_field( rawurldecode( wp_unslash( $_GET['d'] ) ) ) );
 	$sig    = sanitize_text_field( wp_unslash( $_GET['t'] ) );
-	$want   = hash_hmac( 'sha256', 'card|' . strtolower( $domain ), wp_salt( 'auth' ) );
-	$plan   = hash_equals( $want, $sig ) ? db_plan_get( $domain ) : array();
+	$exp    = isset( $_GET['e'] ) ? (int) $_GET['e'] : 0;
+	$plan   = db_plan_get( $domain );
+	// Signed for this plan's current customer, and not expired.
+	if ( $exp < time() || empty( $plan['customer_id'] ) || ! hash_equals( db_plan_card_sig( $domain, $plan['customer_id'], $exp ), $sig ) ) {
+		$plan = array();
+	}
 	$fail   = function () {
 		wp_die(
 			'We could not open the card update page automatically. Please email <a href="mailto:' . esc_attr( DB_PLAN_SUPPORT_EMAIL ) . '">' . esc_html( DB_PLAN_SUPPORT_EMAIL ) . '</a> and we will help right away.',

@@ -24,14 +24,18 @@ const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const USER = process.env.BETA_USER;
 const PASS = process.env.BETA_PASS;
 const OUT = process.argv[2] || path.join(process.cwd(), 'qa-report');
-if (!USER || !PASS) {
+// Staging is behind Basic Auth and must be noindex; production (QA_BASE set
+// to the live site) has no password and must be indexable.
+const STAGING = /\/\/beta\./i.test(BASE);
+if (STAGING && (!USER || !PASS)) {
 	console.error('Set BETA_USER and BETA_PASS (staging Basic Auth).');
 	process.exit(2);
 }
 fs.mkdirSync(OUT, { recursive: true });
 
 const b64 = (s) => Buffer.from(String(s)).toString('base64');
-const AUTH = 'Basic ' + b64(USER + ':' + PASS);
+const AUTH_HEADERS = USER ? { Authorization: 'Basic ' + b64(USER + ':' + PASS) } : {};
+const CREDS = USER ? { httpCredentials: { username: USER, password: PASS } } : {};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const results = [];
@@ -42,7 +46,7 @@ function record(id, area, name, pass, detail) {
 
 async function http(p, opts = {}) {
 	const t0 = Date.now();
-	const res = await fetch(BASE + p, { redirect: opts.redirect || 'manual', headers: { Authorization: AUTH, 'User-Agent': 'DB-QA/1.0', ...(opts.headers || {}) } });
+	const res = await fetch(BASE + p, { redirect: opts.redirect || 'manual', headers: { ...AUTH_HEADERS, 'User-Agent': 'DB-QA/1.0', ...(opts.headers || {}) } });
 	const body = opts.body === false ? '' : await res.text();
 	return { status: res.status, headers: res.headers, body, ms: Date.now() - t0 };
 }
@@ -88,7 +92,12 @@ const PAGES = [
 		const types = [];
 		for (const m of ld) { try { const j = JSON.parse(m[1]); types.push(j['@type']); } catch (e) { ldOk = false; types.push('INVALID'); } }
 		record(`SEO-${name}-jsonld`, 'SEO', `${p} JSON-LD parses`, ldOk, types.join(','));
-		record(`SEO-${name}-noindex`, 'SEO', `${p} staging is noindex`, /noindex/.test(r.headers.get('x-robots-tag') || '') && /noindex/.test(h));
+		const noindex = /noindex/.test(r.headers.get('x-robots-tag') || '') || /<meta[^>]+name=["']robots["'][^>]+noindex/i.test(h);
+		if (STAGING) {
+			record(`SEO-${name}-noindex`, 'SEO', `${p} staging is noindex`, /noindex/.test(r.headers.get('x-robots-tag') || '') && /noindex/.test(h));
+		} else {
+			record(`SEO-${name}-indexable`, 'SEO', `${p} production is indexable`, !noindex);
+		}
 		const imgs = h.match(/<img\b[^>]*>/gi) || [];
 		const noAlt = imgs.filter((t) => !/\salt=/.test(t)).length;
 		record(`A11Y-${name}-alt`, 'A11y', `${p} every <img> has alt`, noAlt === 0, `${noAlt}/${imgs.length} missing`);
@@ -115,7 +124,7 @@ const PAGES = [
 		record('SEC-x-powered-by', 'Security', 'X-Powered-By not exposed', !r.headers.get('x-powered-by'), r.headers.get('x-powered-by') || '');
 		const users = await http('/wp-json/wp/v2/users');
 		record('SEC-user-enum', 'Security', 'REST user enumeration blocked', users.status !== 200 || !/"slug"/.test(users.body), users.status);
-		const xr = await fetch(BASE + '/xmlrpc.php', { method: 'POST', headers: { Authorization: AUTH, 'Content-Type': 'text/xml' }, body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName></methodCall>' });
+		const xr = await fetch(BASE + '/xmlrpc.php', { method: 'POST', headers: { ...AUTH_HEADERS, 'Content-Type': 'text/xml' }, body: '<?xml version="1.0"?><methodCall><methodName>system.listMethods</methodName></methodCall>' });
 		const xrBody = await xr.text();
 		record('SEC-xmlrpc', 'Security', 'XML-RPC refuses system.listMethods', !/<methodResponse>/.test(xrBody), xr.status);
 		const author = await http('/?author=1', { body: false });
@@ -174,7 +183,7 @@ const PAGES = [
 	const browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
 	const perf = [];
 	for (const [vp, viewport] of [['desktop', { width: 1366, height: 900 }], ['mobile', { width: 390, height: 844 }]]) {
-		const ctx = await browser.newContext({ httpCredentials: { username: USER, password: PASS }, viewport, isMobile: vp === 'mobile' });
+		const ctx = await browser.newContext({ ...CREDS, viewport, isMobile: vp === 'mobile' });
 		for (const [name, p] of PAGES) {
 			const page = await ctx.newPage();
 			const errors = []; const bad = []; let bytes = 0; let reqs = 0;
@@ -217,7 +226,7 @@ const PAGES = [
 
 	// Plan chooser: every term updates the summary and schedule correctly.
 	{
-		const ctx = await browser.newContext({ httpCredentials: { username: USER, password: PASS }, viewport: { width: 1366, height: 900 } });
+		const ctx = await browser.newContext({ ...CREDS, viewport: { width: 1366, height: 900 } });
 		const page = await ctx.newPage();
 		await page.goto(`${BASE}/payment-plan-setup/?d=${encodeURIComponent(D)}&p=${encodeURIComponent(P)}`, { waitUntil: 'load' });
 		await page.waitForTimeout(1000);
@@ -245,7 +254,7 @@ const PAGES = [
 	// /all-domains/ filter + sort bar works across every listing, and Clear restores the page.
 	for (const vp of ['desktop', 'mobile']) {
 		const viewport = vp === 'desktop' ? { width: 1366, height: 900 } : { width: 390, height: 844 };
-		const ctx = await browser.newContext({ httpCredentials: { username: USER, password: PASS }, viewport, isMobile: vp === 'mobile' });
+		const ctx = await browser.newContext({ ...CREDS, viewport, isMobile: vp === 'mobile' });
 		const page = await ctx.newPage();
 		const errs = [];
 		page.on('pageerror', (e) => errs.push(e.message));

@@ -1,5 +1,7 @@
 # Domain Brothers Beta — Next Steps
 
+> **Superseded (2026-10-25):** this document dates from July 2026 (plugin v3.4.0). For go-live, use `GO_LIVE_CHECKLIST.md`; for what changed since, see `QA_REPORT.md`. Payment plans now carry interest on 9 months (5%) and 12 months (10%).
+
 > ## ⏰ Read this first (status as of the latest session)
 >
 > **This environment cannot reach `beta.domainbrothers.com`** — the network

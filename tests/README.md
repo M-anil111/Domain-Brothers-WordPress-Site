@@ -15,11 +15,15 @@ Runs sequentially (the shared host returns 508 under parallel load). Writes
 sits behind HTTP Basic Auth, and LiteSpeed does not cache authenticated
 requests, so timings here are always uncached (worst case).
 
-## `plan/plan-lifecycle-test.php` — payment-plan logic, offline (26 checks)
+## `plan/plan-lifecycle-test.php` — payment-plan logic, offline (50 checks)
 Loads the real Stripe and plan-lifecycle code against in-memory stubs and drives
 a plan through start, reminder, monthly charge, decline, day 3/6/9 notices,
 recovery, termination, a second buyer on the same domain, the "already sold"
-guard, and installment sums for every term.
+guard, and installment sums for every term. Section 8 covers the 2026-10-25
+payment review: late/resent payments, second buyers, foreign payments, the
+cron/webhook race, synchronous charge results, API errors, the charge lock and
+idempotency key, the update-card link, receipt-email checks, webhook signatures,
+and test/live record separation.
 
     php tests/plan/plan-lifecycle-test.php
 
@@ -47,3 +51,7 @@ Post-title shortening (series stay distinct, long words, "and more" filler,
 empty titles) and escaping of the document-title filter.
 
     php tests/seo/title-test.php
+
+Staging vs production: `tests/qa/run-qa.js` targets staging by default. Set
+`QA_BASE=https://www.domainbrothers.com` to run it against production (no
+password; checks pages are indexable instead of noindex). It only reads pages.

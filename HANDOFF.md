@@ -1,5 +1,7 @@
 # Domain Brothers Beta — Master Handoff
 
+> **Superseded (2026-10-25):** this document dates from July 2026 (plugin v3.4.0). For go-live, use `GO_LIVE_CHECKLIST.md`; for what changed since, see `QA_REPORT.md`. Payment plans now carry interest on 9 months (5%) and 12 months (10%).
+
 **Purpose:** Single source of truth so another agent or developer can continue this project with full context.
 
 Owner: Jay Mehta (jay@jaymehta.co).

@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.45.0 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.46.0 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -253,3 +253,39 @@ Also fixed:
 - **axe:** 0 violations across 28 scans.
 - **Lighthouse accessibility:** 100 on the home page and `/all-domains/`.
 - **Crawl re-check:** 282 pages, all 200, none blank or missing a title.
+
+## 11. Independent review of the payment code (v3.46.0)
+
+A second reviewer, which hadn't seen my reasoning, audited the Stripe checkout and webhooks (`db-stripe-block.php`) and the plan lifecycle (`db-plan-lifecycle-block.php`). It reported 10 defects and reproduced 7. I found an 11th while fixing them. All are fixed, and the offline plan test now covers each one: **50/50**, up from 29.
+
+No real payment has run through this code yet, because staging has no Stripe keys. These were found before go-live, not after.
+
+| # | Defect | Fix |
+|---|---|---|
+| 1 | **A late or resent success event reopened a completed or terminated plan, which led to a repeat charge.** For example, a resend of installment 2 after the plan completed set it back to "active", and the next cron run charged again. | A plan payment is applied only for the installment the plan expects, from the plan's own customer. Anything else is not applied, and the admin gets "PAYMENT NEEDS REVIEW (possible refund)". Processed PaymentIntent ids are stored with the plan, replacing a 14-day transient. |
+| 2 | **Retry succeeded during the notice email → overwritten.** The daily job saved a copy of the plan it had read before sending, wiping a success that arrived meanwhile, so the paid installment was charged again on day 6. | The job re-reads the plan after the charge and again after the email. Only the notice stage is written, onto the latest record. A success reported by Stripe straight away skips the notice entirely. |
+| 3 | **Second buyer for the same domain:** both payments were accepted, and the second plan was merged into the first (wrong payment history, customer replaced). | Availability is re-checked when a payment arrives. A full sale or a first installment for a sold or reserved domain is not applied, and the admin is alerted to refund it. |
+| 4 | **Any payment on the Stripe account was treated as a domain sale,** for example a Payment Link: "Your domain is secured!" email, "DOMAIN SOLD" alert, and a sold flag for an empty name. | Events without this checkout's `domain` and `type` metadata are ignored. |
+| 5 | **"Update my card" link** was signed over the domain only and never expired. An old or forwarded email could open the card portal for a later buyer of the same domain. | Signed over the domain, the plan's Stripe customer and an expiry (21 days). It fails for any other customer. |
+| 6 | **Case bypass:** a plan stored as `Fatality.ca` didn't block a checkout for `FATALITY.CA`. | One lower-case spelling everywhere: metadata, record keys, index and sold flag. |
+| 7 | **Overlapping cron runs could each charge the same installment;** no idempotency key. | Atomic lock per plan, `Idempotency-Key` on every off-session charge, and the attempt recorded *before* the request. |
+| 8 | **Stripe API errors** (bad key, deleted customer, mode switch) silently pushed the installment a month out. Test-mode purchases also marked real listings sold. | Errors leave the due date in place, retry the next day and alert the admin ("PLAN CHARGE ERROR"). A success or decline in the charge response is applied immediately, without waiting for the webhook. Test and live mode keep separate plan, index and sold records. |
+| 9 | **Webhook marked handled before processing,** so a failure mid-way was never retried. | Atomic `add_option` claim, released (HTTP 500 → Stripe retries) if processing throws. Old claims are purged after 30 days. |
+| 10 | **Receipt email could be changed after payment,** redirecting plan reminders and card links. | Only allowed while the payment is still open. |
+| 11 | **Receipt-email endpoint accepted forged secrets** (found while fixing #10). It only extracted the PaymentIntent id from `pi_…_secret_…` and never compared the secret, so anyone with a PaymentIntent id could set its receipt email. | The full client_secret must match Stripe's (`hash_equals`). |
+
+Also fixed:
+- **Webhook signatures:** any of several `v1` signatures is now accepted, so verification keeps working while the signing secret is rotated.
+- **Stale declines:** a failure event for an earlier installment no longer marks a current plan past due.
+- **Termination re-check:** termination re-reads the plan first, so a payment that just cleared is not terminated.
+
+Verified sound by the reviewer and left as is:
+- **Webhook security:** HMAC verification with a 5-minute window, and only the active mode's secret accepted.
+- **Amounts:** charges always use the server-side listing price, and the installment maths sum exactly.
+- **Admin routes:** they check capability and nonce.
+- **Emails and portal:** emails are escaped, and the billing portal's return URL is fixed.
+
+**Results:**
+- **Offline:** plan 50/50, markup 30/30, titles 10/10.
+- **Live suite:** 385/385.
+- **Checkout check:** checkout for `FATALITY.CA` normalises to `fatality.ca`.

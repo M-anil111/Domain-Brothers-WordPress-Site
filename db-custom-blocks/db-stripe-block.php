@@ -14,6 +14,35 @@ if ( ! function_exists( 'db_stripe_is_test' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_stripe_mode' ) ) {
+	function db_stripe_mode() : string {
+		return db_stripe_is_test() ? 'test' : 'live';
+	}
+}
+
+if ( ! function_exists( 'db_stripe_norm' ) ) {
+	/**
+	 * The one spelling of a domain used for metadata, record keys and the sold
+	 * flag. Mixed case ("Fatality.ca" vs "FATALITY.CA") used to get past the
+	 * "already sold / reserved" check.
+	 */
+	function db_stripe_norm( string $domain ) : string {
+		return strtolower( trim( $domain ) );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_store_key' ) ) {
+	/**
+	 * Option name for a domain's 'plan' or 'sold' record. Test mode has its
+	 * own records, so a test-card purchase never reserves or sells a real
+	 * listing.
+	 */
+	function db_stripe_store_key( string $kind, string $domain ) : string {
+		$prefix = 'test' === db_stripe_mode() ? 'db_stripe_test_' : 'db_stripe_';
+		return $prefix . $kind . '_' . md5( db_stripe_norm( $domain ) );
+	}
+}
+
 if ( ! function_exists( 'db_stripe_keys' ) ) {
 	/**
 	 * Returns the active-mode Stripe credentials.
@@ -236,6 +265,7 @@ add_action( 'template_redirect', static function () {
 	if ( null === $price ) {
 		wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
 	}
+	$domain = db_stripe_norm( $domain );
 
 	// 'months', not 'm' — m is a reserved WordPress query var (date archive
 	// month); a request carrying it turns the main query into an empty date
@@ -692,6 +722,23 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 			return new WP_REST_Response( [ 'error' => 'Payment system not configured.' ], 500 );
 		}
 
+		// The regex above only extracts the PaymentIntent id; anyone who knew
+		// an id could pass "pi_X_secret_anything". Check the full secret
+		// against Stripe's, and only while the payment is still open — after
+		// payment, changing receipt_email would redirect the buyer's plan
+		// reminders and card-update links to someone else.
+		$current = wp_remote_get( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), [
+			'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'] ],
+			'timeout' => 15,
+		] );
+		$pi = is_wp_error( $current ) ? [] : (array) json_decode( (string) wp_remote_retrieve_body( $current ), true );
+		if ( empty( $pi['client_secret'] ) || ! hash_equals( (string) $pi['client_secret'], $client_secret ) || empty( $pi['metadata']['domain'] ) ) {
+			return new WP_REST_Response( [ 'error' => 'Invalid parameters.' ], 400 );
+		}
+		if ( ! in_array( (string) ( $pi['status'] ?? '' ), [ 'requires_payment_method', 'requires_confirmation', 'requires_action' ], true ) ) {
+			return new WP_REST_Response( [ 'error' => 'This payment can no longer be changed.' ], 409 );
+		}
+
 		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), [
 			'headers'   => [
 				'Authorization' => 'Bearer ' . $keys['sec'],
@@ -757,15 +804,17 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 		$obj        = (array)  ( $event['data']['object'] ?? [] );
 		$domain     = (string) ( $obj['metadata']['domain'] ?? '' );
 
-		// Idempotency: Stripe retries deliveries on timeout, which would
-		// otherwise send duplicate receipts/alerts and double-append plan
-		// installment history for the same event.
-		if ( $event_id && get_transient( 'db_stripe_evt_' . $event_id ) ) {
+		// Idempotency: Stripe retries deliveries. add_option() is an atomic
+		// claim (two simultaneous deliveries can't both pass), and the claim
+		// is released if processing fails so Stripe's retry is processed
+		// instead of being acknowledged as a duplicate. The plan/sale records
+		// also de-duplicate by PaymentIntent id on their own.
+		$claim = $event_id ? 'db_stripe_evt_' . $event_id : '';
+		if ( $claim && ! add_option( $claim, time(), '', false ) ) {
 			return db_stripe_wh_respond( $request, [ 'received' => true, 'duplicate' => true ], 200 );
 		}
-		if ( $event_id ) {
-			set_transient( 'db_stripe_evt_' . $event_id, 1, DAY_IN_SECONDS );
-		}
+		$meta_type = (string) ( $obj['metadata']['type'] ?? '' );
+		$ours      = '' !== $domain && in_array( $meta_type, [ 'full', 'plan' ], true );
 
 		$log = [
 			'ts'         => time(),
@@ -774,32 +823,45 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 			'status'     => 'received',
 		];
 
-		switch ( $event_type ) {
-			case 'payment_intent.succeeded':
-				db_stripe_handle_pi_succeeded( $obj );
-				$log['status'] = 'processed';
-				break;
+		try {
+			switch ( $event_type ) {
+				case 'payment_intent.succeeded':
+					db_stripe_handle_pi_succeeded( $obj );
+					$log['status'] = $ours ? 'processed' : 'ignored (not a checkout payment)';
+					break;
 
-			case 'payment_intent.payment_failed':
-				$email      = (string) ( $obj['receipt_email'] ?? '' );
-				$amount_usd = isset( $obj['amount'] ) ? round( (float) $obj['amount'] / 100, 2 ) : 0.0;
-				if ( 'plan' === (string) ( $obj['metadata']['type'] ?? '' ) && (int) ( $obj['metadata']['installment_number'] ?? 0 ) > 1 && function_exists( 'db_plan_on_installment_failed' ) ) {
-					// A later installment declined: start/continue the grace-period flow.
-					db_plan_on_installment_failed( $domain );
-				} else {
-					db_stripe_on_payment_failed( $domain, $email, $amount_usd );
-				}
-				$log['status'] = 'processed';
-				break;
+				case 'payment_intent.payment_failed':
+					if ( ! $ours ) {
+						$log['status'] = 'ignored (not a checkout payment)';
+						break;
+					}
+					$email      = (string) ( $obj['receipt_email'] ?? '' );
+					$amount_usd = isset( $obj['amount'] ) ? round( (float) $obj['amount'] / 100, 2 ) : 0.0;
+					$inst       = (int) ( $obj['metadata']['installment_number'] ?? 0 );
+					if ( 'plan' === $meta_type && $inst > 1 && function_exists( 'db_plan_on_installment_failed' ) ) {
+						// A later installment declined: start/continue the grace-period flow.
+						db_plan_on_installment_failed( db_stripe_norm( $domain ), $inst );
+					} else {
+						db_stripe_on_payment_failed( db_stripe_norm( $domain ), $email, $amount_usd );
+					}
+					$log['status'] = 'processed';
+					break;
 
-			case 'charge.refunded':
-				db_stripe_log_refund( $obj );
-				$log['status'] = 'logged';
-				break;
+				case 'charge.refunded':
+					db_stripe_log_refund( $obj );
+					$log['status'] = 'logged';
+					break;
 
-			default:
-				$log['status'] = 'ignored';
-				break;
+				default:
+					$log['status'] = 'ignored';
+					break;
+			}
+		} catch ( \Throwable $e ) {
+			if ( $claim ) {
+				delete_option( $claim );
+			}
+			error_log( 'DB Stripe: webhook ' . $event_type . ' failed — ' . $e->getMessage() );
+			return db_stripe_wh_respond( $request, [ 'error' => 'Processing failed; will retry.' ], 500 );
 		}
 
 		db_stripe_append_wh_log( $log );
@@ -836,7 +898,7 @@ if ( ! function_exists( 'db_stripe_verify_webhook_sig' ) ) {
 	 */
 	function db_stripe_verify_webhook_sig( string $payload, string $sig_header, string $secret ) : ?array {
 		$timestamp = null;
-		$v1_sig    = null;
+		$v1_sigs   = [];
 
 		foreach ( explode( ',', $sig_header ) as $chunk ) {
 			$parts = explode( '=', $chunk, 2 );
@@ -846,11 +908,12 @@ if ( ! function_exists( 'db_stripe_verify_webhook_sig' ) ) {
 			if ( $parts[0] === 't' ) {
 				$timestamp = $parts[1];
 			} elseif ( $parts[0] === 'v1' ) {
-				$v1_sig = $parts[1];
+				// Several v1 values are sent while a signing secret is being rolled.
+				$v1_sigs[] = $parts[1];
 			}
 		}
 
-		if ( ! $timestamp || ! $v1_sig ) {
+		if ( ! $timestamp || ! $v1_sigs ) {
 			return null;
 		}
 
@@ -862,7 +925,11 @@ if ( ! function_exists( 'db_stripe_verify_webhook_sig' ) ) {
 
 		$computed = hash_hmac( 'sha256', $timestamp . '.' . $payload, $secret );
 
-		if ( ! hash_equals( $computed, $v1_sig ) ) {
+		$valid = false;
+		foreach ( $v1_sigs as $v1_sig ) {
+			$valid = $valid || hash_equals( $computed, $v1_sig );
+		}
+		if ( ! $valid ) {
 			return null;
 		}
 
@@ -873,14 +940,58 @@ if ( ! function_exists( 'db_stripe_verify_webhook_sig' ) ) {
 
 // ─── payment_intent.succeeded ─────────────────────────────────────────────────
 
+if ( ! function_exists( 'db_stripe_flag_conflict' ) ) {
+	/**
+	 * A payment arrived that the plan/sale state says should not exist (a
+	 * second buyer for a reserved or sold domain, a late installment on an
+	 * ended plan, an out-of-order installment). It is NOT applied — applying
+	 * it reopened finished plans and led to repeat charges — and the admin is
+	 * told to review it in Stripe and refund if needed.
+	 */
+	function db_stripe_flag_conflict( string $domain, array $pi, string $why ) : void {
+		$lines = [
+			$why,
+			'',
+			'Domain    : ' . $domain,
+			'Payment   : ' . (string) ( $pi['id'] ?? '?' ) . ' (' . '$' . number_format( (float) ( $pi['amount_received'] ?? $pi['amount'] ?? 0 ) / 100, 2 ) . ')',
+			'Customer  : ' . (string) ( $pi['receipt_email'] ?? '' ) . ' ' . (string) ( $pi['customer'] ?? '' ),
+			'Mode      : ' . db_stripe_mode(),
+			'',
+			'This payment was NOT recorded against the plan/sale. Check it in the Stripe Dashboard and refund it if it should not have been taken.',
+		];
+		error_log( 'DB Stripe: payment needs review — ' . $domain . ' — ' . $why );
+		if ( function_exists( 'db_plan_notify_admin' ) ) {
+			db_plan_notify_admin( 'PAYMENT NEEDS REVIEW (possible refund): ' . $domain, $lines );
+		} else {
+			wp_mail( (string) get_option( 'admin_email' ), 'PAYMENT NEEDS REVIEW (possible refund): ' . $domain, implode( "\n", $lines ) );
+		}
+	}
+}
+
 if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
+	/**
+	 * Applies a successful PaymentIntent (from the webhook, or straight from
+	 * the off-session charge response) to the sale or plan record. Safe to
+	 * call more than once for the same PaymentIntent.
+	 */
 	function db_stripe_handle_pi_succeeded( array $pi ) : void {
-		$meta            = (array)  ( $pi['metadata'] ?? [] );
-		$domain          = (string) ( $meta['domain'] ?? '' );
-		$type            = (string) ( $meta['type'] ?? 'full' );
-		$total_months    = isset( $meta['total_months'] )    ? (int) $meta['total_months']    : 0;
+		$meta   = (array) ( $pi['metadata'] ?? [] );
+		$domain = db_stripe_norm( (string) ( $meta['domain'] ?? '' ) );
+		$type   = (string) ( $meta['type'] ?? '' );
+
+		// Only PaymentIntents this checkout created. A Payment Link or invoice
+		// paid on the same Stripe account has no domain/type metadata and used
+		// to be treated as a full sale of "" (receipt, admin alert, sold flag).
+		if ( '' === $domain || ! in_array( $type, [ 'full', 'plan' ], true ) ) {
+			error_log( 'DB Stripe: ignored payment_intent.succeeded without domain/type metadata (' . (string) ( $pi['id'] ?? '?' ) . ').' );
+			return;
+		}
+
+		$total_months    = isset( $meta['total_months'] ) ? (int) $meta['total_months'] : 0;
 		$installment_num = isset( $meta['installment_number'] ) ? (int) $meta['installment_number'] : 1;
-		$amount_usd      = isset( $pi['amount_received'] )   ? round( (float) $pi['amount_received'] / 100, 2 ) : 0.0;
+		$amount_usd      = isset( $pi['amount_received'] ) ? round( (float) $pi['amount_received'] / 100, 2 ) : 0.0;
+		$pi_id           = (string) ( $pi['id'] ?? '' );
+		$customer        = (string) ( $pi['customer'] ?? '' );
 
 		// receipt_email is set by db_stripe_set_receipt_email() before the
 		// checkout form confirms payment — PaymentIntent responses no longer
@@ -888,55 +999,86 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		// used to silently resolve to an empty email on every sale.
 		$customer_email = (string) ( $pi['receipt_email'] ?? '' );
 
-		// Stripe retries webhook deliveries (timeouts, 5xx, manual resend) and
-		// can deliver the same event twice; without this every retry re-sent
-		// the receipt + admin alert and double-counted the installment.
-		$pi_id = (string) ( $pi['id'] ?? '' );
-		if ( $pi_id ) {
-			if ( get_transient( 'db_stripe_pi_seen_' . $pi_id ) ) {
+		if ( 'full' === $type ) {
+			$sold = get_option( db_stripe_store_key( 'sold', $domain ) );
+			if ( $sold ) {
+				if ( is_array( $sold ) && '' !== $pi_id && ( $sold['pi'] ?? '' ) === $pi_id ) {
+					return; // Same payment delivered again.
+				}
+				db_stripe_flag_conflict( $domain, $pi, 'A full purchase was paid for a domain that is already sold.' );
 				return;
 			}
-			set_transient( 'db_stripe_pi_seen_' . $pi_id, 1, 14 * DAY_IN_SECONDS );
-		}
-
-		if ( $type === 'full' ) {
-			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full' );
+			$plan = (array) get_option( db_stripe_store_key( 'plan', $domain ), [] );
+			if ( in_array( $plan['status'] ?? '', [ 'active', 'past_due' ], true ) ) {
+				db_stripe_flag_conflict( $domain, $pi, 'A full purchase was paid for a domain reserved on another buyer\'s payment plan.' );
+				return;
+			}
+			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full', $pi_id );
 			return;
 		}
 
-		// Payment plan — record this installment.
-		error_log( sprintf(
-			'DB Stripe: Plan installment %d/%d paid — %s ($%.2f)',
-			$installment_num, $total_months, $domain, $amount_usd
-		) );
-
-		$opt_key = 'db_stripe_plan_' . md5( $domain );
+		$opt_key = db_stripe_store_key( 'plan', $domain );
 		$plan    = (array) get_option( $opt_key, [] );
-		// Plans are keyed by domain. If a previous buyer's plan on this domain
-		// ended (defaulted/completed) and a new plan starts, the old record's
-		// history was merged in — the new buyer's "paid so far" and
-		// forfeiture figures included the previous buyer's payments.
-		if ( 1 === $installment_num && ! empty( $plan ) && in_array( $plan['status'] ?? '', [ 'defaulted', 'completed' ], true ) ) {
-			update_option( $opt_key . '_archive_' . time(), $plan, false );
-			$plan = [];
-		}
-		$was_past_due = 'past_due' === ( $plan['status'] ?? '' );
-		$total_price = isset( $meta['total_price_usd'] ) ? (float) $meta['total_price_usd'] : $amount_usd;
+		$status  = (string) ( $plan['status'] ?? '' );
 
-		$plan['domain']         = $domain;
-		$plan['price_usd']      = $total_price;
-		$plan['total_months']   = $total_months;
-		$plan['customer_email'] = $customer_email ?: ( $plan['customer_email'] ?? '' );
-		$plan['customer_id']    = (string) ( $pi['customer'] ?? ( $plan['customer_id'] ?? '' ) );
-		$plan['payment_method'] = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
+		// Durable duplicate check, stored with the plan. (A transient used to
+		// do this: it was set before processing, could expire or be evicted,
+		// and a resend after that was applied a second time.)
+		if ( '' !== $pi_id && in_array( $pi_id, (array) ( $plan['pi_ids'] ?? [] ), true ) ) {
+			return;
+		}
+
+		if ( 1 === $installment_num ) {
+			if ( in_array( $status, [ 'active', 'past_due' ], true ) ) {
+				db_stripe_flag_conflict( $domain, $pi, 'A second buyer paid installment 1 for a domain already on an active payment plan.' );
+				return;
+			}
+			if ( get_option( db_stripe_store_key( 'sold', $domain ) ) ) {
+				db_stripe_flag_conflict( $domain, $pi, 'Installment 1 of a new plan was paid for a domain that is already sold.' );
+				return;
+			}
+			// A previous buyer's plan on this domain ended (defaulted): archive
+			// it so the new buyer's "paid so far" starts at zero.
+			if ( ! empty( $plan ) ) {
+				update_option( $opt_key . '_archive_' . time(), $plan, false );
+				$plan = [];
+			}
+		} else {
+			$expected = (int) ( $plan['next_installment'] ?? 0 );
+			if ( ! in_array( $status, [ 'active', 'past_due' ], true ) || $customer !== (string) ( $plan['customer_id'] ?? '' ) || $installment_num !== $expected ) {
+				db_stripe_flag_conflict( $domain, $pi, sprintf(
+					'Installment %d arrived, but the plan is "%s" and expects installment %d from customer %s. A late or resent payment on a finished, terminated or different plan is not applied.',
+					$installment_num, $status ?: 'missing', $expected, (string) ( $plan['customer_id'] ?? '?' )
+				) );
+				return;
+			}
+		}
+
+		error_log( sprintf( 'DB Stripe: Plan installment %d/%d paid — %s ($%.2f)', $installment_num, $total_months, $domain, $amount_usd ) );
+
+		$was_past_due = 'past_due' === $status;
+		$total_price  = isset( $meta['total_price_usd'] ) ? (float) $meta['total_price_usd'] : $amount_usd;
+
+		$plan['domain']            = $domain;
+		$plan['mode']              = db_stripe_mode();
+		$plan['price_usd']         = $total_price;
+		$plan['total_months']      = $total_months;
+		$plan['customer_email']    = $customer_email ?: ( $plan['customer_email'] ?? '' );
+		$plan['customer_id']       = $customer ?: (string) ( $plan['customer_id'] ?? '' );
+		$plan['payment_method']    = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
 		$plan['paid_installments'] = $installment_num;
 		$plan['reminded_for']      = (int) ( $plan['reminded_for'] ?? 0 );
 		if ( ! empty( $meta['terms_accepted_at'] ) && empty( $plan['terms_accepted_at'] ) ) {
 			$plan['terms_accepted_at'] = sanitize_text_field( (string) $meta['terms_accepted_at'] );
 			$plan['terms_sha']         = sanitize_text_field( (string) ( $meta['terms_sha'] ?? '' ) );
 		}
-		$plan['history']        = (array) ( $plan['history'] ?? [] );
-		$plan['history'][]      = [ 'installment' => $installment_num, 'amount_usd' => $amount_usd, 'ts' => time() ];
+		$plan['history']   = (array) ( $plan['history'] ?? [] );
+		$plan['history'][] = [ 'installment' => $installment_num, 'amount_usd' => $amount_usd, 'ts' => time(), 'pi' => $pi_id ];
+		if ( '' !== $pi_id ) {
+			$plan['pi_ids']   = array_slice( array_merge( (array) ( $plan['pi_ids'] ?? [] ), [ $pi_id ] ), -24 );
+		}
+		$plan['past_due_since'] = 0;
+		$plan['notice_stage']   = 0;
 
 		if ( $installment_num >= $total_months ) {
 			$plan['status'] = 'completed';
@@ -948,13 +1090,13 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 			foreach ( (array) $plan['history'] as $h ) {
 				$paid_total += (float) ( $h['amount_usd'] ?? 0 );
 			}
-			db_stripe_on_sale_complete( $domain, $paid_total > 0 ? $paid_total : $total_price, $customer_email, 'plan' );
+			db_stripe_on_sale_complete( $domain, $paid_total > 0 ? $paid_total : $total_price, $customer_email, 'plan', $pi_id );
 			return;
 		}
 
-		$plan['status']            = 'active';
-		$plan['next_installment']  = $installment_num + 1;
-		$plan['next_charge_ts']    = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		$plan['status']           = 'active';
+		$plan['next_installment'] = $installment_num + 1;
+		$plan['next_charge_ts']   = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
 		update_option( $opt_key, $plan, false );
 		db_stripe_plan_index_add( $domain );
 		if ( $was_past_due && function_exists( 'db_plan_on_recovered' ) ) {
@@ -966,23 +1108,29 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 }
 
 // ─── Payment-plan index (so cron doesn't have to scan every wp_option) ────────
+// Holds normalized domain names, one list per mode.
+
+if ( ! function_exists( 'db_stripe_plan_index_option' ) ) {
+	function db_stripe_plan_index_option() : string {
+		return 'test' === db_stripe_mode() ? 'db_stripe_test_active_plans' : 'db_stripe_active_plans';
+	}
+}
 
 if ( ! function_exists( 'db_stripe_plan_index_add' ) ) {
 	function db_stripe_plan_index_add( string $domain ) : void {
-		$key   = md5( $domain );
-		$index = (array) get_option( 'db_stripe_active_plans', [] );
-		if ( ! in_array( $key, $index, true ) ) {
-			$index[] = $key;
-			update_option( 'db_stripe_active_plans', $index, false );
+		$domain = db_stripe_norm( $domain );
+		$index  = (array) get_option( db_stripe_plan_index_option(), [] );
+		if ( ! in_array( $domain, $index, true ) ) {
+			$index[] = $domain;
+			update_option( db_stripe_plan_index_option(), $index, false );
 		}
 	}
 }
 
 if ( ! function_exists( 'db_stripe_plan_index_remove' ) ) {
 	function db_stripe_plan_index_remove( string $domain ) : void {
-		$key   = md5( $domain );
-		$index = array_values( array_diff( (array) get_option( 'db_stripe_active_plans', [] ), [ $key ] ) );
-		update_option( 'db_stripe_active_plans', $index, false );
+		$index = array_values( array_diff( (array) get_option( db_stripe_plan_index_option(), [] ), [ db_stripe_norm( $domain ) ] ) );
+		update_option( db_stripe_plan_index_option(), $index, false );
 	}
 }
 
@@ -1002,64 +1150,117 @@ add_action( 'init', 'db_stripe_ensure_installment_cron' );
 
 if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 	/**
-	 * Charges the next off-session installment for an active payment plan
-	 * using the Customer + payment method saved at plan start. This is what
-	 * actually collects installments 2..N — previously nothing did, and
-	 * plans silently stopped billing after the first payment.
+	 * Charges the next off-session installment with the Customer + card saved
+	 * at plan start, and applies the result straight away when Stripe returns
+	 * it (success or decline), so a lost webhook can't leave a paid plan
+	 * looking unpaid. The webhook that follows is then a no-op.
+	 *
+	 * Returns: succeeded | declined | processing | error | locked | skipped.
 	 */
-	function db_stripe_charge_next_installment( array $plan ) : void {
-		$keys = db_stripe_keys();
-		$domain      = (string) $plan['domain'];
-		$n           = (int) $plan['next_installment'];
-		$months      = (int) $plan['total_months'];
-		$price_usd   = (float) $plan['price_usd'];
-		$opt_key     = 'db_stripe_plan_' . md5( $domain );
-		$amount_cents = db_stripe_installment_cents( $price_usd, $months, $n );
-
-		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents', [
-			'headers'   => [
-				'Authorization' => 'Bearer ' . $keys['sec'],
-				'Content-Type'  => 'application/x-www-form-urlencoded',
-			],
-			'body'      => [
-				'amount'                    => $amount_cents,
-				'currency'                  => 'usd',
-				'customer'                  => $plan['customer_id'],
-				'payment_method'            => db_stripe_current_payment_method( $plan ),
-				'off_session'               => 'true',
-				'confirm'                   => 'true',
-				'receipt_email'             => $plan['customer_email'] ?? '',
-				'metadata[domain]'          => $domain,
-				'metadata[type]'            => 'plan',
-				'metadata[total_price_usd]' => (string) $price_usd,
-				'metadata[total_months]'    => (string) $months,
-				'metadata[installment_number]' => (string) $n,
-			],
-			'timeout'   => 30,
-			'sslverify' => true,
-		] );
-
-		// Success/failure both arrive via the payment_intent.succeeded /
-		// payment_intent.payment_failed webhook — this call only needs to
-		// push the charge attempt, plus push next_charge_ts forward so a
-		// failed card doesn't retry every single day.
-		if ( is_wp_error( $response ) ) {
-			error_log( 'DB Stripe: installment charge request failed for ' . $domain . ' — ' . $response->get_error_message() );
+	function db_stripe_charge_next_installment( array $plan ) : string {
+		$keys    = db_stripe_keys();
+		$domain  = db_stripe_norm( (string) ( $plan['domain'] ?? '' ) );
+		$opt_key = db_stripe_store_key( 'plan', $domain );
+		if ( '' === $domain || empty( $keys['sec'] ) ) {
+			return 'skipped';
 		}
 
-		// Re-read: the caller's copy may predate a webhook that just ran.
-		$fresh = (array) get_option( $opt_key, [] );
-		if ( ! empty( $fresh ) ) {
-			$plan = $fresh;
+		// One charge at a time per plan. Overlapping cron runs (WP-Cron's lock
+		// is not atomic) used to both see the old last_attempt_ts and both
+		// create a PaymentIntent. add_option() is an atomic claim.
+		$lock = $opt_key . '_lock';
+		if ( ! add_option( $lock, time(), '', false ) ) {
+			if ( (int) get_option( $lock ) > time() - 5 * MINUTE_IN_SECONDS ) {
+				return 'locked';
+			}
+			update_option( $lock, time(), false ); // Stale lock from a crashed run.
 		}
-		$plan['last_attempt_ts'] = time();
-		// An active plan's due date moves on at the attempt, so a lost webhook
-		// can never cause a second charge the next day. A past-due plan keeps
-		// its own retry schedule (db_plan_run_daily).
-		if ( 'past_due' !== ( $plan['status'] ?? '' ) ) {
-			$plan['next_charge_ts'] = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+
+		try {
+			$fresh = (array) get_option( $opt_key, [] );
+			if ( empty( $fresh ) || ! in_array( $fresh['status'] ?? '', [ 'active', 'past_due' ], true ) ) {
+				return 'skipped';
+			}
+			if ( ( $fresh['mode'] ?? db_stripe_mode() ) !== db_stripe_mode() ) {
+				return 'skipped'; // A test-mode plan while the site is live, or the reverse.
+			}
+			if ( time() - (int) ( $fresh['last_attempt_ts'] ?? 0 ) < 20 * HOUR_IN_SECONDS ) {
+				return 'skipped';
+			}
+			$plan   = $fresh;
+			$n      = (int) $plan['next_installment'];
+			$months = (int) $plan['total_months'];
+			$price  = (float) $plan['price_usd'];
+
+			// Record the attempt before calling Stripe, not after it returns.
+			$plan['last_attempt_ts'] = time();
+			update_option( $opt_key, $plan, false );
+
+			$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents', [
+				'headers'   => [
+					'Authorization'   => 'Bearer ' . $keys['sec'],
+					'Content-Type'    => 'application/x-www-form-urlencoded',
+					// Stripe returns the same PaymentIntent for a repeated key, so a
+					// retried request on the same day can never charge twice.
+					'Idempotency-Key' => 'db-plan-' . md5( $domain . '|' . ( $plan['customer_id'] ?? '' ) ) . '-' . $n . '-' . gmdate( 'Ymd' ),
+				],
+				'body'      => [
+					'amount'                       => db_stripe_installment_cents( $price, $months, $n ),
+					'currency'                     => 'usd',
+					'customer'                     => $plan['customer_id'],
+					'payment_method'               => db_stripe_current_payment_method( $plan ),
+					'off_session'                  => 'true',
+					'confirm'                      => 'true',
+					'receipt_email'                => $plan['customer_email'] ?? '',
+					'metadata[domain]'             => $domain,
+					'metadata[type]'               => 'plan',
+					'metadata[total_price_usd]'    => (string) $price,
+					'metadata[total_months]'       => (string) $months,
+					'metadata[installment_number]' => (string) $n,
+				],
+				'timeout'   => 30,
+				'sslverify' => true,
+			] );
+
+			$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+			$data = is_wp_error( $response ) ? [] : (array) json_decode( (string) wp_remote_retrieve_body( $response ), true );
+			// A decline comes back as a 402 error that still carries the PaymentIntent.
+			$pi     = 0 === strpos( (string) ( $data['id'] ?? '' ), 'pi_' ) ? $data : (array) ( $data['error']['payment_intent'] ?? [] );
+			$status = (string) ( $pi['status'] ?? '' );
+
+			if ( 'succeeded' === $status ) {
+				db_stripe_handle_pi_succeeded( $pi );
+				return 'succeeded';
+			}
+			if ( in_array( $status, [ 'requires_payment_method', 'requires_action', 'canceled' ], true ) ) {
+				// Declined, or the bank wants authentication the buyer isn't
+				// present to give: both are a missed payment.
+				if ( function_exists( 'db_plan_on_installment_failed' ) ) {
+					db_plan_on_installment_failed( $domain, $n );
+				}
+				return 'declined';
+			}
+			if ( $pi ) {
+				return 'processing'; // e.g. "processing": the webhook settles it; last_attempt_ts de-bounces.
+			}
+
+			// No PaymentIntent at all: network failure, bad key, deleted
+			// customer, mode switch. Nothing was charged. This used to push the
+			// due date a month out silently; now it is retried tomorrow (the
+			// 20-hour de-bounce above) and the admin is told.
+			$msg = is_wp_error( $response ) ? $response->get_error_message() : (string) ( $data['error']['message'] ?? 'HTTP ' . $code );
+			error_log( 'DB Stripe: installment ' . $n . ' charge for ' . $domain . ' failed before reaching the card — ' . $msg );
+			if ( function_exists( 'db_plan_notify_admin' ) ) {
+				db_plan_notify_admin( 'PLAN CHARGE ERROR: ' . $domain, [
+					'Installment ' . $n . ' of ' . $months . ' could not be submitted to Stripe (nothing was charged).',
+					'Stripe said: ' . $msg,
+					'It will be retried automatically tomorrow. If this repeats, check the Stripe keys/mode and the customer ' . (string) ( $plan['customer_id'] ?? '' ) . '.',
+				] );
+			}
+			return 'error';
+		} finally {
+			delete_option( $lock );
 		}
-		update_option( $opt_key, $plan, false );
 	}
 }
 
@@ -1090,22 +1291,17 @@ if ( ! function_exists( 'db_stripe_current_payment_method' ) ) {
 if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
 	/** True once a domain is sold, or while a payment plan on it is active or past due. */
 	function db_stripe_domain_unavailable( string $domain ) : bool {
-		if ( get_option( 'db_stripe_sold_' . md5( strtolower( $domain ) ) ) ) {
+		if ( get_option( db_stripe_store_key( 'sold', $domain ) ) ) {
 			return true;
 		}
-		foreach ( array_unique( [ $domain, strtolower( $domain ) ] ) as $d ) {
-			$plan = (array) get_option( 'db_stripe_plan_' . md5( $d ), [] );
-			if ( in_array( $plan['status'] ?? '', [ 'active', 'past_due', 'completed' ], true ) ) {
-				return true;
-			}
-		}
-		return false;
+		$plan = (array) get_option( db_stripe_store_key( 'plan', $domain ), [] );
+		return in_array( $plan['status'] ?? '', [ 'active', 'past_due', 'completed' ], true );
 	}
 }
 
 if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
-	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type ) : void {
-		update_option( 'db_stripe_sold_' . md5( strtolower( $domain ) ), time(), false );
+	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type, string $pi_id = '' ) : void {
+		update_option( db_stripe_store_key( 'sold', $domain ), [ 'ts' => time(), 'pi' => $pi_id ], false );
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );
