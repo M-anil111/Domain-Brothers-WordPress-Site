@@ -358,3 +358,21 @@ Section 2 suggested archiving or deleting these. A read-only inventory shows the
 **Defects found and fixed during the redesign**: desktop menu stranded below the footer; banner copy invisible; domain-page trust bullets rendered near-white on white (axe contrast 1.23:1); privacy link 4.3:1 on pale green; plan page drawn as a card inside a card; 5 px overhang of the banner badge text at 344–430 px; 22 px "Learn more" targets.
 
 **Results on staging (this commit)**: live QA 401/402 (the one miss was a navigation flake that passed on three re-runs; earlier 508s are host rate limiting, not code), axe 0 violations on 12 page types × 2 viewports, responsive scan 169 scans with 0 overflow, 0 cut-off, 0 errors, 0 tiny-text pages.
+
+## 15. Plugin audit and front-end speed (v3.50.1)
+
+**Plugins on staging (audited 2026-10-25).** Active: ACF 6.8.10, Contact Form 7 6.1.6, CF7 Multi-Step 4.7.1, Custom Post Type UI 1.19.3, LiteSpeed Cache 7.9.2, Page List 6.3, Team Members 5.4.1, Wordfence 9.0.2, our plugin. All are on their current release; WordPress core is 6.9.10. The only pending update is WPForms Lite, which stays **inactive on purpose** (0 forms, 0 uses; it cost ~80 ms of PHP per request). Delete it on production rather than updating it. Page List and Team Members render nothing on any page; they are candidates for removal once the owner confirms no editor uses them.
+
+**Change (`db-perf-block.php`).** Plugin assets load only where used:
+
+| Page | Render-blocking CSS | Head scripts | First-party requests |
+|---|---|---|---|
+| Home, before | 9 | 7 | 22 |
+| Home, after | 5 | 2 | 13 |
+| Domain page | 9 → 7 | unchanged (the offer form needs them) | |
+
+Contact Form 7 and its multi-step module load on domain pages and pages whose content holds a form. Page List and Team Members load only when their shortcode is in the content. If any of those shortcodes renders anyway (template, widget), its assets are enqueued at that moment. The theme's 230 KB bold webfont now has `font-display: swap`, so text no longer stays invisible while it downloads.
+
+**Regression caught by the QA suite.** The first version removed jQuery from every non-form page ("jQuery is not defined", 26 failing checks): the theme's scripts use jQuery without declaring it, and it had only been loading as a dependency of the multi-step script. jQuery is now enqueued explicitly. Re-run: live QA **404/404**, axe 0 violations, offline suites 50 + 30 + 10 + 12 passing.
+
+**Not changed (owner decision).** Third-party tags still add ~556 KB of script on every page (Google Tag Manager, GA4, Google Ads, plus Clarity, HubSpot, AddToAny and Cloudflare Zaraz as listed in section 5). Loading them after first interaction or on idle is the largest remaining win, but it changes when marketing tags fire and affects ad attribution, so it is a marketing call. Staging timings are uncached (Basic Auth bypasses LiteSpeed); expect lower TTFB on production.
