@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.50.1** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.50.2** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -21,7 +21,7 @@ Everything below has been built and tested on **staging only** (`beta.domainbrot
 
 1. Build the zip from this repo: `cd` to the repo root and run `zip -r db-custom-blocks.zip db-custom-blocks`.
 2. WP Admin → Plugins → Add New → Upload Plugin → choose the zip → **Replace current with uploaded** (or Install + Activate if it isn't there yet).
-3. Check that Plugins shows **Domain Brothers Custom Blocks 3.50.1** as active.
+3. Check that Plugins shows **Domain Brothers Custom Blocks 3.50.2** as active.
 4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin and click **Confirm**. Then purge the CDN or Cloudflare cache if one is in front.
 
 Production-specific behaviour, already handled in code:

@@ -376,3 +376,21 @@ Contact Form 7 and its multi-step module load on domain pages and pages whose co
 **Regression caught by the QA suite.** The first version removed jQuery from every non-form page ("jQuery is not defined", 26 failing checks): the theme's scripts use jQuery without declaring it, and it had only been loading as a dependency of the multi-step script. jQuery is now enqueued explicitly. Re-run: live QA **404/404**, axe 0 violations, offline suites 50 + 30 + 10 + 12 passing.
 
 **Not changed (owner decision).** Third-party tags still add ~556 KB of script on every page (Google Tag Manager, GA4, Google Ads, plus Clarity, HubSpot, AddToAny and Cloudflare Zaraz as listed in section 5). Loading them after first interaction or on idle is the largest remaining win, but it changes when marketing tags fire and affects ad attribution, so it is a marketing call. Staging timings are uncached (Basic Auth bypasses LiteSpeed); expect lower TTFB on production.
+
+## 16. Page-by-page visual review (v3.50.2)
+
+Every page type was screenshotted at 1366 px and 390 px and reviewed. Fixed:
+
+| Page | Problem | Fix |
+|---|---|---|
+| Checkout (`/buy-now/`) | Still dark navy, text-only logo | Light design, logo image, themed Stripe element |
+| Contact | Form flush against the card edge; icon rows touching | Card padding, row spacing |
+| Offer | Title card ended before its floated content; cards spilled out | `display: flow-root` on page content |
+| News post | Text flush against the card edge | Card padding |
+| 404 | Left-aligned; footer floated mid-screen with blank space under it | Centred; footer pinned to the bottom |
+| Footer | Social glyphs off-centre in their circles | Flex-centred badges |
+| All Domains, Sold, category | Filter chips one narrow column; sidebar squeezed left | Two-column chip grid; sidebar centred under the list |
+
+A regression from the footer fix (the theme's row layout widened `#content` by 30 px on home and plan pages, 9 responsive scans) was caught by `run-responsive.js` and fixed. Final: live QA 404/404, axe 0 violations, responsive 169 scans clean, offline suites 50 + 30 + 10 + 12.
+
+The Stripe card form itself was not rendered (staging has no keys); only the "payment system is being configured" state was reviewed.

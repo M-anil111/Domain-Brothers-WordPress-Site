@@ -369,7 +369,7 @@ body.db-ui-active .site-footer .db-icon-badge { display: inline-flex; align-item
 body.db-ui-active .site-footer .db-icon-badge svg { width: 18px; height: 18px; display: block; }
 /* 404: centred, footer kept at the bottom of short pages. */
 body.db-ui-active #page { min-height: 100vh; display: flex; flex-direction: column; }
-body.db-ui-active #page > #content { flex: 1 0 auto; }
+body.db-ui-active #page > #content { flex: 1 0 auto; min-width: 0; margin-left: 0 !important; margin-right: 0 !important; box-sizing: border-box; max-width: 100%; }
 body.db-ui-active .error-404 { text-align: center; padding: clamp(32px, 8vw, 72px) 0; }
 body.db-ui-active .error-404 h1, body.db-ui-active .error-404 .btn { margin-left: auto; margin-right: auto; }
 body.db-ui-active .error-404 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; }
