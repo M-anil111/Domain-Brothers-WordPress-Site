@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.47.0** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.47.1** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -21,7 +21,7 @@ Everything below has been built and tested on **staging only** (`beta.domainbrot
 
 1. Build the zip from this repo: `cd` to the repo root and run `zip -r db-custom-blocks.zip db-custom-blocks`.
 2. WP Admin → Plugins → Add New → Upload Plugin → choose the zip → **Replace current with uploaded** (or Install + Activate if it isn't there yet).
-3. Check that Plugins shows **Domain Brothers Custom Blocks 3.47.0** as active.
+3. Check that Plugins shows **Domain Brothers Custom Blocks 3.47.1** as active.
 4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin and click **Confirm**. Then purge the CDN or Cloudflare cache if one is in front.
 
 Production-specific behaviour, already handled in code:
@@ -55,7 +55,7 @@ Production-specific behaviour, already handled in code:
 
 ## 5. Content decisions (owner)
 
-- **19,700 domain records that aren't live** (17,891 private, 1,781 "unpublish", 52 trash, against 207 published). Archive or delete them after the backup, unless they are sold-domain history you need.
+- **19,700 domain records that aren't live: do not delete.** They are consigned listings from other owners, mostly made private in 2017–18, and carry owner, booking and sale history. See `QA_REPORT.md` §13 and `/?db_domain_inventory=1`. Decide commercially which to re-confirm with their owners and republish, and which to mark expired.
 - **Clean-up after the backup:** 4,926 old revisions, and the tables left by removed plugins (Yoast, WP Automatic, GOTMLS).
 - **Unpublish sold listings.** Checkout already refuses them.
 - **Delete `/plugnpay/`** (an empty legacy page) if PlugnPay is no longer used.

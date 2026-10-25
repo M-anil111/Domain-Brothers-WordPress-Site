@@ -167,6 +167,56 @@ if ( ! function_exists( 'db_db_health_report' ) ) {
 }
 add_action( 'init', 'db_db_health_report', 99 );
 
+if ( ! function_exists( 'db_domain_inventory_report' ) ) {
+	/**
+	 * Read-only: what the ~19,700 non-published `domain` posts are, so the
+	 * owner can decide whether to archive them (QA_REPORT §2). Admin only;
+	 * changes nothing. /?db_domain_inventory=1 (JSON).
+	 *
+	 * Per status: count, last-modified year spread, how many have a price,
+	 * how many duplicate a published listing's title, and sample titles.
+	 * Plus the meta keys most used on non-live records (e.g. sold markers).
+	 */
+	function db_domain_inventory_report() {
+		if ( empty( $_GET['db_domain_inventory'] ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		global $wpdb;
+		$p = $wpdb->posts;
+		$m = $wpdb->postmeta;
+		$r = array( 'generated' => gmdate( 'c' ) );
+
+		$r['by_status'] = $wpdb->get_results( "SELECT post_status AS status, COUNT(*) AS n FROM {$p} WHERE post_type = 'domain' GROUP BY post_status ORDER BY n DESC", ARRAY_A );
+		$r['by_status_and_year'] = $wpdb->get_results( "SELECT post_status AS status, YEAR(post_modified) AS year, COUNT(*) AS n FROM {$p} WHERE post_type = 'domain' AND post_status <> 'publish' GROUP BY post_status, YEAR(post_modified) ORDER BY post_status, year", ARRAY_A );
+		$r['with_price'] = $wpdb->get_results( "SELECT d.post_status AS status, COUNT(*) AS n FROM {$p} d JOIN {$m} pm ON pm.post_id = d.ID AND pm.meta_key = 'domain_price' AND pm.meta_value <> '' WHERE d.post_type = 'domain' GROUP BY d.post_status", ARRAY_A );
+		$r['duplicates_of_published_title'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$p} d WHERE d.post_type = 'domain' AND d.post_status <> 'publish' AND EXISTS ( SELECT 1 FROM {$p} l WHERE l.post_type = 'domain' AND l.post_status = 'publish' AND l.post_title = d.post_title )" );
+		$r['top_meta_keys_non_live'] = $wpdb->get_results( "SELECT pm.meta_key AS k, COUNT(*) AS n FROM {$m} pm JOIN {$p} d ON d.ID = pm.post_id WHERE d.post_type = 'domain' AND d.post_status <> 'publish' GROUP BY pm.meta_key ORDER BY n DESC LIMIT 25", ARRAY_A );
+		$r['in_categories_non_live'] = $wpdb->get_results( "SELECT t.name AS category, COUNT(*) AS n FROM {$wpdb->term_relationships} tr JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = 'domain_category' JOIN {$wpdb->terms} t ON t.term_id = tt.term_id JOIN {$p} d ON d.ID = tr.object_id WHERE d.post_type = 'domain' AND d.post_status <> 'publish' GROUP BY t.name ORDER BY n DESC LIMIT 15", ARRAY_A );
+		// What the portfolio fields say about non-live records (sold? expired? which registrar?).
+		foreach ( array( 'domain_status', 'booking_status', 'domain_type', 'domain_registrar', 'Domain_owner' ) as $key ) {
+			$r['values_non_live'][ $key ] = $wpdb->get_results( $wpdb->prepare(
+				"SELECT LEFT(pm.meta_value, 40) AS v, COUNT(*) AS n FROM {$m} pm JOIN {$p} d ON d.ID = pm.post_id WHERE d.post_type = 'domain' AND d.post_status <> 'publish' AND pm.meta_key = %s GROUP BY LEFT(pm.meta_value, 40) ORDER BY n DESC LIMIT 12",
+				$key
+			), ARRAY_A );
+		}
+		$r['renewal_year_non_live'] = $wpdb->get_results( "SELECT LEFT(pm.meta_value, 4) AS y, COUNT(*) AS n FROM {$m} pm JOIN {$p} d ON d.ID = pm.post_id WHERE d.post_type = 'domain' AND d.post_status <> 'publish' AND pm.meta_key = 'renewal_date' AND pm.meta_value <> '' GROUP BY LEFT(pm.meta_value, 4) ORDER BY y", ARRAY_A );
+		$samples = array();
+		foreach ( $r['by_status'] as $row ) {
+			if ( 'publish' === $row['status'] ) {
+				continue;
+			}
+			$samples[ $row['status'] ] = $wpdb->get_col( $wpdb->prepare( "SELECT post_title FROM {$p} WHERE post_type = 'domain' AND post_status = %s ORDER BY post_modified DESC LIMIT 12", $row['status'] ) );
+		}
+		$r['recent_samples'] = $samples;
+
+		nocache_headers();
+		header( 'Content-Type: application/json; charset=UTF-8' );
+		echo wp_json_encode( $r, JSON_PRETTY_PRINT );
+		exit;
+	}
+}
+add_action( 'init', 'db_domain_inventory_report', 99 );
+
 if ( ! function_exists( 'db_db_maintenance' ) ) {
 	/**
 	 * Safe, reversible database clean-up for admins: /?db_db_maint=1 (dry run)

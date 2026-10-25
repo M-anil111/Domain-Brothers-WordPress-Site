@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.47.0 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.47.1 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -323,3 +323,26 @@ The reviewer confirmed these sound:
 **Results:**
 - **Offline:** forms 12/12 (new), plan 50/50, markup 30/30, titles 10/10.
 - **Live suite:** 388/388. A first run had 3 failures from the host returning 508 "resource limit" errors under load; they passed on the re-run.
+
+## 13. What the 19,700 non-live domain records are (v3.47.1)
+
+Section 2 suggested archiving or deleting these. A read-only inventory shows they are not clutter. The tool is admin-only, at `/?db_domain_inventory=1` (JSON); it changes nothing.
+
+- **Status:** 17,891 private, 1,781 "unpublish", 52 trash and 3 draft, against 207 published. Almost all were last modified in **2017–2018**.
+- **They are consigned listings from other owners:**
+  - every one carries the full listing record: owner, price and minimum price, registrar, renewal date and price, nameservers, and booking fields;
+  - the owner field names more than a dozen different people, and the largest single owner holds about 7,400 names.
+- **Field values:**
+  - `domain_status` is "sale" on 19,699 and "sold" on 28;
+  - `booking_status` is "Booked" on 1,748;
+  - `domain_type` is "offer" on almost all.
+- **Renewal dates** are mostly 2017–2019, so many of these names have probably expired or been dropped by their owners since.
+- **Duplicates:** only 4 share a title with a currently published listing.
+
+**Recommendation (replaces §2):**
+- **Do not delete.** These records are the history of past consignments, bookings and sales.
+- **The decision is commercial:**
+  - re-confirm with active consignors which names are still theirs and still for sale, and republish those;
+  - mark the rest as expired.
+- **Archiving is optional.** If the database size matters, export them to CSV first, or move them to an "archived" status. They are already private: not public, not in the sitemap, and not reachable by URL.
+- **Still safe to clean after a backup:** the 4,926 post revisions and the tables left by removed plugins.
