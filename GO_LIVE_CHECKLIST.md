@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.46.0** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.47.0** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -21,8 +21,8 @@ Everything below has been built and tested on **staging only** (`beta.domainbrot
 
 1. Build the zip from this repo: `cd` to the repo root and run `zip -r db-custom-blocks.zip db-custom-blocks`.
 2. WP Admin → Plugins → Add New → Upload Plugin → choose the zip → **Replace current with uploaded** (or Install + Activate if it isn't there yet).
-3. Check that Plugins shows **Domain Brothers Custom Blocks 3.46.0** as active.
-4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin. Then purge the CDN or Cloudflare cache if one is in front.
+3. Check that Plugins shows **Domain Brothers Custom Blocks 3.47.0** as active.
+4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin and click **Confirm**. Then purge the CDN or Cloudflare cache if one is in front.
 
 Production-specific behaviour, already handled in code:
 - **Table prefix:** the theme hard-codes `Dmb_` (production's prefix). The rewrite only applies on hosts with a different prefix, so on production it does nothing.
@@ -41,6 +41,12 @@ Production-specific behaviour, already handled in code:
 | 3.5 | Check that WordPress cron runs daily, because plan reminders, retries and termination run from it. On shared hosting, add a real cron job that calls `wp-cron.php` every 15 minutes and set `DISABLE_WP_CRON` true. |
 | 3.6 | **Act on "PAYMENT NEEDS REVIEW (possible refund)" emails.** The site sends one when a payment arrives that it will not apply: a second buyer for a reserved or sold domain, or a late installment on a finished or terminated plan. Check the payment in Stripe and refund it if needed. "PLAN CHARGE ERROR" emails mean Stripe refused the request itself (keys, mode, or a deleted customer); nothing was charged, and it retries the next day. |
 | 3.7 | **Legal review** of the plan terms text: forfeiture of paid installments after 10 days unpaid, and transfer only on the final payment. The text is in `db_plan_terms_html()` in `db-plan-lifecycle-block.php`. Buyers must tick agreement to it, and their acceptance is stored. |
+
+## 3b. Spam protection on the forms (owner, with the developer)
+
+- **Add a CAPTCHA to the Contact Form 7 forms.** Cloudflare Turnstile is free and invisible to most visitors: create a site key in Cloudflare, then enter it under Contact → Integration in WordPress. The reCAPTCHA tag currently has no site key.
+  - The plugin now limits offer-confirmation emails to 3 per visitor IP per hour and 1 per recipient per 30 minutes, and keeps visitor text out of them.
+  - A CAPTCHA also stops bots filling the CRM with fake leads.
 
 ## 4. Marketing / analytics (owner)
 

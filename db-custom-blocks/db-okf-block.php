@@ -171,6 +171,7 @@ if ( ! function_exists( 'db_okf_render_domains_index' ) ) {
 		$q = new WP_Query( array(
 			'post_type'      => 'domain',
 			'post_status'    => 'publish',
+			'has_password'   => false,
 			'posts_per_page' => -1,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
@@ -197,7 +198,7 @@ if ( ! function_exists( 'db_okf_render_domains_index' ) ) {
 if ( ! function_exists( 'db_okf_render_domain' ) ) {
 	function db_okf_render_domain( $slug ) {
 		$post = get_page_by_path( $slug, OBJECT, 'domain' );
-		if ( ! $post || 'publish' !== $post->post_status ) {
+		if ( ! $post || 'publish' !== $post->post_status || '' !== $post->post_password ) {
 			return null;
 		}
 		$s      = db_okf_domain_summary( $post );
@@ -259,6 +260,7 @@ if ( ! function_exists( 'db_okf_render_category' ) ) {
 		$q = new WP_Query( array(
 			'post_type'      => 'domain',
 			'post_status'    => 'publish',
+			'has_password'   => false,
 			'posts_per_page' => -1,
 			'no_found_rows'  => true,
 			'tax_query'      => array( array( 'taxonomy' => 'domain_category', 'field' => 'slug', 'terms' => $slug ) ),

@@ -39,6 +39,7 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 		$ids  = get_posts( array(
 			'post_type'              => 'domain',
 			'post_status'            => 'publish',
+			'has_password'           => false,
 			'posts_per_page'         => 2000,
 			'fields'                 => 'ids',
 			'orderby'                => 'title',

@@ -316,6 +316,55 @@ add_filter( 'wpcf7_mail_components', function ( $components, $cf7 ) {
    =========================================================== */
 
 /* -----------------------------------------------------------
+   B0. Who may claim what on /thank-you/
+   ----------------------------------------------------------- */
+
+if ( ! function_exists( 'db_ty_sig' ) ) {
+	/**
+	 * Signature for a checkout return URL. The thank-you page used to build
+	 * "You're the new owner of X — your payment of $Y has been confirmed"
+	 * from ?d= and ?amt= alone, so anyone could mint a convincing fake
+	 * payment confirmation on this domain (e.g. ?type=full&d=google.com&amt=250000).
+	 */
+	function db_ty_sig( $type, $domain, $amount ) {
+		return hash_hmac( 'sha256', 'ty|' . $type . '|' . strtolower( (string) $domain ) . '|' . (string) $amount, wp_salt( 'auth' ) );
+	}
+}
+
+if ( ! function_exists( 'db_ty_known_domain' ) ) {
+	/** The listing's own title if $domain is a published domain, else ''. */
+	function db_ty_known_domain( $domain ) {
+		$domain = trim( (string) $domain );
+		if ( '' === $domain || strlen( $domain ) > 100 ) {
+			return '';
+		}
+		$q = new WP_Query( array( 'post_type' => 'domain', 'post_status' => 'publish', 'title' => $domain, 'posts_per_page' => 1, 'no_found_rows' => true, 'fields' => 'all' ) );
+		$p = $q->posts ? $q->posts[0] : null;
+		return ( $p && 0 === strcasecmp( $p->post_title, $domain ) ) ? strtolower( $p->post_title ) : '';
+	}
+}
+
+if ( ! function_exists( 'db_ty_resolve' ) ) {
+	/**
+	 * Decides what the page may say. Payment confirmations (full/plan) need
+	 * the signature added by the checkout's return URL; without it the page
+	 * shows a neutral thank-you with no domain or amount. Offer confirmations
+	 * only name a domain that is a real listing.
+	 *
+	 * @return array{0:string,1:string,2:string} type, domain, amount
+	 */
+	function db_ty_resolve( $type, $domain, $amount, $sig ) {
+		if ( in_array( $type, array( 'full', 'plan' ), true ) ) {
+			if ( '' === (string) $sig || ! hash_equals( db_ty_sig( $type, $domain, $amount ), (string) $sig ) ) {
+				return array( 'generic', '', '' );
+			}
+			return array( $type, $domain, $amount );
+		}
+		return array( 'offer', db_ty_known_domain( $domain ), '' );
+	}
+}
+
+/* -----------------------------------------------------------
    B1. the_content filter — inject thank-you content on /thank-you/
    ----------------------------------------------------------- */
 
@@ -342,6 +391,8 @@ add_filter( 'the_content', function ( $content ) {
 	// garbled any value that happened to look like valid base64).
 	$domain = ! empty( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$amount = ! empty( $_GET['amt'] ) ? sanitize_text_field( wp_unslash( $_GET['amt'] ) ) : '';
+	$sig    = ! empty( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
 
 	$done = true;
 	return db_ty_html( $type, $domain, $amount ) . $content;
@@ -411,6 +462,14 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			}
 			$html .= '</div>'; // timeline
 
+			$html .= '<a class="db-ty-cta" href="' . esc_url( home_url( '/' ) ) . '">Browse More Domains &rarr;</a>';
+		}
+
+		/* ---- unsigned link: no claims about any payment ---- */
+		elseif ( 'generic' === $type ) {
+			$html .= $check_svg;
+			$html .= '<h1 class="db-ty-headline">Thank you</h1>';
+			$html .= '<p class="db-ty-sub">If you have just completed a purchase, your confirmation and receipt are on their way to your email. Questions? <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact our team</a>.</p>';
 			$html .= '<a class="db-ty-cta" href="' . esc_url( home_url( '/' ) ) . '">Browse More Domains &rarr;</a>';
 		}
 
@@ -798,5 +857,69 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 	}
 	$amount = sanitize_text_field( $amount );
 
+	// Values from the shortcode itself were written by an editor; values that
+	// came from the URL go through the same checks as the_content path.
+	if ( ! $atts['domain'] && ! $atts['amount'] ) {
+		$sig = ! empty( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
+	}
+
 	return db_ty_html( $type, $domain, $amount );
 } );
+
+/* -----------------------------------------------------------
+   B5. Offer-form confirmation email (sent by the offer flow in
+       db-custom-blocks.php on wpcf7_mail_sent)
+   ----------------------------------------------------------- */
+
+if ( ! function_exists( 'db_offer_confirmation_email' ) ) {
+	/**
+	 * The confirmation goes to whatever address was typed into the public
+	 * offer form, so it could be used to send our branded mail to strangers
+	 * with attacker text in it (phishing from sales@…). Limits: once per
+	 * recipient per 30 minutes and 3 per visitor IP per hour; and only values
+	 * we can vouch for are echoed — a real listing name, a plain number, and
+	 * a first name with no links in it.
+	 *
+	 * @return array{to:string,subject:string,body:string}|null Null = don't send.
+	 */
+	function db_offer_confirmation_email( $email, $name, $domain, $amount, $ip ) {
+		if ( ! is_email( $email ) ) {
+			return null;
+		}
+		$rate_key = 'db_offer_conf_' . md5( strtolower( $email ) );
+		if ( get_transient( $rate_key ) ) {
+			return null;
+		}
+		$ip_key = 'db_offer_ip_' . md5( (string) $ip );
+		$sent   = (int) get_transient( $ip_key );
+		if ( $sent >= 3 ) {
+			return null;
+		}
+		set_transient( $rate_key, 1, 30 * MINUTE_IN_SECONDS );
+		set_transient( $ip_key, $sent + 1, HOUR_IN_SECONDS );
+
+		$domain = db_ty_known_domain( $domain );
+		$amount = preg_match( '/^\$?\s*[0-9][0-9,]*(\.[0-9]{1,2})?$/', trim( (string) $amount ) ) ? trim( (string) $amount ) : '';
+		$name   = trim( (string) $name );
+		if ( strlen( $name ) > 40 || preg_match( '#https?:|www\.|[/@<>]|\.[a-z]{2,}\b#i', $name ) ) {
+			$name = '';
+		}
+
+		$greeting = $name ? 'Hi ' . $name . ',' : 'Hi,';
+		$dom_line = $domain ? '<strong>' . esc_html( $domain ) . '</strong>' : 'the domain';
+		$amt_line = $amount ? ' of <strong>' . esc_html( $amount ) . '</strong>' : '';
+
+		$body  = '<p>' . esc_html( $greeting ) . '</p>';
+		$body .= '<p>Thank you for your interest in ' . $dom_line . '. We have received your offer' . $amt_line . ' and our team is reviewing it now.</p>';
+		$body .= '<p>You can expect a personal reply from us shortly. If your offer is accepted, we will send secure checkout instructions to complete the purchase.</p>';
+		$body .= '<p>If you have any questions in the meantime, simply reply to this email.</p>';
+		$body .= '<p>&mdash; The Domain Brothers Team</p>';
+
+		return array(
+			'to'      => $email,
+			'subject' => $domain ? 'We received your offer for ' . $domain : 'We received your offer',
+			'body'    => $body,
+		);
+	}
+}

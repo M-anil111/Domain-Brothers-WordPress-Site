@@ -1,6 +1,6 @@
 # Domain Brothers: full-site QA report (staging)
 
-Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.46.0 · 2026-10-24
+Site: `beta.domainbrothers.com` · Plugin: Domain Brothers Custom Blocks v3.47.0 · 2026-10-24
 Commits: `894986a` (fixes and test suites), plus this report.
 
 ## Results
@@ -289,3 +289,37 @@ Verified sound by the reviewer and left as is:
 - **Offline:** plan 50/50, markup 30/30, titles 10/10.
 - **Live suite:** 385/385.
 - **Checkout check:** checkout for `FATALITY.CA` normalises to `fatality.ca`.
+
+## 12. Security review of the rest of the plugin (v3.47.0)
+
+A third independent reviewer covered everything not reviewed in sections 10–11: the CRM, analytics, admin URL tools, emails and the thank-you page, the offer flow, the news fetcher, the `/okf/` endpoints, the service worker and the UI blocks.
+
+Nothing critical turned up:
+- no database injection;
+- no admin action reachable by the public;
+- no public endpoint that exposes leads.
+
+It reported 7 issues (3 medium, 4 low). All are fixed.
+
+| # | Issue | Fix |
+|---|---|---|
+| 1 | **Medium: offer form usable as a spam/phishing relay.** Anyone could make the site email any address "from" `sales@domainbrothers.com`, with their own text in the subject and greeting. The only limit was once per recipient. | Moved to `db_offer_confirmation_email()`. It allows 3 sends per visitor IP per hour as well as 1 per recipient per 30 minutes. The domain is shown only if it is a real listing, the amount only if it is a plain number, and the name only if it contains no links; the subject never carries visitor text. **Owner action:** add a CAPTCHA (`GO_LIVE_CHECKLIST.md` §3b). |
+| 2 | **Medium: fake payment confirmations.** `/thank-you/?type=full&d=google.com&amt=250000` rendered "You're the new owner of google.com — your payment of $250,000 has been confirmed". On staging the page uses the theme's own fixed template, so this was latent, but it would show wherever the plugin's thank-you content or `[db_thankyou]` shortcode is used. The plan chooser had the same weakness: any text and price via `?d=`/`?p=`. | The checkout return URL is now signed (HMAC over type, domain and amount). Unsigned or edited links show a neutral "Thank you" with no claims. The offer thank-you names only real listings. The plan chooser renders only for real listings. |
+| 3 | **Medium: lead data visible to any logged-in user.** The "Recent Leads" dashboard widget showed names and domains to Subscribers, Authors and Editors. | Admins only. |
+| 4 | **Low: admin URL tools could be triggered from other sites.** `?db_db_maint=1&commit=1` and `?db_purge_cache=1` changed state with no security token, so any page an admin visited could fire them. | A token-protected Confirm step, as the other admin tools already have. The read-only dry run is unchanged. |
+| 5 | **Low: the news fetcher would request internal addresses.** It fetched any URL a third-party feed supplied. | `wp_safe_remote_get()`, https only. |
+| 6 | **Low: SendGrid API key visible in the settings page source.** | The field is now blank; it shows only the last 4 characters, and leaving it blank keeps the saved key. |
+| 7 | **Low: `/okf/*.md` and the domain index served password-protected listings.** | Password-protected posts are excluded. |
+
+The reviewer confirmed these sound:
+- **Admin permissions:** every admin tool and AJAX action checks capability.
+- **Request forgery:** CRM actions and CSV export verify security tokens.
+- **Escaping:** lead data, RSS content and emails are escaped.
+- **CSV export:** neutralises spreadsheet formulas.
+- **Service worker:** it is a kill-switch that caches nothing.
+- **Secrets:** none are hard-coded.
+- **Caching:** transactional pages are excluded from the cache.
+
+**Results:**
+- **Offline:** forms 12/12 (new), plan 50/50, markup 30/30, titles 10/10.
+- **Live suite:** 388/388. A first run had 3 failures from the host returning 508 "resource limit" errors under load; they passed on the re-run.

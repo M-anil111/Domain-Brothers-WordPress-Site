@@ -149,6 +149,12 @@ const PAGES = [
 		record('FN-07', 'Checkout', 'bare plan page redirects', r6.status === 302, r6.status);
 		const r7 = await http('/thank-you/?type=full&d=fatality.ca&amt=2500');
 		record('FN-08', 'Checkout', 'thank-you page renders', r7.status === 200, r7.status);
+		const fake = await http('/thank-you/?type=full&d=google.com&amt=250000');
+		record('SEC-ty-unsigned', 'Security', 'unsigned thank-you link makes no payment/ownership claim', fake.status === 200 && !/new owner|250,000|has been confirmed/i.test(fake.body), fake.status);
+		const offer = await http('/thank-you/?type=offer&d=' + encodeURIComponent('URGENT: verify at evil.example'));
+		record('SEC-ty-offer', 'Security', 'offer thank-you shows only real listing names', offer.status === 200 && !/evil\.example/.test(offer.body), offer.status);
+		const planFake = await http(`/payment-plan-setup/?d=${encodeURIComponent(b64('evil.example'))}&p=${encodeURIComponent(b64('1'))}`);
+		record('SEC-plan-unlisted', 'Security', 'plan chooser does not render for an unlisted domain', !/Choose your payment plan for/.test(planFake.body) || !/evil\.example/.test(planFake.body), planFake.status);
 		const r8 = await http('/payment-successful/');
 		record('FN-09', 'Checkout', '/payment-successful/ redirects to thank-you', r8.status === 302, r8.headers.get('location'));
 	}

@@ -106,6 +106,12 @@ if ( ! function_exists( 'db_cache_manual_purge' ) ) {
 		if ( ! isset( $_GET['db_purge_cache'] ) || ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
+		// Nonce, like the other admin URL tools: otherwise any page an admin
+		// visits could trigger a full purge with <img src="/?db_purge_cache=1">.
+		if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'db_purge_cache' ) ) {
+			$confirm = wp_nonce_url( add_query_arg( 'db_purge_cache', '1', home_url( '/' ) ), 'db_purge_cache' );
+			wp_die( 'Purge the whole page cache? <a href="' . esc_url( $confirm ) . '">Confirm</a>', 'Purge cache', array( 'response' => 200 ) );
+		}
 		do_action( 'litespeed_purge_all' );
 		// litespeed_purge_all alone was confirmed unreliable — the header it
 		// produces (x-litespeed-purge: public,78a_) did get sent, but pages
@@ -179,6 +185,12 @@ if ( ! function_exists( 'db_db_maintenance' ) ) {
 		}
 		global $wpdb;
 		$commit = ! empty( $_GET['commit'] );
+		// The dry run only reads; changing anything needs a nonce, so a page an
+		// admin happens to visit can't trigger it.
+		if ( $commit && ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'db_db_maint' ) ) ) {
+			$confirm = wp_nonce_url( add_query_arg( array( 'db_db_maint' => '1', 'commit' => '1' ), home_url( '/' ) ), 'db_db_maint' );
+			wp_die( 'Run database clean-up (expired transients, feed cache, autoload off for removed plugins)? <a href="' . esc_url( $confirm ) . '">Confirm</a>', 'DB maintenance', array( 'response' => 200 ) );
+		}
 		$out    = array( 'commit' => $commit );
 		$out['expired_transients'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_timeout\\_%%' AND option_value < %d", time() ) );
 		$feeds = $wpdb->get_col( "SELECT o.option_name FROM {$wpdb->options} o LEFT JOIN {$wpdb->options} t ON t.option_name = CONCAT('_transient_timeout_', SUBSTRING(o.option_name, 12)) WHERE o.option_name LIKE '\\_transient\\_feed\\_%' AND t.option_id IS NULL" );

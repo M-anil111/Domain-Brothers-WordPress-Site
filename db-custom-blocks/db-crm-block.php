@@ -1151,6 +1151,10 @@ add_action( 'wp_ajax_db_crm_bulk_action', function() {
    ========================================================================== */
 
 add_action( 'wp_dashboard_setup', function() {
+	// Lead names and domains are for admins only, not every logged-in role.
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
 	wp_add_dashboard_widget(
 		'db_crm_widget',
 		'Domain Brothers &mdash; Recent Leads',
@@ -1160,6 +1164,9 @@ add_action( 'wp_dashboard_setup', function() {
 
 if ( ! function_exists( 'db_crm_dashboard_widget' ) ) {
 	function db_crm_dashboard_widget() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
 		global $wpdb;
 		$table = $wpdb->prefix . 'db_leads';
 

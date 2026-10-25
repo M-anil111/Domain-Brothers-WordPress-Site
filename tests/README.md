@@ -1,6 +1,6 @@
 # Tests
 
-## `qa/run-qa.js` — live staging QA suite (385 checks)
+## `qa/run-qa.js` — live staging QA suite (388 checks)
 Real-browser (Playwright/Chromium) and HTTP checks against staging: status codes,
 PHP error leaks, titles/descriptions/canonicals/H1/JSON-LD, noindex on staging,
 image alt text, security headers, XML-RPC, user enumeration, checkout redirects
@@ -55,3 +55,10 @@ empty titles) and escaping of the document-title filter.
 Staging vs production: `tests/qa/run-qa.js` targets staging by default. Set
 `QA_BASE=https://www.domainbrothers.com` to run it against production (no
 password; checks pages are indexable instead of noindex). It only reads pages.
+
+## `security/forms-test.php` — public-form protections, offline (12 checks)
+Thank-you page can't be used to fake a payment confirmation (signed checkout
+return), offer confirmation emails can't carry attacker text, and per-recipient
+/ per-IP send limits.
+
+    php tests/security/forms-test.php

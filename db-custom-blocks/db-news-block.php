@@ -76,7 +76,15 @@ if ( ! function_exists( 'db_news_og_image' ) ) {
 			return $cached;
 		}
 		$image = '';
-		$resp  = wp_remote_get( $article_url, array( 'timeout' => 3, 'redirection' => 3 ) );
+		// Article links come from third-party feeds: only fetch public https
+		// URLs (wp_safe_remote_get refuses private/loopback addresses and
+		// re-checks redirects), so a compromised feed can't point this server
+		// at internal addresses.
+		if ( 'https' !== wp_parse_url( (string) $article_url, PHP_URL_SCHEME ) ) {
+			set_transient( $key, '', DB_NEWS_TTL );
+			return '';
+		}
+		$resp  = wp_safe_remote_get( $article_url, array( 'timeout' => 3, 'redirection' => 3 ) );
 		if ( ! is_wp_error( $resp ) && 200 === (int) wp_remote_retrieve_response_code( $resp ) ) {
 			$body = wp_remote_retrieve_body( $resp );
 			if ( preg_match( '#<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']#i', $body, $m )

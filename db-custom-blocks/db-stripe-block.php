@@ -426,10 +426,14 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		// 'd', not 'domain' — the domain CPT registers 'domain' as its own
 		// public query var, so ?domain=... hijacks the main query away from
 		// the thank-you page (renders the listing or a 404 instead).
+		$ty_type         = $is_plan ? 'plan' : 'full';
+		$ty_amount       = number_format( $price, 0, '.', ',' );
 		$return_url      = home_url(
-			'/thank-you/?type=' . ( $is_plan ? 'plan' : 'full' )
+			'/thank-you/?type=' . $ty_type
 			. '&d=' . rawurlencode( $domain )
-			. '&amt=' . rawurlencode( number_format( $price, 0, '.', ',' ) )
+			. '&amt=' . rawurlencode( $ty_amount )
+			// Signed, so the confirmation page can't be faked by editing the URL.
+			. ( function_exists( 'db_ty_sig' ) ? '&s=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
 		);
 
 		header( 'Content-Type: text/html; charset=UTF-8' );

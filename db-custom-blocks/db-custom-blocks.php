@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.46.0
+ * Version:     3.47.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.46.0' );
+define( 'DB_BLOCKS_LOADED', '3.47.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -149,7 +149,12 @@ add_action( 'admin_menu', function () {
 add_action( 'admin_init', function () {
 	register_setting( 'db_sg_settings', 'db_sg_api_key', array(
 		'type'              => 'string',
-		'sanitize_callback' => 'sanitize_text_field',
+		// The field is rendered empty (the key is never echoed back), so an
+		// empty submission means "keep the saved key".
+		'sanitize_callback' => function ( $value ) {
+			$value = sanitize_text_field( (string) $value );
+			return '' === $value ? (string) get_option( 'db_sg_api_key', '' ) : $value;
+		},
 		'default'           => '',
 	) );
 } );
@@ -188,8 +193,10 @@ if ( ! function_exists( 'db_sg_settings_page' ) ) {
 					<tr>
 						<th scope="row"><label for="db_sg_api_key">SendGrid API Key</label></th>
 						<td>
+							<?php // Never echo the saved key back into the page; empty = keep it. ?>
 							<input type="password" id="db_sg_api_key" name="db_sg_api_key"
-								value="<?php echo esc_attr( db_sg_api_key() ); ?>"
+								value=""
+								placeholder="<?php echo esc_attr( $key_saved ? 'Saved (ends ' . substr( db_sg_api_key(), -4 ) . ') — leave blank to keep' : 'SG.…' ); ?>"
 								class="regular-text" autocomplete="new-password" style="width:440px">
 							<p class="description">
 								Starts with <code>SG.</code> — create one at
@@ -638,9 +645,12 @@ function db_plan_widget_html() {
 	// two differ — a stale link after a price change, or an edited ?p= — the
 	// chooser would advertise one monthly amount and Stripe would bill
 	// another. Show the same authoritative figure the charge will use.
-	if ( $domain && function_exists( 'db_stripe_lookup_domain_price' ) ) {
-		$listed = db_stripe_lookup_domain_price( $domain );
-		if ( null !== $listed ) { $price = $listed; }
+	// Only for real listings: otherwise ?d=/?p= put any text and any price
+	// into "Choose your payment plan for …" on this domain.
+	if ( function_exists( 'db_stripe_lookup_domain_price' ) ) {
+		$listed = $domain ? db_stripe_lookup_domain_price( $domain ) : null;
+		if ( null === $listed ) { return ''; }
+		$price = $listed;
 	}
 	if ( $price <= 0 ) { return ''; }
 
@@ -1049,29 +1059,16 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 	if ( ! $submission ) { return; }
 	$data = $submission->get_posted_data();
 
-	$email  = db_offer_value( $data, 'email' );
-	$name   = db_offer_value( $data, 'name' );
-	$domain = db_offer_value( $data, 'domain' );
-	$amount = db_offer_value( $data, 'amount' );
-
-	if ( ! is_email( $email ) ) { return; }
-
-	$rate_key = 'db_offer_conf_' . md5( strtolower( $email ) );
-	if ( get_transient( $rate_key ) ) { return; }
-	set_transient( $rate_key, 1, 30 * MINUTE_IN_SECONDS );
-
-	$greeting = $name ? 'Hi ' . $name . ',' : 'Hi,';
-	$dom_line = $domain ? '<strong>' . esc_html( $domain ) . '</strong>' : 'the domain';
-	$amt_line = $amount ? ' of <strong>' . esc_html( $amount ) . '</strong>' : '';
-	$subject  = $domain ? 'We received your offer for ' . sanitize_text_field( $domain ) : 'We received your offer';
-
-	$body  = '<p>' . esc_html( $greeting ) . '</p>';
-	$body .= '<p>Thank you for your interest in ' . $dom_line . '. We have received your offer' . $amt_line . ' and our team is reviewing it now.</p>';
-	$body .= '<p>You can expect a personal reply from us shortly. If your offer is accepted, we will send secure checkout instructions to complete the purchase.</p>';
-	$body .= '<p>If you have any questions in the meantime, simply reply to this email.</p>';
-	$body .= '<p>&mdash; The Domain Brothers Team</p>';
-
-	wp_mail( $email, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
+	$mail = db_offer_confirmation_email(
+		db_offer_value( $data, 'email' ),
+		db_offer_value( $data, 'name' ),
+		db_offer_value( $data, 'domain' ),
+		db_offer_value( $data, 'amount' ),
+		isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''
+	);
+	if ( $mail ) {
+		wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+	}
 }, 10, 1 );
 
 add_action( 'wp_footer', function () {
