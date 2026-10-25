@@ -68,3 +68,9 @@ return), offer confirmation emails can't carry attacker text, and per-recipient
 the plugin and tests, then the four offline suites (plan, hygiene, titles,
 forms) on PHP 8.2, 8.3 and 8.4, plus a syntax check of the browser suites. It
 needs no secrets and makes no network calls to the site.
+
+## `responsive/run-responsive.js` — responsive and foldable layout scan
+
+Loads 13 page types at 13 viewports (phones, Galaxy Z Fold cover/open, Pixel Fold, half-folded Z Flip, Surface Duo single/spanned, tablets, laptop, desktop) and fails on horizontal overflow, elements cut off at the right edge, JS errors. Reports targets under 24 px and text under 12 px. Sequential on purpose (the shared host returns 508 under parallel load).
+
+    BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/responsive/run-responsive.js out-dir [--shots]

@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.48.0
+ * Version:     3.50.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.48.0' );
+define( 'DB_BLOCKS_LOADED', '3.50.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -3306,19 +3306,34 @@ add_action( 'wp_footer', function () {
 			   the same real links the drawer uses, just relocated. CSS
 			   hides #db-desktop-nav and the logo below 992px, where the
 			   drawer stays the only navigation. */
-			var fixedBar = document.querySelector('.site-header .domain-search');
-			var logoLink = document.querySelector('.site-branding .custom-logo-link');
-			var desktopNav = document.getElementById('db-desktop-nav');
-			if (document.body.classList.contains('single-domain')) {
-				// The fixed bar is hidden on this template (search doesn't
-				// belong on a single domain's own sale page) — the logo
-				// stays where it already is; just bring the nav to sit
-				// beside it instead of leaving it orphaned in the footer.
-				var branding = document.querySelector('.site-branding');
-				if (branding && desktopNav) { branding.appendChild(desktopNav); }
-			} else if (fixedBar) {
-				if (desktopNav) { fixedBar.insertBefore(desktopNav, fixedBar.firstChild); }
-				if (logoLink) { fixedBar.insertBefore(logoLink, fixedBar.firstChild); }
+			/* The nav is printed by another wp_footer hook (db-mobilenav-block.php)
+			   AFTER this script has run, so looking it up right here found
+			   nothing and the menu stayed stranded below the footer on every
+			   desktop page. Move it once the document has finished parsing. */
+			function placeDesktopNav() {
+				var fixedBar = document.querySelector('.site-header .domain-search');
+				var logoLink = document.querySelector('.site-branding .custom-logo-link');
+				var desktopNav = document.getElementById('db-desktop-nav');
+				if (!desktopNav || desktopNav.getAttribute('data-placed')) { return; }
+				if (document.body.classList.contains('single-domain')) {
+					// The fixed bar is hidden on this template (search doesn't
+					// belong on a single domain's own sale page) — the logo
+					// stays where it already is; just bring the nav to sit
+					// beside it instead of leaving it orphaned in the footer.
+					var branding = document.querySelector('.site-branding');
+					if (branding) { branding.appendChild(desktopNav); }
+				} else if (fixedBar) {
+					fixedBar.insertBefore(desktopNav, fixedBar.firstChild);
+					if (logoLink) { fixedBar.insertBefore(logoLink, fixedBar.firstChild); }
+				} else {
+					return;
+				}
+				desktopNav.setAttribute('data-placed', '1');
+			}
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', placeDesktopNav);
+			} else {
+				placeDesktopNav();
 			}
 
 			/* 6. Turn the theme's plain domain tables into a card grid.
@@ -4423,3 +4438,8 @@ require_once __DIR__ . '/db-domain-filter-block.php';
    ============================================================ */
 require_once __DIR__ . '/db-recommend-block.php';
 require_once __DIR__ . '/db-exit-offer-block.php';
+
+/* ============================================================
+   DESIGN REFRESH — the exit-offer popup's look, site-wide
+   ============================================================ */
+require_once __DIR__ . '/db-design-block.php';

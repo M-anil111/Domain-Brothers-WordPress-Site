@@ -346,3 +346,15 @@ Section 2 suggested archiving or deleting these. A read-only inventory shows the
   - mark the rest as expired.
 - **Archiving is optional.** If the database size matters, export them to CSV first, or move them to an "archived" status. They are already private: not public, not in the sitemap, and not reachable by URL.
 - **Still safe to clean after a backup:** the 4,926 post revisions and the tables left by removed plugins.
+
+## 14. Exit offer popup, recommendations, site-wide redesign (v3.50.0)
+
+**Added**
+- Exit-intent offer popup on domain pages (`db-exit-offer-block.php`): desktop on pointer leaving through the top edge, touch on a quick scroll-up or 45 s idle. Never in the first 6 s, once per session (3 days remembered), never on sold or password-protected names. It hands the amount to the existing offer form, so the confirmation and limits are unchanged. Buy-now and payment-plan links carry the domain and price.
+- Ranked recommendations (`db-recommend-block.php`) replace the random "Similar domains" list on domain pages and fill the popup. Score: shared categories, shared letters in the name, owner keywords, same extension, similar length and price band, buyable now. Ties break on a stable hash, so pages stay cache-friendly. Reads the cached domain index, so no extra queries.
+- Site-wide design refresh (`db-design-block.php`) in the popup's style: navy `#0a1628`, green `#2e7d14`, white 18 px cards, 52 px controls with 2 px borders and a green focus ring, system font stack, uppercase eyebrow labels. Covers header, hero, cards, forms, tables, domain page, news, plan page, content pages, footer.
+- `tests/responsive/run-responsive.js`: 13 pages × 13 viewports (phones, Z Fold cover and open, Pixel Fold, half-folded Z Flip, Surface Duo single and spanned, tablets, laptop, desktop).
+
+**Defects found and fixed during the redesign**: desktop menu stranded below the footer; banner copy invisible; domain-page trust bullets rendered near-white on white (axe contrast 1.23:1); privacy link 4.3:1 on pale green; plan page drawn as a card inside a card; 5 px overhang of the banner badge text at 344–430 px; 22 px "Learn more" targets.
+
+**Results on staging (this commit)**: live QA 401/402 (the one miss was a navigation flake that passed on three re-runs; earlier 508s are host rate limiting, not code), axe 0 violations on 12 page types × 2 viewports, responsive scan 169 scans with 0 overflow, 0 cut-off, 0 errors, 0 tiny-text pages.
