@@ -185,6 +185,11 @@ if ( ! function_exists( 'db_deal_ensure_for_lead' ) ) {
 		if ( ! $lead ) {
 			return null;
 		}
+		// A repeat offer that was merged into an earlier negotiation opens that one.
+		$joined = db_deal_find_active( $lead->email, $lead->domain );
+		if ( $joined ) {
+			return $joined;
+		}
 		$amount = (float) $lead->offer_amount;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$ok = $wpdb->insert( db_deal_table(), array(
@@ -207,10 +212,43 @@ if ( ! function_exists( 'db_deal_ensure_for_lead' ) ) {
 }
 
 // A new lead from the offer form becomes an open deal.
-add_action( 'db_crm_lead_created', function ( $lead_id, $data ) {
-	if ( 'offer_form' === ( $data['source'] ?? '' ) && (float) db_crm_clean_offer_amount( $data['offer_amount'] ?? '' ) > 0 ) {
-		db_deal_ensure_for_lead( $lead_id );
+if ( ! function_exists( 'db_deal_find_active' ) ) {
+	/** The newest negotiation for this buyer and domain that can still take a new offer. */
+	function db_deal_find_active( $email, $domain ) {
+		global $wpdb;
+		$t = db_deal_table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$deal = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE LOWER(buyer_email) = %s AND domain = %s AND state IN ('open','countered','declined','expired') ORDER BY id DESC LIMIT 1", strtolower( trim( (string) $email ) ), strtolower( trim( (string) $domain ) ) ) );
+		return $deal ? db_deal_expire_if_due( $deal ) : null;
 	}
+}
+
+// A new lead from the offer form becomes an open deal. When the same buyer
+// has already made an offer on this domain and it is still being negotiated,
+// the new offer is added to that negotiation (every offer is kept in its
+// history) instead of starting a second one.
+add_action( 'db_crm_lead_created', function ( $lead_id, $data ) {
+	if ( 'offer_form' !== ( $data['source'] ?? '' ) ) {
+		return;
+	}
+	$amount = (float) db_crm_clean_offer_amount( $data['offer_amount'] ?? '' );
+	if ( $amount <= 0 ) {
+		return;
+	}
+	global $wpdb;
+	$lt = $wpdb->prefix . 'db_leads';
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$lead = $wpdb->get_row( $wpdb->prepare( "SELECT email, domain, message FROM {$lt} WHERE id = %d", (int) $lead_id ) );
+	$prev = $lead ? db_deal_find_active( $lead->email, $lead->domain ) : null;
+	if ( $prev && (int) $prev->lead_id !== (int) $lead_id ) {
+		$res = db_deal_apply( $prev, 'buyer', 'offer', $amount, (string) $lead->message );
+		if ( ! is_wp_error( $res ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$wpdb->update( $lt, array( 'status' => 'negotiating' ), array( 'id' => (int) $lead_id ) );
+			return;
+		}
+	}
+	db_deal_ensure_for_lead( $lead_id );
 }, 10, 2 );
 
 /* ───────────────────────────── 3. State machine ───────────────────────── */
@@ -671,6 +709,97 @@ add_action( 'admin_menu', function () {
 	add_submenu_page( 'db-crm-leads', 'Offers', 'Offers', 'manage_options', 'db-offers', 'db_deal_admin_page' );
 }, 21 );
 
+if ( ! function_exists( 'db_deal_tabs' ) ) {
+	function db_deal_tabs( $current ) {
+		$base = admin_url( 'admin.php?page=db-offers' );
+		return '<h2 class="nav-tab-wrapper"><a class="nav-tab' . ( 'deals' === $current ? ' nav-tab-active' : '' ) . '" href="' . esc_url( $base ) . '">Negotiations</a><a class="nav-tab' . ( 'all' === $current ? ' nav-tab-active' : '' ) . '" href="' . esc_url( add_query_arg( 'tab', 'all', $base ) ) . '">All offers received</a></h2>';
+	}
+}
+
+if ( ! function_exists( 'db_deal_all_offers' ) ) {
+	/**
+	 * Every offer a buyer has ever made, newest first: one row per offer, so a
+	 * buyer who offers three times appears three times. Includes older leads
+	 * from before negotiations were tracked.
+	 *
+	 * @return array<int,array{ts:int,domain:string,email:string,name:string,amount:float,message:string,deal:int,state:string}>
+	 */
+	function db_deal_all_offers( $search = '' ) {
+		global $wpdb;
+		$et = db_deal_table( 'events' );
+		$dt = db_deal_table();
+		$lt = $wpdb->prefix . 'db_leads';
+		$like = '%' . $wpdb->esc_like( $search ) . '%';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$ev = (array) $wpdb->get_results( $wpdb->prepare(
+			"SELECT e.created_at, e.amount, e.message, d.id AS deal, d.domain, d.buyer_email, d.buyer_name, d.state, d.lead_id FROM {$et} e JOIN {$dt} d ON d.id = e.deal_id WHERE e.actor = 'buyer' AND e.action = 'offer' AND (d.domain LIKE %s OR d.buyer_email LIKE %s OR d.buyer_name LIKE %s) ORDER BY e.id DESC LIMIT 2000",
+			$like, $like, $like
+		) );
+		$legacy = (array) $wpdb->get_results( $wpdb->prepare(
+			"SELECT l.id, l.created_at, l.offer_amount, l.message, l.domain, l.email, l.name FROM {$lt} l LEFT JOIN {$dt} d ON d.lead_id = l.id WHERE d.id IS NULL AND l.offer_amount > 0 AND l.source = 'offer_form' AND (l.domain LIKE %s OR l.email LIKE %s OR l.name LIKE %s) ORDER BY l.id DESC LIMIT 2000",
+			$like, $like, $like
+		) );
+		// phpcs:enable
+		$out = array();
+		foreach ( $ev as $r ) {
+			$out[] = array( 'ts' => (int) strtotime( $r->created_at . ' UTC' ), 'domain' => strtolower( $r->domain ), 'email' => $r->buyer_email, 'name' => $r->buyer_name, 'amount' => (float) $r->amount, 'message' => (string) $r->message, 'deal' => (int) $r->deal, 'state' => $r->state );
+		}
+		foreach ( $legacy as $r ) {
+			$out[] = array( 'ts' => (int) strtotime( $r->created_at . ' UTC' ), 'domain' => strtolower( $r->domain ), 'email' => $r->email, 'name' => $r->name, 'amount' => (float) $r->offer_amount, 'message' => (string) $r->message, 'deal' => 0, 'state' => 'earlier' );
+		}
+		usort( $out, static function ( $a, $b ) {
+			return $b['ts'] <=> $a['ts'];
+		} );
+		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_deal_all_offers_page' ) ) {
+	function db_deal_all_offers_page() {
+		$q    = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$rows = db_deal_all_offers( $q );
+		$sum  = 0.0;
+		$doms = array();
+		foreach ( $rows as $r ) {
+			$sum += $r['amount'];
+			$doms[ $r['domain'] ] = true;
+		}
+		echo '<div class="wrap"><h1>Custom offers</h1>' . db_deal_tabs( 'all' ) . '<p>Every offer ever received through the "Make an offer" form. A buyer who offers more than once appears once per offer.</p>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		printf( '<p><strong>%d</strong> offers on <strong>%d</strong> domains, totalling %s.</p>', count( $rows ), count( $doms ), esc_html( db_deal_money( $sum ) ) );
+		echo '<form method="get" style="margin:10px 0"><input type="hidden" name="page" value="db-offers"><input type="hidden" name="tab" value="all"><input type="search" name="q" value="' . esc_attr( $q ) . '" placeholder="Domain or buyer"> <button class="button">Search</button> <a class="button" href="' . esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'db_offers_export', 'q' => $q ), admin_url( 'admin-post.php' ) ), 'db_offers_export' ) ) . '">Export CSV</a></form>';
+		echo '<table class="widefat striped"><thead><tr><th>Received</th><th>Domain</th><th>Buyer</th><th>Offer</th><th>Message</th><th>Now</th><th></th></tr></thead><tbody>';
+		if ( ! $rows ) {
+			echo '<tr><td colspan="7">No offers yet.</td></tr>';
+		}
+		$states = db_deal_states();
+		foreach ( $rows as $r ) {
+			echo '<tr><td>' . esc_html( wp_date( 'M j, Y g:i a', $r['ts'] ) ) . '</td><td><strong>' . esc_html( $r['domain'] ) . '</strong></td><td>' . esc_html( trim( $r['name'] . ' ' . $r['email'] ) ) . '</td><td>' . esc_html( db_deal_money( $r['amount'] ) ) . '</td><td>' . esc_html( wp_trim_words( $r['message'], 14 ) ) . '</td><td>' . esc_html( 'earlier' === $r['state'] ? 'Earlier lead' : ( $states[ $r['state'] ] ?? $r['state'] ) ) . '</td><td>' . ( $r['deal'] ? '<a href="' . esc_url( admin_url( 'admin.php?page=db-offers&deal=' . $r['deal'] ) ) . '">Open</a>' : '' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		}
+		echo '</tbody></table></div>';
+	}
+}
+
+add_action( 'admin_post_db_offers_export', function () {
+	if ( ! current_user_can( 'manage_options' ) || ! check_admin_referer( 'db_offers_export' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	$q = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+	nocache_headers();
+	header( 'Content-Type: text/csv; charset=utf-8' );
+	header( 'Content-Disposition: attachment; filename="db-offers-received-' . gmdate( 'Y-m-d' ) . '.csv"' );
+	$out = fopen( 'php://output', 'w' );
+	fputcsv( $out, array( 'Received (UTC)', 'Domain', 'Buyer name', 'Buyer email', 'Offer (USD)', 'Message', 'Status now' ) );
+	$safe = static function ( $v ) {
+		$v = (string) $v;
+		return ( '' !== $v && false !== strpos( "=+-@\t\r", $v[0] ) ) ? "'" . $v : $v;
+	};
+	foreach ( db_deal_all_offers( $q ) as $r ) {
+		fputcsv( $out, array( gmdate( 'Y-m-d H:i', $r['ts'] ), $safe( $r['domain'] ), $safe( $r['name'] ), $safe( $r['email'] ), number_format( $r['amount'], 2, '.', '' ), $safe( $r['message'] ), $r['state'] ) );
+	}
+	fclose( $out );
+	exit;
+} );
+
 if ( ! function_exists( 'db_deal_admin_page' ) ) {
 	function db_deal_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -692,10 +821,14 @@ if ( ! function_exists( 'db_deal_admin_page' ) ) {
 				return;
 			}
 		}
+		if ( isset( $_GET['tab'] ) && 'all' === $_GET['tab'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			db_deal_all_offers_page();
+			return;
+		}
 		$t = db_deal_table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = (array) $wpdb->get_results( "SELECT * FROM {$t} ORDER BY FIELD(state,'open','accepted','countered','expired','declined','paid'), updated_at DESC LIMIT 300" );
-		echo '<div class="wrap"><h1>Custom offers</h1><p>Offers from the "Make an offer" form. Open one to accept it, send a different price, or decline.</p>';
+		echo '<div class="wrap"><h1>Custom offers</h1>' . db_deal_tabs( 'deals' ) . '<p>Offers from the "Make an offer" form. Open one to accept it, send a different price, or decline.</p>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<style>.dbo-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef2f7;color:#334155}.dbo-pill.open{background:#fff4e0;color:#8a5a00}.dbo-pill.countered{background:#e0f0ff;color:#0a5aa8}.dbo-pill.accepted,.dbo-pill.paid{background:#e7f6ec;color:#137a3e}.dbo-pill.declined,.dbo-pill.expired{background:#fee2e2;color:#991b1b}</style>';
 		echo '<table class="widefat striped"><thead><tr><th>Updated</th><th>Domain</th><th>Buyer</th><th>Price</th><th>Last move</th><th>Status</th><th></th></tr></thead><tbody>';
 		if ( ! $rows ) {
