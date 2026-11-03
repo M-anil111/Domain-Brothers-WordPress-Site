@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.53.4
+ * Version:     3.54.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.53.4' );
+define( 'DB_BLOCKS_LOADED', '3.54.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -999,7 +999,8 @@ if ( ! function_exists( 'db_offer_field_map' ) ) {
 		return array(
 			'email'   => array( 'your-email', 'email', 'offer-email', 'customer-email' ),
 			'name'    => array( 'your-name', 'name', 'offer-name', 'customer-name' ),
-			'domain'  => array( 'your-domain', 'domain', 'offer-domain', 'domain-name', 'offer-doamin-name', 'offer-domain-name' ),
+			// 'hide_domainname' is the hidden field the live Offer Form (CF7 #1878) actually carries the domain in.
+			'domain'  => array( 'your-domain', 'domain', 'hide_domainname', 'offer-domain', 'domain-name', 'offer-doamin-name', 'offer-domain-name' ),
 			'amount'  => array( 'your-offer', 'offer', 'amount', 'offer-amount', 'price', 'offer-price' ),
 			'phone'   => array( 'your-phone', 'phone', 'tel', 'customer-phone', 'offer-phone' ),
 			'message' => array( 'your-message', 'message', 'comments', 'offer-msg', 'offer-message' ),
@@ -1067,9 +1068,12 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 		isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''
 	);
 	if ( $mail ) {
+		// The buyer's private offer page (created by the CRM hook, which runs at priority 10).
+		$link = (string) apply_filters( 'db_offer_confirmation_link', '', $mail['to'], db_offer_value( $data, 'domain' ) );
+		$mail = db_offer_email_with_link( $mail, $link );
 		wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
 	}
-}, 10, 1 );
+}, 20, 1 ); // after the CRM lead (and its offer page) exists
 
 add_action( 'wp_footer', function () {
 	$form_id  = db_offer_resolved_form_id();

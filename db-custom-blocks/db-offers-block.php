@@ -420,6 +420,24 @@ add_action( 'db_deal_changed', function ( $deal, $actor, $action, $message ) {
 	}
 }, 10, 4 );
 
+// The confirmation email links to the buyer's own offer page.
+add_filter( 'db_offer_confirmation_link', function ( $link, $email, $domain ) {
+	global $wpdb;
+	$t = db_deal_table();
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$deal = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE buyer_email = %s AND domain = %s AND created_at > %s ORDER BY id DESC LIMIT 1", sanitize_email( (string) $email ), strtolower( trim( (string) $domain ) ), gmdate( 'Y-m-d H:i:s', time() - 600 ) ) );
+	return $deal ? db_deal_url( $deal ) : $link;
+}, 10, 3 );
+
+// The confirmation email links to the buyer's own offer page.
+add_filter( 'db_offer_confirmation_link', function ( $link, $email, $domain ) {
+	global $wpdb;
+	$t = db_deal_table();
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$deal = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE buyer_email = %s AND domain = %s AND created_at > %s ORDER BY id DESC LIMIT 1", sanitize_email( (string) $email ), strtolower( trim( (string) $domain ) ), gmdate( 'Y-m-d H:i:s', time() - 600 ) ) );
+	return $deal ? db_deal_url( $deal ) : $link;
+}, 10, 3 );
+
 /* ───────────────────────── 5. Checkout and payment ────────────────────── */
 
 if ( ! function_exists( 'db_deal_checkout_context' ) ) {
@@ -768,4 +786,27 @@ add_action( 'admin_post_db_deal_admin', function () {
 		$to( $deal->id, $res->get_error_message() );
 	}
 	$to( $deal->id, 'Done. The buyer has been emailed.' );
+} );
+
+/* ───────────────────── 8. Email failures are visible ──────────────────── */
+
+// Offers are recorded whether or not email works; if it does not, say so in the admin.
+add_action( 'wp_mail_failed', function ( $err ) {
+	$list   = (array) get_option( 'db_mail_failures', array() );
+	$list[] = array( 'ts' => time(), 'subject' => function_exists( 'mb_substr' ) ? mb_substr( (string) ( $err->get_error_data()['subject'] ?? '' ), 0, 80 ) : '', 'error' => substr( wp_strip_all_tags( $err->get_error_message() ), 0, 200 ) );
+	update_option( 'db_mail_failures', array_slice( $list, -20 ), false );
+} );
+
+add_action( 'admin_notices', function () {
+	$screen = get_current_screen();
+	if ( ! $screen || false === strpos( (string) $screen->id, 'db-' ) || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$recent = array_filter( (array) get_option( 'db_mail_failures', array() ), static function ( $f ) {
+		return ( $f['ts'] ?? 0 ) > time() - DAY_IN_SECONDS;
+	} );
+	if ( $recent ) {
+		$last = end( $recent );
+		echo '<div class="notice notice-error"><p><strong>Email is failing.</strong> ' . count( $recent ) . ' message(s) could not be sent in the last 24 hours (latest: ' . esc_html( $last['error'] ) . '). Offers and sales are still recorded, but you and your customers are not being emailed. Check the site\'s SMTP settings.</p></div>';
+	}
 } );

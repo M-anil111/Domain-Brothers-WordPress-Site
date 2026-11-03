@@ -200,7 +200,10 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
    3. CF7 INTEGRATION
    ========================================================================== */
 
-add_action( 'wpcf7_mail_sent', function( $cf7 ) {
+// Recorded BEFORE the mail is attempted (wpcf7_before_send_mail, which runs only once the
+// form has validated). It used to run on wpcf7_mail_sent, so whenever the mail server failed
+// the visitor saw an error and the offer was never recorded anywhere.
+add_action( 'wpcf7_before_send_mail', function( $cf7 ) {
 	// Only fire for forms whose title contains "offer" (case-insensitive)
 	$title = strtolower( $cf7->title() );
 	if ( false === strpos( $title, 'offer' ) ) {
@@ -222,6 +225,13 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 	$domain = function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'domain' ) : ( $posted['your-domain'] ?? '' );
 	if ( empty( $domain ) && isset( $_GET['d'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$domain = sanitize_text_field( wp_unslash( $_GET['d'] ) );
+	}
+	// The form is posted by a REST call, so ?d= is not there: use the page it was posted from.
+	if ( empty( $domain ) && method_exists( $submission, 'get_meta' ) ) {
+		$container = (int) $submission->get_meta( 'container_post_id' );
+		if ( $container && 'domain' === get_post_type( $container ) ) {
+			$domain = strtolower( trim( wp_strip_all_tags( get_the_title( $container ) ) ) );
+		}
 	}
 
 	$data = array(
