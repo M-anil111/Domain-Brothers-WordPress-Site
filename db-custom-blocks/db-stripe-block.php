@@ -1021,6 +1021,7 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 				db_stripe_flag_conflict( $domain, $pi, 'A full purchase was paid for a domain reserved on another buyer\'s payment plan.' );
 				return;
 			}
+			do_action( 'db_order_event', 'full', compact( 'domain', 'amount_usd', 'customer_email', 'pi_id', 'meta' ) );
 			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full', $pi_id );
 			return;
 		}
@@ -1087,6 +1088,16 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		}
 		$plan['past_due_since'] = 0;
 		$plan['notice_stage']   = 0;
+		do_action( 'db_order_event', 'plan_installment', [
+			'domain'         => $domain,
+			'amount_usd'     => $amount_usd,
+			'customer_email' => $customer_email,
+			'pi_id'          => $pi_id,
+			'meta'           => $meta,
+			'installment'    => $installment_num,
+			'total_months'   => $total_months,
+			'total_price'    => $total_price,
+		] );
 
 		if ( $installment_num >= $total_months ) {
 			$plan['status'] = 'completed';
