@@ -736,7 +736,7 @@ if ( ! function_exists( 'db_deal_all_offers' ) ) {
 			$like, $like, $like
 		) );
 		$legacy = (array) $wpdb->get_results( $wpdb->prepare(
-			"SELECT l.id, l.created_at, l.offer_amount, l.message, l.domain, l.email, l.name FROM {$lt} l LEFT JOIN {$dt} d ON d.lead_id = l.id WHERE d.id IS NULL AND l.offer_amount > 0 AND l.source = 'offer_form' AND (l.domain LIKE %s OR l.email LIKE %s OR l.name LIKE %s) ORDER BY l.id DESC LIMIT 2000",
+			"SELECT l.id, l.created_at, l.offer_amount, l.message, l.domain, l.email, l.name FROM {$lt} l LEFT JOIN {$dt} d ON d.lead_id = l.id LEFT JOIN {$dt} d2 ON LOWER(d2.buyer_email) = LOWER(l.email) AND d2.domain = LOWER(l.domain) AND d2.created_at <= l.created_at WHERE d.id IS NULL AND d2.id IS NULL AND l.offer_amount > 0 AND l.source = 'offer_form' AND (l.domain LIKE %s OR l.email LIKE %s OR l.name LIKE %s) ORDER BY l.id DESC LIMIT 2000",
 			$like, $like, $like
 		) );
 		// phpcs:enable
