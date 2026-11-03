@@ -69,6 +69,27 @@ add_action( 'db_hits_purge', function () {
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_hit_visitors WHERE last_ts < %d", time() - 400 * DAY_IN_SECONDS ) );
 } );
 
+// Deleting a domain removes its counts, so the totals only describe live domains.
+add_action( 'deleted_post', function ( $post_id ) {
+	if ( 'domain' !== get_post_type( $post_id ) && get_post_type( $post_id ) ) {
+		return;
+	}
+	global $wpdb;
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery
+	$wpdb->delete( $wpdb->prefix . 'db_hits', array( 'post_id' => (int) $post_id ), array( '%d' ) );
+	$wpdb->delete( $wpdb->prefix . 'db_hit_visitors', array( 'post_id' => (int) $post_id ), array( '%d' ) );
+	// phpcs:enable
+} );
+
+add_action( 'db_hits_purge', function () {
+	global $wpdb;
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	foreach ( array( 'db_hits', 'db_hit_visitors' ) as $t ) {
+		$wpdb->query( "DELETE h FROM {$wpdb->prefix}{$t} h LEFT JOIN {$wpdb->posts} p ON p.ID = h.post_id WHERE p.ID IS NULL" );
+	}
+	// phpcs:enable
+} );
+
 /* ───────────────────────────── 2. Counting ────────────────────────────── */
 
 if ( ! function_exists( 'db_hits_is_bot' ) ) {
@@ -251,6 +272,7 @@ if ( ! function_exists( 'db_hits_page' ) ) {
 		$paged   = isset( $_GET['paged'] ) ? max( 1, (int) $_GET['paged'] ) : 1;
 		// phpcs:enable
 		$per = 50;
+		do_action( 'db_hits_purge' );
 		$res = db_hits_query( $search, $orderby, $dir, $per, ( $paged - 1 ) * $per );
 		$sum = db_hits_summary();
 		$base = admin_url( 'admin.php?page=db-hits' );
