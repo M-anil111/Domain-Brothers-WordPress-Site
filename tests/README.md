@@ -74,3 +74,9 @@ needs no secrets and makes no network calls to the site.
 Loads 13 page types at 13 viewports (phones, Galaxy Z Fold cover/open, Pixel Fold, half-folded Z Flip, Surface Duo single/spanned, tablets, laptop, desktop) and fails on horizontal overflow, elements cut off at the right edge, JS errors. Reports targets under 24 px and text under 12 px. Sequential on purpose (the shared host returns 508 under parallel load).
 
     BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/responsive/run-responsive.js out-dir [--shots]
+
+## `qa/stripe-test-purchase.js` — end-to-end test payment (sandbox only)
+
+Pays through the real checkout with Stripe's `4242` test card and checks the redirect to `/thank-you/` (HTTP 200, domain and amount named). `QA_MONTHS=3` tests a payment plan's first instalment. **Only run it when the site's Stripe mode is "test"**: it creates a PaymentIntent in the connected sandbox.
+
+    QA_MONTHS=3 BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/qa/stripe-test-purchase.js out-dir

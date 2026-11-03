@@ -425,7 +425,10 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		$btn_label       = $is_plan ? 'Start Payment Plan' : 'Pay Now';
 		// 'd', not 'domain' — the domain CPT registers 'domain' as its own
 		// public query var, so ?domain=... hijacks the main query away from
-		// the thank-you page (renders the listing or a 404 instead).
+		// the thank-you page (renders the listing or a 404 instead)
+		// The signature is 'sig', not 's': 's' is WordPress's search query
+		// var, and ?s=... on a page URL turns it into a search for that page
+		// (a 404 here, after every successful payment).
 		$ty_type         = $is_plan ? 'plan' : 'full';
 		$ty_amount       = number_format( $price, 0, '.', ',' );
 		$return_url      = home_url(
@@ -433,7 +436,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 			. '&d=' . rawurlencode( $domain )
 			. '&amt=' . rawurlencode( $ty_amount )
 			// Signed, so the confirmation page can't be faked by editing the URL.
-			. ( function_exists( 'db_ty_sig' ) ? '&s=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
+			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
 		);
 
 		header( 'Content-Type: text/html; charset=UTF-8' );

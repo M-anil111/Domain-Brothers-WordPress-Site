@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.50.2
+ * Version:     3.50.4
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.50.2' );
+define( 'DB_BLOCKS_LOADED', '3.50.4' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1267,7 +1267,8 @@ add_action( 'send_headers', function () {
 	header( 'X-Frame-Options: SAMEORIGIN' );
 	header( 'X-XSS-Protection: 1; mode=block' );
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
-	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()' );
+	// payment: Stripe's iframe needs it for Apple Pay / Google Pay / Link; nobody else gets it.
+	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")' );
 } );
 
 add_filter( 'style_loader_src', function ( $src ) {

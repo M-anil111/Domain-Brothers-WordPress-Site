@@ -348,6 +348,9 @@ body.db-ui-active .offer_text { width: auto !important; max-width: none; overflo
 body.db-ui-active .offer_text_info { max-width: 100%; box-sizing: border-box; margin-right: 0; }
 /* Pages built from blocks (Contact): <main> is the card, so give it inner padding. */
 body.db-ui-active.page:not(.home):not(.check-out) #main.site-main:not(:has(.entry-wrapper)) { padding: clamp(20px, 4vw, 44px) !important; }
+/* Thank-you page: the block's own blue palette and dark variant, re-pointed to the site palette. */
+body.db-ui-active .db-ty-wrap { --db-ty-bg: #f6f8fb; --db-ty-card-bg: #fff; --db-ty-border: #e5eaf1; --db-ty-text: #374151; --db-ty-heading: #0a1628; --db-ty-muted: #4b5563; --db-ty-green: #2e7d14; --db-ty-green-lt: #eaf5e3; --db-ty-navy: #0a1628; --db-ty-blue: #2e7d14; --db-ty-blue-lt: #eaf5e3; --db-ty-info-bg: #eaf5e3; --db-ty-info-border: #c9e4b8; --db-ty-step-line: #cbd5e1; --db-ty-chip-bg: #f1f5f9; --db-ty-chip-text: #0a1628; --db-ty-chip-hover: #eaf5e3; --db-ty-grad-a: #f6f8fb; --db-ty-grad-b: #f6f8fb; }
+body.db-ui-active #main.site-main:has(.db-ty-wrap) { background: none !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
 /* Floated columns inside page content (Offer): the card must wrap them. */
 body.db-ui-active .entry-content { display: flow-root; }
 /* News post card: inner padding. */

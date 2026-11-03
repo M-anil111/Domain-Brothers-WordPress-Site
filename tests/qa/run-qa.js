@@ -185,6 +185,12 @@ const PAGES = [
 		record('FN-18', 'Plans', 'forged "update my card" link is rejected', un.status === 200 && /could not open the card update page/.test(un.body), un.status);
 	}
 
+	{
+		// The checkout redirects here with a signed link; the signature must not be a WordPress query var.
+		const ty = await http('/thank-you/?type=full&d=fatality.ca&amt=2%2C500&sig=not-a-real-signature');
+		record('FN-43', 'Plans', 'thank-you page renders (neutral) for a link with a bad signature', ty.status === 200 && !/new owner|has been confirmed/i.test(ty.body), ty.status);
+	}
+
 	/* ─── Browser checks ────────────────────────────────────────────────── */
 	const browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
 	const perf = [];

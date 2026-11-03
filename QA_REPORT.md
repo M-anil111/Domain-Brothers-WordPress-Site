@@ -394,3 +394,21 @@ Every page type was screenshotted at 1366 px and 390 px and reviewed. Fixed:
 A regression from the footer fix (the theme's row layout widened `#content` by 30 px on home and plan pages, 9 responsive scans) was caught by `run-responsive.js` and fixed. Final: live QA 404/404, axe 0 violations, responsive 169 scans clean, offline suites 50 + 30 + 10 + 12.
 
 The Stripe card form itself was not rendered (staging has no keys); only the "payment system is being configured" state was reviewed.
+
+## 17. First real test payments (v3.50.4)
+
+Stripe **sandbox** keys were entered on staging (Settings > DB Stripe Keys, mode = test); they are stored only in WordPress options, not in the repository. Test purchases through the real checkout with Stripe's `4242` card found three defects that no offline test could see:
+
+| # | Defect | Effect | Fix |
+|---|---|---|---|
+| 1 | The signed return link used `s=` for its signature. `s` is WordPress's search variable, so `/thank-you/?...&s=…` became a search of that page | Every successful payment redirected to a **404** | Signature renamed `sig` (`db-stripe-block.php`, `db-email-thankyou-block.php`) |
+| 2 | `/thank-you/` uses a theme template that never calls `the_content()`, so the plugin's confirmation (`db_ty_html`) never rendered | Buyers saw "we've received your request" (the contact-form text), not "payment confirmed" | `template_include` override (`db-thankyou-template.php`) |
+| 3 | `Permissions-Policy: payment=()` was sent on every page | Apple Pay, Google Pay and Link blocked inside Stripe's iframe | `payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")` |
+
+Also restyled: the checkout page (was dark navy) and the thank-you block (blue palette and a dark variant) now follow the site design.
+
+**Verified (staging, sandbox)**: full purchase of fatality.ca at $2,500 lands on a 200 thank-you page naming the domain and amount; a 3-month plan charges the first instalment of $833.33 (card saved for off-session use) and shows "Your payment plan is active". Confirmed in the Stripe dashboard API: PaymentIntents `succeeded`, amounts exact, `setup_future_usage=off_session` on the plan. New regression tests: `tests/security/forms-test.php` (return-URL query keys are never WordPress-reserved; signature is `sig`), live check FN-43, and `tests/qa/stripe-test-purchase.js` (end-to-end purchase; `QA_MONTHS=3` for a plan).
+
+**Not verified**: webhooks. Staging is behind HTTP Basic Auth, so Stripe cannot reach `/wp-json/…/stripe-webhook`; plan creation, receipt emails, the reservation lock and the instalment schedule (all driven by webhooks and cron) still need a test on a publicly reachable URL. Apple Pay / Google Pay were not exercised (needs a device and a verified domain).
+
+**Housekeeping**: the sandbox secret key was pasted into a chat. Sandbox keys cannot move money, but roll it in the Stripe dashboard (Developers > API keys) before sharing further, and use separate restricted live keys on production.
