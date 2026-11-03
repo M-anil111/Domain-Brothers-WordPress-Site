@@ -80,3 +80,10 @@ Loads 13 page types at 13 viewports (phones, Galaxy Z Fold cover/open, Pixel Fol
 Pays through the real checkout with Stripe's `4242` test card and checks the redirect to `/thank-you/` (HTTP 200, domain and amount named). `QA_MONTHS=3` tests a payment plan's first instalment. **Only run it when the site's Stripe mode is "test"**: it creates a PaymentIntent in the connected sandbox.
 
     QA_MONTHS=3 BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/qa/stripe-test-purchase.js out-dir
+
+## Listing states and offers
+
+- `listing/listing-state-test.php` (offline): which of standard / custom offer / not for sale / sold a listing is in.
+- `offers/deal-transition-test.php` (offline): the negotiation rules (who may accept, counter, decline or pay from each state), price parsing and pay links.
+- `qa/offer-flow.js` (live, **test mode only**): the whole negotiation through the real admin and buyer page, a test-card payment and the closing webhook; it removes its own test sale at the end. Needs `DB_WP_USER`/`DB_WP_PASS` and `STRIPE_TEST_WEBHOOK_SECRET`.
+- `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.

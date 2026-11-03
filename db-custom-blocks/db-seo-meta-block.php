@@ -410,7 +410,7 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 		}
 		$raw   = (string) get_post_meta( $post->ID, 'domain_price', true );
 		$clean = preg_replace( '/[^0-9.]/', '', $raw );
-		$price = is_numeric( $clean ) ? '$' . number_format( (float) $clean, 0 ) : '';
+		$price = ( is_numeric( $clean ) && (float) $clean > 0 ) ? '$' . number_format( (float) $clean, 0 ) : '';
 
 		$title = $price
 			? sprintf( '%s for Sale, %s%s', $name, $price, DB_SEO_SUFFIX )

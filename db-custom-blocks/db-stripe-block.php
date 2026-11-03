@@ -229,9 +229,25 @@ add_action( 'template_redirect', static function () {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$d_raw = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$p_raw = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : '';
+	$offer = isset( $_GET['offer'] ) ? sanitize_text_field( wp_unslash( $_GET['offer'] ) ) : '';
 	// phpcs:enable
 
-	if ( ! $d_raw || ! $p_raw ) {
+	// An accepted custom offer: the domain and the price come from the stored
+	// deal (never from the URL), so the link cannot be edited to pay less.
+	$deal_ctx = null;
+	if ( '' !== $offer && function_exists( 'db_deal_checkout_context' ) ) {
+		$deal_ctx = db_deal_checkout_context( $offer );
+		if ( ! $deal_ctx ) {
+			wp_die(
+				'<h1>This offer link cannot be used</h1><p>It may have expired, already been paid, or the domain is no longer available. <a href="' . esc_url( home_url( '/' ) ) . '">Go to the home page</a> or <a href="mailto:sales@domainbrothers.com">contact us</a>.</p>',
+				'Offer unavailable',
+				[ 'response' => 410 ]
+			);
+		}
+		$GLOBALS['db_deal_checkout'] = $deal_ctx['deal'];
+	}
+
+	if ( ! $deal_ctx && ( ! $d_raw || ! $p_raw ) ) {
 		// Never fall through to the theme here. DomainFolio's buy-now template
 		// fatals when it renders without a selected domain, so a bare
 		// /buy-now/ returned HTTP 500 to every direct visitor and to
@@ -241,31 +257,36 @@ add_action( 'template_redirect', static function () {
 		exit;
 	}
 
-	// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-	$domain    = base64_decode( $d_raw, true );
-	$price_raw = base64_decode( $p_raw, true );
-	// phpcs:enable
+	if ( $deal_ctx ) {
+		$domain = db_stripe_norm( $deal_ctx['domain'] );
+		$price  = (float) $deal_ctx['price'];
+	} else {
+		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		$domain    = base64_decode( $d_raw, true );
+		$price_raw = base64_decode( $p_raw, true );
+		// phpcs:enable
 
-	if ( $domain === false || $price_raw === false ) {
-		wp_die( esc_html( 'Invalid request.' ) );
+		if ( $domain === false || $price_raw === false ) {
+			wp_die( esc_html( 'Invalid request.' ) );
+		}
+
+		$domain       = sanitize_text_field( $domain );
+		$client_price = (float) $price_raw;
+
+		if ( ! $domain || $client_price <= 0.0 ) {
+			wp_die( esc_html( 'Invalid request parameters.' ) );
+		}
+
+		// SECURITY: the URL's price is client-supplied and untrusted — it only
+		// selects WHICH domain to show. The actual charge amount always comes
+		// from the domain listing's own domain_price meta, looked up here.
+		// Without this, anyone could edit ?p= and buy any domain for $1.
+		$price = db_stripe_lookup_domain_price( $domain );
+		if ( null === $price ) {
+			wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
+		}
+		$domain = db_stripe_norm( $domain );
 	}
-
-	$domain       = sanitize_text_field( $domain );
-	$client_price = (float) $price_raw;
-
-	if ( ! $domain || $client_price <= 0.0 ) {
-		wp_die( esc_html( 'Invalid request parameters.' ) );
-	}
-
-	// SECURITY: the URL's price is client-supplied and untrusted — it only
-	// selects WHICH domain to show. The actual charge amount always comes
-	// from the domain listing's own domain_price meta, looked up here.
-	// Without this, anyone could edit ?p= and buy any domain for $1.
-	$price = db_stripe_lookup_domain_price( $domain );
-	if ( null === $price ) {
-		wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
-	}
-	$domain = db_stripe_norm( $domain );
 
 	// 'months', not 'm' — m is a reserved WordPress query var (date archive
 	// month); a request carrying it turns the main query into an empty date
@@ -368,6 +389,11 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 			'metadata[type]'                     => $is_plan ? 'plan' : 'full',
 			'metadata[total_price_usd]'          => (string) $price_usd,
 		];
+
+		// Extra metadata from other blocks (an accepted custom offer adds its lead and deal ids).
+		foreach ( (array) apply_filters( 'db_stripe_pi_metadata', [], $domain ) as $mk => $mv ) {
+			$body[ 'metadata[' . sanitize_key( (string) $mk ) . ']' ] = (string) $mv;
+		}
 
 		if ( $is_plan ) {
 			$body['customer']                     = $customer_id;

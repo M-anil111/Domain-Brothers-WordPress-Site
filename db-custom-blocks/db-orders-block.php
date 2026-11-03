@@ -103,6 +103,10 @@ add_action( 'db_order_event', function ( $event, array $d ) {
 	$domain  = strtolower( trim( (string) ( $d['domain'] ?? '' ) ) );
 	$meta    = (array) ( $d['meta'] ?? array() );
 	$lead_id = isset( $meta['lead_id'] ) ? (int) $meta['lead_id'] : 0;
+	if ( ! $lead_id && ! empty( $meta['deal_id'] ) && function_exists( 'db_deal_get' ) ) {
+		$deal    = db_deal_get( (int) $meta['deal_id'] );
+		$lead_id = $deal ? (int) $deal->lead_id : 0;
+	}
 	$email   = sanitize_email( (string) ( $d['customer_email'] ?? '' ) );
 	$pi      = sanitize_text_field( (string) ( $d['pi_id'] ?? '' ) );
 	$amount  = round( (float) ( $d['amount_usd'] ?? 0 ), 2 );
@@ -266,6 +270,9 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 		}
 
 		echo '<div class="wrap"><h1>Sales</h1>';
+		if ( isset( $_GET['reset'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			echo '<div class="notice notice-success is-dismissible"><p>Reset ' . (int) $_GET['reset'] . ' test order(s). Those domains are available again.</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}
 		if ( $notice >= 0 ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Imported ' . (int) $notice . ' earlier payment plan(s).</p></div>';
 		}
@@ -285,6 +292,9 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 		echo '</select> <input type="search" name="q" value="' . esc_attr( $f['q'] ) . '" placeholder="Domain or email"> <button class="button">Filter</button> ';
 		$export = wp_nonce_url( add_query_arg( array( 'action' => 'db_orders_export', 'mode' => $f['mode'], 'kind' => $f['kind'], 'q' => $f['q'] ), admin_url( 'admin-post.php' ) ), 'db_orders_export' );
 		echo '<a class="button" href="' . esc_url( $export ) . '">Export CSV</a> ';
+		if ( 'test' === $f['mode'] ) {
+			echo '<a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=db_orders_reset_test' ), 'db_orders_reset_test' ) ) . '" onclick="return confirm(\'Reset ALL test sales? Every test-mode domain becomes available again.\')">Reset all test sales</a> ';
+		}
 		$imp = wp_nonce_url( admin_url( 'admin-post.php?action=db_orders_import' ), 'db_orders_import' );
 		echo '<a class="button" href="' . esc_url( $imp ) . '" title="Adds payment plans that started before this screen existed">Import earlier plans</a></form>';
 
@@ -306,6 +316,7 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 			echo '<td>' . ( $r->buyer_email ? '<a href="mailto:' . esc_attr( $r->buyer_email ) . '">' . esc_html( $r->buyer_email ) . '</a>' : '<span class="dbs-sub">not recorded</span>' ) . '</td>';
 			echo '<td><span class="dbs-pill ' . esc_attr( $live['status'] ) . '">' . esc_html( $live['label'] ) . '</span></td>';
 			echo '<td>' . ( $stripe ? '<a href="' . esc_url( $stripe ) . '" target="_blank" rel="noopener">Stripe</a>' : '' )
+				. ( 'test' === $r->mode ? ' &middot; <a href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=db_orders_reset_test&domain=' . rawurlencode( $r->domain ) ), 'db_orders_reset_test' ) ) . '" class="dbs-reset" onclick="return confirm(\'Reset the test sale of ' . esc_js( $r->domain ) . '? It becomes available again.\')">Reset test sale</a>' : '' )
 				. ( $r->lead_id ? ' &middot; <a href="' . esc_url( admin_url( 'admin.php?page=db-crm-leads&s=' . rawurlencode( $r->buyer_email ?: $r->domain ) ) ) . '">Offer #' . (int) $r->lead_id . '</a>' : '' ) . '</td>';
 			echo '</tr>';
 		}
@@ -383,5 +394,45 @@ add_action( 'admin_post_db_orders_import', function () {
 		}
 	}
 	wp_safe_redirect( admin_url( 'admin.php?page=db-sales&imported=' . $n ) );
+	exit;
+} );
+
+/**
+ * Undo test-mode sales (staging QA): the sold flag, the payment plan, the
+ * order rows and the listing's "sold" status. Live records are never touched.
+ */
+add_action( 'admin_post_db_orders_reset_test', function () {
+	if ( ! current_user_can( 'manage_options' ) || ! check_admin_referer( 'db_orders_reset_test' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	global $wpdb;
+	$t      = db_orders_table();
+	$only   = isset( $_GET['domain'] ) ? strtolower( trim( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ) ) : '';
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+	$domains = '' !== $only
+		? array( $only )
+		: (array) $wpdb->get_col( "SELECT DISTINCT domain FROM {$t} WHERE mode = 'test'" );
+	$n = 0;
+	foreach ( $domains as $domain ) {
+		$key = md5( strtolower( trim( $domain ) ) );
+		delete_option( 'db_stripe_test_sold_' . $key );
+		delete_option( 'db_stripe_test_plan_' . $key );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( 'db_stripe_test_plan_' . $key . '_archive_' ) . '%' ) );
+		$idx = (array) get_option( 'db_stripe_test_active_plans', array() );
+		if ( $idx ) {
+			update_option( 'db_stripe_test_active_plans', array_values( array_diff( $idx, array( strtolower( trim( $domain ) ) ) ) ), false );
+		}
+		// Only undo a "sold" status that no live sale backs.
+		$post = function_exists( 'db_listing_post_for_domain' ) ? db_listing_post_for_domain( $domain ) : null;
+		if ( $post && 'sold' === get_post_meta( $post->ID, 'db_listing_state', true ) && ! get_option( 'db_stripe_sold_' . $key ) ) {
+			delete_post_meta( $post->ID, 'db_listing_state' );
+			delete_post_meta( $post->ID, 'db_sold_at' );
+			do_action( 'litespeed_purge_post', $post->ID );
+		}
+		$n += (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE mode = 'test' AND domain = %s", $domain ) );
+	}
+	// phpcs:enable
+	delete_transient( defined( 'DB_DOMAIN_INDEX_KEY' ) ? DB_DOMAIN_INDEX_KEY : 'db_domain_index_v3' );
+	wp_safe_redirect( admin_url( 'admin.php?page=db-sales&mode=test&reset=' . $n ) );
 	exit;
 } );

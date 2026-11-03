@@ -190,7 +190,9 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
 			return new WP_Error( 'db_error', __( 'Could not save lead to database.', 'db-blocks' ) );
 		}
 
-		return (int) $wpdb->insert_id;
+		$new_id = (int) $wpdb->insert_id;
+		do_action( 'db_crm_lead_created', $new_id, $data );
+		return $new_id;
 	}
 }
 
@@ -617,6 +619,10 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $lead['source'] ) ) ); ?></td>
 							<td title="<?php echo esc_attr( $lead['created_at'] ); ?>"><?php echo esc_html( db_crm_time_ago( $lead['created_at'] ) ); ?></td>
 							<td class="db-crm-actions">
+								<?php if ( 'offer_form' === $lead['source'] && function_exists( 'db_deal_get_by_lead' ) ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=db-offers&lead=' . (int) $lead['id'] ) ); ?>"><strong>Respond</strong></a>
+									&nbsp;|&nbsp;
+								<?php endif; ?>
 								<a href="#" class="db-crm-quick-edit-btn" data-id="<?php echo esc_attr( $lead['id'] ); ?>" data-status="<?php echo esc_attr( $lead['status'] ); ?>" data-admin-notes="<?php echo esc_attr( $lead['admin_notes'] ); ?>" data-offer="<?php echo esc_attr( $lead['offer_amount'] ); ?>">Edit</a>
 								&nbsp;|&nbsp;
 								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-ajax.php?action=db_crm_delete_lead&id=' . (int) $lead['id'] ), 'db_crm_delete_' . (int) $lead['id'] ) ); ?>" class="db-crm-delete-btn" style="color:#cc0000;">Delete</a>

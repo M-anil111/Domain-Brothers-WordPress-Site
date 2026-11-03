@@ -40,6 +40,8 @@ jobs:
         run: php tests/security/forms-test.php
       - name: Listing states (offline)
         run: php tests/listing/listing-state-test.php
+      - name: Offer negotiation rules (offline)
+        run: php tests/offers/deal-transition-test.php
 
   js:
     runs-on: ubuntu-latest
