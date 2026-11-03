@@ -277,6 +277,17 @@ add_action( 'template_redirect', static function () {
 			wp_die( esc_html( 'Invalid request parameters.' ) );
 		}
 
+		// A sold, reserved or not-for-sale name is "no longer available" (410)
+		// whether or not it still carries a price; check before the price lookup,
+		// which would otherwise fail such a listing with a generic 500.
+		if ( db_stripe_domain_unavailable( db_stripe_norm( $domain ) ) ) {
+			wp_die(
+				'<h1>This domain is no longer available</h1><p>' . esc_html( $domain ) . ' has been sold, is reserved on a payment plan, or is not for sale. <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other premium domains</a> or <a href="mailto:sales@domainbrothers.com">contact us</a>.</p>',
+				'Domain unavailable',
+				[ 'response' => 410 ]
+			);
+		}
+
 		// SECURITY: the URL's price is client-supplied and untrusted — it only
 		// selects WHICH domain to show. The actual charge amount always comes
 		// from the domain listing's own domain_price meta, looked up here.

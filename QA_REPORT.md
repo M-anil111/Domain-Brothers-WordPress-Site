@@ -427,3 +427,15 @@ Also restyled: the checkout page (was dark navy) and the thank-you block (blue p
 **Tests.** Offline: `tests/listing/listing-state-test.php` (14), `tests/offers/deal-transition-test.php` (26: who may do what from each state). Live, end to end: `tests/qa/offer-flow.js` (17: offer in, counter, buyer counters, accept, pay with the test card, webhook, Sales and lead, then reset), `tests/qa/send-test-webhook.js` (signed synthetic Stripe events, which also made the order log testable on staging). Found along the way: the SEO title read "for Sale, $0" for offer-only names (fixed).
 
 **Not done / needs a decision.** The offer *confirmation* email the buyer gets on submitting the form does not yet link to their private page (it is fixed-text by design, to prevent phishing relays); add the link if you want buyers to find it without our reply. A not-for-sale or sold domain with an unpublished listing still 404s. Plans on custom offers use the same terms and forfeiture rules as standard plans.
+
+## 19. Sold page matched to the production design (v3.53.3)
+
+The QA issue report (Beta Domain Brothers, one item: "Sold page design", production `wingcms-com/?lis=y`) was checked against staging. Findings and fixes:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A sold domain (e.g. wingcms.com) showed no sold page on staging: visitors were sent to the home page | The theme prints `window.location.href = '<home>'` for any domain marked sold. Production only shows the sold page through the legacy `?lis=y` address; staging redirects `?lis=y` away, so no address worked | The plugin's sold template removes that one redirect line from the header it prints |
+| Sold design did not match production | First version was a white card | Rebuilt: full-width blue (#00476c) banner with the hanging red SOLD sign and the domain in green (#67bd3c), a Domain News carousel (latest site posts, date badges, arrows), a Testimonials slider over the production photo (3 testimonials, stars, dots, 7 s autoplay unless reduced motion) |
+| Sold and not-for-sale pages loaded the contact-form scripts | CF7 loaded on every domain page | Not loaded on these two pages |
+
+Not-for-sale uses the same layout (amber "NOT FOR SALE" sign, the "Ask the owner" form). Similar available domains (4) sit between the banner and the news. Deliberate differences from production: the legacy landing header (logo, WebGuru ad banner, "Questions? Email" line) is replaced by the site's normal header; news and testimonial titles use the site green #2e7d14 (production's #67bd3c is 2.2:1 on white, below WCAG AA). New live checks FN-44 (sold page present, no redirect) and FN-45 (checkout refuses a sold domain). axe: 0 violations on both pages at desktop and phone width.
