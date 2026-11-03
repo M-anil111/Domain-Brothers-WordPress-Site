@@ -1296,9 +1296,9 @@ if ( ! function_exists( 'db_stripe_current_payment_method' ) ) {
 
 // ─── Email: sale complete ──────────────────────────────────────────────────────
 
-if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
+if ( ! function_exists( 'db_stripe_domain_taken' ) ) {
 	/** True once a domain is sold, or while a payment plan on it is active or past due. */
-	function db_stripe_domain_unavailable( string $domain ) : bool {
+	function db_stripe_domain_taken( string $domain ) : bool {
 		if ( get_option( db_stripe_store_key( 'sold', $domain ) ) ) {
 			return true;
 		}
@@ -1307,9 +1307,20 @@ if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
+	/** Taken by a buyer, or marked sold / not for sale by an admin (listing status). */
+	function db_stripe_domain_unavailable( string $domain ) : bool {
+		return db_stripe_domain_taken( $domain )
+			|| ( function_exists( 'db_listing_blocked_by_name' ) && db_listing_blocked_by_name( $domain ) );
+	}
+}
+
 if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type, string $pi_id = '' ) : void {
 		update_option( db_stripe_store_key( 'sold', $domain ), [ 'ts' => time(), 'pi' => $pi_id ], false );
+		if ( function_exists( 'db_listing_mark_sold' ) ) {
+			db_listing_mark_sold( $domain );
+		}
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );

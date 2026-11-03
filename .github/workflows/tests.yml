@@ -38,6 +38,8 @@ jobs:
         run: php tests/seo/title-test.php
       - name: Public forms security
         run: php tests/security/forms-test.php
+      - name: Listing states (offline)
+        run: php tests/listing/listing-state-test.php
 
   js:
     runs-on: ubuntu-latest

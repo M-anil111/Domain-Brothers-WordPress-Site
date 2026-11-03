@@ -94,7 +94,7 @@ if ( ! function_exists( 'db_crm_allowed_statuses' ) ) {
 
 if ( ! function_exists( 'db_crm_allowed_sources' ) ) {
 	function db_crm_allowed_sources() {
-		return array( 'offer_form', 'direct', 'referral' );
+		return array( 'offer_form', 'direct', 'referral', 'inquiry' );
 	}
 }
 
