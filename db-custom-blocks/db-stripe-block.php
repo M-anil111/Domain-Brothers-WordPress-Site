@@ -1367,7 +1367,7 @@ if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type, string $pi_id = '' ) : void {
 		update_option( db_stripe_store_key( 'sold', $domain ), [ 'ts' => time(), 'pi' => $pi_id ], false );
 		if ( function_exists( 'db_listing_mark_sold' ) ) {
-			db_listing_mark_sold( $domain );
+			db_listing_mark_sold( $domain, $amount_usd, $customer_email, 'full' === $type ? 'website' : 'website_plan' );
 		}
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );

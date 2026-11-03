@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.54.0
+ * Version:     3.55.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.54.0' );
+define( 'DB_BLOCKS_LOADED', '3.55.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -4457,3 +4457,4 @@ require_once __DIR__ . '/db-perf-block.php';
 require_once __DIR__ . '/db-listing-state-block.php';
 require_once __DIR__ . '/db-orders-block.php';
 require_once __DIR__ . '/db-offers-block.php';
+require_once __DIR__ . '/db-sold-block.php';

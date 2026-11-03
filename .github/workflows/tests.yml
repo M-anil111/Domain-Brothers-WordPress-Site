@@ -42,6 +42,8 @@ jobs:
         run: php tests/listing/listing-state-test.php
       - name: Offer negotiation rules (offline)
         run: php tests/offers/deal-transition-test.php
+      - name: EPP code handling (offline)
+        run: php tests/sold/epp-test.php
 
   js:
     runs-on: ubuntu-latest

@@ -109,14 +109,21 @@ if ( ! function_exists( 'db_listing_blocked_by_name' ) ) {
 }
 
 if ( ! function_exists( 'db_listing_mark_sold' ) ) {
-	/** Called when a sale completes: records it on the listing and refreshes caches. */
-	function db_listing_mark_sold( $domain ) {
+	/** Called when a sale completes: records it (price, buyer, how) on the listing and refreshes caches. */
+	function db_listing_mark_sold( $domain, $price = 0.0, $buyer_email = '', $via = 'website' ) {
 		$post = db_listing_post_for_domain( $domain );
 		if ( ! $post ) {
 			return;
 		}
 		update_post_meta( $post->ID, 'db_listing_state', 'sold' );
 		update_post_meta( $post->ID, 'db_sold_at', time() );
+		if ( (float) $price > 0 ) {
+			update_post_meta( $post->ID, 'db_sold_price', round( (float) $price, 2 ) );
+		}
+		if ( is_email( $buyer_email ) ) {
+			update_post_meta( $post->ID, 'db_sold_buyer', sanitize_email( $buyer_email ) );
+		}
+		update_post_meta( $post->ID, 'db_sold_via', sanitize_key( $via ) );
 		delete_transient( defined( 'DB_DOMAIN_INDEX_KEY' ) ? DB_DOMAIN_INDEX_KEY : 'db_domain_index_v3' );
 		do_action( 'litespeed_purge_post', $post->ID );
 	}
@@ -145,6 +152,13 @@ add_action( 'add_meta_boxes_domain', function () {
 		}
 		$states = db_listing_states();
 		echo '<p style="margin-top:12px"><strong>Shown to visitors as:</strong> ' . esc_html( $states[ $effective ] ?? $effective ) . '</p>';
+		$sp  = get_post_meta( $post->ID, 'db_sold_price', true );
+		$sat = (int) get_post_meta( $post->ID, 'db_sold_at', true );
+		$sb  = (string) get_post_meta( $post->ID, 'db_sold_buyer', true );
+		echo '<hr><p><strong>If sold</strong> (shown in Domain Brothers &gt; Sold domains)</p>';
+		echo '<p><label>Sold for (USD)<br><input type="text" name="db_sold_price" value="' . esc_attr( '' !== (string) $sp ? (string) $sp : '' ) . '" class="widefat" inputmode="decimal"></label></p>';
+		echo '<p><label>Sold on<br><input type="date" name="db_sold_date" value="' . esc_attr( $sat ? wp_date( 'Y-m-d', $sat ) : '' ) . '" class="widefat"></label></p>';
+		echo '<p><label>Buyer email (for the transfer code)<br><input type="email" name="db_sold_buyer" value="' . esc_attr( $sb ) . '" class="widefat"></label></p>';
 	}, 'domain', 'side', 'high' );
 } );
 
@@ -168,6 +182,33 @@ add_action( 'save_post_domain', function ( $post_id, $post ) {
 		update_post_meta( $post_id, 'db_sold_at', time() );
 	}
 }, 10, 2 );
+
+// Sale details can be filled in for any listing the admin has sold, including ones marked sold in the theme's own box.
+add_action( 'save_post_domain', function ( $post_id ) {
+	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || wp_is_post_revision( $post_id ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['db_listing_state_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['db_listing_state_nonce'] ) ), 'db_listing_state_save' ) || ! current_user_can( 'edit_post', $post_id ) ) {
+		return;
+	}
+	$price = isset( $_POST['db_sold_price'] ) ? preg_replace( '/[^0-9.]/', '', sanitize_text_field( wp_unslash( $_POST['db_sold_price'] ) ) ) : '';
+	if ( '' !== $price && is_numeric( $price ) && (float) $price > 0 ) {
+		update_post_meta( $post_id, 'db_sold_price', round( (float) $price, 2 ) );
+	} else {
+		delete_post_meta( $post_id, 'db_sold_price' );
+	}
+	$date = isset( $_POST['db_sold_date'] ) ? sanitize_text_field( wp_unslash( $_POST['db_sold_date'] ) ) : '';
+	$ts   = preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? strtotime( $date . ' 12:00:00 UTC' ) : 0;
+	if ( $ts ) {
+		update_post_meta( $post_id, 'db_sold_at', $ts );
+	}
+	$buyer = isset( $_POST['db_sold_buyer'] ) ? sanitize_email( wp_unslash( $_POST['db_sold_buyer'] ) ) : '';
+	if ( is_email( $buyer ) ) {
+		update_post_meta( $post_id, 'db_sold_buyer', $buyer );
+	} else {
+		delete_post_meta( $post_id, 'db_sold_buyer' );
+	}
+}, 11 );
 
 add_filter( 'manage_domain_posts_columns', function ( $cols ) {
 	$cols['db_listing'] = 'Listing';
