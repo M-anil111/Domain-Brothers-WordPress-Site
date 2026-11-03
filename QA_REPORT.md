@@ -394,3 +394,48 @@ Every page type was screenshotted at 1366 px and 390 px and reviewed. Fixed:
 A regression from the footer fix (the theme's row layout widened `#content` by 30 px on home and plan pages, 9 responsive scans) was caught by `run-responsive.js` and fixed. Final: live QA 404/404, axe 0 violations, responsive 169 scans clean, offline suites 50 + 30 + 10 + 12.
 
 The Stripe card form itself was not rendered (staging has no keys); only the "payment system is being configured" state was reviewed.
+
+## 17. First real test payments (v3.50.4)
+
+Stripe **sandbox** keys were entered on staging (Settings > DB Stripe Keys, mode = test); they are stored only in WordPress options, not in the repository. Test purchases through the real checkout with Stripe's `4242` card found three defects that no offline test could see:
+
+| # | Defect | Effect | Fix |
+|---|---|---|---|
+| 1 | The signed return link used `s=` for its signature. `s` is WordPress's search variable, so `/thank-you/?...&s=…` became a search of that page | Every successful payment redirected to a **404** | Signature renamed `sig` (`db-stripe-block.php`, `db-email-thankyou-block.php`) |
+| 2 | `/thank-you/` uses a theme template that never calls `the_content()`, so the plugin's confirmation (`db_ty_html`) never rendered | Buyers saw "we've received your request" (the contact-form text), not "payment confirmed" | `template_include` override (`db-thankyou-template.php`) |
+| 3 | `Permissions-Policy: payment=()` was sent on every page | Apple Pay, Google Pay and Link blocked inside Stripe's iframe | `payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")` |
+
+Also restyled: the checkout page (was dark navy) and the thank-you block (blue palette and a dark variant) now follow the site design.
+
+**Verified (staging, sandbox)**: full purchase of fatality.ca at $2,500 lands on a 200 thank-you page naming the domain and amount; a 3-month plan charges the first instalment of $833.33 (card saved for off-session use) and shows "Your payment plan is active". Confirmed in the Stripe dashboard API: PaymentIntents `succeeded`, amounts exact, `setup_future_usage=off_session` on the plan. New regression tests: `tests/security/forms-test.php` (return-URL query keys are never WordPress-reserved; signature is `sig`), live check FN-43, and `tests/qa/stripe-test-purchase.js` (end-to-end purchase; `QA_MONTHS=3` for a plan).
+
+**Not verified**: webhooks. Staging is behind HTTP Basic Auth, so Stripe cannot reach `/wp-json/…/stripe-webhook`; plan creation, receipt emails, the reservation lock and the instalment schedule (all driven by webhooks and cron) still need a test on a publicly reachable URL. Apple Pay / Google Pay were not exercised (needs a device and a verified domain).
+
+**Housekeeping**: the sandbox secret key was pasted into a chat. Sandbox keys cannot move money, but roll it in the Stripe dashboard (Developers > API keys) before sharing further, and use separate restricted live keys on production.
+
+## 18. Four listing states, Sales screen, custom-offer negotiation (v3.51 - v3.53)
+
+**1. Every domain page is one of four kinds** (`db-listing-state-block.php`). Decided in this order: the new "Listing status" box on the domain's edit screen (Automatic / Not for sale / Sold); the legacy `domain_status = sold`; a completed sale or active payment plan; otherwise a price means *standard* and no price means *custom offers*.
+- **Standard** and **custom offer** keep the existing page. **Sold** and **not for sale** have their own template; the theme's used to say "is for sale!" and show the offer form on a sold name. Sold shows similar names that are available. Not for sale takes an "Ask the owner" enquiry (CRM lead, source "inquiry", honeypot, timing and per-IP limits).
+- Checkout and the plan page refuse sold and not-for-sale names (HTTP 410). They are left out of All Domains, the domain index and recommendations (about 80 listings already marked sold no longer appear in All Domains). SEO titles say "has been sold" / "is not for sale"; structured data no longer claims availability; a completed sale marks the listing sold. Sold pages are `noindex`.
+- Production check: only the standard (`?lis=y`) and custom-offer (`?c=`) designs exist on domainbrothers.com today; the sold and not-for-sale pages are new.
+
+**2. Sales** (`db-orders-block.php`; Domain Brothers > Sales). Every purchase from the website is a row: type (standard price / payment plan / custom offer), price, paid so far, plan progress and next charge (live from the plan record), buyer, status, Stripe link, offer link. Filters, CSV export (formula-safe), "Import earlier plans", and "Reset test sale" for test-mode rows. Written from the Stripe webhook.
+
+**3. Custom offers** (`db-offers-block.php`; Domain Brothers > Offers, plus a "Respond" link on each offer-form lead). The offer form creates a deal. The team can **accept**, **send a different price** (valid 7 days by default, with a message) or **decline**. The buyer gets a private link (`…/domains/name/?c=<token>`, 32 random hex characters, `noindex`, never cached) where they can **accept** a counter-offer, **decline**, or **make a new offer**, as often as they like. An accepted price opens payment: pay in full, or monthly (3/6/9/12 months; 0/0/5/10% interest) from $600. The checkout takes the domain and price from the stored deal, never from the URL. The webhook closes the deal, the lead becomes Won, and Sales shows the order as "Custom offer". Emails go to the buyer for each of our moves and to the admin for each of theirs.
+
+**Tests.** Offline: `tests/listing/listing-state-test.php` (14), `tests/offers/deal-transition-test.php` (26: who may do what from each state). Live, end to end: `tests/qa/offer-flow.js` (17: offer in, counter, buyer counters, accept, pay with the test card, webhook, Sales and lead, then reset), `tests/qa/send-test-webhook.js` (signed synthetic Stripe events, which also made the order log testable on staging). Found along the way: the SEO title read "for Sale, $0" for offer-only names (fixed).
+
+**Not done / needs a decision.** The offer *confirmation* email the buyer gets on submitting the form does not yet link to their private page (it is fixed-text by design, to prevent phishing relays); add the link if you want buyers to find it without our reply. A not-for-sale or sold domain with an unpublished listing still 404s. Plans on custom offers use the same terms and forfeiture rules as standard plans.
+
+## 19. Sold page matched to the production design (v3.53.3)
+
+The QA issue report (Beta Domain Brothers, one item: "Sold page design", production `wingcms-com/?lis=y`) was checked against staging. Findings and fixes:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A sold domain (e.g. wingcms.com) showed no sold page on staging: visitors were sent to the home page | The theme prints `window.location.href = '<home>'` for any domain marked sold. Production only shows the sold page through the legacy `?lis=y` address; staging redirects `?lis=y` away, so no address worked | The plugin's sold template removes that one redirect line from the header it prints |
+| Sold design did not match production | First version was a white card | Rebuilt: full-width blue (#00476c) banner with the hanging red SOLD sign and the domain in green (#67bd3c), a Domain News carousel (latest site posts, date badges, arrows), a Testimonials slider over the production photo (3 testimonials, stars, dots, 7 s autoplay unless reduced motion) |
+| Sold and not-for-sale pages loaded the contact-form scripts | CF7 loaded on every domain page | Not loaded on these two pages |
+
+Not-for-sale uses the same layout (amber "NOT FOR SALE" sign, the "Ask the owner" form). Similar available domains (4) sit between the banner and the news. Deliberate differences from production: the legacy landing header (logo, WebGuru ad banner, "Questions? Email" line) is replaced by the site's normal header; news and testimonial titles use the site green #2e7d14 (production's #67bd3c is 2.2:1 on white, below WCAG AA). New live checks FN-44 (sold page present, no redirect) and FN-45 (checkout refuses a sold domain). axe: 0 violations on both pages at desktop and phone width.

@@ -391,7 +391,7 @@ add_filter( 'the_content', function ( $content ) {
 	// garbled any value that happened to look like valid base64).
 	$domain = ! empty( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$amount = ! empty( $_GET['amt'] ) ? sanitize_text_field( wp_unslash( $_GET['amt'] ) ) : '';
-	$sig    = ! empty( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+	$sig    = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
 	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
 
 	$done = true;
@@ -826,6 +826,16 @@ if ( ! function_exists( 'db_ty_styles' ) ) {
 	}
 }
 
+/* The theme's thank-you page template ignores the_content(), so the filter
+   above never runs there. Render the confirmation from our own template. */
+add_filter( 'template_include', function ( $template ) {
+	$file = __DIR__ . '/db-thankyou-template.php';
+	if ( is_page( array( 'thank-you', 'thankyou' ) ) && is_readable( $file ) ) {
+		return $file;
+	}
+	return $template;
+}, 99 );
+
 /* -----------------------------------------------------------
    B4. [db_thankyou] shortcode — manual placement fallback
    ----------------------------------------------------------- */
@@ -860,7 +870,7 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 	// Values from the shortcode itself were written by an editor; values that
 	// came from the URL go through the same checks as the_content path.
 	if ( ! $atts['domain'] && ! $atts['amount'] ) {
-		$sig = ! empty( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+		$sig = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
 		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
 	}
 

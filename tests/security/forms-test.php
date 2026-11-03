@@ -56,6 +56,15 @@ ok( array( 'offer', '', '' ) === db_ty_resolve( 'offer', 'URGENT: verify at evil
 $html = db_ty_html( 'generic', '', '' );
 ok( false === strpos( $html, 'new owner' ) && false === stripos( $html, 'has been confirmed' ), 'neutral page makes no payment or ownership claim' );
 
+// The return URL's own query keys must not be WordPress query vars: 's'
+// (search) once turned every post-payment redirect into a 404 on a page URL.
+$src = file_get_contents( dirname( __DIR__, 2 ) . '/db-custom-blocks/db-stripe-block.php' );
+preg_match( "/\\\$return_url\\s*=\\s*home_url\\((.*?)\\);/s", $src, $m );
+preg_match_all( "/[?&]([a-z_]+)=/", $m[1] ?? '', $keys );
+$reserved = array( 's', 'p', 'page', 'name', 'm', 'cat', 'tag', 'author', 'feed', 'paged', 'post_type', 'domain', 'attachment', 'pagename', 'order', 'orderby', 'year', 'monthnum', 'day', 'static' );
+ok( ! empty( $keys[1] ) && ! array_intersect( $keys[1], $reserved ), 'checkout return URL uses no WordPress-reserved query variable (' . implode( ',', $keys[1] ?? array() ) . ')' );
+ok( in_array( 'sig', $keys[1] ?? array(), true ), 'checkout return URL carries the signature as "sig"' );
+
 // Offer confirmation email.
 $m = db_offer_confirmation_email( 'v1@example.test', 'there - your account is locked, verify at evil.example/login', 'URGENT: invoice overdue, pay at evil.example', '1', '203.0.113.5' );
 ok( is_array( $m ) && 'We received your offer' === $m['subject'] && false === strpos( $m['body'], 'evil.example' ) && false === strpos( $m['body'], 'URGENT' ), 'attacker text kept out of subject and body' );

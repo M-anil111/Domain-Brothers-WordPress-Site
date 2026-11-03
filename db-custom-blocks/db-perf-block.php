@@ -47,7 +47,8 @@ if ( ! function_exists( 'db_perf_has' ) ) {
 if ( ! function_exists( 'db_perf_needs_forms' ) ) {
 	function db_perf_needs_forms() {
 		if ( is_singular( 'domain' ) ) {
-			return true;
+			// Sold and not-for-sale pages have no contact form.
+			return ! ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( get_queried_object() ), array( 'sold', 'not_for_sale' ), true ) );
 		}
 		return db_perf_has( db_perf_content(), array( '[contact-form-7', '[cf7', 'wpcf7' ) );
 	}

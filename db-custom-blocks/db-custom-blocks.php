@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.50.2
+ * Version:     3.53.4
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.50.2' );
+define( 'DB_BLOCKS_LOADED', '3.53.4' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1267,7 +1267,8 @@ add_action( 'send_headers', function () {
 	header( 'X-Frame-Options: SAMEORIGIN' );
 	header( 'X-XSS-Protection: 1; mode=block' );
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
-	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()' );
+	// payment: Stripe's iframe needs it for Apple Pay / Google Pay / Link; nobody else gets it.
+	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")' );
 } );
 
 add_filter( 'style_loader_src', function ( $src ) {
@@ -1452,11 +1453,13 @@ add_action( 'wp_head', function () {
 		$domain_name  = get_the_title( $post );
 		$domain_price = get_post_meta( $post->ID, DB_AEO_PRICE_META, true );
 		$domain_url   = get_permalink( $post );
+		$list_state   = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'standard';
 		$product      = array( '@type' => 'Product', 'name' => $domain_name,
-			'description' => 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.',
+			'description' => ( 'sold' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' has been sold.' : ( 'not_for_sale' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' is not for sale.' : 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.' ) ),
 			'url' => esc_url( $domain_url ),
 			'brand' => array( '@type' => 'Brand', 'name' => $site_name ) );
-		if ( $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
+		// No offer (and so no "in stock") for a name that is sold or not for sale.
+		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
 			$price = (float) preg_replace( '/[^0-9.]/', '', $domain_price );
 			$product['offers'] = array( '@type' => 'Offer', 'price' => number_format( $price, 2, '.', '' ), 'priceCurrency' => 'USD', 'availability' => 'https://schema.org/InStock', 'url' => esc_url( $domain_url ), 'seller' => array( '@type' => 'Organization', 'name' => $site_name ) );
 		}
@@ -3925,7 +3928,10 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
 		return $title;
 	}
-	$post        = get_queried_object();
+	$post = get_queried_object();
+	if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( $post ), array( 'sold', 'not_for_sale' ), true ) ) {
+		return $title;
+	}
 	$domain_name = get_post_meta( $post->ID, 'domain_name', true );
 	if ( ! $domain_name ) {
 		$domain_name = $post->post_title;
@@ -4444,3 +4450,6 @@ require_once __DIR__ . '/db-exit-offer-block.php';
    ============================================================ */
 require_once __DIR__ . '/db-design-block.php';
 require_once __DIR__ . '/db-perf-block.php';
+require_once __DIR__ . '/db-listing-state-block.php';
+require_once __DIR__ . '/db-orders-block.php';
+require_once __DIR__ . '/db-offers-block.php';

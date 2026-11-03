@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.50.2** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.53.4** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -21,7 +21,7 @@ Everything below has been built and tested on **staging only** (`beta.domainbrot
 
 1. Build the zip from this repo: `cd` to the repo root and run `zip -r db-custom-blocks.zip db-custom-blocks`.
 2. WP Admin → Plugins → Add New → Upload Plugin → choose the zip → **Replace current with uploaded** (or Install + Activate if it isn't there yet).
-3. Check that Plugins shows **Domain Brothers Custom Blocks 3.50.2** as active.
+3. Check that Plugins shows **Domain Brothers Custom Blocks 3.53.4** as active.
 4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin and click **Confirm**. Then purge the CDN or Cloudflare cache if one is in front.
 
 Production-specific behaviour, already handled in code:
@@ -35,6 +35,7 @@ Production-specific behaviour, already handled in code:
 | # | Task |
 |---|---|
 | 3.1 | WP Admin → Settings → **DB Stripe Keys**: enter **live** publishable and secret keys, and **test** keys. Choose the mode. |
+| 3.1a | **Already done on staging (sandbox):** test keys entered, mode = test, checkout and a 3-month plan paid with the `4242` test card (QA_REPORT §17). Not yet tested: webhooks (staging is behind Basic Auth, so Stripe cannot reach it), Apple Pay / Google Pay. **Roll the sandbox secret key** (it was pasted in a chat) and never reuse test keys in live mode. |
 | 3.2 | Create the webhook, either with the **Auto-Create Stripe Webhook** button on that page or by hand in the Stripe Dashboard. Point it at `https://www.domainbrothers.com/wp-json/db/v1/stripe-webhook` with events `payment_intent.succeeded`, `payment_intent.payment_failed`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded`. Paste the signing secret into the matching field. |
 | 3.3 | Stripe Dashboard → Settings → Billing → **Customer portal**: enable it, allowing payment-method updates. The "update my card" link in missed-payment emails opens this portal. |
 | 3.4 | **First, in test mode on staging:** run a full purchase and a 3-month plan with test card `4242 4242 4242 4242`. Then a plan with decline card `4000 0000 0000 0341`, which attaches but fails later. Confirm the emails and the plan record. `GOLIVE_TEST_PLAN.md` §1–4 and §12 have the click path, but its plan amounts predate interest: 3 and 6 months are 0%, 9 months 5%, 12 months 10%. |

@@ -185,6 +185,20 @@ const PAGES = [
 		record('FN-18', 'Plans', 'forged "update my card" link is rejected', un.status === 200 && /could not open the card update page/.test(un.body), un.status);
 	}
 
+	{
+		// The checkout redirects here with a signed link; the signature must not be a WordPress query var.
+		const ty = await http('/thank-you/?type=full&d=fatality.ca&amt=2%2C500&sig=not-a-real-signature');
+		record('FN-43', 'Plans', 'thank-you page renders (neutral) for a link with a bad signature', ty.status === 200 && !/new owner|has been confirmed/i.test(ty.body), ty.status);
+	}
+
+	{
+		// A published domain already marked sold (the production design reference): its own page, not a bounce to the home page.
+		const sold = await http('/domains/wingcms-com/');
+		record('FN-44', 'Listing states', 'a sold domain shows the sold page (banner, news, testimonials), with no redirect to the home page', sold.status === 200 && /Has Been Sold/.test(sold.body) && /db-sold-band/.test(sold.body) && /Domain News/.test(sold.body) && /Testimonials/.test(sold.body) && !/window\.location\.href\s*=\s*['"]https?:\/\/[^'"]*['"]\s*;?\s*<\/script>/.test(sold.body.split('db-sold-band')[0]), sold.status);
+		const chk = await http('/buy-now/?d=' + Buffer.from('wingcms.com').toString('base64') + '&p=' + Buffer.from('1000').toString('base64'));
+		record('FN-45', 'Listing states', 'checkout refuses a sold domain', chk.status === 410, chk.status);
+	}
+
 	/* ─── Browser checks ────────────────────────────────────────────────── */
 	const browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
 	const perf = [];
