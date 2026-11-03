@@ -37,7 +37,7 @@ const UAS = ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.
 		const f = p.locator('form.wpcf7-form:visible').first();
 		const set = async (s, v) => { const l = f.locator(s).first(); if (await l.count()) await l.fill(v); };
 		await set('input[name*=name]', 'Demo Buyer'); await set('input[type=email]', BUYER); await set('input[name*=phone], input[type=tel]', '5125550100'); await set('textarea', `Demo offer ${amt}`);
-		await f.locator('input[type=submit], button[type=submit]').first().click(); await p.waitForURL(/thank-you/, { timeout: 60000 }).catch(() => {}); await c.close();
+		await f.locator('input[type=submit], button[type=submit]').first().click(); await p.waitForURL(/thank-you/, { timeout: 60000 }).catch(() => {}); await p.waitForTimeout(3000); await c.close();
 	}
 	await a.goto(`${BASE}/wp-admin/admin.php?page=db-hits&q=${STAMP}`, { waitUntil: 'domcontentloaded' }); await shot('1-domain-hits');
 	await a.goto(`${BASE}/wp-admin/edit.php?post_type=domain&s=${STAMP}`, { waitUntil: 'domcontentloaded' }); await shot('2-domain-list-hits-and-listing-columns');
