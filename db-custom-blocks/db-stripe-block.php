@@ -447,7 +447,71 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 
 // ─── Checkout page HTML render ─────────────────────────────────────────────────
 
+if ( ! function_exists( 'db_stripe_checkout_footer_links' ) ) {
+	/**
+	 * Footer links for the checkout page, matching the production footer.
+	 * Each label maps to candidate page slugs; the first slug that exists as a
+	 * published page wins, and labels with no matching page are left out so
+	 * the checkout never links to a 404.
+	 *
+	 * @return array<string, string> label => URL
+	 */
+	function db_stripe_checkout_footer_links() : array {
+		$candidates = [
+			'Blog'           => [ 'blog', 'news' ],
+			'About'          => [ 'about-us', 'about' ],
+			'Our Team'       => [ 'our-team', 'team' ],
+			'News'           => [ 'news' ],
+			'Privacy Policy' => [ 'privacy-policy' ],
+			'Refund Policy'  => [ 'refund-policy', 'refunds' ],
+			'Terms of Use'   => [ 'terms-of-use', 'terms-and-conditions', 'terms' ],
+			'FAQs'           => [ 'faqs', 'faq' ],
+			'Sitemap'        => [ 'sitemap' ],
+		];
+		$links = [];
+		foreach ( $candidates as $label => $slugs ) {
+			foreach ( $slugs as $slug ) {
+				$page = get_page_by_path( $slug );
+				if ( $page && 'publish' === $page->post_status ) {
+					$links[ $label ] = (string) get_permalink( $page );
+					break;
+				}
+			}
+		}
+		return (array) apply_filters( 'db_checkout_footer_links', $links );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_checkout_social_links' ) ) {
+	/**
+	 * Social profile URLs for the checkout footer. Empty by default: set them
+	 * with the DB_SOCIAL_FACEBOOK / DB_SOCIAL_TWITTER / DB_SOCIAL_INSTAGRAM
+	 * constants in wp-config.php, or the db_checkout_social_links filter.
+	 * An icon is shown only when its URL is set.
+	 *
+	 * @return array<string, string> network => URL
+	 */
+	function db_stripe_checkout_social_links() : array {
+		$links = [
+			'facebook'  => defined( 'DB_SOCIAL_FACEBOOK' ) ? (string) DB_SOCIAL_FACEBOOK : '',
+			'twitter'   => defined( 'DB_SOCIAL_TWITTER' ) ? (string) DB_SOCIAL_TWITTER : '',
+			'instagram' => defined( 'DB_SOCIAL_INSTAGRAM' ) ? (string) DB_SOCIAL_INSTAGRAM : '',
+		];
+		$links = (array) apply_filters( 'db_checkout_social_links', $links );
+		return array_filter( $links, static function ( $url ) {
+			return is_string( $url ) && '' !== $url;
+		} );
+	}
+}
+
 if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
+	/**
+	 * Renders /buy-now/ as the three-step checkout used on production:
+	 * 1. Billing Information (pay-in-full / pay-less-up-front choice + name,
+	 *    email, phone), 2. Order Confirmation (review, plan terms), 3. Payment
+	 *    (Stripe Payment Element). Steps switch client-side; the PaymentIntent
+	 *    is created server-side before render, exactly as before.
+	 */
 	function db_stripe_render_checkout_page( string $domain, float $price, int $months, array $pi ) : void {
 		$keys           = db_stripe_keys();
 		$pub_key        = $keys['pub'];
@@ -455,26 +519,66 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		$has_error      = isset( $pi['error'] );
 		$client_secret  = $pi['client_secret'] ?? '';
 		$not_configured = empty( $pub_key ) || empty( $keys['sec'] );
+		$can_pay        = ! $not_configured && ! $has_error && '' !== $client_secret;
 
-		$price_display   = '$' . number_format( $price, 0, '.', ',' );
-		$monthly_cents   = $is_plan ? db_stripe_installment_cents( $price, $months, 1 ) : 0;
-		$monthly_display = $is_plan ? '$' . number_format( $monthly_cents / 100, 2 ) : '';
-		$btn_label       = $is_plan ? 'Start Payment Plan' : 'Pay Now';
+		$price_display = '$' . number_format( $price, 2, '.', ',' );
+		$btn_label     = $is_plan ? 'Start Payment Plan' : 'Pay Now';
+
+		// "Pay less up front" option: the buyer's chosen term when already on a
+		// plan, otherwise 6 months (production's default), falling back to the
+		// first configured term.
+		$plan_terms = function_exists( 'db_plan_terms' ) ? array_map( 'intval', (array) db_plan_terms() ) : [ 3, 6, 9, 12 ];
+		$alt_months = $is_plan ? $months : ( in_array( 6, $plan_terms, true ) ? 6 : (int) reset( $plan_terms ) );
+		$alt_first  = $alt_months > 0 ? db_stripe_installment_cents( $price, $alt_months, 1 ) / 100 : 0.0;
+		$alt_rate   = function_exists( 'db_plan_rate' ) ? (float) db_plan_rate( $alt_months ) : 0.0;
+		$alt_total  = function_exists( 'db_plan_total_cents' ) ? db_plan_total_cents( $price, $alt_months ) / 100 : $price;
+		$rate_label = rtrim( rtrim( number_format( $alt_rate, 1 ), '0' ), '.' ) . '% interest';
+
+		$due_today         = $is_plan ? $alt_first : $price;
+		$due_today_display = '$' . number_format( $due_today, 2, '.', ',' );
+
+		// Toggle targets keep the visitor's original ?d=/?p= (base64) so the
+		// server-side lookup works exactly as on first load.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$d_b64 = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : base64_encode( $domain );
+		$p_b64 = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : base64_encode( (string) $price );
+		// phpcs:enable
+		// An accepted custom offer (?offer=) is priced from the stored deal, so
+		// the toggle keeps the offer token instead of ?d=/?p=, which would
+		// switch the buyer back to the listing price.
+		$offer_tok = isset( $_GET['offer'] ) ? sanitize_text_field( wp_unslash( $_GET['offer'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$base_args = '' !== $offer_tok && ! empty( $GLOBALS['db_deal_checkout'] )
+			? [ 'offer' => rawurlencode( $offer_tok ) ]
+			: [ 'd' => rawurlencode( $d_b64 ), 'p' => rawurlencode( $p_b64 ) ];
+		$buy_now   = home_url( '/buy-now/' );
+		$full_url  = add_query_arg( $base_args, $buy_now );
+		$plan_url  = add_query_arg( array_merge( [ 't' => 'plan', 'months' => $alt_months ], $base_args ), $buy_now );
+		// The plan-length chooser prices from the listing, so it is only
+		// offered on listing checkouts, not on accepted offers.
+		$terms_url = isset( $base_args['offer'] ) ? '' : add_query_arg( $base_args, home_url( '/payment-plan-setup/' ) );
+
 		// 'd', not 'domain' — the domain CPT registers 'domain' as its own
 		// public query var, so ?domain=... hijacks the main query away from
-		// the thank-you page (renders the listing or a 404 instead)
+		// the thank-you page (renders the listing or a 404 instead).
 		// The signature is 'sig', not 's': 's' is WordPress's search query
 		// var, and ?s=... on a page URL turns it into a search for that page
 		// (a 404 here, after every successful payment).
-		$ty_type         = $is_plan ? 'plan' : 'full';
-		$ty_amount       = number_format( $price, 0, '.', ',' );
-		$return_url      = home_url(
+		$ty_type    = $is_plan ? 'plan' : 'full';
+		$ty_amount  = number_format( $price, 0, '.', ',' );
+		$return_url = home_url(
 			'/thank-you/?type=' . $ty_type
 			. '&d=' . rawurlencode( $domain )
 			. '&amt=' . rawurlencode( $ty_amount )
 			// Signed, so the confirmation page can't be faked by editing the URL.
 			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
 		);
+
+		$support_email = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
+		$logo_url      = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
+		$footer_links  = db_stripe_checkout_footer_links();
+		$social_links  = db_stripe_checkout_social_links();
+		$grace_days    = defined( 'DB_PLAN_GRACE_DAYS' ) ? (int) DB_PLAN_GRACE_DAYS : 10;
+		$check_svg     = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
 
 		header( 'Content-Type: text/html; charset=UTF-8' );
 		header( 'Cache-Control: no-store, no-cache, must-revalidate' );
@@ -485,129 +589,385 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Checkout — <?php echo esc_html( $domain ); ?> — Domain Brothers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
 <style>
+:root{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#2f8a17;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-footer:#6abf40;--co-bar:#0f2230;--co-err:#c62828}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f6f8fb;min-height:100vh;color:#0a1628;display:flex;flex-direction:column;line-height:1.5}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--co-bg);color:var(--co-ink);min-height:100vh;display:flex;flex-direction:column;line-height:1.5;font-size:15px}
+a{color:inherit}
+.co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
+.co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Header */
-.db-stripe-header{padding:14px 32px;border-bottom:1px solid #e5eaf1;background:#fff;display:flex;align-items:center}
-.db-stripe-logo{display:inline-flex;align-items:center;min-height:44px;text-decoration:none}
-.db-stripe-logo img{display:block;height:40px;width:auto}
+.co-header{background:var(--co-navy);color:#fff}
+.co-header .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:140px;padding-top:20px;padding-bottom:20px}
+.co-logo{display:inline-flex;align-items:center;min-height:44px}
+.co-logo img{display:block;height:56px;width:auto}
+.co-help{text-align:right;font-size:20px;line-height:1.5}
+.co-help a{display:inline-block;color:#8fd45f;text-decoration:none}
+.co-help a:hover,.co-help a:focus-visible{text-decoration:underline}
+/* Stepper */
+.co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
+.co-steps{--w:190px;--p:.5;list-style:none;position:relative;display:flex;justify-content:space-between}
+.co-steps::before,.co-steps::after{content:"";position:absolute;top:17px;left:calc(var(--w) / 2);height:2px}
+.co-steps::before{right:calc(var(--w) / 2);background:var(--co-line)}
+.co-steps::after{width:calc((100% - var(--w)) * var(--p));background:var(--co-green);transition:width .3s}
+.co-step{position:relative;z-index:1;flex:0 0 var(--w);display:flex;justify-content:center}
+.co-step-btn{display:flex;flex-direction:column;align-items:center;gap:12px;background:none;border:0;font:inherit;color:inherit;padding:0;cursor:default;text-align:center}
+.co-step.is-done .co-step-btn{cursor:pointer}
+.co-step-num{width:36px;height:36px;border-radius:50%;border:2px solid #6d7a84;background:#fff;color:#33424e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+.co-step.is-active .co-step-num,.co-step.is-done .co-step-num{background:var(--co-green);border-color:var(--co-green);color:#fff}
+.co-step-num svg{width:18px;height:18px;fill:#fff}
+.co-step-label{font-size:17px;letter-spacing:.03em;color:#2d3d4a}
+.co-step.is-active .co-step-label{font-weight:700;color:var(--co-ink)}
+.co-step.is-done .co-step-btn:hover .co-step-label,.co-step.is-done .co-step-btn:focus-visible .co-step-label{text-decoration:underline}
+.co-step-btn:focus-visible{outline:3px solid var(--co-green-text);outline-offset:4px;border-radius:6px}
 /* Layout */
-.db-stripe-main{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 64px}
-.db-stripe-card{background:#fff;border:1px solid #e5eaf1;border-radius:18px;padding:36px;width:100%;max-width:520px;box-shadow:0 10px 30px rgba(10,22,40,.08)}
+.co-main{flex:1;padding-bottom:40px}
+.co-grid{display:grid;grid-template-columns:minmax(0,840px) minmax(0,1fr);gap:24px 40px;align-items:start}
+.co-card{display:grid;grid-template-columns:58.5% 41.5%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 14px rgba(15,34,48,.06)}
+.co-left{padding:16px 32px 48px}
+.co-right{background:var(--co-panel);padding:16px 16px 32px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+/* Pay option toggle */
+.co-toggle{display:grid;grid-template-columns:auto 1fr;gap:10px;margin:0 0 26px -16px}
+.co-opt{position:relative;display:flex;gap:8px;align-items:flex-start;border:1px solid #6d7a84;border-radius:3px;padding:10px 6px 8px;background:#fff;text-decoration:none;color:var(--co-ink);min-height:70px;transition:border-color .15s,background .15s}
+.co-opt:hover{border-color:var(--co-green)}
+.co-opt:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px}
+.co-opt.is-on{background:var(--co-green-soft);border-color:var(--co-green)}
+.co-opt-tick{flex:0 0 20px;width:20px;height:20px;border-radius:50%;background:#8a949b;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.co-opt.is-on .co-opt-tick{background:var(--co-green)}
+.co-opt-tick svg{width:14px;height:14px;fill:#fff}
+.co-opt-body{display:flex;flex-direction:column;flex:1;min-width:0}
+.co-opt-title{font-size:16px;letter-spacing:.03em;line-height:1.35}
+.co-opt-amt{font-size:17px;letter-spacing:.03em;line-height:1.35}
+.co-opt-sub{font-size:13px;line-height:1.4;color:var(--co-ink);white-space:nowrap}
+.co-opt-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;margin-left:auto;padding-right:2px;gap:4px}
+.co-opt-side strong{font-size:17px;font-weight:700;letter-spacing:.02em}
+.co-opt-side span{font-size:13px}
+.co-opt-change{display:inline-block;margin:-16px 0 20px 4px;font-size:13px;color:var(--co-green-text)}
+/* Step panels */
+.co-panel[hidden]{display:none}
+.co-pill{background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(15,34,48,.16);text-align:center;font-size:17px;font-weight:700;letter-spacing:.03em;padding:8px 14px;margin:0 16px 0 0}
+.co-intro{font-size:14px;letter-spacing:.02em;margin:14px 0 30px}
+.co-field{margin-bottom:26px}
+.co-field label{display:block;font-size:14px;letter-spacing:.02em;margin-bottom:12px}
+.co-input-row{display:flex;align-items:center;gap:10px}
+.co-req{color:#e53935;font-size:16px;line-height:1;width:6px}
+.co-input{flex:1;min-width:0;height:38px;border:1px solid #98a3ab;border-radius:20px;padding:0 16px;font:inherit;font-size:15px;color:var(--co-ink);background:#fff;transition:border-color .15s,box-shadow .15s}
+.co-input:focus{outline:none;border-color:var(--co-green);box-shadow:0 0 0 3px rgba(92,181,49,.25)}
+.co-input[aria-invalid="true"]{border-color:var(--co-err)}
+.co-field-err{display:none;color:var(--co-err);font-size:13px;margin:6px 0 0 16px}
+.co-field-err.is-on{display:block}
+.co-actions{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:22px;flex-wrap:wrap}
+.co-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:148px;min-height:44px;padding:10px 28px;border:0;border-radius:22px;background:var(--co-green-btn);color:#fff;font:inherit;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .15s,transform .1s}
+.co-btn:hover:not(:disabled){background:#2f8a17}
+.co-btn:active:not(:disabled){transform:scale(.98)}
+.co-btn:focus-visible{outline:3px solid var(--co-navy);outline-offset:3px}
+.co-btn:disabled{background:#8a949b;cursor:not-allowed}
+.co-btn svg{width:15px;height:15px;fill:currentColor}
+.co-btn-wide{width:100%}
+.co-back{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;padding:10px 4px;min-height:44px}
+.co-back:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px;border-radius:4px}
+/* Review */
+.co-review{border:1px solid #dde3e7;border-radius:8px;margin-top:20px}
+.co-review-row{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid #e8ecef;font-size:14px}
+.co-review-row:last-child{border-bottom:0}
+.co-review-row dt{color:var(--co-muted)}
+.co-review-row dd{font-weight:700;text-align:right;word-break:break-word}
+.co-review-head{display:flex;justify-content:space-between;align-items:center;margin-top:24px}
+.co-review-head h3{font-size:16px;letter-spacing:.03em}
+.co-edit{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;min-height:32px}
+.co-terms{font-size:13px;line-height:1.5;background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:12px 14px;margin:20px 0 12px}
+.co-agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;cursor:pointer}
+.co-agree input{margin-top:3px;flex:0 0 auto;width:16px;height:16px;accent-color:var(--co-green-btn)}
+/* Payment */
+.co-due{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:20px 0 16px;font-size:15px}
+.co-due strong{font-size:22px;color:var(--co-green-text)}
+.co-pe{background:#fff;border:1px solid #dde3e7;border-radius:8px;padding:16px;margin-bottom:16px;min-height:80px}
+.co-err{display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:11px 15px;color:#991b1b;font-size:14px;margin-bottom:14px}
+.co-trust{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.co-trust span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--co-muted)}
+.co-trust svg{width:13px;height:13px;fill:var(--co-muted);flex-shrink:0}
+.co-notice{text-align:center;padding:40px 8px;color:#374151;font-size:15px;line-height:1.6}
+.co-notice a{color:var(--co-green-text);text-decoration:underline}
 /* Order summary */
-.db-stripe-summary{background:#f6f8fb;border:1px solid #e5eaf1;border-radius:12px;padding:18px 20px;margin-bottom:24px}
-.db-stripe-domain{font-size:1.55rem;font-weight:700;color:#2e7d14;word-break:break-all;margin-bottom:6px}
-.db-stripe-price{font-size:2.5rem;font-weight:800;line-height:1.1;color:#0a1628}
-.db-stripe-onetime{font-size:.8rem;color:#4b5563;margin-top:8px}
-/* Plan info */
-.db-stripe-plan-box{background:#eaf5e3;border:1px solid #c9e4b8;border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:.93rem;color:#1f2937;line-height:1.5}
-.db-stripe-plan-box strong{color:#1f5c0d;font-size:1.15rem}
-.db-stripe-badge{display:inline-block;background:#1f5c0d;color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:6px}
-/* Email field */
-.db-stripe-label{display:block;font-size:.75rem;font-weight:700;color:#2e7d14;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-.db-stripe-input{width:100%;height:52px;padding:0 14px;border-radius:10px;border:2px solid #cbd5e1;background:#fff;color:#0a1628;font-size:1rem;margin-bottom:18px;transition:border-color .15s,box-shadow .15s}
-.db-stripe-input::placeholder{color:#6b7280}
-.db-stripe-input:focus{outline:none;border-color:#2e7d14;box-shadow:0 0 0 4px rgba(46,125,20,.18)}
-/* Payment element */
-.db-stripe-pe-wrap{background:#fff;border:1px solid #e5eaf1;border-radius:12px;padding:18px;margin-bottom:18px;min-height:80px}
-/* Button */
-.db-stripe-btn{width:100%;min-height:54px;padding:15px 20px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:1.02rem;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:8px}
-.db-stripe-btn svg{width:15px;height:15px;fill:currentColor;flex-shrink:0}
-.db-stripe-btn:hover:not(:disabled){background:#1b2a44}
-.db-stripe-btn:focus-visible{outline:3px solid #2e7d14;outline-offset:2px}
-.db-stripe-btn:active:not(:disabled){transform:scale(.98)}
-.db-stripe-btn:disabled{background:#64748b;cursor:not-allowed}
-/* Error */
-.db-stripe-err{background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:11px 15px;color:#991b1b;font-size:.88rem;margin-bottom:14px;display:none}
-/* Trust row */
-.db-stripe-trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
-.db-stripe-trust-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#4b5563}
-.db-stripe-trust-item svg{width:13px;height:13px;fill:#4b5563;flex-shrink:0}
-/* Notice */
-.db-stripe-notice{text-align:center;padding:24px 0;color:#374151;font-size:.95rem;line-height:1.6}
-.db-stripe-notice a{color:#1f5c0d;text-decoration:underline}
-@media(max-width:540px){.db-stripe-header{padding:10px 16px}.db-stripe-card{padding:24px 16px}.db-stripe-domain{font-size:1.25rem}.db-stripe-price{font-size:2rem}}
+.co-sum{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(15,34,48,.08);padding:20px 14px 14px}
+.co-sum h2{font-size:17px;font-weight:400;letter-spacing:.03em;margin-bottom:12px}
+.co-sum-item{display:flex;align-items:center;gap:10px}
+.co-sum-item .co-ico{flex:0 0 30px;width:30px;height:30px}
+.co-sum-domain{font-size:17px;font-weight:700;letter-spacing:.02em;word-break:break-all;flex:1}
+.co-remove{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin-right:-6px;border-radius:50%;color:#8a949b;text-decoration:none}
+.co-remove:hover,.co-remove:focus-visible{color:var(--co-err)}
+.co-remove svg{width:20px;height:20px}
+.co-sum-price{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.co-sum-price .co-ico{flex:0 0 32px;width:32px;height:32px}
+.co-sum-amt{font-size:22px;color:var(--co-green-text);letter-spacing:.02em}
+.co-sum-note{font-size:15px;color:var(--co-ink);margin-left:auto;padding-right:24px}
+.co-sum-plan{font-size:13px;color:var(--co-muted);margin-top:10px;line-height:1.5}
+.co-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.co-cards svg{width:46px;height:32px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+/* Next steps */
+.co-next{padding-top:16px}
+.co-next h2{font-size:21px;font-weight:400;text-align:center;letter-spacing:.02em}
+.co-next h2::after{content:"";display:block;width:60px;height:2px;background:var(--co-ink);margin:16px auto 28px}
+.co-next ul{list-style:none;display:flex;flex-direction:column;gap:18px}
+.co-next li{display:flex;align-items:center;gap:24px;font-size:16px;letter-spacing:.02em;line-height:1.45}
+.co-next .co-bubble{flex:0 0 84px;width:84px;height:84px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(15,34,48,.08);display:flex;align-items:center;justify-content:center}
+.co-next .co-bubble svg{width:50px;height:50px}
+/* Footer */
+.co-foot{background:var(--co-footer);color:#fff}
+.co-foot .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:120px;padding-top:24px;padding-bottom:24px}
+.co-foot img{display:block;height:56px;width:auto}
+.co-social{display:flex;gap:28px;padding-right:24px}
+.co-social a{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#fff}
+.co-social a:focus-visible{outline:3px solid #fff;outline-offset:2px;border-radius:4px}
+.co-social svg{width:22px;height:22px;fill:currentColor}
+.co-bar{background:var(--co-bar);color:#c9d6df;font-family:Arial,Helvetica,sans-serif;font-size:12px}
+.co-bar .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px 24px;min-height:66px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.co-copy{color:#8fd45f}
+.co-bar nav ul{list-style:none;display:flex;flex-wrap:wrap;gap:4px 16px}
+.co-bar nav a{color:#c9d6df;text-decoration:none}
+.co-bar nav a:hover,.co-bar nav a:focus-visible{color:#fff;text-decoration:underline}
+/* Responsive */
+@media (max-width:1180px){
+	.co-grid{grid-template-columns:1fr}
+	.co-card{max-width:840px;width:100%;margin:0 auto}
+	.co-next{max-width:840px;width:100%;margin:0 auto}
+	.co-next ul{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+	.co-next li{flex-direction:column;text-align:center;gap:12px}
+}
+@media (max-width:860px){
+	.co-header .co-wrap{min-height:110px}
+	.co-help{font-size:16px}
+	.co-steps-wrap{margin:32px auto 28px}
+	.co-steps{--w:160px}
+	.co-step-label{font-size:15px}
+	.co-card{grid-template-columns:1fr}
+	.co-right{order:-1;padding:16px}
+	.co-cards{display:none}
+	.co-left{padding:20px 20px 36px}
+}
+@media (max-width:600px){
+	.co-wrap{padding:0 16px}
+	.co-header .co-wrap{flex-direction:column;justify-content:center;gap:10px;text-align:center;min-height:0}
+	.co-help{text-align:center;font-size:14px}
+	.co-logo img{height:44px}
+	.co-steps-wrap{padding:0 12px}
+	.co-steps{--w:96px}
+	.co-step-label{font-size:12px;letter-spacing:0;line-height:1.3}
+	.co-toggle{grid-template-columns:1fr;margin-left:0}
+	.co-pill{margin-right:0;font-size:15px}
+	.co-next ul{grid-template-columns:1fr}
+	.co-next li{flex-direction:row;text-align:left}
+	.co-next .co-bubble{flex-basis:64px;width:64px;height:64px}
+	.co-next .co-bubble svg{width:38px;height:38px}
+	.co-foot .co-wrap{flex-direction:column;justify-content:center;min-height:0}
+	.co-social{padding-right:0}
+	.co-bar .co-wrap{flex-direction:column;justify-content:center;text-align:center}
+	.co-bar nav ul{justify-content:center}
+	.co-sum-note{padding-right:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<header class="db-stripe-header">
-	<a class="db-stripe-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' ) ); ?>" alt="Domain Brothers" width="148" height="40"></a>
+<header class="co-header">
+	<div class="co-wrap">
+		<a class="co-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo_url ); ?>" alt="Domain Brothers" width="200" height="56"></a>
+		<p class="co-help">Questions? We're here to help! Email today:<br><a href="mailto:<?php echo esc_attr( $support_email ); ?>">Sales@DomainBrothers.com</a></p>
+	</div>
 </header>
-<main class="db-stripe-main">
-	<div class="db-stripe-card">
+
+<main class="co-main" id="co-main">
+	<nav class="co-steps-wrap" aria-label="Checkout progress"><ol class="co-steps" id="co-steps">
+		<li class="co-step is-active" data-step="1"><button type="button" class="co-step-btn" aria-current="step" disabled><span class="co-step-num">1</span><span class="co-step-label">Billing Information</span></button></li>
+		<li class="co-step" data-step="2"><button type="button" class="co-step-btn" disabled><span class="co-step-num">2</span><span class="co-step-label">Order Confirmation</span></button></li>
+		<li class="co-step" data-step="3"><button type="button" class="co-step-btn" disabled><span class="co-step-num">3</span><span class="co-step-label">Payment</span></button></li>
+	</ol></nav>
+
+	<div class="co-wrap">
+		<div class="co-grid">
+			<div class="co-card">
+				<section class="co-left" aria-label="Checkout">
+					<div class="co-toggle" role="group" aria-label="Payment option">
+						<a class="co-opt<?php echo $is_plan ? '' : ' is-on'; ?>" href="<?php echo esc_url( $full_url ); ?>"<?php echo $is_plan ? '' : ' aria-current="true"'; ?>>
+							<span class="co-opt-tick"><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG ?></span>
+							<span class="co-opt-body"><span class="co-opt-title">Pay in full</span><span class="co-opt-amt"><?php echo esc_html( $price_display ); ?></span></span>
+						</a>
+<?php if ( $alt_months > 0 ) : ?>
+						<a class="co-opt<?php echo $is_plan ? ' is-on' : ''; ?>" href="<?php echo esc_url( $plan_url ); ?>"<?php echo $is_plan ? ' aria-current="true"' : ''; ?>>
+							<span class="co-opt-tick"><?php echo $check_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG ?></span>
+							<span class="co-opt-body"><span class="co-opt-title">Pay less up front</span><span class="co-opt-sub">Monthly: <?php echo esc_html( '$' . number_format( $alt_first, 2 ) ); ?> (<?php echo esc_html( (string) $alt_months ); ?> Payments)</span></span>
+							<span class="co-opt-side"><strong><?php echo esc_html( '$' . number_format( $alt_first, 2 ) ); ?></strong><span>Now</span></span>
+						</a>
+<?php endif; ?>
+					</div>
+<?php if ( $is_plan && '' !== $terms_url ) : ?>
+					<a class="co-opt-change" href="<?php echo esc_url( $terms_url ); ?>">Change plan length (<?php echo esc_html( $alt_months . ' months, ' . $rate_label ); ?>)</a>
+<?php endif; ?>
 
 <?php if ( $not_configured ) : ?>
-		<div class="db-stripe-notice">
-			<p>Our payment system is being configured.</p>
-			<p style="margin-top:8px">Please <a href="mailto:<?php echo esc_attr( (string) get_option( 'admin_email' ) ); ?>">contact support</a> to complete your purchase.</p>
-		</div>
-
+					<div class="co-notice" role="status">
+						<p>Our payment system is being configured.</p>
+						<p style="margin-top:8px">Please <a href="mailto:<?php echo esc_attr( $support_email ); ?>">contact support</a> to complete your purchase.</p>
+					</div>
 <?php elseif ( $has_error ) : ?>
-		<div class="db-stripe-notice">
-			<p><?php echo esc_html( $pi['error'] ); ?></p>
-			<p style="margin-top:8px;font-size:.85rem;opacity:.7">Please try again or <a href="mailto:<?php echo esc_attr( (string) get_option( 'admin_email' ) ); ?>">contact support</a>.</p>
-		</div>
-
+					<div class="co-notice" role="alert">
+						<p><?php echo esc_html( $pi['error'] ); ?></p>
+						<p style="margin-top:8px;font-size:.9rem">Please try again or <a href="mailto:<?php echo esc_attr( $support_email ); ?>">contact support</a>.</p>
+					</div>
 <?php else : ?>
-		<div class="db-stripe-summary">
-			<p class="db-stripe-domain"><?php echo esc_html( $domain ); ?></p>
-			<p class="db-stripe-price"><?php echo esc_html( $price_display ); ?></p>
-<?php if ( ! $is_plan ) : ?>
-			<p class="db-stripe-onetime">One-time payment &middot; Instant transfer initiation</p>
-<?php endif; ?>
-		</div>
+					<!-- Step 1: Billing information -->
+					<div class="co-panel" id="co-panel-1" data-panel="1">
+						<h1 class="co-pill">Please fill-in your billing information</h1>
+						<p class="co-intro">You will receive an invoice once your payment is processed.</p>
+						<form id="co-billing" novalidate>
+							<div class="co-field">
+								<label for="co-name">Full Name</label>
+								<div class="co-input-row"><input class="co-input" type="text" id="co-name" name="name" autocomplete="name" required aria-required="true" aria-describedby="co-name-err" maxlength="120"><span class="co-req" aria-hidden="true">*</span></div>
+								<p class="co-field-err" id="co-name-err">Please enter your full name.</p>
+							</div>
+							<div class="co-field">
+								<label for="co-email">Email Id</label>
+								<div class="co-input-row"><input class="co-input" type="email" id="co-email" name="email" autocomplete="email" inputmode="email" required aria-required="true" aria-describedby="co-email-err" maxlength="190"><span class="co-req" aria-hidden="true">*</span></div>
+								<p class="co-field-err" id="co-email-err">Please enter a valid email address.</p>
+							</div>
+							<div class="co-field">
+								<label for="co-phone">Phone #</label>
+								<div class="co-input-row"><input class="co-input" type="tel" id="co-phone" name="phone" autocomplete="tel" inputmode="tel" required aria-required="true" aria-describedby="co-phone-err" maxlength="30"><span class="co-req" aria-hidden="true">*</span></div>
+								<p class="co-field-err" id="co-phone-err">Please enter a valid phone number.</p>
+							</div>
+							<div class="co-actions"><button type="submit" class="co-btn">Next</button></div>
+						</form>
+					</div>
 
+					<!-- Step 2: Order confirmation -->
+					<div class="co-panel" id="co-panel-2" data-panel="2" hidden>
+						<h2 class="co-pill" tabindex="-1">Please confirm your order</h2>
+						<div class="co-review-head"><h3>Billing information</h3><button type="button" class="co-edit" data-goto="1">Edit</button></div>
+						<dl class="co-review">
+							<div class="co-review-row"><dt>Full Name</dt><dd id="co-r-name"></dd></div>
+							<div class="co-review-row"><dt>Email</dt><dd id="co-r-email"></dd></div>
+							<div class="co-review-row"><dt>Phone</dt><dd id="co-r-phone"></dd></div>
+						</dl>
+						<div class="co-review-head"><h3>Order</h3></div>
+						<dl class="co-review">
+							<div class="co-review-row"><dt>Domain</dt><dd><?php echo esc_html( $domain ); ?></dd></div>
+							<div class="co-review-row"><dt>Payment</dt><dd><?php echo esc_html( $is_plan ? $months . ' monthly payments (' . $rate_label . ')' : 'Pay in full' ); ?></dd></div>
 <?php if ( $is_plan ) : ?>
-		<div class="db-stripe-plan-box">
-			<strong><?php echo esc_html( $monthly_display ); ?>/mo</strong>
-			&times; <?php echo esc_html( (string) $months ); ?> months
-			<span class="db-stripe-badge"><?php echo esc_html( rtrim( rtrim( number_format( db_plan_rate( $months ), 1 ), '0' ), '.' ) ); ?>% interest</span>
-			<br><small style="opacity:.65;margin-top:4px;display:block">First installment charged today &mdash; remaining <?php echo esc_html( (string) ( $months - 1 ) ); ?> installments billed monthly (<?php echo esc_html( rtrim( rtrim( number_format( db_plan_rate( $months ), 1 ), '0' ), '.' ) ); ?>% interest, total $<?php echo esc_html( number_format( db_plan_total_cents( $price, $months ) / 100, 2 ) ); ?>).</small>
-		</div>
+							<div class="co-review-row"><dt>Plan total</dt><dd><?php echo esc_html( '$' . number_format( $alt_total, 2 ) ); ?></dd></div>
 <?php endif; ?>
-
+							<div class="co-review-row"><dt>Due today</dt><dd><?php echo esc_html( $due_today_display ); ?></dd></div>
+						</dl>
 <?php if ( $is_plan ) : ?>
-		<p class="db-stripe-terms" style="font-size:13px;line-height:1.5;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;margin:0 0 16px;"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
+						<p class="co-terms"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
+						<label class="co-agree" for="co-agree">
+							<input type="checkbox" id="co-agree" required aria-describedby="co-agree-err">
+							<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment stays unpaid <?php echo esc_html( (string) $grace_days ); ?> days after its due date the plan ends and installments already paid are not refunded.</span>
+						</label>
+						<p class="co-field-err" id="co-agree-err" style="margin-left:26px">Please confirm you agree to the payment plan terms.</p>
 <?php endif; ?>
+						<div class="co-actions">
+							<button type="button" class="co-back" data-goto="1">&larr; Back</button>
+							<button type="button" class="co-btn" id="co-confirm">Next</button>
+						</div>
+					</div>
 
-		<div id="db-stripe-err" class="db-stripe-err"></div>
-		<form id="db-stripe-form" novalidate>
-			<label class="db-stripe-label" for="db-stripe-email">Email for your receipt</label>
-			<input type="email" id="db-stripe-email" class="db-stripe-input" placeholder="you@example.com" required autocomplete="email">
-			<div class="db-stripe-pe-wrap">
-				<div id="db-stripe-payment-element"></div>
+					<!-- Step 3: Payment -->
+					<div class="co-panel" id="co-panel-3" data-panel="3" hidden>
+						<h2 class="co-pill" tabindex="-1">Enter your payment details</h2>
+						<div class="co-due"><span>Amount due today</span><strong><?php echo esc_html( $due_today_display ); ?></strong></div>
+						<div id="co-err" class="co-err" role="alert"></div>
+						<form id="co-pay" novalidate>
+							<div class="co-pe"><div id="db-stripe-payment-element"></div></div>
+							<button type="submit" id="co-pay-btn" class="co-btn co-btn-wide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg><span id="co-pay-label"><?php echo esc_html( $btn_label ); ?></span></button>
+						</form>
+						<div class="co-actions"><button type="button" class="co-back" data-goto="2">&larr; Back to order confirmation</button></div>
+						<div class="co-trust">
+							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>SSL Secured</span>
+							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Escrow Protected</span>
+							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>24-hr Support</span>
+						</div>
+					</div>
+<?php endif; ?>
+				</section>
+
+				<aside class="co-right" aria-label="Order summary">
+					<div class="co-sum">
+						<h2>Your Order Summary - 1 Item</h2>
+						<div class="co-sum-item">
+							<svg class="co-ico" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="22" r="15" fill="#e8f5df"/><path d="M8 22a12 12 0 0 1 24 0M8 22a12 12 0 0 0 24 0M20 10c-4 4-4 20 0 24M20 10c4 4 4 20 0 24M8 22h24" fill="none" stroke="#5cb531" stroke-width="1.6"/><rect x="2" y="3" width="36" height="10" rx="2" fill="#fff"/><text x="20" y="11.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#1d2b36">www</text></svg>
+							<span class="co-sum-domain"><?php echo esc_html( $domain ); ?></span>
+							<a class="co-remove" href="<?php echo esc_url( home_url( '/all-domains/' ) ); ?>" aria-label="Remove <?php echo esc_attr( $domain ); ?> and browse other domains"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
+						</div>
+						<div class="co-sum-price">
+							<svg class="co-ico" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2l4 3.5 5-1 1.5 5 5 1.5-1 5L38 20l-3.5 4 1 5-5 1.5-1.5 5-5-1L20 38l-4-3.5-5 1-1.5-5-5-1.5 1-5L2 20l3.5-4-1-5 5-1.5 1.5-5 5 1z" fill="#5cb531"/><circle cx="20" cy="20" r="11" fill="#fff"/><circle cx="20" cy="20" r="9" fill="none" stroke="#2f8a17" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#2f8a17">$</text></svg>
+							<span class="co-sum-amt"><?php echo esc_html( $price_display ); ?></span>
+							<span class="co-sum-note">(Excl. GST)</span>
+						</div>
+<?php if ( $is_plan ) : ?>
+						<p class="co-sum-plan"><?php echo esc_html( sprintf( '%d monthly payments, %s. %s due today, plan total $%s.', $months, $rate_label, $due_today_display, number_format( $alt_total, 2 ) ) ); ?></p>
+<?php endif; ?>
+					</div>
+					<div class="co-cards" aria-label="Accepted cards">
+						<svg viewBox="0 0 46 32" role="img" aria-label="Mastercard"><rect width="46" height="32" fill="#1a4a8c"/><circle cx="19" cy="16" r="8" fill="#eb001b"/><circle cx="27" cy="16" r="8" fill="#f79e1b" fill-opacity=".9"/></svg>
+						<svg viewBox="0 0 46 32" role="img" aria-label="Visa"><rect width="46" height="32" fill="#fff"/><text x="23" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" font-style="italic" fill="#1a1f71">VISA</text></svg>
+						<svg viewBox="0 0 46 32" role="img" aria-label="American Express"><rect width="46" height="32" fill="#2e77bb"/><text x="23" y="14" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" font-weight="700" fill="#fff">AMERICAN</text><text x="23" y="22" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" font-weight="700" fill="#fff">EXPRESS</text></svg>
+						<svg viewBox="0 0 46 32" role="img" aria-label="Discover"><rect width="46" height="32" fill="#fff"/><text x="4" y="18" font-family="Arial,sans-serif" font-size="6.6" font-weight="700" fill="#231f20">DISC</text><circle cx="24.6" cy="15.8" r="2.9" fill="#f58220"/><text x="27.8" y="18" font-family="Arial,sans-serif" font-size="6.6" font-weight="700" fill="#231f20">VER</text><rect y="26" width="46" height="6" fill="#f58220"/></svg>
+					</div>
+				</aside>
 			</div>
-<?php if ( $is_plan ) : ?>
-			<label class="db-stripe-agree" for="db-stripe-agree" style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;margin:0 0 14px;cursor:pointer;">
-				<input type="checkbox" id="db-stripe-agree" required style="margin-top:3px;flex:0 0 auto;width:16px;height:16px;">
-				<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment stays unpaid <?php echo esc_html( (string) ( defined( 'DB_PLAN_GRACE_DAYS' ) ? DB_PLAN_GRACE_DAYS : 10 ) ); ?> days after its due date the plan ends and installments already paid are not refunded.</span>
-			</label>
-<?php endif; ?>
-			<button type="submit" id="db-stripe-btn" class="db-stripe-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/></svg><?php echo esc_html( $btn_label ); ?></button>
-		</form>
 
-		<div class="db-stripe-trust">
-			<span class="db-stripe-trust-item">
-				<svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>
-				SSL Secured
-			</span>
-			<span class="db-stripe-trust-item">
-				<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-				Escrow Protected
-			</span>
-			<span class="db-stripe-trust-item">
-				<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-				24-hr Support
-			</span>
+			<aside class="co-next" aria-labelledby="co-next-h">
+				<h2 id="co-next-h">What are the next steps?</h2>
+				<ul>
+					<li><span class="co-bubble"><svg viewBox="0 0 50 50" aria-hidden="true"><rect x="5" y="6" width="36" height="26" rx="3" fill="#e3f0fa" stroke="#1d4f7a" stroke-width="2"/><rect x="5" y="11" width="36" height="5" fill="#1d4f7a"/><circle cx="33" cy="24" r="3" fill="#f57c00"/><circle cx="37" cy="24" r="3" fill="#ffb300" fill-opacity=".85"/><rect x="18" y="27" width="20" height="17" rx="3" fill="#ffcc4d" stroke="#1d4f7a" stroke-width="2"/><path d="M22 27v-4a6 6 0 0 1 12 0v4" fill="none" stroke="#1d4f7a" stroke-width="2"/><circle cx="28" cy="35" r="2" fill="#1d4f7a"/></svg></span><span>Your payment is securely processed</span></li>
+					<li><span class="co-bubble"><svg viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20" fill="#e3edf5"/><path d="M5 25h40M25 5c-7 6-7 34 0 40M25 5c7 6 7 34 0 40M9 14h32M9 36h32" fill="none" stroke="#b9c9d6" stroke-width="1.5"/><rect x="4" y="18" width="42" height="14" rx="2" fill="#ffd54f"/><text x="25" y="29" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="900" fill="#1d4f7a">www</text></svg></span><span>The domain is in hold &amp; secured for you</span></li>
+					<li><span class="co-bubble"><svg viewBox="0 0 50 50" aria-hidden="true"><rect x="27" y="5" width="15" height="19" rx="2" fill="#fff3d6" stroke="#1d4f7a" stroke-width="2"/><path d="M31 11h7M31 15h7M31 19h5" stroke="#f57c00" stroke-width="1.8"/><rect x="8" y="26" width="15" height="19" rx="2" fill="#dff3e4" stroke="#1d4f7a" stroke-width="2"/><path d="M12 32h7M12 36h7M12 40h5" stroke="#2e7d32" stroke-width="1.8"/><path d="M20 9c-8 0-12 5-12 12" fill="none" stroke="#1d4f7a" stroke-width="2"/><path d="M5 18l3 4 3-4" fill="none" stroke="#1d4f7a" stroke-width="2"/><path d="M30 42c8 0 12-5 12-12" fill="none" stroke="#1d4f7a" stroke-width="2"/><path d="M39 33l3-4 3 4" fill="none" stroke="#1d4f7a" stroke-width="2"/></svg></span><span>We give you instruction on the domain transfer</span></li>
+				</ul>
+			</aside>
 		</div>
-<?php endif; ?>
-
 	</div>
 </main>
 
-<?php if ( ! $not_configured && ! $has_error && $client_secret ) : ?>
+<footer>
+	<div class="co-foot">
+		<div class="co-wrap">
+			<a class="co-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo_url ); ?>" alt="Domain Brothers" width="200" height="56" loading="lazy"></a>
+<?php if ( $social_links ) : ?>
+			<div class="co-social">
+<?php if ( ! empty( $social_links['facebook'] ) ) : ?>
+				<a href="<?php echo esc_url( $social_links['facebook'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.5 1.6-1.5h1.7V4.4c-.3 0-1.3-.1-2.4-.1-2.4 0-4.1 1.5-4.1 4.2v2.3H7.6V14h2.7v8z"/></svg></a>
+<?php endif; ?>
+<?php if ( ! empty( $social_links['twitter'] ) ) : ?>
+				<a href="<?php echo esc_url( $social_links['twitter'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on X (Twitter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 5.9c-.7.3-1.5.5-2.4.6.9-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1a4.1 4.1 0 0 0-7 3.7A11.6 11.6 0 0 1 3.4 4.6a4.1 4.1 0 0 0 1.3 5.5c-.7 0-1.3-.2-1.9-.5 0 2 1.4 3.7 3.3 4.1-.6.2-1.2.2-1.8.1.5 1.6 2 2.8 3.8 2.9A8.2 8.2 0 0 1 2 18.4 11.6 11.6 0 0 0 8.3 20c7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2-2z"/></svg></a>
+<?php endif; ?>
+<?php if ( ! empty( $social_links['instagram'] ) ) : ?>
+				<a href="<?php echo esc_url( $social_links['instagram'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zm2 2v14h14V5zm7 3.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM16.5 6.3a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></svg></a>
+<?php endif; ?>
+			</div>
+<?php endif; ?>
+		</div>
+	</div>
+	<div class="co-bar">
+		<div class="co-wrap">
+			<p class="co-copy">Copyright &copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> | A Mindshare Consulting Inc company | All Rights Reserved.</p>
+<?php if ( $footer_links ) : ?>
+			<nav aria-label="Footer"><ul>
+<?php foreach ( $footer_links as $label => $url ) : ?>
+				<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $label ); ?></a></li>
+<?php endforeach; ?>
+			</ul></nav>
+<?php endif; ?>
+		</div>
+	</div>
+</footer>
+
+<?php if ( $can_pay ) : ?>
 <script>
 window.DB_PUB_KEY    = <?php echo wp_json_encode( $pub_key ); ?>;
 window.DB_PI_SECRET  = <?php echo wp_json_encode( $client_secret ); ?>;
@@ -619,83 +979,169 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 <script>
 (function () {
 	'use strict';
-	function waitStripe(cb) {
-		if (typeof Stripe !== 'undefined') { cb(); return; }
-		var iv = setInterval(function () { if (typeof Stripe !== 'undefined') { clearInterval(iv); cb(); } }, 80);
+	var current  = 1;
+	var buyer    = { name: '', email: '', phone: '' };
+	var stripe   = null, elements = null, payEl = null;
+
+	var steps    = document.querySelectorAll('#co-steps .co-step');
+	var panels   = document.querySelectorAll('[data-panel]');
+	var billing  = document.getElementById('co-billing');
+	var nameInp  = document.getElementById('co-name');
+	var emailInp = document.getElementById('co-email');
+	var phoneInp = document.getElementById('co-phone');
+	var agreeInp = document.getElementById('co-agree');
+	var payForm  = document.getElementById('co-pay');
+	var payBtn   = document.getElementById('co-pay-btn');
+	var payLabel = document.getElementById('co-pay-label');
+	var errDiv   = document.getElementById('co-err');
+	var CHECK    = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
+
+	function fieldError(input, errId, bad) {
+		input.setAttribute('aria-invalid', bad ? 'true' : 'false');
+		document.getElementById(errId).classList.toggle('is-on', bad);
+		return bad;
 	}
-	waitStripe(function () {
-		var stripe   = Stripe(window.DB_PUB_KEY);
-		var elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '10px', colorPrimary: '#2e7d14', colorText: '#0a1628', colorDanger: '#991b1b' } } });
-		var payEl    = elements.create('payment');
-		payEl.mount('#db-stripe-payment-element');
 
-		var form     = document.getElementById('db-stripe-form');
-		var btn      = document.getElementById('db-stripe-btn');
-		var errDiv   = document.getElementById('db-stripe-err');
-		var emailInp = document.getElementById('db-stripe-email');
-		var agreeInp = document.getElementById('db-stripe-agree');
+	function showStep(n) {
+		current = n;
+		document.getElementById('co-steps').style.setProperty('--p', n === 1 ? '.5' : '1');
+		Array.prototype.forEach.call(panels, function (p) {
+			p.hidden = parseInt(p.getAttribute('data-panel'), 10) !== n;
+		});
+		Array.prototype.forEach.call(steps, function (li) {
+			var s   = parseInt(li.getAttribute('data-step'), 10);
+			var btn = li.querySelector('.co-step-btn');
+			var num = li.querySelector('.co-step-num');
+			li.classList.toggle('is-active', s === n);
+			li.classList.toggle('is-done', s < n);
+			num.innerHTML = s < n ? CHECK : String(s);
+			btn.disabled = s >= n;
+			if (s === n) { btn.setAttribute('aria-current', 'step'); } else { btn.removeAttribute('aria-current'); }
+			btn.setAttribute('aria-label', (s < n ? 'Completed: ' : '') + li.querySelector('.co-step-label').textContent);
+		});
+		if (n === 3) { mountPayment(); }
+		var focusTarget = document.querySelector('#co-panel-' + n + ' .co-pill');
+		if (n > 1 && focusTarget) { focusTarget.focus({ preventScroll: true }); }
+		var top = document.getElementById('co-steps').getBoundingClientRect().top + window.pageYOffset - 16;
+		if (window.pageYOffset > top) { window.scrollTo(0, top); }
+	}
 
-		function showErr(msg) {
-			errDiv.textContent = msg;
-			errDiv.style.display = 'block';
-			btn.disabled = false;
-			btn.textContent = window.DB_BTN_LABEL;
-		}
-
-		form.addEventListener('submit', function (e) {
-			e.preventDefault();
-
-			var email = (emailInp.value || '').trim();
-			if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-				showErr('Please enter a valid email address.');
-				emailInp.focus();
-				return;
-			}
-			if (agreeInp && !agreeInp.checked) {
-				showErr('Please confirm you agree to the payment plan terms.');
-				agreeInp.focus();
-				return;
-			}
-
-			btn.disabled = true;
-			btn.textContent = 'Processing…';
-			errDiv.style.display = 'none';
-
-			// Attach the buyer's email as the PaymentIntent's receipt_email
-			// before confirming — this is what lets the sale-complete and
-			// payment-failed emails reach the actual buyer.
-			fetch(window.DB_EMAIL_REST, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: email, terms_accepted: !!(agreeInp && agreeInp.checked) })
-			}).then(function (res) {
-				// Payment plans: the terms acceptance is recorded by this call,
-				// so it must succeed before the card is charged.
-				if (agreeInp && (!res || !res.ok)) { throw new Error('consent'); }
-			}, function () {
-				if (agreeInp) { throw new Error('consent'); }
-				/* full purchase: non-fatal, still attempt payment */
-			}).then(function () {
-				return stripe.confirmPayment({
-					elements: elements,
-					confirmParams: { return_url: window.DB_RETURN_URL },
-					redirect: 'if_required'
-				});
-			}).then(function (result) {
-				if (result.error) {
-					showErr(result.error.message || 'Payment failed. Please try again.');
-				} else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-					window.location.href = window.DB_RETURN_URL;
-				} else {
-					showErr('Payment could not be confirmed. Please contact support.');
-				}
-			}).catch(function (err) {
-				showErr(err && err.message === 'consent'
-					? 'We could not record your agreement to the plan terms, so your card was not charged. Please try again.'
-					: 'An unexpected error occurred. Please refresh and try again.');
-			});
+	Array.prototype.forEach.call(steps, function (li) {
+		li.querySelector('.co-step-btn').addEventListener('click', function () {
+			var s = parseInt(li.getAttribute('data-step'), 10);
+			if (s < current) { showStep(s); }
 		});
 	});
+	Array.prototype.forEach.call(document.querySelectorAll('[data-goto]'), function (b) {
+		b.addEventListener('click', function () { showStep(parseInt(b.getAttribute('data-goto'), 10)); });
+	});
+
+	// Step 1 → 2
+	billing.addEventListener('submit', function (e) {
+		e.preventDefault();
+		var name  = (nameInp.value || '').trim().replace(/\s+/g, ' ');
+		var email = (emailInp.value || '').trim();
+		var phone = (phoneInp.value || '').trim();
+		var digits = phone.replace(/\D/g, '');
+		var bad = [
+			fieldError(nameInp, 'co-name-err', name.length < 2) ? nameInp : null,
+			fieldError(emailInp, 'co-email-err', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) ? emailInp : null,
+			fieldError(phoneInp, 'co-phone-err', digits.length < 7 || digits.length > 15 || !/^[+()\d\s.\-]+$/.test(phone)) ? phoneInp : null
+		].filter(Boolean);
+		if (bad.length) { bad[0].focus(); return; }
+		buyer = { name: name, email: email, phone: phone };
+		document.getElementById('co-r-name').textContent  = name;
+		document.getElementById('co-r-email').textContent = email;
+		document.getElementById('co-r-phone').textContent = phone;
+		showStep(2);
+	});
+
+	// Step 2 → 3
+	document.getElementById('co-confirm').addEventListener('click', function () {
+		if (agreeInp && fieldError(agreeInp, 'co-agree-err', !agreeInp.checked)) { agreeInp.focus(); return; }
+		showStep(3);
+	});
+	if (agreeInp) {
+		agreeInp.addEventListener('change', function () { if (agreeInp.checked) { fieldError(agreeInp, 'co-agree-err', false); } });
+	}
+
+	function waitStripe(cb) {
+		if (typeof Stripe !== 'undefined') { cb(); return; }
+		var tries = 0;
+		var iv = setInterval(function () {
+			tries++;
+			if (typeof Stripe !== 'undefined') { clearInterval(iv); cb(); }
+			else if (tries > 150) { clearInterval(iv); showErr('The payment form could not load. Please refresh the page or contact support.'); }
+		}, 80);
+	}
+
+	function mountPayment() {
+		if (payEl) { return; }
+		waitStripe(function () {
+			if (payEl) { return; }
+			stripe   = Stripe(window.DB_PUB_KEY);
+			elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '8px', colorPrimary: '#3c9c1e', colorText: '#1d2b36', colorDanger: '#c62828', fontFamily: 'Lato, -apple-system, Segoe UI, Roboto, Arial, sans-serif' } }, fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap' }] });
+			payEl    = elements.create('payment', { defaultValues: { billingDetails: { name: buyer.name, email: buyer.email, phone: buyer.phone } } });
+			payEl.mount('#db-stripe-payment-element');
+		});
+	}
+
+	function showErr(msg) {
+		errDiv.textContent = msg;
+		errDiv.style.display = 'block';
+		payBtn.disabled = false;
+		payLabel.textContent = window.DB_BTN_LABEL;
+	}
+
+	// Step 3: pay
+	payForm.addEventListener('submit', function (e) {
+		e.preventDefault();
+		if (!stripe || !elements) { showErr('The payment form is still loading. Please wait a moment and try again.'); return; }
+		if (agreeInp && !agreeInp.checked) { showStep(2); return; }
+
+		payBtn.disabled = true;
+		payLabel.textContent = 'Processing…';
+		errDiv.style.display = 'none';
+
+		// Attach the buyer's email (receipt_email) and name/phone (metadata)
+		// to the PaymentIntent before confirming — this is what lets the
+		// sale-complete and payment-failed emails reach the actual buyer.
+		fetch(window.DB_EMAIL_REST, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: buyer.email, name: buyer.name, phone: buyer.phone, terms_accepted: !!(agreeInp && agreeInp.checked) })
+		}).then(function (res) {
+			// Payment plans: the terms acceptance is recorded by this call,
+			// so it must succeed before the card is charged.
+			if (agreeInp && (!res || !res.ok)) { throw new Error('consent'); }
+		}, function () {
+			if (agreeInp) { throw new Error('consent'); }
+			/* full purchase: non-fatal, still attempt payment */
+		}).then(function () {
+			return stripe.confirmPayment({
+				elements: elements,
+				confirmParams: {
+					return_url: window.DB_RETURN_URL,
+					payment_method_data: { billing_details: { name: buyer.name, email: buyer.email, phone: buyer.phone } }
+				},
+				redirect: 'if_required'
+			});
+		}).then(function (result) {
+			if (result.error) {
+				showErr(result.error.message || 'Payment failed. Please try again.');
+			} else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+				window.location.href = window.DB_RETURN_URL;
+			} else {
+				showErr('Payment could not be confirmed. Please contact support.');
+			}
+		}).catch(function (err) {
+			showErr(err && err.message === 'consent'
+				? 'We could not record your agreement to the plan terms, so your card was not charged. Please try again.'
+				: 'An unexpected error occurred. Please refresh and try again.');
+		});
+	});
+
+	showStep(1);
 }());
 </script>
 <?php endif; ?>
@@ -722,6 +1168,8 @@ add_action( 'rest_api_init', static function () {
 			'client_secret' => [ 'required' => true, 'type' => 'string' ],
 			'email'         => [ 'required' => true, 'type' => 'string' ],
 			'terms_accepted' => [ 'required' => false, 'type' => 'boolean' ],
+			'name'           => [ 'required' => false, 'type' => 'string' ],
+			'phone'          => [ 'required' => false, 'type' => 'string' ],
 		],
 	] );
 } );
@@ -733,8 +1181,19 @@ if ( ! function_exists( 'db_stripe_receipt_body' ) ) {
 	 * stored on the PaymentIntent's metadata, so there is a record of what
 	 * was agreed if a forfeiture is ever disputed.
 	 */
-	function db_stripe_receipt_body( $email, $terms_accepted ) {
+	function db_stripe_receipt_body( $email, $terms_accepted, $name = '', $phone = '' ) {
 		$body = [ 'receipt_email' => $email ];
+		// Billing details from checkout step 1, kept with the order so the
+		// sale can be followed up by phone. Stripe caps metadata values at 500.
+		$name  = substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) $name ) ) ), 0, 120 );
+		$phone = substr( preg_replace( '/[^0-9+().\-\s]/', '', (string) $phone ), 0, 30 );
+		if ( '' !== $name ) {
+			$body['metadata[buyer_name]'] = $name;
+		}
+		if ( '' !== trim( $phone ) ) {
+			$body['metadata[buyer_phone]'] = trim( $phone );
+		}
+
 		if ( $terms_accepted && function_exists( 'db_plan_terms_html' ) ) {
 			$body['metadata[terms_accepted_at]'] = gmdate( 'c' );
 			$body['metadata[terms_sha]']         = substr( hash( 'sha256', wp_strip_all_tags( db_plan_terms_html() ) ), 0, 16 );
@@ -789,7 +1248,12 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 				'Authorization' => 'Bearer ' . $keys['sec'],
 				'Content-Type'  => 'application/x-www-form-urlencoded',
 			],
-			'body'      => db_stripe_receipt_body( $email, (bool) $request->get_param( 'terms_accepted' ) ),
+			'body'      => db_stripe_receipt_body(
+				$email,
+				(bool) $request->get_param( 'terms_accepted' ),
+				sanitize_text_field( (string) $request->get_param( 'name' ) ),
+				sanitize_text_field( (string) $request->get_param( 'phone' ) )
+			),
 			'timeout'   => 15,
 			'sslverify' => true,
 		] );

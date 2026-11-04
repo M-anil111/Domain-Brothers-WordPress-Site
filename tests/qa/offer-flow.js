@@ -105,20 +105,24 @@ const authCtx = (browser, extra = {}) => browser.newContext({ ...(process.env.BE
 	// ── 8. checkout charges the deal's price, whatever the URL says ──
 	const payHref = await buyer.locator('a.db-un-btn--primary').first().getAttribute('href');
 	await buyer.goto(payHref + '&p=MQ%3D%3D&d=eC5jb20%3D', { waitUntil: 'domcontentloaded' });
-	await buyer.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 60000 });
 	t = await text(buyer);
 	check('checkout shows the agreed domain and $2,000 (extra URL parameters ignored)', new RegExp(DOMAIN.replace('.', '\\.'), 'i').test(t) && /\$2,000/.test(t));
+	// Three-step checkout: billing details, order confirmation, then payment.
+	await buyer.fill('#co-name', 'QA Offer Buyer');
+	await buyer.fill('#co-email', EMAIL);
+	await buyer.fill('#co-phone', '+1 555 010 0000');
+	await buyer.click('#co-billing button[type=submit]');
+	if (await buyer.locator('#co-agree').count()) { await buyer.check('#co-agree'); }
+	await buyer.click('#co-confirm');
+	await buyer.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 60000 });
 	await buyer.waitForTimeout(3000);
-	await buyer.locator('input[type=email]').first().fill(EMAIL);
 	const fr = buyer.frameLocator('iframe[name^="__privateStripeFrame"]').first();
 	await fr.locator('input[name="number"], input[autocomplete="cc-number"]').first().fill('4242424242424242');
 	await fr.locator('input[name="expiry"], input[autocomplete="cc-exp"]').first().fill('12 / 34');
 	await fr.locator('input[name="cvc"], input[autocomplete="cc-csc"]').first().fill('123');
 	const zip = fr.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
 	if (await zip.count()) { await zip.first().fill('78701'); }
-	const agree = buyer.locator('#db-stripe-agree');
-	if (await agree.count() && await agree.isVisible()) { await agree.check(); }
-	await buyer.locator('button.db-stripe-btn, button[type=submit]').first().click();
+	await buyer.locator('#co-pay-btn').click();
 	await buyer.waitForURL(/thank-you/, { timeout: 90000 }).catch(() => {});
 	check('test payment completes and reaches the thank-you page', /thank-you/.test(buyer.url()));
 
