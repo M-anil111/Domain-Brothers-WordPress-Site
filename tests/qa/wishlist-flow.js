@@ -24,6 +24,7 @@ const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const STAMP = Date.now().toString(36);
 const DOMAIN = `qa-wish-${STAMP}.com`;
 const EMAIL = `qa-wish-${STAMP}@example.com`;
+const SHOTS = require('path').join(__dirname, '..', '..', 'docs', 'screenshots', 'wishlist');
 const results = [];
 const check = (name, pass, detail = '') => { results.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'} ${name}${detail ? ' - ' + detail : ''}`); };
 
@@ -102,27 +103,34 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.goto(link, { waitUntil: 'load' });
 	const btn = page.locator('.db-wl-btn');
 	await btn.waitFor();
-	check('domain page has "Add to wishlist"', /Add to wishlist/.test(await btn.innerText()));
+	check('domain page has "Add to wishlist"', /add to wishlist/i.test(await btn.innerText()));
+	await page.locator('.db-wl-wrap').scrollIntoViewIfNeeded();
+	await page.screenshot({ path: SHOTS + '/0-domain-page-button.png' });
 	await btn.click();
 	await page.waitForSelector('.db-wl-dialog[open]');
+	await page.screenshot({ path: SHOTS + '/1-sign-in-dialog.png' });
 	await page.fill('.db-wl-dialog input[name=email]', EMAIL);
 	await page.click('.db-wl-dialog [data-step=email] button[type=submit]');
 	await page.waitForSelector('.db-wl-dialog [data-step=code]:not([hidden])');
+	await page.screenshot({ path: SHOTS + '/2-enter-code.png' });
 	const code3 = await testCode();
 	await page.fill('.db-wl-dialog input[name=code]', code3);
 	await page.click('.db-wl-dialog [data-step=code] button[type=submit]');
 	await page.waitForSelector('.db-wl-toast');
 	check('the dialog signs in and shows "Saved to your wishlist"', /Saved to your wishlist|signed in/i.test(await page.locator('.db-wl-toast').innerText()));
-	check('the button now reads "Saved to wishlist"', /Saved to wishlist/.test(await btn.innerText()));
+	check('the button now reads "Saved to wishlist"', /saved to wishlist/i.test(await btn.innerText()));
 
 	// 7. the wishlist page
 	const resp = await page.goto(`${BASE}/my-wishlist/`, { waitUntil: 'load' });
+	await page.screenshot({ path: SHOTS + '/3-my-wishlist.png' });
 	const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ');
 	check('/my-wishlist/ lists the domain with its price', resp.status() === 200 && text.includes(DOMAIN) && /\$2,500/.test(text) && new RegExp(EMAIL).test(text));
 	check('the wishlist page is private and noindex', /no-store|private/.test(resp.headers()['cache-control'] || '') && /noindex/.test(resp.headers()['x-robots-tag'] || ''));
 
 	// 8. Domain Statistics
 	await page.goto(link + (link.includes('?') ? '&' : '?') + 'nc=' + STAMP, { waitUntil: 'load' });
+	await page.locator('.db-stats').first().scrollIntoViewIfNeeded().catch(() => {});
+	await page.screenshot({ path: SHOTS + '/4-domain-statistics.png' });
 	const stats = (await page.locator('.db-stats').first().innerText().catch(() => '')).replace(/\s+/g, ' ');
 	check('the domain page shows Domain Statistics with Watching 1', /Domain Statistics/.test(stats) && /1\s*Watching/.test(stats), stats.slice(0, 120));
 
@@ -135,7 +143,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.goto(`${BASE}/my-wishlist/`, { waitUntil: 'load' });
 	check('Remove takes it off the wishlist', /Nothing saved yet/.test(await page.locator('body').innerText()));
 	await page.click('#db-wl-signout');
-	await page.waitForLoadState('load');
+	await page.waitForSelector('#db-wl-signin', { timeout: 30000 }).catch(() => {});
 	check('Sign out ends the session', await page.locator('#db-wl-signin').count() === 1);
 
 	// 10. clean up (test domain and its rows)

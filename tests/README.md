@@ -89,4 +89,5 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 - `qa/listing-templates.js` (live): four temporary domains through the admin screen, each must get its own template; removes them.
 - `qa/sold-epp-flow.js` (live, test mode): payment plan to completion, Sold domains report, EPP code send and buyer reveal, revoke. Needs `STRIPE_TEST_WEBHOOK_SECRET`.
 - `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded) and the All offers received log with repeat offers merged.
+- `qa/wishlist-flow.js` (live): wishlist sign-in by emailed code (read back through a staging-only admin route), saving, the wishlist page, Domain Statistics, rate and origin limits; removes its test domain.
 - `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.

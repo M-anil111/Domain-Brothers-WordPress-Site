@@ -458,3 +458,7 @@ html body.db-ui-active a.db-wl-view { display: inline-flex; align-items: center;
 html body.db-ui-active a.db-wl-view.is-offer { background: #d9f6e4; border: 1.5px solid #2f9e5e; color: #0b2f73 !important; }
 .db-wl-remove { border: 0; background: none; color: var(--m-muted); text-decoration: underline; cursor: pointer; font: inherit; padding: 8px; }
 @media (max-width: 640px) { .db-wl-row { grid-template-columns: 1fr auto; } .db-wl-name { grid-column: 1 / -1; } }
+html body.db-ui-active .db-wl-btn, html body.db-ui-active .db-wl-primary, html body.db-ui-active .db-wl-link, html body.db-ui-active .db-wl-remove, html body.db-ui-active a.db-wl-view, html body.db-ui-active .db-wl-dialog button { text-transform: none !important; letter-spacing: 0 !important; }
+html body.db-ui-active .db-stats h2, html body.db-ui-active .db-how h2, html body.db-ui-active .db-aud h3, html body.db-ui-active .db-how-step h3 { color: var(--m-ink) !important; }
+html body.db-ui-active .db-stats { padding: 22px 28px 28px; }
+html body.db-ui-active .db-stats h2 { margin: 0 0 18px !important; }
