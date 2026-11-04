@@ -1,6 +1,6 @@
 # QA report — https://beta.domainbrothers.com
 
-Ran 2026-11-04T05:22:05.963Z: 407 checks, 407 passed, 0 failed.
+Ran 2026-11-04T06:01:53.605Z: 407 checks, 407 passed, 0 failed.
 
 ## Failures
 
@@ -11,35 +11,35 @@ Ran 2026-11-04T05:22:05.963Z: 407 checks, 407 passed, 0 failed.
 
 | Viewport | Page | TTFB ms | DOMContentLoaded ms | Load ms | Requests | DOM nodes | Height px |
 |---|---|---|---|---|---|---|---|
-| desktop | home | 1198 | 1597 | 2591 | 49 | 1205 | 5415 |
-| desktop | domain | 518 | 757 | 1343 | 43 | 682 | 5233 |
-| desktop | domain-priced | 453 | 690 | 1194 | 42 | 682 | 5300 |
-| desktop | all-domains | 503 | 723 | 1188 | 30 | 855 | 6082 |
-| desktop | category | 527 | 713 | 1218 | 30 | 469 | 2869 |
-| desktop | news | 413 | 595 | 1104 | 36 | 441 | 4743 |
-| desktop | post | 675 | 830 | 1376 | 32 | 292 | 1823 |
-| desktop | services | 735 | 899 | 1466 | 32 | 363 | 3454 |
-| desktop | service | 477 | 617 | 1190 | 30 | 275 | 3036 |
-| desktop | about | 543 | 696 | 1221 | 33 | 306 | 1671 |
-| desktop | faqs | 515 | 663 | 1192 | 30 | 407 | 3513 |
-| desktop | contact | 424 | 633 | 1179 | 46 | 356 | 1882 |
-| desktop | offer | 429 | 624 | 1153 | 41 | 345 | 1931 |
-| desktop | privacy | 437 | 574 | 1109 | 30 | 349 | 4973 |
-| desktop | sold | 461 | 606 | 1156 | 30 | 502 | 2989 |
-| desktop | epp | 486 | 644 | 1173 | 33 | 401 | 4515 |
-| mobile | home | 1216 | 1597 | 2706 | 50 | 1205 | 8520 |
-| mobile | domain | 572 | 793 | 1324 | 42 | 682 | 9663 |
-| mobile | domain-priced | 484 | 696 | 1212 | 42 | 682 | 9665 |
-| mobile | all-domains | 538 | 806 | 1295 | 30 | 855 | 11850 |
-| mobile | category | 496 | 694 | 1257 | 31 | 469 | 4508 |
-| mobile | news | 482 | 651 | 1182 | 33 | 441 | 6482 |
-| mobile | post | 452 | 841 | 1068 | 30 | 292 | 3140 |
-| mobile | services | 492 | 663 | 1218 | 32 | 363 | 6200 |
-| mobile | service | 623 | 766 | 1344 | 30 | 275 | 4134 |
-| mobile | about | 498 | 656 | 1257 | 33 | 306 | 2004 |
-| mobile | faqs | 469 | 615 | 1167 | 30 | 407 | 5215 |
-| mobile | contact | 552 | 773 | 1284 | 46 | 356 | 2542 |
-| mobile | offer | 480 | 685 | 1242 | 41 | 345 | 2555 |
-| mobile | privacy | 476 | 645 | 1194 | 30 | 349 | 7776 |
-| mobile | sold | 608 | 821 | 1328 | 30 | 502 | 2943 |
-| mobile | epp | 446 | 678 | 1173 | 32 | 401 | 7970 |
+| desktop | home | 1565 | 2269 | 3649 | 50 | 1208 | 5613 |
+| desktop | domain | 502 | 750 | 1371 | 44 | 683 | 5239 |
+| desktop | domain-priced | 445 | 680 | 1215 | 42 | 682 | 5306 |
+| desktop | all-domains | 587 | 921 | 1415 | 30 | 857 | 6280 |
+| desktop | category | 663 | 853 | 1442 | 30 | 471 | 3043 |
+| desktop | news | 425 | 630 | 1151 | 36 | 443 | 4909 |
+| desktop | post | 479 | 613 | 1325 | 32 | 294 | 2005 |
+| desktop | services | 500 | 652 | 1229 | 32 | 365 | 3608 |
+| desktop | service | 440 | 596 | 1136 | 30 | 277 | 3218 |
+| desktop | about | 472 | 636 | 1198 | 33 | 308 | 1859 |
+| desktop | faqs | 444 | 599 | 1146 | 30 | 409 | 3696 |
+| desktop | contact | 722 | 915 | 1450 | 46 | 358 | 2052 |
+| desktop | offer | 480 | 674 | 1256 | 41 | 347 | 2085 |
+| desktop | privacy | 476 | 627 | 1206 | 30 | 349 | 4973 |
+| desktop | sold | 459 | 615 | 1173 | 30 | 504 | 3187 |
+| desktop | epp | 512 | 668 | 1209 | 33 | 403 | 4703 |
+| mobile | home | 1248 | 1675 | 2886 | 50 | 1208 | 8686 |
+| mobile | domain | 579 | 801 | 1444 | 42 | 682 | 9677 |
+| mobile | domain-priced | 510 | 759 | 1358 | 43 | 682 | 9680 |
+| mobile | all-domains | 534 | 795 | 1323 | 30 | 857 | 12052 |
+| mobile | category | 574 | 765 | 1325 | 30 | 471 | 4650 |
+| mobile | news | 397 | 563 | 1150 | 33 | 443 | 6620 |
+| mobile | post | 417 | 580 | 1173 | 31 | 294 | 3290 |
+| mobile | services | 557 | 736 | 1313 | 32 | 365 | 6342 |
+| mobile | service | 512 | 711 | 1364 | 30 | 277 | 4284 |
+| mobile | about | 588 | 748 | 1335 | 33 | 308 | 2160 |
+| mobile | faqs | 444 | 616 | 1214 | 30 | 409 | 5366 |
+| mobile | contact | 463 | 671 | 1319 | 45 | 358 | 2680 |
+| mobile | offer | 697 | 877 | 1486 | 41 | 347 | 2705 |
+| mobile | privacy | 456 | 616 | 1193 | 30 | 349 | 7776 |
+| mobile | sold | 592 | 743 | 1339 | 30 | 504 | 3109 |
+| mobile | epp | 463 | 621 | 1195 | 32 | 403 | 8126 |
