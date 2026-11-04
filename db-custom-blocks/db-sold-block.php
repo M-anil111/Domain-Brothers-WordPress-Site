@@ -460,13 +460,14 @@ add_action( 'admin_post_db_epp_send', function () {
 	) );
 	update_post_meta( $sold->ID, 'db_sold_buyer', $email );
 
-	$sent = false;
-	if ( function_exists( 'db_plan_email_shell' ) && function_exists( 'db_plan_send' ) ) {
+	$sent = function_exists( 'db_mail_send' ) ? db_mail_send( 'transfer_code', $email, array( 'domain' => $domain, 'note_html' => '' !== $note ? '<p>' . esc_html( $note ) . '</p>' : '', 'days' => (string) (int) DB_EPP_LINK_DAYS, 'code_url' => db_epp_url( $token ) ), DB_PLAN_SUPPORT_EMAIL ) : null;
+	if ( null === $sent && function_exists( 'db_plan_email_shell' ) && function_exists( 'db_plan_send' ) ) {
 		$paras = '<p style="font-size:15px;color:#374151;margin:0 0 12px;">The transfer (EPP / unlock) code for <strong>' . esc_html( $domain ) . '</strong> is ready. For your security it is not in this email: open the private page below and press "Show my code".</p>'
 			. ( '' !== $note ? '<p style="font-size:15px;color:#374151;margin:0 0 12px;border-left:3px solid #d1d5db;padding-left:12px;">' . esc_html( $note ) . '</p>' : '' )
 			. '<p style="font-size:13px;color:#6b7280;margin:0 0 12px;">The link works for ' . (int) DB_EPP_LINK_DAYS . ' days. Do not forward it.</p>';
 		$sent  = db_plan_send( $email, 'Your transfer code for ' . $domain, db_plan_email_shell( 'Your transfer code is ready', $paras, array( 'Domain' => $domain ), 'Get my transfer code', db_epp_url( $token ), 'good' ) );
 	}
+	$sent = (bool) $sent;
 	$back( $sent ? 'Done. ' . $email . ' has been emailed a secure link to the code for ' . $domain . '.' : 'The code is saved, but the email could not be sent (see the email warning above). Fix email, then press Send again.', ! $sent );
 } );
 

@@ -143,6 +143,12 @@ if ( ! function_exists( 'db_plan_send' ) ) {
 if ( ! function_exists( 'db_plan_notify_admin' ) ) {
 	function db_plan_notify_admin( $subject, array $lines ) {
 		$to   = (string) get_option( 'admin_email' );
+		if ( function_exists( 'db_mail_send' ) ) {
+			$r = db_mail_send( 'admin_alert', $to, array( 'subject_line' => $subject, 'title' => $subject, 'lines_html' => '<p>' . nl2br( esc_html( implode( "\n", $lines ) ) ) . '</p>' ) );
+			if ( null !== $r ) {
+				return;
+			}
+		}
 		$body = '<p>' . nl2br( esc_html( implode( "\n", $lines ) ) ) . '</p>';
 		if ( function_exists( 'db_send_branded_email' ) ) {
 			db_send_branded_email( $to, $subject, $body );
@@ -182,6 +188,26 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 			'Domain'  => $d,
 			$inst     => db_plan_money( $amount ),
 		);
+
+		if ( function_exists( 'db_mail_compose' ) ) {
+			$m = db_mail_compose( 'plan_' . $key, array(
+				'domain'     => $d,
+				'number'     => (string) $n,
+				'months'     => (string) $months,
+				'amount'     => db_plan_money( $amount ),
+				'paid'       => db_plan_money( $paid ),
+				'remaining'  => (string) max( 0, $months - ( 'recovered' === $key ? (int) ( $plan['paid_installments'] ?? 0 ) : $n ) ),
+				'due_date'   => isset( $x['due_ts'] ) ? $fmt( $x['due_ts'] ) : '',
+				'grace_end'  => $grace_end,
+				'grace_days' => (string) $grace,
+				'days_left'  => isset( $x['days_left'] ) ? (string) (int) $x['days_left'] : '',
+				'card_url'   => $card_url,
+			) );
+			if ( $m ) {
+				$GLOBALS['db_mail_pre'] = $m['pre'];
+				return array( $m['subject'], $m['inner'] );
+			}
+		}
 
 		switch ( $key ) {
 

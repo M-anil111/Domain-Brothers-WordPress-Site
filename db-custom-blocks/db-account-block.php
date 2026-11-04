@@ -270,7 +270,19 @@ if ( ! function_exists( 'db_acct_send_pending' ) ) {
 			if ( function_exists( 'db_wl_is_staging' ) && db_wl_is_staging() ) {
 				set_transient( 'db_acct_dbg_' . md5( $email ), $subject . "\n" . $body, HOUR_IN_SECONDS ); // read only by the admin-only staging test route
 			}
-			$ok = (bool) wp_mail( $email, $subject, $body );
+			$li = '<ul>';
+			foreach ( $list as $n ) {
+				$p   = get_post( (int) $n->post_id );
+				$li .= '<li>' . esc_html( $n->message ) . ( $p ? ' <a href="' . esc_url( get_permalink( $p ) ) . '">View</a>' : '' ) . '</li>';
+			}
+			$li .= '</ul>';
+			$tpl = function_exists( 'db_mail_send' ) ? db_mail_send( 'alerts_digest', $email, array(
+				'summary'     => 1 === $count ? $list[0]->message : $count . ' updates on domains you follow',
+				'alerts_html' => $li,
+				'account_url' => add_query_arg( 'tab', 'alerts', home_url( '/my-wishlist/' ) ),
+				'stop_url'    => db_acct_stop_url( $email ),
+			) ) : null;
+			$ok = null === $tpl ? (bool) wp_mail( $email, $subject, $body ) : (bool) $tpl;
 			if ( $ok || ( function_exists( 'db_wl_is_staging' ) && db_wl_is_staging() ) ) {
 				$wpdb->query( "UPDATE {$notes} SET emailed = 1 WHERE id IN ({$ids})" );
 				$sent++;

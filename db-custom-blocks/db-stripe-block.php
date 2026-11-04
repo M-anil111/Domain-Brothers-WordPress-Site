@@ -1373,6 +1373,13 @@ if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );
 		$type_label     = $type === 'plan' ? 'Payment Plan (Complete)' : 'Full Purchase';
+		if ( function_exists( 'db_mail_send' ) ) {
+			if ( $customer_email ) {
+				db_mail_send( 'purchase_full', $customer_email, [ 'domain' => $domain, 'amount' => $amount_display, 'date' => wp_date( 'F j, Y' ), 'type' => $type_label ], 'sales@domainbrothers.com' );
+			}
+			db_mail_send( 'admin_sale', $admin_email, [ 'domain' => $domain, 'amount' => $amount_display, 'type' => $type_label, 'customer' => $customer_email ?: 'Unknown', 'time' => wp_date( 'Y-m-d H:i:s T' ), 'admin_url' => admin_url() ] );
+			return;
+		}
 
 		// Customer receipt
 		if ( $customer_email ) {
@@ -1442,6 +1449,32 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 		$d           = esc_html( $domain );
 		$paid_fmt    = '$' . number_format( $amount_usd, 2 );
 
+		if ( function_exists( 'db_mail_send' ) ) {
+			if ( $customer_email ) {
+				if ( 1 === $n ) {
+					$sched = '';
+					for ( $i = 1; $i <= $months; $i++ ) {
+						$when   = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
+						$sched .= esc_html( $i . '. ' . $when . ': $' . number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '<br>';
+					}
+					db_mail_send( 'plan_started', $customer_email, [
+						'domain' => $domain, 'amount' => $paid_fmt, 'months' => (string) $months, 'rate' => $rate_label, 'total' => '$' . number_format( $total, 2 ),
+						'schedule_html' => '<p>' . $sched . '</p>',
+						'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
+						'reminder_days' => (string) ( defined( 'DB_PLAN_REMIND_DAYS' ) ? DB_PLAN_REMIND_DAYS : 3 ),
+					], 'sales@domainbrothers.com' );
+				} else {
+					db_mail_send( 'plan_installment', $customer_email, [ 'domain' => $domain, 'number' => (string) $n, 'months' => (string) $months, 'amount' => $paid_fmt, 'remaining' => (string) max( 0, $months - $n ) ], 'sales@domainbrothers.com' );
+				}
+			}
+			db_mail_send( 'admin_plan_payment', $admin_email, [
+				'domain' => $domain, 'headline' => 1 === $n ? 'Plan started' : 'Payment ' . $n . ' of ' . $months, 'amount' => $paid_fmt,
+				'plan' => $rate_label . ', total $' . number_format( $total, 2 ), 'customer' => $customer_email ?: 'Unknown', 'time' => wp_date( 'Y-m-d H:i:s T' ),
+				'subject_line' => 1 === $n ? sprintf( 'PLAN STARTED: %s — %d months, %s', $domain, $months, $rate_label ) : sprintf( 'PLAN PAYMENT %d/%d: %s (%s)', $n, $months, $domain, $paid_fmt ),
+			] );
+			return;
+		}
+
 		if ( $customer_email ) {
 			if ( 1 === $n ) {
 				$subj = sprintf( 'Your payment plan for %s has started', $domain );
@@ -1494,6 +1527,14 @@ if ( ! function_exists( 'db_stripe_on_payment_failed' ) ) {
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );
+
+		if ( function_exists( 'db_mail_send' ) ) {
+			if ( $customer_email ) {
+				db_mail_send( 'payment_failed', $customer_email, [ 'domain' => $domain, 'amount' => $amount_display, 'update_url' => home_url( '/' ) ], 'sales@domainbrothers.com' );
+			}
+			db_mail_send( 'admin_payment_failed', $admin_email, [ 'domain' => $domain, 'amount' => $amount_display, 'customer' => $customer_email ?: 'Unknown', 'time' => wp_date( 'Y-m-d H:i:s T' ), 'admin_url' => admin_url() ] );
+			return;
+		}
 
 		// Customer notification
 		if ( $customer_email ) {

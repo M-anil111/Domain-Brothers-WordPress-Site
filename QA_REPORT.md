@@ -484,3 +484,38 @@ Not-for-sale uses the same layout (amber "NOT FOR SALE" sign, the "Ask the owner
 - **Home page**: two new sections between the listings and the contact band: "Perfect for domain buyers ... and domain sellers" (two check lists with buttons) and "How it works" (three steps).
 - Test: `tests/qa/wishlist-flow.js` 20/20 (the code is read back through an administrators-only route that exists on staging only, because staging cannot send email).
 - **Not verified**: the code email itself. Staging cannot send email ("SMTP Error: Could not authenticate"); check delivery on production before announcing the wishlist.
+
+## 24. Apple-style domain page, priced-domain template, develop banner (v3.60 - v3.61)
+
+- **Domain page**: category photo tile, smaller Domain Statistics bar, a details grid with better type, a four-step "How buying works" process, one scrolling row of recommended domains, and a "Want to develop this domain?" banner (logo, social media, website, mobile apps, with a call to action).
+- **Priced domains** use a template matched to the production pricing page: a "this domain is on sale" band, three numbered ways to get it (Buy now, Finance this domain, Make a custom offer), accepted payments, details, quotes and news. All offer ids and the checkout links are unchanged. Tests: listing templates 6/6, offer flow 17/17.
+
+## 25. Account dashboard and follower alerts (v3.62.0)
+
+Signing in with the emailed code now opens **My account** (`/my-wishlist/`), with four tabs:
+
+- **Wishlist**: the saved domains (the people following a domain).
+- **Alerts**: what happened to those domains, newest first, with an unread count and a switch for email.
+- **My offers**: every offer the person made, its status (Waiting for us, Agreed, Declined, Paid, Expired), a link to the negotiation, and a form to make a new offer (`/db/v1/account/offer`, same sign-in and Origin rules as the wishlist, 10 offers an hour).
+- **Discover**: Recently listed and Hot domains (views in the last 7 days, plus 5 for each watcher and 10 for each offer; real numbers only), each with View, Make an offer and Save.
+
+**Alerts to followers** are created when the price changes (including "now open to offers"), when a domain sells, leaves or returns to the market, and when someone makes an offer. The offer alert never gives the amount or who made it, and the person who made the offer is not told about their own. Alerts show in the account at once and go out as one email per person at most every 15 minutes, with a signed one-click stop link that only works for that address. Admin: Domain Brothers > Wishlists lists every alert and whether it was emailed.
+
+Tests: `tests/qa/account-flow.js` 27/27 (price drop, offer, sale, the one email with its stop link, forged stop link, Discover, Save, mark-read, admin view, clean-up).
+
+## 26. Priced page polish, status panel, ad slots (v3.62.0)
+
+- The three buying options now end on one line: the buttons are pinned to the bottom of equal-height cards; the offer amount sits above its button.
+- "Add to wishlist" sits in the payment-badges row (right side on desktop, stacked on phones).
+- **Domain status panel** in the right half of "details and pricing": status pill, large price, monthly option, Buy now and payment plan buttons (Make an offer for open-to-offers domains), on a blue gradient so it stands out; it stays in view while scrolling.
+- "How buying works" and the payment-plan terms box now span the full width, the same width as the develop banner below.
+- **Google AdSense**: three banner slots (after the three options, after details and pricing, after How buying works). Domain Brothers > Ads takes the publisher id and three ad unit ids. Until an id is saved, live visitors see nothing and staging shows labelled empty slots. **Not verified**: real ads (needs your AdSense account; a consent banner is required for visitors in the EEA, UK and Switzerland).
+
+## 27. Branded emails and the template editor (v3.63.0)
+
+- **One look for every email**: logo centred on a soft background, a white rounded card with a primary-to-secondary colour strip, a small coloured title, a bold centred headline, centred text, a rounded details panel and a pill button; dark mode follows the reader's device; every HTML email also carries a plain-text version.
+- **24 templates** cover sign-in code, followed-domain alerts, offer received / our price / accepted / declined, payment received (full and plan), plan payment received, payment failed, plan reminders and the four failure notices, plan back on track, plan terminated, transfer code, and six notices to the team (sale, plan payment, payment failed, offer, plan alerts, not-for-sale enquiry). The older senders (receipts, Stripe webhooks, plan lifecycle, offers, transfer codes) now go through these templates.
+- **Admin: Domain Brothers > Email templates** (administrators only). Templates tab: every email, when it is sent, edit it with a rich text editor (subject, small title, headline, image, text, details, button), a live preview, a test send, switch off (team notices and followed-domain alerts only; payment, offer-accepted and sign-in emails are always sent), and reset to the original. Design tab: logo, logo width, primary and secondary colours, button colours, backgrounds, text colours, font, tagline, footer; the preview updates as you change them.
+- Test: `tests/qa/email-templates.js` 12/12 (all 24 render with logo and no leftover placeholders; an edit reaches the next real email; a colour change reaches every email; reset; switch-off rules; access control). Screenshots: `docs/screenshots/email/`.
+- **Not verified**: delivery. Staging cannot send mail, so rendering is checked in the preview and in the captured message, not in Gmail, Outlook or Apple Mail. Send a test of each important email to real inboxes after enabling SMTP.
+- **Not built**: "checklist filled / not filled" and "new project received" emails; this site has no checklist or project feature. The closest equivalents exist (new offer, payment received).

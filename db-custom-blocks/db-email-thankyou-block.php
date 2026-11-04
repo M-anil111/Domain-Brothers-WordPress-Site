@@ -110,6 +110,22 @@ if ( ! function_exists( 'db_mail_send_sale_receipt' ) ) {
 		$type_label  = ( 'plan' === $type ) ? 'Payment Plan' : 'Full Purchase';
 		$date_str    = gmdate( 'F j, Y' );
 		$subject     = 'Your domain ' . $domain . ' is secured — Domain Brothers';
+		if ( function_exists( 'db_mail_send' ) ) {
+			if ( 'plan' === $type ) {
+				$monthly = ( $plan_months > 0 ) ? '$' . number_format( (float) $amount_usd / (int) $plan_months, 2 ) : $amount_fmt;
+				$r = db_mail_send( 'plan_started', $to_email, array(
+					'domain' => $domain, 'amount' => $monthly, 'months' => (string) (int) $plan_months,
+					'rate' => ( db_plan_rate( $plan_months ) > 0 ? rtrim( rtrim( number_format( db_plan_rate( $plan_months ), 1 ), '0' ), '.' ) . '% interest' : '0% interest' ),
+					'total' => $amount_fmt, 'schedule_html' => '', 'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
+					'reminder_days' => (string) ( defined( 'DB_PLAN_REMIND_DAYS' ) ? DB_PLAN_REMIND_DAYS : 3 ),
+				), 'sales@domainbrothers.com' );
+			} else {
+				$r = db_mail_send( 'purchase_full', $to_email, array( 'domain' => $domain, 'amount' => $amount_fmt, 'date' => $date_str, 'type' => $type_label ), 'sales@domainbrothers.com' );
+			}
+			if ( null !== $r ) {
+				return $r;
+			}
+		}
 
 		// Order summary table (inline CSS for Gmail compatibility)
 		$tbl  = '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:20px 0;">';
@@ -166,6 +182,12 @@ if ( ! function_exists( 'db_mail_send_admin_alert' ) ) {
 		$type_label  = ( 'plan' === $type ) ? 'Payment Plan' : 'Full Purchase';
 		$subject     = 'DOMAIN SOLD: ' . $domain . ' — ' . $amount_fmt . ' (' . $type_label . ')';
 		$date_str    = gmdate( 'Y-m-d H:i:s T' );
+		if ( function_exists( 'db_mail_send' ) ) {
+			$r = db_mail_send( 'admin_sale', $admin_email, array( 'domain' => $domain, 'amount' => $amount_fmt, 'type' => $type_label . ( $plan_months > 0 ? ' (' . (int) $plan_months . ' months)' : '' ), 'customer' => $customer_email, 'time' => $date_str, 'admin_url' => admin_url() ) );
+			if ( null !== $r ) {
+				return $r;
+			}
+		}
 
 		$rows = array(
 			'Domain'         => esc_html( $domain ),
@@ -205,6 +227,12 @@ if ( ! function_exists( 'db_mail_send_payment_failed' ) ) {
 		$amount_fmt  = '$' . number_format( (float) $amount_usd, 2 );
 		$subject     = 'Action needed: Payment failed for ' . $domain;
 		$domain_url  = esc_url( home_url( '/' ) );
+		if ( function_exists( 'db_mail_send' ) ) {
+			$r = db_mail_send( 'payment_failed', $to_email, array( 'domain' => $domain, 'amount' => $amount_fmt, 'update_url' => home_url( '/' ) ), 'sales@domainbrothers.com' );
+			if ( null !== $r ) {
+				return $r;
+			}
+		}
 
 		$body  = '<p style="font-size:20px;font-weight:700;color:#c0392b;margin:0 0 12px;">&#9888; Payment Failed</p>';
 		$body .= '<p>We were unable to process your payment of <strong>' . esc_html( $amount_fmt ) . '</strong> for <strong>' . $domain_safe . '</strong>.</p>';
@@ -226,6 +254,12 @@ if ( ! function_exists( 'db_mail_send_payment_failed_admin' ) ) {
 		$amount_fmt  = '$' . number_format( (float) $amount_usd, 2 );
 		$subject     = 'PAYMENT FAILED: ' . $domain . ' — ' . $amount_fmt;
 		$date_str    = gmdate( 'Y-m-d H:i:s T' );
+		if ( function_exists( 'db_mail_send' ) ) {
+			$r = db_mail_send( 'admin_payment_failed', $admin_email, array( 'domain' => $domain, 'amount' => $amount_fmt, 'customer' => $customer_email, 'time' => $date_str, 'admin_url' => admin_url() ) );
+			if ( null !== $r ) {
+				return $r;
+			}
+		}
 
 		$tbl  = '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:20px 0;">';
 		$tbl .= '<tr><td style="padding:9px 14px;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;width:38%;">Domain</td><td style="padding:9px 14px;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #f3f4f6;">' . esc_html( $domain ) . '</td></tr>';
@@ -251,6 +285,12 @@ if ( ! function_exists( 'db_mail_send_offer_ack' ) ) {
 	function db_mail_send_offer_ack( $to_email, $domain, $offer_amount = '' ) {
 		$domain_safe = esc_html( $domain );
 		$subject     = 'We received your offer — Domain Brothers';
+		if ( function_exists( 'db_mail_send' ) ) {
+			$r = db_mail_send( 'offer_received', $to_email, array( 'domain' => $domain, 'offer_amount' => $offer_amount ? '$' . ltrim( preg_replace( '/[^0-9.,]/', '', (string) $offer_amount ), '$' ) : '', 'offer_url' => '', 'email' => $to_email ), 'sales@domainbrothers.com' );
+			if ( null !== $r ) {
+				return $r;
+			}
+		}
 
 		$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Offer received!</p>';
 		$body .= '<p>We\'ve received your offer for <strong>' . $domain_safe . '</strong>. Our team personally reviews every offer within <strong>24 hours</strong>.</p>';
@@ -950,6 +990,8 @@ if ( ! function_exists( 'db_offer_confirmation_email' ) ) {
 			'to'      => $email,
 			'subject' => $domain ? 'We received your offer for ' . $domain : 'We received your offer',
 			'body'    => $body,
+			'domain'  => $domain,
+			'amount'  => $amount,
 		);
 	}
 }

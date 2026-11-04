@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.62.0
+ * Version:     3.63.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.62.0' );
+define( 'DB_BLOCKS_LOADED', '3.63.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -1122,8 +1122,19 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 	if ( $mail ) {
 		// The buyer's private offer page (created by the CRM hook, which runs at priority 10).
 		$link = (string) apply_filters( 'db_offer_confirmation_link', '', $mail['to'], db_offer_value( $data, 'domain' ) );
-		$mail = db_offer_email_with_link( $mail, $link );
-		wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+		$sent = null;
+		if ( function_exists( 'db_mail_send' ) ) {
+			$sent = db_mail_send( 'offer_received', $mail['to'], array(
+				'domain'       => '' !== (string) ( $mail['domain'] ?? '' ) ? $mail['domain'] : 'your domain',
+				'offer_amount' => (string) ( $mail['amount'] ?? '' ),
+				'offer_url'    => db_mail_local_url( $link ),
+				'email'        => $mail['to'],
+			), 'sales@domainbrothers.com' );
+		}
+		if ( null === $sent ) {
+			$mail = db_offer_email_with_link( $mail, $link );
+			wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+		}
 	}
 }, 20, 1 ); // after the CRM lead (and its offer page) exists
 
@@ -4416,6 +4427,7 @@ require_once __DIR__ . '/db-crm-block.php';
 /* ============================================================
    EMAIL + THANK-YOU BLOCK — Branded emails & thank-you page
    ============================================================ */
+require_once __DIR__ . '/db-emails-block.php';
 require_once __DIR__ . '/db-email-thankyou-block.php';
 
 /* ============================================================

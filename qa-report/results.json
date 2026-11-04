@@ -1,0 +1,3305 @@
+{
+ "base": "https://beta.domainbrothers.com",
+ "ran": "2026-11-04T05:22:05.961Z",
+ "results": [
+  {
+   "id": "HT-home-status",
+   "area": "HTTP",
+   "name": "/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-home-php",
+   "area": "HTTP",
+   "name": "/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-home-title",
+   "area": "SEO",
+   "name": "/ title 25–65 chars",
+   "pass": true,
+   "detail": "55: Buy Premium Domains, Escrow Protected | Domain Brothers"
+  },
+  {
+   "id": "SEO-home-desc",
+   "area": "SEO",
+   "name": "/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "148"
+  },
+  {
+   "id": "SEO-home-canonical",
+   "area": "SEO",
+   "name": "/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/"
+  },
+  {
+   "id": "SEO-home-h1",
+   "area": "SEO",
+   "name": "/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-home-jsonld",
+   "area": "SEO",
+   "name": "/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite"
+  },
+  {
+   "id": "SEO-home-noindex",
+   "area": "SEO",
+   "name": "/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-home-alt",
+   "area": "A11y",
+   "name": "/ every <img> has alt",
+   "pass": true,
+   "detail": "0/18 missing"
+  },
+  {
+   "id": "A11Y-home-zoom",
+   "area": "A11y",
+   "name": "/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-home-paste",
+   "area": "A11y",
+   "name": "/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-home-one-title",
+   "area": "SEO",
+   "name": "/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-home-blank-rel",
+   "area": "Security",
+   "name": "/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-home-unique-ids",
+   "area": "A11y",
+   "name": "/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-home-ttfb",
+   "area": "Perf",
+   "name": "/ response < 2.5s",
+   "pass": true,
+   "detail": "842ms"
+  },
+  {
+   "id": "HT-domain-status",
+   "area": "HTTP",
+   "name": "/domains/fatality-ca/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-domain-php",
+   "area": "HTTP",
+   "name": "/domains/fatality-ca/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-domain-title",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ title 25–65 chars",
+   "pass": true,
+   "detail": "46: fatality.ca for Sale, $2,500 | Domain Brothers"
+  },
+  {
+   "id": "SEO-domain-desc",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "152"
+  },
+  {
+   "id": "SEO-domain-canonical",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/domains/fatality-ca/"
+  },
+  {
+   "id": "SEO-domain-h1",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-domain-jsonld",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,Product,BreadcrumbList"
+  },
+  {
+   "id": "SEO-domain-noindex",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-domain-alt",
+   "area": "A11y",
+   "name": "/domains/fatality-ca/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-domain-zoom",
+   "area": "A11y",
+   "name": "/domains/fatality-ca/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-domain-paste",
+   "area": "A11y",
+   "name": "/domains/fatality-ca/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-domain-one-title",
+   "area": "SEO",
+   "name": "/domains/fatality-ca/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-domain-blank-rel",
+   "area": "Security",
+   "name": "/domains/fatality-ca/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-domain-unique-ids",
+   "area": "A11y",
+   "name": "/domains/fatality-ca/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-domain-ttfb",
+   "area": "Perf",
+   "name": "/domains/fatality-ca/ response < 2.5s",
+   "pass": true,
+   "detail": "473ms"
+  },
+  {
+   "id": "HT-domain-priced-status",
+   "area": "HTTP",
+   "name": "/domains/aethereum-ca/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-domain-priced-php",
+   "area": "HTTP",
+   "name": "/domains/aethereum-ca/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-domain-priced-title",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ title 25–65 chars",
+   "pass": true,
+   "detail": "48: aethereum.ca for Sale, $10,000 | Domain Brothers"
+  },
+  {
+   "id": "SEO-domain-priced-desc",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "154"
+  },
+  {
+   "id": "SEO-domain-priced-canonical",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/domains/aethereum-ca/"
+  },
+  {
+   "id": "SEO-domain-priced-h1",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-domain-priced-jsonld",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,Product,BreadcrumbList"
+  },
+  {
+   "id": "SEO-domain-priced-noindex",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-domain-priced-alt",
+   "area": "A11y",
+   "name": "/domains/aethereum-ca/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-domain-priced-zoom",
+   "area": "A11y",
+   "name": "/domains/aethereum-ca/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-domain-priced-paste",
+   "area": "A11y",
+   "name": "/domains/aethereum-ca/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-domain-priced-one-title",
+   "area": "SEO",
+   "name": "/domains/aethereum-ca/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-domain-priced-blank-rel",
+   "area": "Security",
+   "name": "/domains/aethereum-ca/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-domain-priced-unique-ids",
+   "area": "A11y",
+   "name": "/domains/aethereum-ca/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-domain-priced-ttfb",
+   "area": "Perf",
+   "name": "/domains/aethereum-ca/ response < 2.5s",
+   "pass": true,
+   "detail": "601ms"
+  },
+  {
+   "id": "HT-all-domains-status",
+   "area": "HTTP",
+   "name": "/all-domains/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-all-domains-php",
+   "area": "HTTP",
+   "name": "/all-domains/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-all-domains-title",
+   "area": "SEO",
+   "name": "/all-domains/ title 25–65 chars",
+   "pass": true,
+   "detail": "55: Premium Domains for Sale: Browse 200+ | Domain Brothers"
+  },
+  {
+   "id": "SEO-all-domains-desc",
+   "area": "SEO",
+   "name": "/all-domains/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "154"
+  },
+  {
+   "id": "SEO-all-domains-canonical",
+   "area": "SEO",
+   "name": "/all-domains/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/all-domains/"
+  },
+  {
+   "id": "SEO-all-domains-h1",
+   "area": "SEO",
+   "name": "/all-domains/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-all-domains-jsonld",
+   "area": "SEO",
+   "name": "/all-domains/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-all-domains-noindex",
+   "area": "SEO",
+   "name": "/all-domains/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-all-domains-alt",
+   "area": "A11y",
+   "name": "/all-domains/ every <img> has alt",
+   "pass": true,
+   "detail": "0/7 missing"
+  },
+  {
+   "id": "A11Y-all-domains-zoom",
+   "area": "A11y",
+   "name": "/all-domains/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-all-domains-paste",
+   "area": "A11y",
+   "name": "/all-domains/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-all-domains-one-title",
+   "area": "SEO",
+   "name": "/all-domains/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-all-domains-blank-rel",
+   "area": "Security",
+   "name": "/all-domains/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-all-domains-unique-ids",
+   "area": "A11y",
+   "name": "/all-domains/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-all-domains-ttfb",
+   "area": "Perf",
+   "name": "/all-domains/ response < 2.5s",
+   "pass": true,
+   "detail": "604ms"
+  },
+  {
+   "id": "HT-category-status",
+   "area": "HTTP",
+   "name": "/domain-category/business/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-category-php",
+   "area": "HTTP",
+   "name": "/domain-category/business/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-category-title",
+   "area": "SEO",
+   "name": "/domain-category/business/ title 25–65 chars",
+   "pass": true,
+   "detail": "43: Business Domains for Sale | Domain Brothers"
+  },
+  {
+   "id": "SEO-category-desc",
+   "area": "SEO",
+   "name": "/domain-category/business/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "153"
+  },
+  {
+   "id": "SEO-category-canonical",
+   "area": "SEO",
+   "name": "/domain-category/business/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/domain-category/business/"
+  },
+  {
+   "id": "SEO-category-h1",
+   "area": "SEO",
+   "name": "/domain-category/business/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-category-jsonld",
+   "area": "SEO",
+   "name": "/domain-category/business/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,CollectionPage,BreadcrumbList"
+  },
+  {
+   "id": "SEO-category-noindex",
+   "area": "SEO",
+   "name": "/domain-category/business/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-category-alt",
+   "area": "A11y",
+   "name": "/domain-category/business/ every <img> has alt",
+   "pass": true,
+   "detail": "0/7 missing"
+  },
+  {
+   "id": "A11Y-category-zoom",
+   "area": "A11y",
+   "name": "/domain-category/business/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-category-paste",
+   "area": "A11y",
+   "name": "/domain-category/business/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-category-one-title",
+   "area": "SEO",
+   "name": "/domain-category/business/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-category-blank-rel",
+   "area": "Security",
+   "name": "/domain-category/business/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-category-unique-ids",
+   "area": "A11y",
+   "name": "/domain-category/business/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-category-ttfb",
+   "area": "Perf",
+   "name": "/domain-category/business/ response < 2.5s",
+   "pass": true,
+   "detail": "498ms"
+  },
+  {
+   "id": "HT-news-status",
+   "area": "HTTP",
+   "name": "/news/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-news-php",
+   "area": "HTTP",
+   "name": "/news/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-news-title",
+   "area": "SEO",
+   "name": "/news/ title 25–65 chars",
+   "pass": true,
+   "detail": "60: Domain Industry News &amp; Market Insights | Domain Brothers"
+  },
+  {
+   "id": "SEO-news-desc",
+   "area": "SEO",
+   "name": "/news/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "138"
+  },
+  {
+   "id": "SEO-news-canonical",
+   "area": "SEO",
+   "name": "/news/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/news/"
+  },
+  {
+   "id": "SEO-news-h1",
+   "area": "SEO",
+   "name": "/news/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-news-jsonld",
+   "area": "SEO",
+   "name": "/news/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-news-noindex",
+   "area": "SEO",
+   "name": "/news/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-news-alt",
+   "area": "A11y",
+   "name": "/news/ every <img> has alt",
+   "pass": true,
+   "detail": "0/14 missing"
+  },
+  {
+   "id": "A11Y-news-zoom",
+   "area": "A11y",
+   "name": "/news/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-news-paste",
+   "area": "A11y",
+   "name": "/news/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-news-one-title",
+   "area": "SEO",
+   "name": "/news/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-news-blank-rel",
+   "area": "Security",
+   "name": "/news/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-news-unique-ids",
+   "area": "A11y",
+   "name": "/news/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-news-ttfb",
+   "area": "Perf",
+   "name": "/news/ response < 2.5s",
+   "pass": true,
+   "detail": "453ms"
+  },
+  {
+   "id": "HT-post-status",
+   "area": "HTTP",
+   "name": "/centr-tld-market-report-2024/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-post-php",
+   "area": "HTTP",
+   "name": "/centr-tld-market-report-2024/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-post-title",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ title 25–65 chars",
+   "pass": true,
+   "detail": "46: CENTR TLD Market Report 2024 | Domain Brothers"
+  },
+  {
+   "id": "SEO-post-desc",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "153"
+  },
+  {
+   "id": "SEO-post-canonical",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/centr-tld-market-report-2024/"
+  },
+  {
+   "id": "SEO-post-h1",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-post-jsonld",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,Article,BreadcrumbList"
+  },
+  {
+   "id": "SEO-post-noindex",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-post-alt",
+   "area": "A11y",
+   "name": "/centr-tld-market-report-2024/ every <img> has alt",
+   "pass": true,
+   "detail": "0/6 missing"
+  },
+  {
+   "id": "A11Y-post-zoom",
+   "area": "A11y",
+   "name": "/centr-tld-market-report-2024/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-post-paste",
+   "area": "A11y",
+   "name": "/centr-tld-market-report-2024/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-post-one-title",
+   "area": "SEO",
+   "name": "/centr-tld-market-report-2024/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-post-blank-rel",
+   "area": "Security",
+   "name": "/centr-tld-market-report-2024/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-post-unique-ids",
+   "area": "A11y",
+   "name": "/centr-tld-market-report-2024/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-post-ttfb",
+   "area": "Perf",
+   "name": "/centr-tld-market-report-2024/ response < 2.5s",
+   "pass": true,
+   "detail": "407ms"
+  },
+  {
+   "id": "HT-services-status",
+   "area": "HTTP",
+   "name": "/our-services/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-services-php",
+   "area": "HTTP",
+   "name": "/our-services/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-services-title",
+   "area": "SEO",
+   "name": "/our-services/ title 25–65 chars",
+   "pass": true,
+   "detail": "58: Domain and Digital Services in One Place | Domain Brothers"
+  },
+  {
+   "id": "SEO-services-desc",
+   "area": "SEO",
+   "name": "/our-services/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "153"
+  },
+  {
+   "id": "SEO-services-canonical",
+   "area": "SEO",
+   "name": "/our-services/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/our-services/"
+  },
+  {
+   "id": "SEO-services-h1",
+   "area": "SEO",
+   "name": "/our-services/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-services-jsonld",
+   "area": "SEO",
+   "name": "/our-services/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-services-noindex",
+   "area": "SEO",
+   "name": "/our-services/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-services-alt",
+   "area": "A11y",
+   "name": "/our-services/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-services-zoom",
+   "area": "A11y",
+   "name": "/our-services/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-services-paste",
+   "area": "A11y",
+   "name": "/our-services/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-services-one-title",
+   "area": "SEO",
+   "name": "/our-services/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-services-blank-rel",
+   "area": "Security",
+   "name": "/our-services/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-services-unique-ids",
+   "area": "A11y",
+   "name": "/our-services/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-services-ttfb",
+   "area": "Perf",
+   "name": "/our-services/ response < 2.5s",
+   "pass": true,
+   "detail": "496ms"
+  },
+  {
+   "id": "HT-service-status",
+   "area": "HTTP",
+   "name": "/digital-marketing/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-service-php",
+   "area": "HTTP",
+   "name": "/digital-marketing/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-service-title",
+   "area": "SEO",
+   "name": "/digital-marketing/ title 25–65 chars",
+   "pass": true,
+   "detail": "60: Digital Marketing Services That Grow Sales | Domain Brothers"
+  },
+  {
+   "id": "SEO-service-desc",
+   "area": "SEO",
+   "name": "/digital-marketing/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "142"
+  },
+  {
+   "id": "SEO-service-canonical",
+   "area": "SEO",
+   "name": "/digital-marketing/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/digital-marketing/"
+  },
+  {
+   "id": "SEO-service-h1",
+   "area": "SEO",
+   "name": "/digital-marketing/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-service-jsonld",
+   "area": "SEO",
+   "name": "/digital-marketing/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,Service,BreadcrumbList"
+  },
+  {
+   "id": "SEO-service-noindex",
+   "area": "SEO",
+   "name": "/digital-marketing/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-service-alt",
+   "area": "A11y",
+   "name": "/digital-marketing/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-service-zoom",
+   "area": "A11y",
+   "name": "/digital-marketing/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-service-paste",
+   "area": "A11y",
+   "name": "/digital-marketing/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-service-one-title",
+   "area": "SEO",
+   "name": "/digital-marketing/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-service-blank-rel",
+   "area": "Security",
+   "name": "/digital-marketing/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-service-unique-ids",
+   "area": "A11y",
+   "name": "/digital-marketing/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-service-ttfb",
+   "area": "Perf",
+   "name": "/digital-marketing/ response < 2.5s",
+   "pass": true,
+   "detail": "485ms"
+  },
+  {
+   "id": "HT-about-status",
+   "area": "HTTP",
+   "name": "/about-us/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-about-php",
+   "area": "HTTP",
+   "name": "/about-us/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-about-title",
+   "area": "SEO",
+   "name": "/about-us/ title 25–65 chars",
+   "pass": true,
+   "detail": "56: Domain Brokerage Experts Since Day One | Domain Brothers"
+  },
+  {
+   "id": "SEO-about-desc",
+   "area": "SEO",
+   "name": "/about-us/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "158"
+  },
+  {
+   "id": "SEO-about-canonical",
+   "area": "SEO",
+   "name": "/about-us/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/about-us/"
+  },
+  {
+   "id": "SEO-about-h1",
+   "area": "SEO",
+   "name": "/about-us/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-about-jsonld",
+   "area": "SEO",
+   "name": "/about-us/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-about-noindex",
+   "area": "SEO",
+   "name": "/about-us/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-about-alt",
+   "area": "A11y",
+   "name": "/about-us/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-about-zoom",
+   "area": "A11y",
+   "name": "/about-us/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-about-paste",
+   "area": "A11y",
+   "name": "/about-us/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-about-one-title",
+   "area": "SEO",
+   "name": "/about-us/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-about-blank-rel",
+   "area": "Security",
+   "name": "/about-us/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-about-unique-ids",
+   "area": "A11y",
+   "name": "/about-us/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-about-ttfb",
+   "area": "Perf",
+   "name": "/about-us/ response < 2.5s",
+   "pass": true,
+   "detail": "474ms"
+  },
+  {
+   "id": "HT-faqs-status",
+   "area": "HTTP",
+   "name": "/faqs/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-faqs-php",
+   "area": "HTTP",
+   "name": "/faqs/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-faqs-title",
+   "area": "SEO",
+   "name": "/faqs/ title 25–65 chars",
+   "pass": true,
+   "detail": "56: Domain Buying FAQs: Answers for Buyers | Domain Brothers"
+  },
+  {
+   "id": "SEO-faqs-desc",
+   "area": "SEO",
+   "name": "/faqs/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "142"
+  },
+  {
+   "id": "SEO-faqs-canonical",
+   "area": "SEO",
+   "name": "/faqs/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/faqs/"
+  },
+  {
+   "id": "SEO-faqs-h1",
+   "area": "SEO",
+   "name": "/faqs/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-faqs-jsonld",
+   "area": "SEO",
+   "name": "/faqs/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-faqs-noindex",
+   "area": "SEO",
+   "name": "/faqs/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-faqs-alt",
+   "area": "A11y",
+   "name": "/faqs/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-faqs-zoom",
+   "area": "A11y",
+   "name": "/faqs/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-faqs-paste",
+   "area": "A11y",
+   "name": "/faqs/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-faqs-one-title",
+   "area": "SEO",
+   "name": "/faqs/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-faqs-blank-rel",
+   "area": "Security",
+   "name": "/faqs/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-faqs-unique-ids",
+   "area": "A11y",
+   "name": "/faqs/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-faqs-ttfb",
+   "area": "Perf",
+   "name": "/faqs/ response < 2.5s",
+   "pass": true,
+   "detail": "460ms"
+  },
+  {
+   "id": "HT-contact-status",
+   "area": "HTTP",
+   "name": "/contact-us/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-contact-php",
+   "area": "HTTP",
+   "name": "/contact-us/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-contact-title",
+   "area": "SEO",
+   "name": "/contact-us/ title 25–65 chars",
+   "pass": true,
+   "detail": "56: Contact Domain Brothers: Talk to Sales | Domain Brothers"
+  },
+  {
+   "id": "SEO-contact-desc",
+   "area": "SEO",
+   "name": "/contact-us/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "148"
+  },
+  {
+   "id": "SEO-contact-canonical",
+   "area": "SEO",
+   "name": "/contact-us/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/contact-us/"
+  },
+  {
+   "id": "SEO-contact-h1",
+   "area": "SEO",
+   "name": "/contact-us/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-contact-jsonld",
+   "area": "SEO",
+   "name": "/contact-us/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-contact-noindex",
+   "area": "SEO",
+   "name": "/contact-us/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-contact-alt",
+   "area": "A11y",
+   "name": "/contact-us/ every <img> has alt",
+   "pass": true,
+   "detail": "0/10 missing"
+  },
+  {
+   "id": "A11Y-contact-zoom",
+   "area": "A11y",
+   "name": "/contact-us/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-contact-paste",
+   "area": "A11y",
+   "name": "/contact-us/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-contact-one-title",
+   "area": "SEO",
+   "name": "/contact-us/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-contact-blank-rel",
+   "area": "Security",
+   "name": "/contact-us/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-contact-unique-ids",
+   "area": "A11y",
+   "name": "/contact-us/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-contact-ttfb",
+   "area": "Perf",
+   "name": "/contact-us/ response < 2.5s",
+   "pass": true,
+   "detail": "549ms"
+  },
+  {
+   "id": "HT-offer-status",
+   "area": "HTTP",
+   "name": "/offer/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-offer-php",
+   "area": "HTTP",
+   "name": "/offer/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-offer-title",
+   "area": "SEO",
+   "name": "/offer/ title 25–65 chars",
+   "pass": true,
+   "detail": "51: Make an Offer on a Premium Domain | Domain Brothers"
+  },
+  {
+   "id": "SEO-offer-desc",
+   "area": "SEO",
+   "name": "/offer/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "160"
+  },
+  {
+   "id": "SEO-offer-canonical",
+   "area": "SEO",
+   "name": "/offer/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/offer/"
+  },
+  {
+   "id": "SEO-offer-h1",
+   "area": "SEO",
+   "name": "/offer/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-offer-jsonld",
+   "area": "SEO",
+   "name": "/offer/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-offer-noindex",
+   "area": "SEO",
+   "name": "/offer/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-offer-alt",
+   "area": "A11y",
+   "name": "/offer/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-offer-zoom",
+   "area": "A11y",
+   "name": "/offer/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-offer-paste",
+   "area": "A11y",
+   "name": "/offer/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-offer-one-title",
+   "area": "SEO",
+   "name": "/offer/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-offer-blank-rel",
+   "area": "Security",
+   "name": "/offer/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-offer-unique-ids",
+   "area": "A11y",
+   "name": "/offer/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-offer-ttfb",
+   "area": "Perf",
+   "name": "/offer/ response < 2.5s",
+   "pass": true,
+   "detail": "500ms"
+  },
+  {
+   "id": "HT-privacy-status",
+   "area": "HTTP",
+   "name": "/privacy-policy/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-privacy-php",
+   "area": "HTTP",
+   "name": "/privacy-policy/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-privacy-title",
+   "area": "SEO",
+   "name": "/privacy-policy/ title 25–65 chars",
+   "pass": true,
+   "detail": "53: Privacy Policy: How We Protect Data | Domain Brothers"
+  },
+  {
+   "id": "SEO-privacy-desc",
+   "area": "SEO",
+   "name": "/privacy-policy/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "158"
+  },
+  {
+   "id": "SEO-privacy-canonical",
+   "area": "SEO",
+   "name": "/privacy-policy/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/privacy-policy/"
+  },
+  {
+   "id": "SEO-privacy-h1",
+   "area": "SEO",
+   "name": "/privacy-policy/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-privacy-jsonld",
+   "area": "SEO",
+   "name": "/privacy-policy/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-privacy-noindex",
+   "area": "SEO",
+   "name": "/privacy-policy/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-privacy-alt",
+   "area": "A11y",
+   "name": "/privacy-policy/ every <img> has alt",
+   "pass": true,
+   "detail": "0/5 missing"
+  },
+  {
+   "id": "A11Y-privacy-zoom",
+   "area": "A11y",
+   "name": "/privacy-policy/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-privacy-paste",
+   "area": "A11y",
+   "name": "/privacy-policy/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-privacy-one-title",
+   "area": "SEO",
+   "name": "/privacy-policy/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-privacy-blank-rel",
+   "area": "Security",
+   "name": "/privacy-policy/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-privacy-unique-ids",
+   "area": "A11y",
+   "name": "/privacy-policy/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-privacy-ttfb",
+   "area": "Perf",
+   "name": "/privacy-policy/ response < 2.5s",
+   "pass": true,
+   "detail": "480ms"
+  },
+  {
+   "id": "HT-sold-status",
+   "area": "HTTP",
+   "name": "/sold/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-sold-php",
+   "area": "HTTP",
+   "name": "/sold/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-sold-title",
+   "area": "SEO",
+   "name": "/sold/ title 25–65 chars",
+   "pass": true,
+   "detail": "56: Sold Premium Domains: Our Track Record | Domain Brothers"
+  },
+  {
+   "id": "SEO-sold-desc",
+   "area": "SEO",
+   "name": "/sold/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "153"
+  },
+  {
+   "id": "SEO-sold-canonical",
+   "area": "SEO",
+   "name": "/sold/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/sold/"
+  },
+  {
+   "id": "SEO-sold-h1",
+   "area": "SEO",
+   "name": "/sold/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-sold-jsonld",
+   "area": "SEO",
+   "name": "/sold/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-sold-noindex",
+   "area": "SEO",
+   "name": "/sold/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-sold-alt",
+   "area": "A11y",
+   "name": "/sold/ every <img> has alt",
+   "pass": true,
+   "detail": "0/7 missing"
+  },
+  {
+   "id": "A11Y-sold-zoom",
+   "area": "A11y",
+   "name": "/sold/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-sold-paste",
+   "area": "A11y",
+   "name": "/sold/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-sold-one-title",
+   "area": "SEO",
+   "name": "/sold/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-sold-blank-rel",
+   "area": "Security",
+   "name": "/sold/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-sold-unique-ids",
+   "area": "A11y",
+   "name": "/sold/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-sold-ttfb",
+   "area": "Perf",
+   "name": "/sold/ response < 2.5s",
+   "pass": true,
+   "detail": "503ms"
+  },
+  {
+   "id": "HT-epp-status",
+   "area": "HTTP",
+   "name": "/epp-guidelines/ returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "HT-epp-php",
+   "area": "HTTP",
+   "name": "/epp-guidelines/ has no PHP error text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-epp-title",
+   "area": "SEO",
+   "name": "/epp-guidelines/ title 25–65 chars",
+   "pass": true,
+   "detail": "57: EPP Code Guidelines for Every Registrar | Domain Brothers"
+  },
+  {
+   "id": "SEO-epp-desc",
+   "area": "SEO",
+   "name": "/epp-guidelines/ meta description 70–160 chars",
+   "pass": true,
+   "detail": "153"
+  },
+  {
+   "id": "SEO-epp-canonical",
+   "area": "SEO",
+   "name": "/epp-guidelines/ canonical is self",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/epp-guidelines/"
+  },
+  {
+   "id": "SEO-epp-h1",
+   "area": "SEO",
+   "name": "/epp-guidelines/ has exactly one <h1>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEO-epp-jsonld",
+   "area": "SEO",
+   "name": "/epp-guidelines/ JSON-LD parses",
+   "pass": true,
+   "detail": "Organization,WebSite,BreadcrumbList"
+  },
+  {
+   "id": "SEO-epp-noindex",
+   "area": "SEO",
+   "name": "/epp-guidelines/ staging is noindex",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "A11Y-epp-alt",
+   "area": "A11y",
+   "name": "/epp-guidelines/ every <img> has alt",
+   "pass": true,
+   "detail": "0/10 missing"
+  },
+  {
+   "id": "A11Y-epp-zoom",
+   "area": "A11y",
+   "name": "/epp-guidelines/ viewport allows pinch-zoom",
+   "pass": true,
+   "detail": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> <meta name=\"viewport\" content=\"width=device-width, "
+  },
+  {
+   "id": "A11Y-epp-paste",
+   "area": "A11y",
+   "name": "/epp-guidelines/ no field blocks paste",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEO-epp-one-title",
+   "area": "SEO",
+   "name": "/epp-guidelines/ has exactly one <title>",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "SEC-epp-blank-rel",
+   "area": "Security",
+   "name": "/epp-guidelines/ target=_blank links carry rel=noopener",
+   "pass": true,
+   "detail": "0 unsafe "
+  },
+  {
+   "id": "A11Y-epp-unique-ids",
+   "area": "A11y",
+   "name": "/epp-guidelines/ has no duplicate element ids",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "PERF-epp-ttfb",
+   "area": "Perf",
+   "name": "/epp-guidelines/ response < 2.5s",
+   "pass": true,
+   "detail": "466ms"
+  },
+  {
+   "id": "SEC-strict-transport-security",
+   "area": "Security",
+   "name": "header strict-transport-security present",
+   "pass": true,
+   "detail": "max-age=15552000; includeSubDomains"
+  },
+  {
+   "id": "SEC-x-content-type-options",
+   "area": "Security",
+   "name": "header x-content-type-options present",
+   "pass": true,
+   "detail": "nosniff"
+  },
+  {
+   "id": "SEC-x-frame-options",
+   "area": "Security",
+   "name": "header x-frame-options present",
+   "pass": true,
+   "detail": "SAMEORIGIN"
+  },
+  {
+   "id": "SEC-referrer-policy",
+   "area": "Security",
+   "name": "header referrer-policy present",
+   "pass": true,
+   "detail": "strict-origin-when-cross-origin"
+  },
+  {
+   "id": "SEC-content-security-policy",
+   "area": "Security",
+   "name": "header content-security-policy present",
+   "pass": true,
+   "detail": "upgrade-insecure-requests"
+  },
+  {
+   "id": "SEC-x-powered-by",
+   "area": "Security",
+   "name": "X-Powered-By not exposed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "SEC-user-enum",
+   "area": "Security",
+   "name": "REST user enumeration blocked",
+   "pass": true,
+   "detail": "404"
+  },
+  {
+   "id": "SEC-xmlrpc",
+   "area": "Security",
+   "name": "XML-RPC refuses system.listMethods",
+   "pass": true,
+   "detail": "403"
+  },
+  {
+   "id": "SEC-author-enum",
+   "area": "Security",
+   "name": "?author=1 does not reveal a username",
+   "pass": true,
+   "detail": "404"
+  },
+  {
+   "id": "FN-01",
+   "area": "Checkout",
+   "name": "bare /checkout/ redirects to /all-domains/",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/all-domains/"
+  },
+  {
+   "id": "FN-02",
+   "area": "Checkout",
+   "name": "legacy /checkout/ with d+p goes to Stripe /buy-now/",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D"
+  },
+  {
+   "id": "FN-03",
+   "area": "Checkout",
+   "name": "bare /buy-now/ redirects to /all-domains/",
+   "pass": true,
+   "detail": "302"
+  },
+  {
+   "id": "FN-04",
+   "area": "Checkout",
+   "name": "/buy-now/ renders (Stripe form or \"being configured\")",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-05",
+   "area": "Checkout",
+   "name": "/buy-now/ is never cached",
+   "pass": true,
+   "detail": "no-store, no-cache, must-revalidate"
+  },
+  {
+   "id": "FN-06",
+   "area": "Checkout",
+   "name": "/buy-now/ refuses a domain that is not a listing",
+   "pass": true,
+   "detail": "500"
+  },
+  {
+   "id": "FN-07",
+   "area": "Checkout",
+   "name": "bare plan page redirects",
+   "pass": true,
+   "detail": "302"
+  },
+  {
+   "id": "FN-08",
+   "area": "Checkout",
+   "name": "thank-you page renders",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "SEC-ty-unsigned",
+   "area": "Security",
+   "name": "unsigned thank-you link makes no payment/ownership claim",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "SEC-ty-offer",
+   "area": "Security",
+   "name": "offer thank-you shows only real listing names",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "SEC-plan-unlisted",
+   "area": "Security",
+   "name": "plan chooser does not render for an unlisted domain",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-09",
+   "area": "Checkout",
+   "name": "/payment-successful/ redirects to thank-you",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/thank-you/"
+  },
+  {
+   "id": "FN-10",
+   "area": "Offer",
+   "name": "Make-an-Offer form 1878 is on domain pages",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-11",
+   "area": "Offer",
+   "name": "offer redirect uses this site, not production",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-12",
+   "area": "Domain page",
+   "name": "Buy now button carries this domain + price",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?d=YWV0aGVyZXVtLmNh&#038;p=MTAwMDA%3D"
+  },
+  {
+   "id": "FN-13",
+   "area": "Domain page",
+   "name": "domain details block has 200+ words",
+   "pass": true,
+   "detail": "398"
+  },
+  {
+   "id": "FN-14",
+   "area": "404",
+   "name": "unknown URL returns 404",
+   "pass": true,
+   "detail": "404"
+  },
+  {
+   "id": "FN-15",
+   "area": "404",
+   "name": "404 page offers search + links",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-16",
+   "area": "Search",
+   "name": "site search returns 200",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-OKF-index",
+   "area": "OKF",
+   "name": "/okf/index.md is markdown with frontmatter",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-OKF-domains/index",
+   "area": "OKF",
+   "name": "/okf/domains/index.md is markdown with frontmatter",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-OKF-domains/fatality-ca",
+   "area": "OKF",
+   "name": "/okf/domains/fatality-ca.md is markdown with frontmatter",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-OKF-categories/index",
+   "area": "OKF",
+   "name": "/okf/categories/index.md is markdown with frontmatter",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-OKF-business/index",
+   "area": "OKF",
+   "name": "/okf/business/index.md is markdown with frontmatter",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-17",
+   "area": "SEO",
+   "name": "wp-sitemap.xml is valid XML",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-18",
+   "area": "Plans",
+   "name": "forged \"update my card\" link is rejected",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-43",
+   "area": "Plans",
+   "name": "thank-you page renders (neutral) for a link with a bad signature",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-44",
+   "area": "Listing states",
+   "name": "a sold domain shows the sold page (banner, news, testimonials), with no redirect to the home page",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "FN-45",
+   "area": "Listing states",
+   "name": "checkout refuses a sold domain",
+   "pass": true,
+   "detail": "410"
+  },
+  {
+   "id": "UI-desktop-home-overflow",
+   "area": "Layout",
+   "name": "/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-home-jserr",
+   "area": "JS",
+   "name": "/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-home-404",
+   "area": "Assets",
+   "name": "/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-domain-overflow",
+   "area": "Layout",
+   "name": "/domains/fatality-ca/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-domain-jserr",
+   "area": "JS",
+   "name": "/domains/fatality-ca/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-domain-404",
+   "area": "Assets",
+   "name": "/domains/fatality-ca/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-domain-priced-overflow",
+   "area": "Layout",
+   "name": "/domains/aethereum-ca/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-domain-priced-jserr",
+   "area": "JS",
+   "name": "/domains/aethereum-ca/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-domain-priced-404",
+   "area": "Assets",
+   "name": "/domains/aethereum-ca/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-all-domains-overflow",
+   "area": "Layout",
+   "name": "/all-domains/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-all-domains-jserr",
+   "area": "JS",
+   "name": "/all-domains/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-all-domains-404",
+   "area": "Assets",
+   "name": "/all-domains/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-category-overflow",
+   "area": "Layout",
+   "name": "/domain-category/business/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-category-jserr",
+   "area": "JS",
+   "name": "/domain-category/business/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-category-404",
+   "area": "Assets",
+   "name": "/domain-category/business/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-news-overflow",
+   "area": "Layout",
+   "name": "/news/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-news-jserr",
+   "area": "JS",
+   "name": "/news/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-news-404",
+   "area": "Assets",
+   "name": "/news/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-post-overflow",
+   "area": "Layout",
+   "name": "/centr-tld-market-report-2024/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-post-jserr",
+   "area": "JS",
+   "name": "/centr-tld-market-report-2024/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-post-404",
+   "area": "Assets",
+   "name": "/centr-tld-market-report-2024/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-services-overflow",
+   "area": "Layout",
+   "name": "/our-services/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-services-jserr",
+   "area": "JS",
+   "name": "/our-services/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-services-404",
+   "area": "Assets",
+   "name": "/our-services/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-service-overflow",
+   "area": "Layout",
+   "name": "/digital-marketing/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-service-jserr",
+   "area": "JS",
+   "name": "/digital-marketing/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-service-404",
+   "area": "Assets",
+   "name": "/digital-marketing/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-about-overflow",
+   "area": "Layout",
+   "name": "/about-us/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-about-jserr",
+   "area": "JS",
+   "name": "/about-us/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-about-404",
+   "area": "Assets",
+   "name": "/about-us/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-faqs-overflow",
+   "area": "Layout",
+   "name": "/faqs/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-faqs-jserr",
+   "area": "JS",
+   "name": "/faqs/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-faqs-404",
+   "area": "Assets",
+   "name": "/faqs/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-contact-overflow",
+   "area": "Layout",
+   "name": "/contact-us/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-contact-jserr",
+   "area": "JS",
+   "name": "/contact-us/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-contact-404",
+   "area": "Assets",
+   "name": "/contact-us/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-offer-overflow",
+   "area": "Layout",
+   "name": "/offer/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-offer-jserr",
+   "area": "JS",
+   "name": "/offer/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-offer-404",
+   "area": "Assets",
+   "name": "/offer/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-privacy-overflow",
+   "area": "Layout",
+   "name": "/privacy-policy/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-privacy-jserr",
+   "area": "JS",
+   "name": "/privacy-policy/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-privacy-404",
+   "area": "Assets",
+   "name": "/privacy-policy/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-sold-overflow",
+   "area": "Layout",
+   "name": "/sold/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-sold-jserr",
+   "area": "JS",
+   "name": "/sold/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-sold-404",
+   "area": "Assets",
+   "name": "/sold/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-epp-overflow",
+   "area": "Layout",
+   "name": "/epp-guidelines/ no horizontal scroll (desktop)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-desktop-epp-jserr",
+   "area": "JS",
+   "name": "/epp-guidelines/ no uncaught JS errors (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-desktop-epp-404",
+   "area": "Assets",
+   "name": "/epp-guidelines/ no same-site 4xx/5xx assets (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-home-overflow",
+   "area": "Layout",
+   "name": "/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-home-jserr",
+   "area": "JS",
+   "name": "/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-home-404",
+   "area": "Assets",
+   "name": "/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-domain-overflow",
+   "area": "Layout",
+   "name": "/domains/fatality-ca/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-domain-jserr",
+   "area": "JS",
+   "name": "/domains/fatality-ca/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-domain-404",
+   "area": "Assets",
+   "name": "/domains/fatality-ca/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-domain-priced-overflow",
+   "area": "Layout",
+   "name": "/domains/aethereum-ca/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-domain-priced-jserr",
+   "area": "JS",
+   "name": "/domains/aethereum-ca/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-domain-priced-404",
+   "area": "Assets",
+   "name": "/domains/aethereum-ca/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-all-domains-overflow",
+   "area": "Layout",
+   "name": "/all-domains/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-all-domains-jserr",
+   "area": "JS",
+   "name": "/all-domains/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-all-domains-404",
+   "area": "Assets",
+   "name": "/all-domains/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-category-overflow",
+   "area": "Layout",
+   "name": "/domain-category/business/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-category-jserr",
+   "area": "JS",
+   "name": "/domain-category/business/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-category-404",
+   "area": "Assets",
+   "name": "/domain-category/business/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-news-overflow",
+   "area": "Layout",
+   "name": "/news/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-news-jserr",
+   "area": "JS",
+   "name": "/news/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-news-404",
+   "area": "Assets",
+   "name": "/news/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-post-overflow",
+   "area": "Layout",
+   "name": "/centr-tld-market-report-2024/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-post-jserr",
+   "area": "JS",
+   "name": "/centr-tld-market-report-2024/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-post-404",
+   "area": "Assets",
+   "name": "/centr-tld-market-report-2024/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-services-overflow",
+   "area": "Layout",
+   "name": "/our-services/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-services-jserr",
+   "area": "JS",
+   "name": "/our-services/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-services-404",
+   "area": "Assets",
+   "name": "/our-services/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-service-overflow",
+   "area": "Layout",
+   "name": "/digital-marketing/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-service-jserr",
+   "area": "JS",
+   "name": "/digital-marketing/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-service-404",
+   "area": "Assets",
+   "name": "/digital-marketing/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-about-overflow",
+   "area": "Layout",
+   "name": "/about-us/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-about-jserr",
+   "area": "JS",
+   "name": "/about-us/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-about-404",
+   "area": "Assets",
+   "name": "/about-us/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-faqs-overflow",
+   "area": "Layout",
+   "name": "/faqs/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-faqs-jserr",
+   "area": "JS",
+   "name": "/faqs/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-faqs-404",
+   "area": "Assets",
+   "name": "/faqs/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-contact-overflow",
+   "area": "Layout",
+   "name": "/contact-us/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-contact-jserr",
+   "area": "JS",
+   "name": "/contact-us/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-contact-404",
+   "area": "Assets",
+   "name": "/contact-us/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-offer-overflow",
+   "area": "Layout",
+   "name": "/offer/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-offer-jserr",
+   "area": "JS",
+   "name": "/offer/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-offer-404",
+   "area": "Assets",
+   "name": "/offer/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-privacy-overflow",
+   "area": "Layout",
+   "name": "/privacy-policy/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-privacy-jserr",
+   "area": "JS",
+   "name": "/privacy-policy/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-privacy-404",
+   "area": "Assets",
+   "name": "/privacy-policy/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-sold-overflow",
+   "area": "Layout",
+   "name": "/sold/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-sold-jserr",
+   "area": "JS",
+   "name": "/sold/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-sold-404",
+   "area": "Assets",
+   "name": "/sold/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-epp-overflow",
+   "area": "Layout",
+   "name": "/epp-guidelines/ no horizontal scroll (mobile)",
+   "pass": true,
+   "detail": "0px"
+  },
+  {
+   "id": "UI-mobile-epp-jserr",
+   "area": "JS",
+   "name": "/epp-guidelines/ no uncaught JS errors (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "UI-mobile-epp-404",
+   "area": "Assets",
+   "name": "/epp-guidelines/ no same-site 4xx/5xx assets (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-20",
+   "area": "Plans",
+   "name": "plan chooser shows 4 terms",
+   "pass": true,
+   "detail": "4"
+  },
+  {
+   "id": "FN-21-3",
+   "area": "Plans",
+   "name": "3-month plan: 3 rows summing to $2500.00",
+   "pass": true,
+   "detail": "rows=3 sum=2500 monthly=$833.33"
+  },
+  {
+   "id": "FN-22-3",
+   "area": "Plans",
+   "name": "3-month CTA carries months=3",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?t=plan&months=3&d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D"
+  },
+  {
+   "id": "FN-21-6",
+   "area": "Plans",
+   "name": "6-month plan: 6 rows summing to $2500.00",
+   "pass": true,
+   "detail": "rows=6 sum=2500 monthly=$416.67"
+  },
+  {
+   "id": "FN-22-6",
+   "area": "Plans",
+   "name": "6-month CTA carries months=6",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?t=plan&months=6&d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D"
+  },
+  {
+   "id": "FN-21-9",
+   "area": "Plans",
+   "name": "9-month plan: 9 rows summing to $2625.00",
+   "pass": true,
+   "detail": "rows=9 sum=2625 monthly=$291.67"
+  },
+  {
+   "id": "FN-22-9",
+   "area": "Plans",
+   "name": "9-month CTA carries months=9",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?t=plan&months=9&d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D"
+  },
+  {
+   "id": "FN-21-12",
+   "area": "Plans",
+   "name": "12-month plan: 12 rows summing to $2750.00",
+   "pass": true,
+   "detail": "rows=12 sum=2750 monthly=$229.17"
+  },
+  {
+   "id": "FN-22-12",
+   "area": "Plans",
+   "name": "12-month CTA carries months=12",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?t=plan&months=12&d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D"
+  },
+  {
+   "id": "FN-23-desktop",
+   "area": "Filter",
+   "name": "filter bar present (desktop)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-24-desktop",
+   "area": "Filter",
+   "name": "sort by price covers every listing, low to high, offers last (desktop)",
+   "pass": true,
+   "detail": "rows=132 total=132 pagerows=56"
+  },
+  {
+   "id": "FN-25-desktop",
+   "area": "Filter",
+   "name": ".ca + max $2,500 returns only matching names (desktop)",
+   "pass": true,
+   "detail": "32 rows"
+  },
+  {
+   "id": "FN-26-desktop",
+   "area": "Filter",
+   "name": "Clear restores the page, no overflow, no JS errors (desktop)",
+   "pass": true,
+   "detail": "rows=56/56 overflow=false errs="
+  },
+  {
+   "id": "FN-23-mobile",
+   "area": "Filter",
+   "name": "filter bar present (mobile)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-24-mobile",
+   "area": "Filter",
+   "name": "sort by price covers every listing, low to high, offers last (mobile)",
+   "pass": true,
+   "detail": "rows=132 total=132 pagerows=56"
+  },
+  {
+   "id": "FN-25-mobile",
+   "area": "Filter",
+   "name": ".ca + max $2,500 returns only matching names (mobile)",
+   "pass": true,
+   "detail": "32 rows"
+  },
+  {
+   "id": "FN-26-mobile",
+   "area": "Filter",
+   "name": "Clear restores the page, no overflow, no JS errors (mobile)",
+   "pass": true,
+   "detail": "rows=56/56 overflow=false errs="
+  },
+  {
+   "id": "FN-30",
+   "area": "Exit offer",
+   "name": "does not appear within the first 6 seconds",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-31",
+   "area": "Recommendations",
+   "name": "domain page lists 6 recommended names, not itself",
+   "pass": true,
+   "detail": "hunttickets.ca,ability.ca,pitaworld.ca,prodesk.ca,fastpass.ca,gizmofreak.ca"
+  },
+  {
+   "id": "FN-32",
+   "area": "Recommendations",
+   "name": "a similar name outranks a same-category-only name",
+   "pass": true,
+   "detail": "mississaugahomefinder.ca Similar name | mississauga.blog Similar name | mississaugagym.ca Similar name"
+  },
+  {
+   "id": "FN-33",
+   "area": "Exit offer",
+   "name": "opens when the pointer leaves through the top",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-34",
+   "area": "Exit offer",
+   "name": "dialog semantics, focus inside, page scroll locked",
+   "pass": true,
+   "detail": "{\"focusIn\":true,\"role\":\"dialog\",\"modal\":\"true\",\"buy\":\"https://beta.domainbrothers.com/buy-now/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D\",\"plan\":\"https://beta.domainbrothers.com/payment-plan-setup/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D\",\"recs\":3,\"bodyLocked\":true}"
+  },
+  {
+   "id": "FN-35",
+   "area": "Exit offer",
+   "name": "buy and plan links carry this domain; 3 recommendations",
+   "pass": true,
+   "detail": "https://beta.domainbrothers.com/buy-now/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D https://beta.domainbrothers.com/payment-plan-setup/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D recs=3"
+  },
+  {
+   "id": "FN-36",
+   "area": "Exit offer",
+   "name": "Tab stays inside the dialog",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-37",
+   "area": "Exit offer",
+   "name": "Escape closes it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-38",
+   "area": "Exit offer",
+   "name": "does not reopen on the same page view",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-39",
+   "area": "Exit offer",
+   "name": "empty offer shows an error, stays open",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-40",
+   "area": "Exit offer",
+   "name": "amount is handed to the page offer form and its confirmation opens",
+   "pass": true,
+   "detail": "{\"field\":\"2400\",\"popup\":\"2400\",\"modal\":true,\"exitHidden\":true}"
+  },
+  {
+   "id": "FN-41",
+   "area": "Exit offer",
+   "name": "no JS errors",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "FN-42-phone",
+   "area": "Exit offer",
+   "name": "fits the screen with 44px+ buttons (phone 390x844)",
+   "pass": true,
+   "detail": "{\"l\":0,\"r\":390,\"t\":118.3125,\"b\":844,\"w\":390,\"h\":844,\"goH\":52,\"scrollW\":390}"
+  },
+  {
+   "id": "FN-42-fold-cover",
+   "area": "Exit offer",
+   "name": "fits the screen with 44px+ buttons (fold-cover 344x882)",
+   "pass": true,
+   "detail": "{\"l\":0,\"r\":344,\"t\":129.921875,\"b\":882,\"w\":344,\"h\":882,\"goH\":52,\"scrollW\":344}"
+  },
+  {
+   "id": "FN-42-fold-open",
+   "area": "Exit offer",
+   "name": "fits the screen with 44px+ buttons (fold-open 673x841)",
+   "pass": true,
+   "detail": "{\"l\":66.5,\"r\":606.5,\"t\":108.25,\"b\":732.75,\"w\":673,\"h\":841,\"goH\":52,\"scrollW\":673}"
+  },
+  {
+   "id": "FN-42-landscape",
+   "area": "Exit offer",
+   "name": "fits the screen with 44px+ buttons (landscape 844x390)",
+   "pass": true,
+   "detail": "{\"l\":152,\"r\":692,\"t\":12,\"b\":378,\"w\":844,\"h\":390,\"goH\":52,\"scrollW\":844}"
+  }
+ ],
+ "perf": [
+  {
+   "vp": "desktop",
+   "page": "home",
+   "path": "/",
+   "overflow": 0,
+   "domNodes": 1205,
+   "ttfb": 1198,
+   "domContentLoaded": 1597,
+   "load": 2591,
+   "height": 5415,
+   "tapSmall": 1,
+   "requests": 49,
+   "kbHeaderSized": 583
+  },
+  {
+   "vp": "desktop",
+   "page": "domain",
+   "path": "/domains/fatality-ca/",
+   "overflow": 0,
+   "domNodes": 682,
+   "ttfb": 518,
+   "domContentLoaded": 757,
+   "load": 1343,
+   "height": 5233,
+   "tapSmall": 1,
+   "requests": 43,
+   "kbHeaderSized": 622
+  },
+  {
+   "vp": "desktop",
+   "page": "domain-priced",
+   "path": "/domains/aethereum-ca/",
+   "overflow": 0,
+   "domNodes": 682,
+   "ttfb": 453,
+   "domContentLoaded": 690,
+   "load": 1194,
+   "height": 5300,
+   "tapSmall": 1,
+   "requests": 42,
+   "kbHeaderSized": 638
+  },
+  {
+   "vp": "desktop",
+   "page": "all-domains",
+   "path": "/all-domains/",
+   "overflow": 0,
+   "domNodes": 855,
+   "ttfb": 503,
+   "domContentLoaded": 723,
+   "load": 1188,
+   "height": 6082,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "category",
+   "path": "/domain-category/business/",
+   "overflow": 0,
+   "domNodes": 469,
+   "ttfb": 527,
+   "domContentLoaded": 713,
+   "load": 1218,
+   "height": 2869,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "news",
+   "path": "/news/",
+   "overflow": 0,
+   "domNodes": 441,
+   "ttfb": 413,
+   "domContentLoaded": 595,
+   "load": 1104,
+   "height": 4743,
+   "tapSmall": 1,
+   "requests": 36,
+   "kbHeaderSized": 803
+  },
+  {
+   "vp": "desktop",
+   "page": "post",
+   "path": "/centr-tld-market-report-2024/",
+   "overflow": 0,
+   "domNodes": 292,
+   "ttfb": 675,
+   "domContentLoaded": 830,
+   "load": 1376,
+   "height": 1823,
+   "tapSmall": 1,
+   "requests": 32,
+   "kbHeaderSized": 587
+  },
+  {
+   "vp": "desktop",
+   "page": "services",
+   "path": "/our-services/",
+   "overflow": 0,
+   "domNodes": 363,
+   "ttfb": 735,
+   "domContentLoaded": 899,
+   "load": 1466,
+   "height": 3454,
+   "tapSmall": 1,
+   "requests": 32,
+   "kbHeaderSized": 590
+  },
+  {
+   "vp": "desktop",
+   "page": "service",
+   "path": "/digital-marketing/",
+   "overflow": 0,
+   "domNodes": 275,
+   "ttfb": 477,
+   "domContentLoaded": 617,
+   "load": 1190,
+   "height": 3036,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "about",
+   "path": "/about-us/",
+   "overflow": 0,
+   "domNodes": 306,
+   "ttfb": 543,
+   "domContentLoaded": 696,
+   "load": 1221,
+   "height": 1671,
+   "tapSmall": 1,
+   "requests": 33,
+   "kbHeaderSized": 613
+  },
+  {
+   "vp": "desktop",
+   "page": "faqs",
+   "path": "/faqs/",
+   "overflow": 0,
+   "domNodes": 407,
+   "ttfb": 515,
+   "domContentLoaded": 663,
+   "load": 1192,
+   "height": 3513,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "contact",
+   "path": "/contact-us/",
+   "overflow": 0,
+   "domNodes": 356,
+   "ttfb": 424,
+   "domContentLoaded": 633,
+   "load": 1179,
+   "height": 1882,
+   "tapSmall": 1,
+   "requests": 46,
+   "kbHeaderSized": 576
+  },
+  {
+   "vp": "desktop",
+   "page": "offer",
+   "path": "/offer/",
+   "overflow": 0,
+   "domNodes": 345,
+   "ttfb": 429,
+   "domContentLoaded": 624,
+   "load": 1153,
+   "height": 1931,
+   "tapSmall": 1,
+   "requests": 41,
+   "kbHeaderSized": 571
+  },
+  {
+   "vp": "desktop",
+   "page": "privacy",
+   "path": "/privacy-policy/",
+   "overflow": 0,
+   "domNodes": 349,
+   "ttfb": 437,
+   "domContentLoaded": 574,
+   "load": 1109,
+   "height": 4973,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "sold",
+   "path": "/sold/",
+   "overflow": 0,
+   "domNodes": 502,
+   "ttfb": 461,
+   "domContentLoaded": 606,
+   "load": 1156,
+   "height": 2989,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "desktop",
+   "page": "epp",
+   "path": "/epp-guidelines/",
+   "overflow": 0,
+   "domNodes": 401,
+   "ttfb": 486,
+   "domContentLoaded": 644,
+   "load": 1173,
+   "height": 4515,
+   "tapSmall": 1,
+   "requests": 33,
+   "kbHeaderSized": 571
+  },
+  {
+   "vp": "mobile",
+   "page": "home",
+   "path": "/",
+   "overflow": 0,
+   "domNodes": 1205,
+   "ttfb": 1216,
+   "domContentLoaded": 1597,
+   "load": 2706,
+   "height": 8520,
+   "tapSmall": 1,
+   "requests": 50,
+   "kbHeaderSized": 583
+  },
+  {
+   "vp": "mobile",
+   "page": "domain",
+   "path": "/domains/fatality-ca/",
+   "overflow": 0,
+   "domNodes": 682,
+   "ttfb": 572,
+   "domContentLoaded": 793,
+   "load": 1324,
+   "height": 9663,
+   "tapSmall": 1,
+   "requests": 42,
+   "kbHeaderSized": 622
+  },
+  {
+   "vp": "mobile",
+   "page": "domain-priced",
+   "path": "/domains/aethereum-ca/",
+   "overflow": 0,
+   "domNodes": 682,
+   "ttfb": 484,
+   "domContentLoaded": 696,
+   "load": 1212,
+   "height": 9665,
+   "tapSmall": 1,
+   "requests": 42,
+   "kbHeaderSized": 638
+  },
+  {
+   "vp": "mobile",
+   "page": "all-domains",
+   "path": "/all-domains/",
+   "overflow": 0,
+   "domNodes": 855,
+   "ttfb": 538,
+   "domContentLoaded": 806,
+   "load": 1295,
+   "height": 11850,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "category",
+   "path": "/domain-category/business/",
+   "overflow": 0,
+   "domNodes": 469,
+   "ttfb": 496,
+   "domContentLoaded": 694,
+   "load": 1257,
+   "height": 4508,
+   "tapSmall": 1,
+   "requests": 31,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "news",
+   "path": "/news/",
+   "overflow": 0,
+   "domNodes": 441,
+   "ttfb": 482,
+   "domContentLoaded": 651,
+   "load": 1182,
+   "height": 6482,
+   "tapSmall": 1,
+   "requests": 33,
+   "kbHeaderSized": 629
+  },
+  {
+   "vp": "mobile",
+   "page": "post",
+   "path": "/centr-tld-market-report-2024/",
+   "overflow": 0,
+   "domNodes": 292,
+   "ttfb": 452,
+   "domContentLoaded": 841,
+   "load": 1068,
+   "height": 3140,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 576
+  },
+  {
+   "vp": "mobile",
+   "page": "services",
+   "path": "/our-services/",
+   "overflow": 0,
+   "domNodes": 363,
+   "ttfb": 492,
+   "domContentLoaded": 663,
+   "load": 1218,
+   "height": 6200,
+   "tapSmall": 1,
+   "requests": 32,
+   "kbHeaderSized": 590
+  },
+  {
+   "vp": "mobile",
+   "page": "service",
+   "path": "/digital-marketing/",
+   "overflow": 0,
+   "domNodes": 275,
+   "ttfb": 623,
+   "domContentLoaded": 766,
+   "load": 1344,
+   "height": 4134,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "about",
+   "path": "/about-us/",
+   "overflow": 0,
+   "domNodes": 306,
+   "ttfb": 498,
+   "domContentLoaded": 656,
+   "load": 1257,
+   "height": 2004,
+   "tapSmall": 1,
+   "requests": 33,
+   "kbHeaderSized": 613
+  },
+  {
+   "vp": "mobile",
+   "page": "faqs",
+   "path": "/faqs/",
+   "overflow": 0,
+   "domNodes": 407,
+   "ttfb": 469,
+   "domContentLoaded": 615,
+   "load": 1167,
+   "height": 5215,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "contact",
+   "path": "/contact-us/",
+   "overflow": 0,
+   "domNodes": 356,
+   "ttfb": 552,
+   "domContentLoaded": 773,
+   "load": 1284,
+   "height": 2542,
+   "tapSmall": 1,
+   "requests": 46,
+   "kbHeaderSized": 576
+  },
+  {
+   "vp": "mobile",
+   "page": "offer",
+   "path": "/offer/",
+   "overflow": 0,
+   "domNodes": 345,
+   "ttfb": 480,
+   "domContentLoaded": 685,
+   "load": 1242,
+   "height": 2555,
+   "tapSmall": 1,
+   "requests": 41,
+   "kbHeaderSized": 571
+  },
+  {
+   "vp": "mobile",
+   "page": "privacy",
+   "path": "/privacy-policy/",
+   "overflow": 0,
+   "domNodes": 349,
+   "ttfb": 476,
+   "domContentLoaded": 645,
+   "load": 1194,
+   "height": 7776,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "sold",
+   "path": "/sold/",
+   "overflow": 0,
+   "domNodes": 502,
+   "ttfb": 608,
+   "domContentLoaded": 821,
+   "load": 1328,
+   "height": 2943,
+   "tapSmall": 1,
+   "requests": 30,
+   "kbHeaderSized": 560
+  },
+  {
+   "vp": "mobile",
+   "page": "epp",
+   "path": "/epp-guidelines/",
+   "overflow": 0,
+   "domNodes": 401,
+   "ttfb": 446,
+   "domContentLoaded": 678,
+   "load": 1173,
+   "height": 7970,
+   "tapSmall": 1,
+   "requests": 32,
+   "kbHeaderSized": 568
+  }
+ ]
+}

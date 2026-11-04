@@ -568,7 +568,8 @@ if ( ! function_exists( 'db_listing_handle_inquiry' ) ) {
 		}
 		// Admin alert only: nothing the visitor typed is sent to anyone else.
 		$to = (string) get_option( 'admin_email' );
-		if ( is_email( $to ) ) {
+		$sent = ( is_email( $to ) && function_exists( 'db_mail_send' ) ) ? db_mail_send( 'admin_enquiry', $to, array( 'domain' => $domain, 'email' => $email, 'message_html' => '' !== $message ? '<p>' . nl2br( esc_html( $message ) ) . '</p>' : '' ) ) : null;
+		if ( is_email( $to ) && null === $sent ) {
 			wp_mail( $to, 'Not-for-sale enquiry: ' . $domain, "Someone asked whether the owner of {$domain} would consider selling.\n\nEmail: {$email}\n\n" . ( '' !== $message ? "Message:\n{$message}\n\n" : '' ) . 'See Domain Brothers > All Leads.' );
 		}
 		$go( 'ok' );

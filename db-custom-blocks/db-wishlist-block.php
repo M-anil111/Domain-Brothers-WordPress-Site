@@ -170,7 +170,10 @@ if ( ! function_exists( 'db_wl_send_code' ) ) {
 		}
 		$subject = 'Your Domain Brothers sign-in code: ' . $code;
 		$body    = "Your sign-in code is {$code}\n\nIt works for 10 minutes. Enter it on the Domain Brothers site to open your wishlist.\n\nIf you did not ask for this, you can ignore this email; nobody can sign in without the code.\n\nDomain Brothers\n" . home_url( '/' );
-		wp_mail( $email, $subject, $body );
+		$sent = function_exists( 'db_mail_send' ) ? db_mail_send( 'signin_code', $email, array( 'code' => $code, 'minutes' => (string) (int) ( DB_WL_CODE_TTL / 60 ) ) ) : null;
+		if ( null === $sent ) {
+			wp_mail( $email, $subject, $body );
+		}
 		return true;
 	}
 }
