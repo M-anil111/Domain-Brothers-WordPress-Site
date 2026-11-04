@@ -28,6 +28,7 @@ const CREDS = USER ? { httpCredentials: { username: USER, password: PASS } } : {
 fs.mkdirSync(OUT, { recursive: true });
 
 const VIEWPORTS = [
+	['iphone-se-375', 375, 667, true],
 	['phone-small-360', 360, 800, true],
 	['fold-cover-344', 344, 882, true],
 	['phone-390', 390, 844, true],
@@ -37,7 +38,13 @@ const VIEWPORTS = [
 	['duo-single-540', 540, 720, true],
 	['fold-open-673', 673, 841, true],
 	['pixel-fold-841', 841, 701, true],
+	['ipad-mini-744', 744, 1133, true],
 	['tablet-768', 768, 1024, true],
+	['ipad-air-820', 820, 1180, true],
+	['ipad-pro11-834', 834, 1194, true],
+	['ipad-landscape-1180', 1180, 820, true],
+	['ipad-pro129-1024', 1024, 1366, true],
+	['ipad-pro129-landscape-1366', 1366, 1024, true],
 	['duo-spanned-1114', 1114, 720, true],
 	['laptop-1280', 1280, 800, false],
 	['desktop-1920', 1920, 1080, false],

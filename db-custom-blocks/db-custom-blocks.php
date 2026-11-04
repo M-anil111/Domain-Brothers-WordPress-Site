@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.57.0
+ * Version:     3.58.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.57.0' );
+define( 'DB_BLOCKS_LOADED', '3.58.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -333,9 +333,27 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
 		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for flexible payment plans.</p>';
-		$html .= '<div class="db-hp-ctas">';
-		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
-		$html .= '</div>';
+		// A search-first hero: one big search box, then the extensions people actually browse.
+		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
+		$html .= '<label class="screen-reader-text" for="db-hp-q">Search for a domain, keyword or brand</label>';
+		$html .= '<input id="db-hp-q" type="search" name="q" placeholder="Search for a domain, keyword or brand" autocomplete="off" required>';
+		$html .= '<button type="submit">Search</button></form>';
+		$chips = '';
+		if ( function_exists( 'db_domain_index' ) ) {
+			$tlds = array();
+			foreach ( (array) db_domain_index() as $row ) {
+				$dot = strrpos( (string) $row['n'], '.' );
+				if ( false !== $dot ) {
+					$t          = substr( $row['n'], $dot );
+					$tlds[ $t ] = ( $tlds[ $t ] ?? 0 ) + 1;
+				}
+			}
+			arsort( $tlds );
+			foreach ( array_slice( array_keys( $tlds ), 0, 6 ) as $t ) {
+				$chips .= '<a href="' . esc_url( add_query_arg( 'tld', $t, home_url( '/all-domains/' ) ) ) . '">' . esc_html( $t ) . '</a>';
+			}
+		}
+		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
 		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
@@ -4454,3 +4472,4 @@ require_once __DIR__ . '/db-orders-block.php';
 require_once __DIR__ . '/db-offers-block.php';
 require_once __DIR__ . '/db-sold-block.php';
 require_once __DIR__ . '/db-hits-block.php';
+require_once __DIR__ . '/db-modern-block.php';

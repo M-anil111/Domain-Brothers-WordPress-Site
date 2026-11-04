@@ -253,6 +253,18 @@ add_action( 'wp_footer', function () {
 	bar.addEventListener('change', apply);
 	bar.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
 	bar.addEventListener('reset', function () { setTimeout(reset, 0); });
+	// Arrive with a search already applied (?q=, ?tld=, ?max=, ?sort=), e.g. from the home page.
+	(function () {
+		var qs = new URLSearchParams(window.location.search);
+		if (!(qs.get('q') || qs.get('tld') || qs.get('max') || qs.get('sort'))) { return; }
+		if (qs.get('q')) { bar.elements.q.value = qs.get('q'); }
+		load().then(function () {
+			if (qs.get('tld')) { bar.elements.tld.value = qs.get('tld'); }
+			if (qs.get('max')) { bar.elements.max.value = qs.get('max'); }
+			if (qs.get('sort')) { bar.elements.sort.value = qs.get('sort'); }
+			apply();
+		}).catch(function () {});
+	})();
 	// Populate the extension list as soon as someone reaches for the bar.
 	bar.addEventListener('focusin', function () { load().catch(function () {}); }, { once: true });
 })();
