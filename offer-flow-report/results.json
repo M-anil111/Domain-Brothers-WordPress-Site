@@ -1,0 +1,70 @@
+[
+ {
+  "name": "a new offer becomes an open deal in Offers",
+  "pass": true
+ },
+ {
+  "name": "admin detail has the buyer's private link",
+  "pass": true
+ },
+ {
+  "name": "counter-offer sent",
+  "pass": true
+ },
+ {
+  "name": "buyer page shows our price, message and the accept button",
+  "pass": true
+ },
+ {
+  "name": "buyer page is noindex",
+  "pass": true
+ },
+ {
+  "name": "a wrong token shows no offer",
+  "pass": true
+ },
+ {
+  "name": "buyer's new offer is recorded (waiting for us, $2,000)",
+  "pass": true
+ },
+ {
+  "name": "admin sees the buyer's counter and the history",
+  "pass": true
+ },
+ {
+  "name": "offer accepted",
+  "pass": true
+ },
+ {
+  "name": "accepted page offers Pay now and monthly plans",
+  "pass": true
+ },
+ {
+  "name": "checkout shows the agreed domain and $2,000 (extra URL parameters ignored)",
+  "pass": true
+ },
+ {
+  "name": "test payment completes and reaches the thank-you page",
+  "pass": true
+ },
+ {
+  "name": "webhook accepted",
+  "pass": true
+ },
+ {
+  "name": "deal is Paid",
+  "pass": true
+ },
+ {
+  "name": "Sales lists it as a Custom offer, paid in full, $2,000",
+  "pass": true
+ },
+ {
+  "name": "lead is marked Won",
+  "pass": true
+ },
+ {
+  "name": "after \"Reset test sale\" the domain is available again",
+  "pass": true
+ }
+]

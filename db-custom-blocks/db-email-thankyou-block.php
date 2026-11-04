@@ -882,6 +882,26 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
        db-custom-blocks.php on wpcf7_mail_sent)
    ----------------------------------------------------------- */
 
+if ( ! function_exists( 'db_offer_email_with_link' ) ) {
+	/**
+	 * Adds a "follow your offer" line to the confirmation email. Only a link on
+	 * this site is ever added, so the email cannot be made to carry a foreign URL.
+	 */
+	function db_offer_email_with_link( $mail, $link ) {
+		if ( ! is_array( $mail ) || '' === (string) $link ) {
+			return $mail;
+		}
+		$home = wp_parse_url( home_url( '/' ) );
+		$url  = wp_parse_url( $link );
+		if ( empty( $url['host'] ) || empty( $home['host'] ) || 0 !== strcasecmp( $url['host'], $home['host'] ) || ! in_array( $url['scheme'] ?? '', array( 'https', 'http' ), true ) ) {
+			return $mail;
+		}
+		$line = '<p>You can follow your offer, reply to our price or make a new offer any time on <a href="' . esc_url( $link ) . '">your private offer page</a>. Keep that link to yourself.</p>';
+		$mail['body'] = str_replace( '<p>If you have any questions in the meantime', $line . '<p>If you have any questions in the meantime', $mail['body'] );
+		return $mail;
+	}
+}
+
 if ( ! function_exists( 'db_offer_confirmation_email' ) ) {
 	/**
 	 * The confirmation goes to whatever address was typed into the public

@@ -86,4 +86,7 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 - `listing/listing-state-test.php` (offline): which of standard / custom offer / not for sale / sold a listing is in.
 - `offers/deal-transition-test.php` (offline): the negotiation rules (who may accept, counter, decline or pay from each state), price parsing and pay links.
 - `qa/offer-flow.js` (live, **test mode only**): the whole negotiation through the real admin and buyer page, a test-card payment and the closing webhook; it removes its own test sale at the end. Needs `DB_WP_USER`/`DB_WP_PASS` and `STRIPE_TEST_WEBHOOK_SECRET`.
+- `qa/listing-templates.js` (live): four temporary domains through the admin screen, each must get its own template; removes them.
+- `qa/sold-epp-flow.js` (live, test mode): payment plan to completion, Sold domains report, EPP code send and buyer reveal, revoke. Needs `STRIPE_TEST_WEBHOOK_SECRET`.
+- `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded) and the All offers received log with repeat offers merged.
 - `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.

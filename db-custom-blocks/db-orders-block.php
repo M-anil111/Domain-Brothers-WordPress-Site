@@ -430,6 +430,7 @@ add_action( 'admin_post_db_orders_reset_test', function () {
 			do_action( 'litespeed_purge_post', $post->ID );
 		}
 		$n += (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE mode = 'test' AND domain = %s", $domain ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_epp WHERE domain = %s", strtolower( trim( $domain ) ) ) ); // test transfer-code records go with the test sale
 	}
 	// phpcs:enable
 	delete_transient( defined( 'DB_DOMAIN_INDEX_KEY' ) ? DB_DOMAIN_INDEX_KEY : 'db_domain_index_v3' );
