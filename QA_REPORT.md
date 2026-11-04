@@ -394,3 +394,83 @@ Every page type was screenshotted at 1366 px and 390 px and reviewed. Fixed:
 A regression from the footer fix (the theme's row layout widened `#content` by 30 px on home and plan pages, 9 responsive scans) was caught by `run-responsive.js` and fixed. Final: live QA 404/404, axe 0 violations, responsive 169 scans clean, offline suites 50 + 30 + 10 + 12.
 
 The Stripe card form itself was not rendered (staging has no keys); only the "payment system is being configured" state was reviewed.
+
+## 17. First real test payments (v3.50.4)
+
+Stripe **sandbox** keys were entered on staging (Settings > DB Stripe Keys, mode = test); they are stored only in WordPress options, not in the repository. Test purchases through the real checkout with Stripe's `4242` card found three defects that no offline test could see:
+
+| # | Defect | Effect | Fix |
+|---|---|---|---|
+| 1 | The signed return link used `s=` for its signature. `s` is WordPress's search variable, so `/thank-you/?...&s=…` became a search of that page | Every successful payment redirected to a **404** | Signature renamed `sig` (`db-stripe-block.php`, `db-email-thankyou-block.php`) |
+| 2 | `/thank-you/` uses a theme template that never calls `the_content()`, so the plugin's confirmation (`db_ty_html`) never rendered | Buyers saw "we've received your request" (the contact-form text), not "payment confirmed" | `template_include` override (`db-thankyou-template.php`) |
+| 3 | `Permissions-Policy: payment=()` was sent on every page | Apple Pay, Google Pay and Link blocked inside Stripe's iframe | `payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")` |
+
+Also restyled: the checkout page (was dark navy) and the thank-you block (blue palette and a dark variant) now follow the site design.
+
+**Verified (staging, sandbox)**: full purchase of fatality.ca at $2,500 lands on a 200 thank-you page naming the domain and amount; a 3-month plan charges the first instalment of $833.33 (card saved for off-session use) and shows "Your payment plan is active". Confirmed in the Stripe dashboard API: PaymentIntents `succeeded`, amounts exact, `setup_future_usage=off_session` on the plan. New regression tests: `tests/security/forms-test.php` (return-URL query keys are never WordPress-reserved; signature is `sig`), live check FN-43, and `tests/qa/stripe-test-purchase.js` (end-to-end purchase; `QA_MONTHS=3` for a plan).
+
+**Not verified**: webhooks. Staging is behind HTTP Basic Auth, so Stripe cannot reach `/wp-json/…/stripe-webhook`; plan creation, receipt emails, the reservation lock and the instalment schedule (all driven by webhooks and cron) still need a test on a publicly reachable URL. Apple Pay / Google Pay were not exercised (needs a device and a verified domain).
+
+**Housekeeping**: the sandbox secret key was pasted into a chat. Sandbox keys cannot move money, but roll it in the Stripe dashboard (Developers > API keys) before sharing further, and use separate restricted live keys on production.
+
+## 18. Four listing states, Sales screen, custom-offer negotiation (v3.51 - v3.53)
+
+**1. Every domain page is one of four kinds** (`db-listing-state-block.php`). Decided in this order: the new "Listing status" box on the domain's edit screen (Automatic / Not for sale / Sold); the legacy `domain_status = sold`; a completed sale or active payment plan; otherwise a price means *standard* and no price means *custom offers*.
+- **Standard** and **custom offer** keep the existing page. **Sold** and **not for sale** have their own template; the theme's used to say "is for sale!" and show the offer form on a sold name. Sold shows similar names that are available. Not for sale takes an "Ask the owner" enquiry (CRM lead, source "inquiry", honeypot, timing and per-IP limits).
+- Checkout and the plan page refuse sold and not-for-sale names (HTTP 410). They are left out of All Domains, the domain index and recommendations (about 80 listings already marked sold no longer appear in All Domains). SEO titles say "has been sold" / "is not for sale"; structured data no longer claims availability; a completed sale marks the listing sold. Sold pages are `noindex`.
+- Production check: only the standard (`?lis=y`) and custom-offer (`?c=`) designs exist on domainbrothers.com today; the sold and not-for-sale pages are new.
+
+**2. Sales** (`db-orders-block.php`; Domain Brothers > Sales). Every purchase from the website is a row: type (standard price / payment plan / custom offer), price, paid so far, plan progress and next charge (live from the plan record), buyer, status, Stripe link, offer link. Filters, CSV export (formula-safe), "Import earlier plans", and "Reset test sale" for test-mode rows. Written from the Stripe webhook.
+
+**3. Custom offers** (`db-offers-block.php`; Domain Brothers > Offers, plus a "Respond" link on each offer-form lead). The offer form creates a deal. The team can **accept**, **send a different price** (valid 7 days by default, with a message) or **decline**. The buyer gets a private link (`…/domains/name/?c=<token>`, 32 random hex characters, `noindex`, never cached) where they can **accept** a counter-offer, **decline**, or **make a new offer**, as often as they like. An accepted price opens payment: pay in full, or monthly (3/6/9/12 months; 0/0/5/10% interest) from $600. The checkout takes the domain and price from the stored deal, never from the URL. The webhook closes the deal, the lead becomes Won, and Sales shows the order as "Custom offer". Emails go to the buyer for each of our moves and to the admin for each of theirs.
+
+**Tests.** Offline: `tests/listing/listing-state-test.php` (14), `tests/offers/deal-transition-test.php` (26: who may do what from each state). Live, end to end: `tests/qa/offer-flow.js` (17: offer in, counter, buyer counters, accept, pay with the test card, webhook, Sales and lead, then reset), `tests/qa/send-test-webhook.js` (signed synthetic Stripe events, which also made the order log testable on staging). Found along the way: the SEO title read "for Sale, $0" for offer-only names (fixed).
+
+**Not done / needs a decision.** The offer *confirmation* email the buyer gets on submitting the form does not yet link to their private page (it is fixed-text by design, to prevent phishing relays); add the link if you want buyers to find it without our reply. A not-for-sale or sold domain with an unpublished listing still 404s. Plans on custom offers use the same terms and forfeiture rules as standard plans.
+
+## 19. Sold page matched to the production design (v3.53.3)
+
+The QA issue report (Beta Domain Brothers, one item: "Sold page design", production `wingcms-com/?lis=y`) was checked against staging. Findings and fixes:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| A sold domain (e.g. wingcms.com) showed no sold page on staging: visitors were sent to the home page | The theme prints `window.location.href = '<home>'` for any domain marked sold. Production only shows the sold page through the legacy `?lis=y` address; staging redirects `?lis=y` away, so no address worked | The plugin's sold template removes that one redirect line from the header it prints |
+| Sold design did not match production | First version was a white card | Rebuilt: full-width blue (#00476c) banner with the hanging red SOLD sign and the domain in green (#67bd3c), a Domain News carousel (latest site posts, date badges, arrows), a Testimonials slider over the production photo (3 testimonials, stars, dots, 7 s autoplay unless reduced motion) |
+| Sold and not-for-sale pages loaded the contact-form scripts | CF7 loaded on every domain page | Not loaded on these two pages |
+
+Not-for-sale uses the same layout (amber "NOT FOR SALE" sign, the "Ask the owner" form). Similar available domains (4) sit between the banner and the news. Deliberate differences from production: the legacy landing header (logo, WebGuru ad banner, "Questions? Email" line) is replaced by the site's normal header; news and testimonial titles use the site green #2e7d14 (production's #67bd3c is 2.2:1 on white, below WCAG AA). New live checks FN-44 (sold page present, no redirect) and FN-45 (checkout refuses a sold domain). axe: 0 violations on both pages at desktop and phone width.
+
+## 20. Listing templates, sold report, EPP codes, domain hits, offers log (v3.55 - v3.56)
+
+**Templates (checked live, `tests/qa/listing-templates.js`, 6/6).** Domains added through the admin screen get the right page: price set and "For sale" gives the standard page (buy now / monthly); no price gives the custom-offer page (make an offer, no price shown); status Sold gives the sold page even when a price is stored; Listing status "Not for sale" gives the not-for-sale page. The admin list shows each state in a Listing column.
+
+**Offers in the admin.** Domain Brothers > Offers lists each negotiation with its status; opening one shows the full history and lets the team accept, send a different price, or decline; the buyer's private page continues the process through to payment. Bug fixed: offers submitted through the real form were never recorded (domain not mapped from `hide_domainname`; lead now captured before mail is sent). Staging mail still fails ("SMTP Error: Could not authenticate"), so emails must be verified on production; offers are recorded regardless, and an admin notice shows mail failures.
+
+**Sold domains report** (Domain Brothers > Sold domains). Every sold domain with price, money collected, date, buyer and channel; tiles for domains sold, total sold for and money collected; CSV export and import for older sales (their prices were never stored). Sales through the website fill in automatically.
+
+**EPP / transfer codes.** The team enters the code on a sold row. The code is never in an email or in the admin after saving (AES-256-GCM at rest). The buyer gets a private link; the page shows the code only after pressing "Show my code" (POST), logs that it was viewed, and expires after 14 days. A new code revokes the old link. A payment plan must be complete first. Test: `tests/qa/sold-epp-flow.js` 17/17, offline `tests/sold/epp-test.php` 11/11.
+
+**Domain hits** (Domain Brothers > Domain hits, plus a Hits / unique column on the domain list). Per domain: all-time hits, unique visitors, last 7 and 30 days, last visit, offers received; sortable, searchable, CSV. Counted by a beacon after the page loads (works behind the page cache). Not counted: bots and link previews, prefetches, logged-in editors, background tabs, the same visitor twice within 10 seconds. A visitor is a salted hash of IP and browser; no address is stored; visitor hashes are purged after 400 days. Caveat: unique visitors depend on the server seeing the visitor's real IP; behind the sandbox proxy used for testing, the same browser can appear as several visitors.
+
+**All offers received** (Offers > All offers received). One row per offer ever made, including earlier leads from before negotiations were tracked, with count, domain total, search and CSV. A buyer who offers again on the same domain while the negotiation is open, countered, declined or expired is added to that negotiation's history (and the team is notified) instead of starting a second one. Test: `tests/qa/hits-offers-log.js` 8/8.
+
+## 21. Page curtain removed; hits by period and date range; offer page intelligence (v3.56.1 - v3.57.0)
+
+- **Curtain removed** (v3.56.1): the navy page-transition overlay (`db-curtain-block.php`) is deleted; no page contains its markup. Site QA 406/407 (the one miss was a single slow `/news/` load that was 0.65 s on recheck).
+- **Domain hits** now show Today, Last 7 days, This month, This year and All time, each as hits / unique visitors, plus a From / To date range column and CSV. A new table (`db_hit_vdays`) records which visitor came on which day, so unique visitors can be counted for any period; unique counts therefore start from the release of v3.57.0 (hit totals continue from v3.56.0). Days follow the site time zone.
+- **Offer page** (Offers > open an offer) has an "About this domain" card: visits by period, every offer and reply on that domain with highest / lowest / average, and similar sold domains (same extension, similar length or same category) with their prices. Only sales with a recorded price are compared, so older sold domains appear once their prices are filled in on Sold domains.
+- Test: `tests/qa/hits-offers-log.js` 11/11.
+
+## 22. Modern white redesign, list and grid views, platform versions (v3.58.0)
+
+**Platform.** WordPress 6.9.11 and PHP 8.5.12 (nginx, php-fpm) were already the latest releases on staging. The two plugins with updates pending were updated (Advanced Custom Fields 6.8.10 to 6.8.11, WPForms Lite 2.0.2.2 to 2.0.3.1); all plugins and the theme are now current and the site was re-tested afterwards. The PHP version itself is set in the hosting panel, not in WordPress.
+
+**Design.** A GoDaddy-style marketplace look, loaded last (`assets/modern.css`, `db-modern-block.php`): white pages, black pill buttons, thin borders, one calm teal for links, a light footer, and no dark sections. Home has a search-first hero (one large search box, the most common extensions as chips, a short trust row). Listings are clean rows or cards. The domain page is a two-column layout with a sticky purchase card on desktop and a stacked layout below 900 px. Bug fixed on the way: the domain page had a screen-high blank gap above its content (the page frame stretched to fill the viewport while the domain template closes that frame early); it now starts at the top.
+
+**List and grid views.** Domain lists (all domains, categories, home) default to a simple list: name on the left, price and Buy / Make an offer on the right. A List / Grid switch changes it to the card grid; the choice is remembered in the browser. The switch sits above the filter bar so filtering still finds its results (found by the site QA when the first version sat below it).
+
+**Devices.** `tests/responsive/run-responsive.js` now scans 13 pages at 20 sizes: iPhone SE, small and large phones, foldables (Galaxy Z Fold cover and open, Pixel Fold, Z Flip half-folded, Surface Duo single and spanned), iPad Mini, iPad, iPad Air, iPad Pro 11 and 12.9 inch in portrait and landscape, laptop and 1920 desktop. Result: 260 scans, 0 with horizontal overflow, cut-off content, targets under 24 px, or tiny text. Screenshots: `docs/screenshots/redesign/` (desktop, iPad, iPhone, foldable; home, list, grid, domain page).
+
+**Regression.** Site QA 407/407; axe-core (WCAG 2.1 A and AA) 0 violations on 28 scans; listing templates 6/6, offer flow 17/17, sold and EPP flow 17/17, hits and offers log 11/11; offline suites pass.
+
+**Notes.** The header, mobile menu and every checkout, offer and sold page keep their existing behaviour and now use the same palette. Third-party widgets (payment badges, Stripe elements) keep their own styling.

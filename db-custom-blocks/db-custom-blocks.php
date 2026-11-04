@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.51.0
+ * Version:     3.59.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,12 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.51.0' );
+define( 'DB_BLOCKS_LOADED', '3.59.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
 	 * The Domain Brothers logo URL, resolved once for the hero, the nav
-	 * drawer and the page curtain.
+	 * drawer.
 	 *
 	 * The three of them each hardcoded the same uploads path built from
 	 * home_url(), which is the wrong base for an uploads file — it breaks
@@ -333,9 +333,27 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
 		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for flexible payment plans.</p>';
-		$html .= '<div class="db-hp-ctas">';
-		$html .= '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse Premium Domains</a>';
-		$html .= '</div>';
+		// A search-first hero: one big search box, then the extensions people actually browse.
+		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
+		$html .= '<label class="screen-reader-text" for="db-hp-q">Search for a domain, keyword or brand</label>';
+		$html .= '<input id="db-hp-q" type="search" name="q" placeholder="Search a domain or keyword" autocomplete="off" required>';
+		$html .= '<button type="submit">Search</button></form>';
+		$chips = '';
+		if ( function_exists( 'db_domain_index' ) ) {
+			$tlds = array();
+			foreach ( (array) db_domain_index() as $row ) {
+				$dot = strrpos( (string) $row['n'], '.' );
+				if ( false !== $dot ) {
+					$t          = substr( $row['n'], $dot );
+					$tlds[ $t ] = ( $tlds[ $t ] ?? 0 ) + 1;
+				}
+			}
+			arsort( $tlds );
+			foreach ( array_slice( array_keys( $tlds ), 0, 6 ) as $t ) {
+				$chips .= '<a href="' . esc_url( add_query_arg( 'tld', $t, home_url( '/all-domains/' ) ) ) . '">' . esc_html( $t ) . '</a>';
+			}
+		}
+		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
 		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
@@ -999,7 +1017,8 @@ if ( ! function_exists( 'db_offer_field_map' ) ) {
 		return array(
 			'email'   => array( 'your-email', 'email', 'offer-email', 'customer-email' ),
 			'name'    => array( 'your-name', 'name', 'offer-name', 'customer-name' ),
-			'domain'  => array( 'your-domain', 'domain', 'offer-domain', 'domain-name', 'offer-doamin-name', 'offer-domain-name' ),
+			// 'hide_domainname' is the hidden field the live Offer Form (CF7 #1878) actually carries the domain in.
+			'domain'  => array( 'your-domain', 'domain', 'hide_domainname', 'offer-domain', 'domain-name', 'offer-doamin-name', 'offer-domain-name' ),
 			'amount'  => array( 'your-offer', 'offer', 'amount', 'offer-amount', 'price', 'offer-price' ),
 			'phone'   => array( 'your-phone', 'phone', 'tel', 'customer-phone', 'offer-phone' ),
 			'message' => array( 'your-message', 'message', 'comments', 'offer-msg', 'offer-message' ),
@@ -1067,9 +1086,12 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 		isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''
 	);
 	if ( $mail ) {
+		// The buyer's private offer page (created by the CRM hook, which runs at priority 10).
+		$link = (string) apply_filters( 'db_offer_confirmation_link', '', $mail['to'], db_offer_value( $data, 'domain' ) );
+		$mail = db_offer_email_with_link( $mail, $link );
 		wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
 	}
-}, 10, 1 );
+}, 20, 1 ); // after the CRM lead (and its offer page) exists
 
 add_action( 'wp_footer', function () {
 	$form_id  = db_offer_resolved_form_id();
@@ -1267,7 +1289,8 @@ add_action( 'send_headers', function () {
 	header( 'X-Frame-Options: SAMEORIGIN' );
 	header( 'X-XSS-Protection: 1; mode=block' );
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
-	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()' );
+	// payment: Stripe's iframe needs it for Apple Pay / Google Pay / Link; nobody else gets it.
+	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")' );
 } );
 
 add_filter( 'style_loader_src', function ( $src ) {
@@ -1452,11 +1475,13 @@ add_action( 'wp_head', function () {
 		$domain_name  = get_the_title( $post );
 		$domain_price = get_post_meta( $post->ID, DB_AEO_PRICE_META, true );
 		$domain_url   = get_permalink( $post );
+		$list_state   = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'standard';
 		$product      = array( '@type' => 'Product', 'name' => $domain_name,
-			'description' => 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.',
+			'description' => ( 'sold' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' has been sold.' : ( 'not_for_sale' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' is not for sale.' : 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.' ) ),
 			'url' => esc_url( $domain_url ),
 			'brand' => array( '@type' => 'Brand', 'name' => $site_name ) );
-		if ( $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
+		// No offer (and so no "in stock") for a name that is sold or not for sale.
+		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
 			$price = (float) preg_replace( '/[^0-9.]/', '', $domain_price );
 			$product['offers'] = array( '@type' => 'Offer', 'price' => number_format( $price, 2, '.', '' ), 'priceCurrency' => 'USD', 'availability' => 'https://schema.org/InStock', 'url' => esc_url( $domain_url ), 'seller' => array( '@type' => 'Organization', 'name' => $site_name ) );
 		}
@@ -3925,7 +3950,10 @@ add_filter( 'pre_get_document_title', function ( $title ) {
 	if ( ! is_singular( 'domain' ) || db_seo_other_plugin() ) {
 		return $title;
 	}
-	$post        = get_queried_object();
+	$post = get_queried_object();
+	if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( $post ), array( 'sold', 'not_for_sale' ), true ) ) {
+		return $title;
+	}
 	$domain_name = get_post_meta( $post->ID, 'domain_name', true );
 	if ( ! $domain_name ) {
 		$domain_name = $post->post_title;
@@ -4389,11 +4417,6 @@ require_once __DIR__ . '/db-seo-meta-block.php';
 require_once __DIR__ . '/db-mobilenav-block.php';
 
 /* ============================================================
-   PAGE CURTAIN — branded transition overlay
-   ============================================================ */
-require_once __DIR__ . '/db-curtain-block.php';
-
-/* ============================================================
    SAFETY — fatal-error recorder + branded failure page
    ============================================================ */
 require_once __DIR__ . '/db-safety-block.php';
@@ -4444,3 +4467,9 @@ require_once __DIR__ . '/db-exit-offer-block.php';
    ============================================================ */
 require_once __DIR__ . '/db-design-block.php';
 require_once __DIR__ . '/db-perf-block.php';
+require_once __DIR__ . '/db-listing-state-block.php';
+require_once __DIR__ . '/db-orders-block.php';
+require_once __DIR__ . '/db-offers-block.php';
+require_once __DIR__ . '/db-sold-block.php';
+require_once __DIR__ . '/db-hits-block.php';
+require_once __DIR__ . '/db-modern-block.php';

@@ -74,3 +74,19 @@ needs no secrets and makes no network calls to the site.
 Loads 13 page types at 13 viewports (phones, Galaxy Z Fold cover/open, Pixel Fold, half-folded Z Flip, Surface Duo single/spanned, tablets, laptop, desktop) and fails on horizontal overflow, elements cut off at the right edge, JS errors. Reports targets under 24 px and text under 12 px. Sequential on purpose (the shared host returns 508 under parallel load).
 
     BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/responsive/run-responsive.js out-dir [--shots]
+
+## `qa/stripe-test-purchase.js` — end-to-end test payment (sandbox only)
+
+Pays through the real checkout with Stripe's `4242` test card and checks the redirect to `/thank-you/` (HTTP 200, domain and amount named). `QA_MONTHS=3` tests a payment plan's first instalment. **Only run it when the site's Stripe mode is "test"**: it creates a PaymentIntent in the connected sandbox.
+
+    QA_MONTHS=3 BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/qa/stripe-test-purchase.js out-dir
+
+## Listing states and offers
+
+- `listing/listing-state-test.php` (offline): which of standard / custom offer / not for sale / sold a listing is in.
+- `offers/deal-transition-test.php` (offline): the negotiation rules (who may accept, counter, decline or pay from each state), price parsing and pay links.
+- `qa/offer-flow.js` (live, **test mode only**): the whole negotiation through the real admin and buyer page, a test-card payment and the closing webhook; it removes its own test sale at the end. Needs `DB_WP_USER`/`DB_WP_PASS` and `STRIPE_TEST_WEBHOOK_SECRET`.
+- `qa/listing-templates.js` (live): four temporary domains through the admin screen, each must get its own template; removes them.
+- `qa/sold-epp-flow.js` (live, test mode): payment plan to completion, Sold domains report, EPP code send and buyer reveal, revoke. Needs `STRIPE_TEST_WEBHOOK_SECRET`.
+- `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded) and the All offers received log with repeat offers merged.
+- `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.

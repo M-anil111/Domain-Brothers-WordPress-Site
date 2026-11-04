@@ -140,6 +140,32 @@ if ( ! function_exists( 'db_rec_score' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_rec_row_for_post' ) ) {
+	/** An index-shaped row for one listing that is not in the domain index. */
+	function db_rec_row_for_post( $post_id ) {
+		$post = get_post( (int) $post_id );
+		if ( ! $post || 'domain' !== $post->post_type ) {
+			return null;
+		}
+		$cats  = array();
+		$terms = get_the_terms( $post->ID, 'domain_category' );
+		if ( is_array( $terms ) ) {
+			foreach ( $terms as $t ) {
+				$cats[] = array( $t->name, '' );
+			}
+		}
+		$raw = preg_replace( '/[^0-9.]/', '', (string) get_post_meta( $post->ID, 'domain_price', true ) );
+		return array(
+			'id' => (int) $post->ID,
+			'n'  => strtolower( trim( wp_strip_all_tags( $post->post_title ) ) ),
+			'u'  => get_permalink( $post ),
+			'p'  => ( '' !== $raw && is_numeric( $raw ) ) ? (float) $raw : 0.0,
+			'c'  => $cats,
+			'k'  => strtolower( trim( (string) get_post_meta( $post->ID, 'domain_keyword', true ) ) ),
+		);
+	}
+}
+
 if ( ! function_exists( 'db_rec_for' ) ) {
 	/**
 	 * Best $limit other listings for $post_id, best first.
@@ -157,6 +183,10 @@ if ( ! function_exists( 'db_rec_for' ) ) {
 				$me = $r;
 				break;
 			}
+		}
+		if ( ! $me ) {
+			// Sold and not-for-sale names are left out of the index; build the row from the post.
+			$me = db_rec_row_for_post( $post_id );
 		}
 		if ( ! $me ) {
 			return array();

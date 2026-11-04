@@ -20,7 +20,7 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'DB_DOMAIN_INDEX_KEY' ) ) {
-	define( 'DB_DOMAIN_INDEX_KEY', 'db_domain_index_v2' );
+	define( 'DB_DOMAIN_INDEX_KEY', 'db_domain_index_v3' );
 }
 
 if ( ! function_exists( 'db_domain_index' ) ) {
@@ -54,6 +54,10 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 			if ( '' === $name ) {
 				continue;
 			}
+			// Sold and not-for-sale names stay reachable by URL but are not offered in lists.
+			if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( $id ), array( 'sold', 'not_for_sale' ), true ) ) {
+				continue;
+			}
 			$raw   = preg_replace( '/[^0-9.]/', '', (string) get_post_meta( $id, 'domain_price', true ) );
 			$price = is_numeric( $raw ) && (float) $raw > 0 ? (float) $raw : 0.0;
 			$cats  = array();
@@ -84,7 +88,7 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 // Listing changes (new domain, price edit, unpublish) rebuild the index.
 add_action( 'save_post_domain', function () {
 	delete_transient( DB_DOMAIN_INDEX_KEY );
-} );
+}, 20 );
 add_action( 'set_object_terms', function ( $object_id ) {
 	if ( 'domain' === get_post_type( $object_id ) ) {
 		delete_transient( DB_DOMAIN_INDEX_KEY );
@@ -249,6 +253,18 @@ add_action( 'wp_footer', function () {
 	bar.addEventListener('change', apply);
 	bar.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
 	bar.addEventListener('reset', function () { setTimeout(reset, 0); });
+	// Arrive with a search already applied (?q=, ?tld=, ?max=, ?sort=), e.g. from the home page.
+	(function () {
+		var qs = new URLSearchParams(window.location.search);
+		if (!(qs.get('q') || qs.get('tld') || qs.get('max') || qs.get('sort'))) { return; }
+		if (qs.get('q')) { bar.elements.q.value = qs.get('q'); }
+		load().then(function () {
+			if (qs.get('tld')) { bar.elements.tld.value = qs.get('tld'); }
+			if (qs.get('max')) { bar.elements.max.value = qs.get('max'); }
+			if (qs.get('sort')) { bar.elements.sort.value = qs.get('sort'); }
+			apply();
+		}).catch(function () {});
+	})();
 	// Populate the extension list as soon as someone reaches for the bar.
 	bar.addEventListener('focusin', function () { load().catch(function () {}); }, { once: true });
 })();

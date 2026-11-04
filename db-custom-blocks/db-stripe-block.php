@@ -229,9 +229,25 @@ add_action( 'template_redirect', static function () {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
 	$d_raw = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$p_raw = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : '';
+	$offer = isset( $_GET['offer'] ) ? sanitize_text_field( wp_unslash( $_GET['offer'] ) ) : '';
 	// phpcs:enable
 
-	if ( ! $d_raw || ! $p_raw ) {
+	// An accepted custom offer: the domain and the price come from the stored
+	// deal (never from the URL), so the link cannot be edited to pay less.
+	$deal_ctx = null;
+	if ( '' !== $offer && function_exists( 'db_deal_checkout_context' ) ) {
+		$deal_ctx = db_deal_checkout_context( $offer );
+		if ( ! $deal_ctx ) {
+			wp_die(
+				'<h1>This offer link cannot be used</h1><p>It may have expired, already been paid, or the domain is no longer available. <a href="' . esc_url( home_url( '/' ) ) . '">Go to the home page</a> or <a href="mailto:sales@domainbrothers.com">contact us</a>.</p>',
+				'Offer unavailable',
+				[ 'response' => 410 ]
+			);
+		}
+		$GLOBALS['db_deal_checkout'] = $deal_ctx['deal'];
+	}
+
+	if ( ! $deal_ctx && ( ! $d_raw || ! $p_raw ) ) {
 		// Never fall through to the theme here. DomainFolio's buy-now template
 		// fatals when it renders without a selected domain, so a bare
 		// /buy-now/ returned HTTP 500 to every direct visitor and to
@@ -241,31 +257,47 @@ add_action( 'template_redirect', static function () {
 		exit;
 	}
 
-	// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-	$domain    = base64_decode( $d_raw, true );
-	$price_raw = base64_decode( $p_raw, true );
-	// phpcs:enable
+	if ( $deal_ctx ) {
+		$domain = db_stripe_norm( $deal_ctx['domain'] );
+		$price  = (float) $deal_ctx['price'];
+	} else {
+		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		$domain    = base64_decode( $d_raw, true );
+		$price_raw = base64_decode( $p_raw, true );
+		// phpcs:enable
 
-	if ( $domain === false || $price_raw === false ) {
-		wp_die( esc_html( 'Invalid request.' ) );
+		if ( $domain === false || $price_raw === false ) {
+			wp_die( esc_html( 'Invalid request.' ) );
+		}
+
+		$domain       = sanitize_text_field( $domain );
+		$client_price = (float) $price_raw;
+
+		if ( ! $domain || $client_price <= 0.0 ) {
+			wp_die( esc_html( 'Invalid request parameters.' ) );
+		}
+
+		// A sold, reserved or not-for-sale name is "no longer available" (410)
+		// whether or not it still carries a price; check before the price lookup,
+		// which would otherwise fail such a listing with a generic 500.
+		if ( db_stripe_domain_unavailable( db_stripe_norm( $domain ) ) ) {
+			wp_die(
+				'<h1>This domain is no longer available</h1><p>' . esc_html( $domain ) . ' has been sold, is reserved on a payment plan, or is not for sale. <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other premium domains</a> or <a href="mailto:sales@domainbrothers.com">contact us</a>.</p>',
+				'Domain unavailable',
+				[ 'response' => 410 ]
+			);
+		}
+
+		// SECURITY: the URL's price is client-supplied and untrusted — it only
+		// selects WHICH domain to show. The actual charge amount always comes
+		// from the domain listing's own domain_price meta, looked up here.
+		// Without this, anyone could edit ?p= and buy any domain for $1.
+		$price = db_stripe_lookup_domain_price( $domain );
+		if ( null === $price ) {
+			wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
+		}
+		$domain = db_stripe_norm( $domain );
 	}
-
-	$domain       = sanitize_text_field( $domain );
-	$client_price = (float) $price_raw;
-
-	if ( ! $domain || $client_price <= 0.0 ) {
-		wp_die( esc_html( 'Invalid request parameters.' ) );
-	}
-
-	// SECURITY: the URL's price is client-supplied and untrusted — it only
-	// selects WHICH domain to show. The actual charge amount always comes
-	// from the domain listing's own domain_price meta, looked up here.
-	// Without this, anyone could edit ?p= and buy any domain for $1.
-	$price = db_stripe_lookup_domain_price( $domain );
-	if ( null === $price ) {
-		wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
-	}
-	$domain = db_stripe_norm( $domain );
 
 	// 'months', not 'm' — m is a reserved WordPress query var (date archive
 	// month); a request carrying it turns the main query into an empty date
@@ -368,6 +400,11 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 			'metadata[type]'                     => $is_plan ? 'plan' : 'full',
 			'metadata[total_price_usd]'          => (string) $price_usd,
 		];
+
+		// Extra metadata from other blocks (an accepted custom offer adds its lead and deal ids).
+		foreach ( (array) apply_filters( 'db_stripe_pi_metadata', [], $domain ) as $mk => $mv ) {
+			$body[ 'metadata[' . sanitize_key( (string) $mk ) . ']' ] = (string) $mv;
+		}
 
 		if ( $is_plan ) {
 			$body['customer']                     = $customer_id;
@@ -506,14 +543,26 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		$d_b64 = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : base64_encode( $domain );
 		$p_b64 = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : base64_encode( (string) $price );
 		// phpcs:enable
+		// An accepted custom offer (?offer=) is priced from the stored deal, so
+		// the toggle keeps the offer token instead of ?d=/?p=, which would
+		// switch the buyer back to the listing price.
+		$offer_tok = isset( $_GET['offer'] ) ? sanitize_text_field( wp_unslash( $_GET['offer'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$base_args = '' !== $offer_tok && ! empty( $GLOBALS['db_deal_checkout'] )
+			? [ 'offer' => rawurlencode( $offer_tok ) ]
+			: [ 'd' => rawurlencode( $d_b64 ), 'p' => rawurlencode( $p_b64 ) ];
 		$buy_now   = home_url( '/buy-now/' );
-		$full_url  = add_query_arg( [ 'd' => rawurlencode( $d_b64 ), 'p' => rawurlencode( $p_b64 ) ], $buy_now );
-		$plan_url  = add_query_arg( [ 't' => 'plan', 'months' => $alt_months, 'd' => rawurlencode( $d_b64 ), 'p' => rawurlencode( $p_b64 ) ], $buy_now );
-		$terms_url = add_query_arg( [ 'd' => rawurlencode( $d_b64 ), 'p' => rawurlencode( $p_b64 ) ], home_url( '/payment-plan-setup/' ) );
+		$full_url  = add_query_arg( $base_args, $buy_now );
+		$plan_url  = add_query_arg( array_merge( [ 't' => 'plan', 'months' => $alt_months ], $base_args ), $buy_now );
+		// The plan-length chooser prices from the listing, so it is only
+		// offered on listing checkouts, not on accepted offers.
+		$terms_url = isset( $base_args['offer'] ) ? '' : add_query_arg( $base_args, home_url( '/payment-plan-setup/' ) );
 
 		// 'd', not 'domain' — the domain CPT registers 'domain' as its own
 		// public query var, so ?domain=... hijacks the main query away from
 		// the thank-you page (renders the listing or a 404 instead).
+		// The signature is 'sig', not 's': 's' is WordPress's search query
+		// var, and ?s=... on a page URL turns it into a search for that page
+		// (a 404 here, after every successful payment).
 		$ty_type    = $is_plan ? 'plan' : 'full';
 		$ty_amount  = number_format( $price, 0, '.', ',' );
 		$return_url = home_url(
@@ -521,7 +570,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 			. '&d=' . rawurlencode( $domain )
 			. '&amt=' . rawurlencode( $ty_amount )
 			// Signed, so the confirmation page can't be faked by editing the URL.
-			. ( function_exists( 'db_ty_sig' ) ? '&s=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
+			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
 		);
 
 		$support_email = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
@@ -757,7 +806,7 @@ a{color:inherit}
 						</a>
 <?php endif; ?>
 					</div>
-<?php if ( $is_plan ) : ?>
+<?php if ( $is_plan && '' !== $terms_url ) : ?>
 					<a class="co-opt-change" href="<?php echo esc_url( $terms_url ); ?>">Change plan length (<?php echo esc_html( $alt_months . ' months, ' . $rate_label ); ?>)</a>
 <?php endif; ?>
 
@@ -1144,6 +1193,7 @@ if ( ! function_exists( 'db_stripe_receipt_body' ) ) {
 		if ( '' !== trim( $phone ) ) {
 			$body['metadata[buyer_phone]'] = trim( $phone );
 		}
+
 		if ( $terms_accepted && function_exists( 'db_plan_terms_html' ) ) {
 			$body['metadata[terms_accepted_at]'] = gmdate( 'c' );
 			$body['metadata[terms_sha]']         = substr( hash( 'sha256', wp_strip_all_tags( db_plan_terms_html() ) ), 0, 16 );
@@ -1472,6 +1522,7 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 				db_stripe_flag_conflict( $domain, $pi, 'A full purchase was paid for a domain reserved on another buyer\'s payment plan.' );
 				return;
 			}
+			do_action( 'db_order_event', 'full', compact( 'domain', 'amount_usd', 'customer_email', 'pi_id', 'meta' ) );
 			db_stripe_on_sale_complete( $domain, $amount_usd, $customer_email, 'full', $pi_id );
 			return;
 		}
@@ -1538,6 +1589,16 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		}
 		$plan['past_due_since'] = 0;
 		$plan['notice_stage']   = 0;
+		do_action( 'db_order_event', 'plan_installment', [
+			'domain'         => $domain,
+			'amount_usd'     => $amount_usd,
+			'customer_email' => $customer_email,
+			'pi_id'          => $pi_id,
+			'meta'           => $meta,
+			'installment'    => $installment_num,
+			'total_months'   => $total_months,
+			'total_price'    => $total_price,
+		] );
 
 		if ( $installment_num >= $total_months ) {
 			$plan['status'] = 'completed';
@@ -1747,9 +1808,9 @@ if ( ! function_exists( 'db_stripe_current_payment_method' ) ) {
 
 // ─── Email: sale complete ──────────────────────────────────────────────────────
 
-if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
+if ( ! function_exists( 'db_stripe_domain_taken' ) ) {
 	/** True once a domain is sold, or while a payment plan on it is active or past due. */
-	function db_stripe_domain_unavailable( string $domain ) : bool {
+	function db_stripe_domain_taken( string $domain ) : bool {
 		if ( get_option( db_stripe_store_key( 'sold', $domain ) ) ) {
 			return true;
 		}
@@ -1758,9 +1819,20 @@ if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_stripe_domain_unavailable' ) ) {
+	/** Taken by a buyer, or marked sold / not for sale by an admin (listing status). */
+	function db_stripe_domain_unavailable( string $domain ) : bool {
+		return db_stripe_domain_taken( $domain )
+			|| ( function_exists( 'db_listing_blocked_by_name' ) && db_listing_blocked_by_name( $domain ) );
+	}
+}
+
 if ( ! function_exists( 'db_stripe_on_sale_complete' ) ) {
 	function db_stripe_on_sale_complete( string $domain, float $amount_usd, string $customer_email, string $type, string $pi_id = '' ) : void {
 		update_option( db_stripe_store_key( 'sold', $domain ), [ 'ts' => time(), 'pi' => $pi_id ], false );
+		if ( function_exists( 'db_listing_mark_sold' ) ) {
+			db_listing_mark_sold( $domain, $amount_usd, $customer_email, 'full' === $type ? 'website' : 'website_plan' );
+		}
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );

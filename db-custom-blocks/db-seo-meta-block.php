@@ -393,9 +393,24 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 			return null;
 		}
 		$name  = $post->post_title;
+		$state = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'standard';
+		if ( 'sold' === $state ) {
+			return array(
+				'title' => sprintf( '%s Has Been Sold%s', $name, DB_SEO_SUFFIX ),
+				'desc'  => sprintf( '%s has been sold. Browse similar premium domains with escrow-protected transfer and payment plans at Domain Brothers.', $name ),
+				'kw'    => strtolower( $name ),
+			);
+		}
+		if ( 'not_for_sale' === $state ) {
+			return array(
+				'title' => sprintf( '%s Is Not for Sale%s', $name, DB_SEO_SUFFIX ),
+				'desc'  => sprintf( '%s is not for sale. Ask us to approach the owner, or browse similar premium domains at Domain Brothers.', $name ),
+				'kw'    => strtolower( $name ),
+			);
+		}
 		$raw   = (string) get_post_meta( $post->ID, 'domain_price', true );
 		$clean = preg_replace( '/[^0-9.]/', '', $raw );
-		$price = is_numeric( $clean ) ? '$' . number_format( (float) $clean, 0 ) : '';
+		$price = ( is_numeric( $clean ) && (float) $clean > 0 ) ? '$' . number_format( (float) $clean, 0 ) : '';
 
 		$title = $price
 			? sprintf( '%s for Sale, %s%s', $name, $price, DB_SEO_SUFFIX )

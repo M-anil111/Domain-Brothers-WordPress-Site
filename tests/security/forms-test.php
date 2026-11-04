@@ -14,8 +14,11 @@ function add_filter() {}
 function add_action() {}
 function add_shortcode() {}
 function wp_salt() { return 'test-salt'; }
-function esc_url( $s ) { return (string) $s; } function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); } function home_url( $p = '/' ) { return 'https://beta.example.test' . $p; }
+function esc_url( $s ) { return str_replace( array( '"', '<', '>', "'" ), array( '%22', '%3C', '%3E', '%27' ), (string) $s ); }
+// (esc_url above percent-encodes quotes and angle brackets, like WordPress.)
+ function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); } function home_url( $p = '/' ) { return 'https://beta.example.test' . $p; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
+function wp_parse_url( $u ) { return parse_url( (string) $u ); }
 function is_email( $e ) { return false !== filter_var( $e, FILTER_VALIDATE_EMAIL ); }
 $GLOBALS['TR'] = array();
 function get_transient( $k ) { return $GLOBALS['TR'][ $k ] ?? false; }
@@ -56,6 +59,15 @@ ok( array( 'offer', '', '' ) === db_ty_resolve( 'offer', 'URGENT: verify at evil
 $html = db_ty_html( 'generic', '', '' );
 ok( false === strpos( $html, 'new owner' ) && false === stripos( $html, 'has been confirmed' ), 'neutral page makes no payment or ownership claim' );
 
+// The return URL's own query keys must not be WordPress query vars: 's'
+// (search) once turned every post-payment redirect into a 404 on a page URL.
+$src = file_get_contents( dirname( __DIR__, 2 ) . '/db-custom-blocks/db-stripe-block.php' );
+preg_match( "/\\\$return_url\\s*=\\s*home_url\\((.*?)\\);/s", $src, $m );
+preg_match_all( "/[?&]([a-z_]+)=/", $m[1] ?? '', $keys );
+$reserved = array( 's', 'p', 'page', 'name', 'm', 'cat', 'tag', 'author', 'feed', 'paged', 'post_type', 'domain', 'attachment', 'pagename', 'order', 'orderby', 'year', 'monthnum', 'day', 'static' );
+ok( ! empty( $keys[1] ) && ! array_intersect( $keys[1], $reserved ), 'checkout return URL uses no WordPress-reserved query variable (' . implode( ',', $keys[1] ?? array() ) . ')' );
+ok( in_array( 'sig', $keys[1] ?? array(), true ), 'checkout return URL carries the signature as "sig"' );
+
 // Offer confirmation email.
 $m = db_offer_confirmation_email( 'v1@example.test', 'there - your account is locked, verify at evil.example/login', 'URGENT: invoice overdue, pay at evil.example', '1', '203.0.113.5' );
 ok( is_array( $m ) && 'We received your offer' === $m['subject'] && false === strpos( $m['body'], 'evil.example' ) && false === strpos( $m['body'], 'URGENT' ), 'attacker text kept out of subject and body' );
@@ -69,6 +81,14 @@ for ( $i = 1; $i <= 5; $i++ ) {
 }
 ok( 3 === $sent, 'one visitor IP can trigger at most 3 confirmation emails an hour' );
 ok( null === db_offer_confirmation_email( 'not-an-email', 'x', 'fatality.ca', '1', '198.51.100.10' ), 'invalid address: nothing sent' );
+
+// "Follow your offer" link in the confirmation email: our own site only.
+$m2   = array( 'to' => 'v2@example.test', 'subject' => 's', 'body' => '<p>Hi,</p><p>If you have any questions in the meantime, reply.</p>' );
+$with = db_offer_email_with_link( $m2, 'https://beta.example.test/domains/fatality-ca/?c=' . str_repeat( 'a', 32 ) );
+ok( false !== strpos( $with['body'], 'private offer page' ) && false !== strpos( $with['body'], 'beta.example.test/domains/fatality-ca/?c=' ), 'a link on this site is added to the confirmation email' );
+ok( db_offer_email_with_link( $m2, 'https://evil.example/pay?c=1' )['body'] === $m2['body'], 'a link to another site is never added' );
+ok( db_offer_email_with_link( $m2, '' )['body'] === $m2['body'], 'no link, no change' );
+ok( false === strpos( db_offer_email_with_link( $m2, 'https://beta.example.test/x?a="><script>' )['body'], '<script>' ), 'the link is escaped' );
 
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );

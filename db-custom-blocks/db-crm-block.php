@@ -94,7 +94,7 @@ if ( ! function_exists( 'db_crm_allowed_statuses' ) ) {
 
 if ( ! function_exists( 'db_crm_allowed_sources' ) ) {
 	function db_crm_allowed_sources() {
-		return array( 'offer_form', 'direct', 'referral' );
+		return array( 'offer_form', 'direct', 'referral', 'inquiry' );
 	}
 }
 
@@ -190,7 +190,9 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
 			return new WP_Error( 'db_error', __( 'Could not save lead to database.', 'db-blocks' ) );
 		}
 
-		return (int) $wpdb->insert_id;
+		$new_id = (int) $wpdb->insert_id;
+		do_action( 'db_crm_lead_created', $new_id, $data );
+		return $new_id;
 	}
 }
 
@@ -198,7 +200,10 @@ if ( ! function_exists( 'db_crm_create_lead' ) ) {
    3. CF7 INTEGRATION
    ========================================================================== */
 
-add_action( 'wpcf7_mail_sent', function( $cf7 ) {
+// Recorded BEFORE the mail is attempted (wpcf7_before_send_mail, which runs only once the
+// form has validated). It used to run on wpcf7_mail_sent, so whenever the mail server failed
+// the visitor saw an error and the offer was never recorded anywhere.
+add_action( 'wpcf7_before_send_mail', function( $cf7 ) {
 	// Only fire for forms whose title contains "offer" (case-insensitive)
 	$title = strtolower( $cf7->title() );
 	if ( false === strpos( $title, 'offer' ) ) {
@@ -220,6 +225,13 @@ add_action( 'wpcf7_mail_sent', function( $cf7 ) {
 	$domain = function_exists( 'db_offer_value' ) ? db_offer_value( $posted, 'domain' ) : ( $posted['your-domain'] ?? '' );
 	if ( empty( $domain ) && isset( $_GET['d'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$domain = sanitize_text_field( wp_unslash( $_GET['d'] ) );
+	}
+	// The form is posted by a REST call, so ?d= is not there: use the page it was posted from.
+	if ( empty( $domain ) && method_exists( $submission, 'get_meta' ) ) {
+		$container = (int) $submission->get_meta( 'container_post_id' );
+		if ( $container && 'domain' === get_post_type( $container ) ) {
+			$domain = strtolower( trim( wp_strip_all_tags( get_the_title( $container ) ) ) );
+		}
 	}
 
 	$data = array(
@@ -617,6 +629,10 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $lead['source'] ) ) ); ?></td>
 							<td title="<?php echo esc_attr( $lead['created_at'] ); ?>"><?php echo esc_html( db_crm_time_ago( $lead['created_at'] ) ); ?></td>
 							<td class="db-crm-actions">
+								<?php if ( 'offer_form' === $lead['source'] && function_exists( 'db_deal_get_by_lead' ) ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=db-offers&lead=' . (int) $lead['id'] ) ); ?>"><strong>Respond</strong></a>
+									&nbsp;|&nbsp;
+								<?php endif; ?>
 								<a href="#" class="db-crm-quick-edit-btn" data-id="<?php echo esc_attr( $lead['id'] ); ?>" data-status="<?php echo esc_attr( $lead['status'] ); ?>" data-admin-notes="<?php echo esc_attr( $lead['admin_notes'] ); ?>" data-offer="<?php echo esc_attr( $lead['offer_amount'] ); ?>">Edit</a>
 								&nbsp;|&nbsp;
 								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-ajax.php?action=db_crm_delete_lead&id=' . (int) $lead['id'] ), 'db_crm_delete_' . (int) $lead['id'] ) ); ?>" class="db-crm-delete-btn" style="color:#cc0000;">Delete</a>
