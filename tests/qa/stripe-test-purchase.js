@@ -51,6 +51,9 @@ fs.mkdirSync(OUT, { recursive: true });
 	await fr.locator('input[name="cvc"], input[autocomplete="cc-csc"]').first().fill('123');
 	const zip = fr.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
 	if (await zip.count()) { await zip.first().fill('78701'); }
+	// Stripe Link: leave "save my information" off, otherwise it asks for a real mobile number.
+	const saveInfo = fr.getByLabel(/save my information/i);
+	if (await saveInfo.count()) { await saveInfo.first().uncheck({ timeout: 5000 }).catch(() => {}); }
 	const [resp] = await Promise.all([
 		page.waitForResponse((r) => /\/thank-you\//.test(r.url()) && r.request().resourceType() === 'document', { timeout: 60000 }).catch(() => null),
 		page.locator('#co-pay-btn').click(),

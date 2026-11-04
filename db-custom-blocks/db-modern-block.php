@@ -93,3 +93,73 @@ add_action( 'wp_footer', function () {
 </script>
 	<?php
 }, 90 );
+
+// A category photo for the domain page hero (stock images from Unsplash, see assets/hero/CREDITS.txt).
+if ( ! function_exists( 'db_hero_slug' ) ) {
+	function db_hero_slug( $post ) {
+		$order = array( 'technology', 'finance-legal', 'health-fitness', 'travel', 'shopping', 'food-drinks', 'automobile', 'home-living', 'education-non-profit', 'entertainment', 'international', 'business' );
+		$terms = get_the_terms( $post, 'domain_category' );
+		$slugs = is_array( $terms ) ? wp_list_pluck( $terms, 'slug' ) : array();
+		foreach ( $order as $s ) {
+			if ( in_array( $s, $slugs, true ) && file_exists( __DIR__ . '/assets/hero/' . $s . '.webp' ) ) {
+				return $s;
+			}
+		}
+		return 'default';
+	}
+}
+
+add_action( 'wp_head', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) ) {
+		return;
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof WP_Post ) {
+		return;
+	}
+	$url = plugins_url( 'assets/hero/' . db_hero_slug( $post ) . '.webp', __FILE__ );
+	echo '<style id="db-hero-var">:root{--db-hero:url("' . esc_url( $url ) . '")}</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" fetchpriority="high">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+}, 5 );
+
+// Recommended domains: one scrolling row with arrows.
+add_action( 'wp_footer', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) ) {
+		return;
+	}
+	?>
+<script id="db-rec-scroll">
+(function () {
+	'use strict';
+	var list = document.querySelector('.db-rec-grid');
+	if (!list || list.children.length < 2) { return; }
+	var wrap = document.createElement('div');
+	wrap.className = 'db-rec-wrap';
+	list.parentNode.insertBefore(wrap, list);
+	wrap.appendChild(list);
+	function btn(dir, label) {
+		var b = document.createElement('button');
+		b.type = 'button'; b.className = 'db-rec-arrow db-rec-arrow--' + dir; b.setAttribute('aria-label', label);
+		b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (dir === 'prev' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7') + '"/></svg>';
+		b.addEventListener('click', function () {
+			var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			list.scrollBy({ left: (dir === 'prev' ? -1 : 1) * Math.max(240, list.clientWidth * 0.8), behavior: reduce ? 'auto' : 'smooth' });
+		});
+		wrap.appendChild(b);
+		return b;
+	}
+	var prev = btn('prev', 'Previous domains'), next = btn('next', 'More domains');
+	function sync() {
+		var max = list.scrollWidth - list.clientWidth - 2;
+		prev.hidden = list.scrollLeft <= 2;
+		next.hidden = list.scrollLeft >= max;
+		wrap.classList.toggle('has-more', list.scrollLeft < max);
+		wrap.classList.toggle('has-less', list.scrollLeft > 2);
+	}
+	list.addEventListener('scroll', sync, { passive: true });
+	window.addEventListener('resize', sync);
+	sync();
+})();
+</script>
+	<?php
+}, 91 );

@@ -406,6 +406,21 @@ if ( ! function_exists( 'db_deal_email_buyer' ) ) {
 		$note    = '' !== trim( $message ) ? '<p style="font-size:15px;color:#374151;margin:0 0 12px;border-left:3px solid #d1d5db;padding-left:12px;">' . nl2br( esc_html( $message ) ) . '</p>' : '';
 		$expires = $deal->expires_at ? wp_date( 'F j, Y', strtotime( $deal->expires_at . ' UTC' ) ) : '';
 		$url     = db_deal_url( $deal );
+		if ( function_exists( 'db_mail_send' ) ) {
+			$map = array( 'countered' => 'offer_countered', 'accepted' => 'offer_accepted', 'declined' => 'offer_declined' );
+			if ( isset( $map[ $kind ] ) ) {
+				$r = db_mail_send( $map[ $kind ], $deal->buyer_email, array(
+					'domain'    => $deal->domain,
+					'price'     => $money,
+					'expires'   => $expires,
+					'note_html' => '' !== trim( $message ) ? '<p>' . nl2br( esc_html( $message ) ) . '</p>' : '',
+					'offer_url' => $url,
+				), DB_PLAN_SUPPORT_EMAIL );
+				if ( null !== $r ) {
+					return;
+				}
+			}
+		}
 		if ( 'countered' === $kind ) {
 			$html = db_plan_email_shell( 'We have a price for ' . $deal->domain, '<p style="font-size:15px;color:#374151;margin:0 0 12px;">Thank you for your offer on <strong>' . $d . '</strong>. After talking with the owner, we can offer it to you at <strong>' . esc_html( $money ) . '</strong>.</p>' . $note, array_filter( array( 'Domain' => $deal->domain, 'Our price' => $money, 'Open until' => $expires ) ), 'See the offer', $url, 'neutral' );
 			db_plan_send( $deal->buyer_email, 'Our price for ' . $deal->domain . ': ' . $money, $html );
@@ -423,6 +438,22 @@ if ( ! function_exists( 'db_deal_email_admin' ) ) {
 	function db_deal_email_admin( $deal, $what, $message = '' ) {
 		if ( ! function_exists( 'db_plan_notify_admin' ) ) {
 			return;
+		}
+		if ( function_exists( 'db_mail_send' ) ) {
+			$st = db_deal_states()[ $deal->state ] ?? $deal->state;
+			$r  = db_mail_send( 'admin_offer', db_mail_team_to(), array(
+				'what'         => $what,
+				'domain'       => $deal->domain,
+				'buyer'        => $deal->buyer_email,
+				'price'        => db_deal_money( $deal->amount ),
+				'state'        => $st,
+				'message_html' => '' !== trim( $message ) ? '<p>' . nl2br( esc_html( $message ) ) . '</p>' : '',
+				'respond_url'  => admin_url( 'admin.php?page=db-offers&deal=' . (int) $deal->id ),
+				'subject_line' => 'Offer: ' . $deal->domain . ' (' . $st . ')',
+			) );
+			if ( null !== $r ) {
+				return;
+			}
 		}
 		$lines = array(
 			$what,
