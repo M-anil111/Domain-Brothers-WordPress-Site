@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.58.0
+ * Version:     3.58.4
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.58.0' );
+define( 'DB_BLOCKS_LOADED', '3.58.4' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -286,14 +286,39 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 	function db_hp_hero_html() {
 		$browse_href = DB_HERO_BROWSE_URL ? esc_url( DB_HERO_BROWSE_URL ) : '#db-below-hero';
 		$offer_href  = esc_url( home_url( DB_HERO_OFFER_URL ) );
-		$trust_items = array( 'Escrow-Protected Transfers', 'Flexible Payment Plans', '27+ Years Combined Experience', '500+ Domains Sold' );
-		$trust_html  = '';
-		foreach ( $trust_items as $i => $item ) {
-			if ( $i > 0 ) {
-				$trust_html .= '<span class="db-hp-tdot" aria-hidden="true"></span>';
-			}
-			$trust_html .= '<span class="db-hp-titem">' . esc_html( $item ) . '</span>';
+		// Trust points, shown as a slow scrolling row of pills. Each has a small icon.
+		$icons = array(
+			'shield'   => '<path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/>',
+			'card'     => '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>',
+			'award'    => '<circle cx="12" cy="9" r="5"/><path d="M9 13.5L8 21l4-2 4 2-1-7.5"/>',
+			'globe'    => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+			'clock'    => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+			'lock'     => '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+			'calendar' => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+			'check'    => '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+		);
+		$trust_items = array(
+			array( 'shield', 'Escrow-Protected Transfers' ),
+			array( 'card', 'Flexible Payment Plans' ),
+			array( 'award', '27+ Years Combined Experience' ),
+			array( 'globe', '5,000+ Domains Sold' ),
+			array( 'clock', 'Domains Transferred in Under 2 Hours' ),
+			array( 'lock', 'Buyer Protection Program' ),
+			array( 'calendar', 'Pay Over 3 to 12 Months' ),
+			array( 'check', '100% Money-Back Guarantee' ),
+		);
+		$pill = static function ( $item, $hidden ) use ( $icons ) {
+			return '<li class="db-hp-titem"' . ( $hidden ? ' aria-hidden="true"' : '' ) . '><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $icons[ $item[0] ] . '</svg><span>' . esc_html( $item[1] ) . '</span></li>';
+		};
+		$trust_html = '<ul class="db-hp-track">';
+		foreach ( $trust_items as $item ) {
+			$trust_html .= $pill( $item, false );
 		}
+		// A second copy makes the loop seamless; screen readers skip it.
+		foreach ( $trust_items as $item ) {
+			$trust_html .= $pill( $item, true );
+		}
+		$trust_html .= '</ul>';
 		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : db_brand_logo_url();
 
 		// Burger menu links (no WP nav menu is registered on this theme).
@@ -354,7 +379,8 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 		}
 		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
-		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
+		$html .= '<div class="db-hp-trust db-hp-marquee" role="group" aria-label="Why buyers choose Domain Brothers"><div class="db-hp-viewport">' . $trust_html . '</div><button type="button" class="db-hp-pause" aria-pressed="false" aria-label="Pause scrolling"><span aria-hidden="true">&#10074;&#10074;</span></button></div>';
+		$html .= '<script>(function(){var b=document.querySelector(".db-hp-pause");if(!b){return;}b.addEventListener("click",function(){var m=b.closest(".db-hp-marquee"),p=m.classList.toggle("is-paused");b.setAttribute("aria-pressed",p?"true":"false");b.setAttribute("aria-label",p?"Resume scrolling":"Pause scrolling");b.firstChild.innerHTML=p?"&#9654;":"&#10074;&#10074;";});})();</script>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
 		return $html;

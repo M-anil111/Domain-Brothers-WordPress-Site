@@ -65,18 +65,20 @@ body.db-ui-active .search-form .search-submit {
 body.db-ui-active .search-form .search-submit:hover { background: var(--m-btn-hover) !important; }
 
 /* ---- 4. Buttons and form controls -------------------------------------- */
-body.db-ui-active :is(.db-hp-btn-primary, .db-hp-cta, .badge-offer.badge.ad-cart, .db-act-buy .badge, .db-act-offer .badge, button.db-stripe-btn, input[type=submit].wpcf7-submit, .small-btn button, #buy_now button) {
+body.db-ui-active :is(.db-hp-btn-primary, .db-hp-cta, button.db-stripe-btn, input[type=submit].wpcf7-submit) {
 	background: var(--m-btn) !important; color: #fff !important; border: 1.5px solid var(--m-btn) !important; border-radius: var(--m-pill) !important;
 	font-weight: 700; letter-spacing: 0; text-transform: none; box-shadow: none !important; text-decoration: none !important;
 }
-body.db-ui-active :is(.db-hp-btn-primary, .badge-offer.badge.ad-cart, .db-act-buy .badge, .db-act-offer .badge, button.db-stripe-btn, input[type=submit].wpcf7-submit, #buy_now button):hover {
-	background: var(--m-btn-hover) !important; border-color: var(--m-btn-hover) !important; color: #fff !important;
-}
-/* "Make an offer" is the quieter of the two actions */
-body.db-ui-active :is(.db-act-offer .badge, #make_offer .small-btn, .badge-offer.badge:not(.ad-cart)) {
-	background: #fff !important; color: var(--m-ink) !important; border: 1.5px solid var(--m-ink) !important; border-radius: var(--m-pill) !important; font-weight: 700;
-}
-body.db-ui-active :is(.db-act-offer .badge, #make_offer .small-btn):hover { background: var(--m-soft) !important; }
+body.db-ui-active :is(.db-hp-btn-primary, button.db-stripe-btn, input[type=submit].wpcf7-submit):hover { background: var(--m-btn-hover) !important; border-color: var(--m-btn-hover) !important; color: #fff !important; }
+/* On the domain page the theme's #buy_now button is the "Make an Offer" button: same blue-on-green as the list buttons */
+html body.db-ui-active.db-ui-active #buy_now button { background: #d9f6e4 !important; color: #0b2f73 !important; border: 1.5px solid #2f9e5e !important; border-radius: 999px !important; font-weight: 700; box-shadow: none !important; }
+html body.db-ui-active.db-ui-active #buy_now button:hover { background: #c4f0d6 !important; border-color: #238a4f !important; }
+html body.db-ui-active.db-ui-active #buy_now button .small-btn { background: transparent !important; color: #0b2f73 !important; border: 0 !important; }
+/* "Make an offer" on the domain page: the same blue-on-green as the list buttons */
+html body.db-ui-active.db-ui-active #make_offer .small-btn, html body.db-ui-active.db-ui-active #make_offer .small-btn * { background: #d9f6e4 !important; color: #0b2f73 !important; }
+html body.db-ui-active.db-ui-active #make_offer .small-btn { border: 1.5px solid #2f9e5e !important; border-radius: 999px !important; font-weight: 700; }
+html body.db-ui-active.db-ui-active #make_offer .small-btn * { background: transparent !important; border: 0 !important; }
+html body.db-ui-active.db-ui-active #make_offer .small-btn:hover { background: #c4f0d6 !important; border-color: #238a4f !important; }
 body.db-ui-active :is(input[type=text], input[type=email], input[type=tel], input[type=search], input[type=number], select, textarea) {
 	border: 1.5px solid var(--m-line-2); border-radius: var(--m-radius-sm); background: #fff; color: var(--m-ink); box-shadow: none;
 }
@@ -315,3 +317,72 @@ body.db-ui-active .domain_form_info .offer_text_info .offer_text { padding: 0 !i
 body.db-ui-active .banner_bg #main.domain-detail { padding-top: 8px !important; margin-top: 0 !important; }
 body.db-ui-active .domain_form_info .banner_contant, body.db-ui-active .domain_form_info .text_normal { padding-top: 0 !important; margin-top: 0 !important; }
 body.db-ui-active .domain_form_info > .row { padding-top: 8px; }
+
+/* ---- 14. Trust pills: a slow scrolling row ------------------------------- */
+body.db-ui-active .db-hp-ctas { margin: 0 0 18px !important; }
+body.home.db-ui-active .db-hp-inner { padding-bottom: 28px !important; }
+body.db-ui-active .db-hp-hero { padding-bottom: 0 !important; }
+body.db-ui-active .db-hp-marquee { display: flex !important; flex-wrap: nowrap !important; align-items: center; gap: 10px; width: 100%; max-width: 1140px; margin: 0 auto !important; padding: 6px 0 10px; }
+body.db-ui-active .db-hp-viewport {
+	flex: 1 1 auto; min-width: 0; overflow: hidden;
+	-webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+body.db-ui-active .db-hp-track { display: flex; gap: 12px; width: max-content; margin: 0; padding: 0 6px; list-style: none; animation: db-trust-scroll 46s linear infinite; will-change: transform; }
+body.db-ui-active .db-hp-marquee:hover .db-hp-track, body.db-ui-active .db-hp-marquee:focus-within .db-hp-track, body.db-ui-active .db-hp-marquee.is-paused .db-hp-track { animation-play-state: paused; }
+@keyframes db-trust-scroll { to { transform: translateX(calc(-50% - 6px)); } }
+body.db-ui-active .db-hp-titem {
+	display: inline-flex; align-items: center; gap: 10px; flex: 0 0 auto; padding: 10px 18px 10px 12px; border: 1px solid var(--m-line); border-radius: var(--m-pill);
+	background: #fff; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 6px 16px rgba(17,24,39,.06); font-weight: 700; font-size: 14px; white-space: nowrap; color: var(--m-ink) !important;
+}
+body.db-ui-active .db-hp-titem:nth-child(3n+2) { background: var(--m-accent-lt); border-color: #cfe9e7; }
+body.db-ui-active .db-hp-titem:nth-child(3n) { background: var(--m-soft); }
+body.db-ui-active .db-hp-titem::before { content: none !important; }
+body.db-ui-active .db-hp-titem svg { width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: var(--m-ink); fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; box-sizing: border-box; }
+body.db-ui-active .db-hp-titem span { color: var(--m-ink) !important; }
+.db-hp-pause {
+	flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--m-line-2); border-radius: 50%; background: #fff; color: var(--m-ink);
+	font-size: 10px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--m-shadow); z-index: 2;
+}
+@media (max-width: 600px) {
+	body.db-ui-active .db-hp-track { animation-duration: 38s; }
+	body.db-ui-active .db-hp-titem { font-size: 13px; padding: 8px 14px 8px 10px; }
+	.db-hp-pause { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	body.db-ui-active .db-hp-viewport { -webkit-mask-image: none; mask-image: none; overflow: visible; }
+	body.db-ui-active .db-hp-track { animation: none !important; width: auto; flex-wrap: wrap; justify-content: center; }
+	body.db-ui-active .db-hp-track .db-hp-titem[aria-hidden="true"] { display: none; }
+	.db-hp-pause { display: none; }
+}
+
+/* ---- 15. Buy Now and Make an Offer: one button shape, two colours -------- */
+/* The link is the button; the badge inside it is just its label (no second box).
+   Specificity is deliberately high: the older layers style these with !important. */
+html body.db-ui-active.db-ui-active a.db-act-buy.db-act-buy, html body.db-ui-active.db-ui-active a.db-act-offer.db-act-offer {
+	display: inline-flex; align-items: center; justify-content: center; min-width: 132px; min-height: 46px; padding: 0 22px; border-radius: 999px !important;
+	font-weight: 700; font-size: 15px; text-decoration: none !important; box-shadow: none !important; transition: background .15s, border-color .15s; box-sizing: border-box; margin-left: 0;
+}
+html body.db-ui-active.db-ui-active a.db-act-buy.db-act-buy { background: #111827 !important; border: 1.5px solid #111827 !important; color: #fff !important; }
+html body.db-ui-active.db-ui-active a.db-act-buy.db-act-buy:hover { background: #2b3445 !important; border-color: #2b3445 !important; }
+html body.db-ui-active.db-ui-active a.db-act-offer.db-act-offer { background: #d9f6e4 !important; border: 1.5px solid #2f9e5e !important; color: #0b2f73 !important; }
+html body.db-ui-active.db-ui-active a.db-act-offer.db-act-offer:hover { background: #c4f0d6 !important; border-color: #238a4f !important; }
+html body.db-ui-active.db-ui-active a.db-act-buy.db-act-buy .badge, html body.db-ui-active.db-ui-active a.db-act-offer.db-act-offer .badge {
+	background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; min-width: 0 !important; margin: 0 !important; color: inherit !important; font: inherit !important; letter-spacing: 0; display: inline; line-height: 1.2;
+}
+/* The same blue-on-green button where the label stands alone (home tables, domain rows) */
+html body.db-ui-active.db-ui-active .badge-offer.badge:not(.ad-cart):not(.db-x) {
+	display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 20px !important; border-radius: 999px !important;
+	background: #d9f6e4 !important; border: 1.5px solid #2f9e5e !important; color: #0b2f73 !important; font-weight: 700; box-shadow: none !important;
+}
+html body.db-ui-active.db-ui-active a.db-act-offer .badge-offer.badge:not(.ad-cart):not(.db-x) { background: transparent !important; border: 0 !important; min-height: 0; padding: 0 !important; }
+html body.db-ui-active a:hover > .badge-offer.badge:not(.ad-cart) { background: #c4f0d6 !important; border-color: #238a4f !important; }
+@media (max-width: 640px) { html.db-view-list body.db-ui-active .db-domain-card a.db-act-buy, html.db-view-list body.db-ui-active .db-domain-card a.db-act-offer { min-width: 116px; min-height: 44px; } }
+
+/* ---- 16. Hero search button: a true pill that sits inside the bar --------- */
+html body.db-ui-active .db-hp-search { padding: 6px; align-items: center; }
+html body.db-ui-active .db-hp-search button[type=submit] {
+	border-radius: 999px !important; background: #111827 !important; color: #fff !important; border: 0 !important; min-height: 52px; height: 52px; padding: 0 30px; margin: 0; box-shadow: none !important; font-weight: 700; font-size: 16px; line-height: 1;
+}
+html body.db-ui-active .db-hp-search button[type=submit]:hover { background: #2b3445 !important; }
+html body.db-ui-active .db-hp-search input[type=search] { height: 52px; border-radius: 999px !important; }
+@media (max-width: 600px) { html body.db-ui-active .db-hp-search button[type=submit] { width: 100%; border-radius: 14px !important; } }
