@@ -122,6 +122,9 @@ const authCtx = (browser, extra = {}) => browser.newContext({ ...(process.env.BE
 	await fr.locator('input[name="cvc"], input[autocomplete="cc-csc"]').first().fill('123');
 	const zip = fr.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
 	if (await zip.count()) { await zip.first().fill('78701'); }
+	// Stripe Link: leave "save my information" off, otherwise it asks for a real mobile number.
+	const saveInfo = fr.getByLabel(/save my information/i);
+	if (await saveInfo.count()) { await saveInfo.first().uncheck({ timeout: 5000 }).catch(() => {}); }
 	await buyer.locator('#co-pay-btn').click();
 	await buyer.waitForURL(/thank-you/, { timeout: 90000 }).catch(() => {});
 	check('test payment completes and reaches the thank-you page', /thank-you/.test(buyer.url()));
