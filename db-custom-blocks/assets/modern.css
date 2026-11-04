@@ -806,7 +806,7 @@ html body.db-ui-active.single-domain .banner_contant .text_normal h2 .domain_nam
 /* ===== 28. Priced page: aligned buttons, wishlist row; details grid with status panel; full-width terms; ad slots ===== */
 .db-pr-card > a.db-pr-btn { margin-top: auto; }
 .db-pr-card .db-pr-offer { margin-top: auto; }
-.db-pr-card .db-pr-fine { min-height: 38px; }
+.db-pr-card .db-pr-fine { min-height: 44px; box-sizing: border-box; }
 .db-pr-card--offer .db-pr-offerbtn { margin: 0; }
 /* payment badges on the left, wishlist on the right, one row */
 html body.db-ui-active .db-pr-pay { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 28px; text-align: left; }
@@ -855,3 +855,5 @@ html body.db-ui-active .db-dd { width: 100%; }
 .db-ad-label { display: block; margin-bottom: 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #9ca3af; }
 .db-ad--empty { display: flex; align-items: center; justify-content: center; border: 1.5px dashed #d1d5db; border-radius: 16px; background: #f9fafb; color: #6b7280; font-size: 14px; min-height: 110px; width: calc(100% - 2 * var(--m-gutter, 20px)); }
 .db-dd > .db-ad--empty { width: 100%; }
+html body.db-ui-active.db-ui-active .db-dd-side a.db-dd-side-btn { display: flex !important; width: 100% !important; box-sizing: border-box; background: #fff !important; color: #12356f !important; border: 1.5px solid #fff !important; }
+html body.db-ui-active.db-ui-active .db-dd-side a.db-dd-side-btn--ghost { background: transparent !important; color: #fff !important; }
