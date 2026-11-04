@@ -852,6 +852,131 @@ if ( ! function_exists( 'db_deal_admin_page' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_deal_similar_sold' ) ) {
+	/**
+	 * Sold domains that resemble $name, best match first. Similar = same
+	 * extension, a name of about the same length, and shared categories.
+	 *
+	 * @return array<int,array{name:string,price:float,date:int,via:string,score:int}>
+	 */
+	function db_deal_similar_sold( $name, $post = null, $limit = 8 ) {
+		if ( ! function_exists( 'db_sold_rows' ) ) {
+			return array();
+		}
+		$name = strtolower( trim( (string) $name ) );
+		$dot  = strrpos( $name, '.' );
+		$tld  = false === $dot ? '' : substr( $name, $dot );
+		$len  = false === $dot ? strlen( $name ) : $dot;
+		$cats = array();
+		if ( $post ) {
+			$cats = array_map( 'intval', (array) wp_get_object_terms( $post->ID, 'domain_category', array( 'fields' => 'ids' ) ) );
+		}
+		$out = array();
+		foreach ( db_sold_rows( '' ) as $r ) {
+			if ( $r['name'] === $name || $r['info']['price'] <= 0 ) {
+				continue;
+			}
+			$d     = strrpos( $r['name'], '.' );
+			$rtld  = false === $d ? '' : substr( $r['name'], $d );
+			$rlen  = false === $d ? strlen( $r['name'] ) : $d;
+			$score = 0;
+			$score += ( '' !== $tld && $rtld === $tld ) ? 2 : 0;
+			$diff   = abs( $rlen - $len );
+			$score += $diff <= 2 ? 2 : ( $diff <= 4 ? 1 : 0 );
+			if ( $cats && ! empty( $r['post'] ) ) {
+				$theirs = array_map( 'intval', (array) wp_get_object_terms( $r['post']->ID, 'domain_category', array( 'fields' => 'ids' ) ) );
+				$score += array_intersect( $cats, $theirs ) ? 2 : 0;
+			}
+			if ( $score >= 3 ) {
+				$out[] = array( 'name' => $r['name'], 'price' => (float) $r['info']['price'], 'date' => (int) $r['info']['date'], 'via' => (string) $r['info']['via'], 'score' => $score );
+			}
+		}
+		usort( $out, static function ( $a, $b ) {
+			return ( $b['score'] <=> $a['score'] ) ?: ( $b['date'] <=> $a['date'] );
+		} );
+		return array_slice( $out, 0, (int) $limit );
+	}
+}
+
+if ( ! function_exists( 'db_deal_intel_html' ) ) {
+	/** What the team should know before answering: traffic, offer history, comparable sales. */
+	function db_deal_intel_html( $deal ) {
+		global $wpdb;
+		$name = strtolower( $deal->domain );
+		$post = function_exists( 'db_listing_post_for_domain' ) ? db_listing_post_for_domain( $name ) : null;
+		$h    = ( $post && function_exists( 'db_hits_for_domain' ) ) ? db_hits_for_domain( $post->ID ) : null;
+		$html = '<div class="dbo-card dbo-intel"><h2>About ' . esc_html( $name ) . '</h2>';
+
+		// Traffic
+		$html .= '<h3>Visits <span class="dbs-sub">(hits / unique visitors)</span></h3>';
+		if ( $h ) {
+			$cells = array( 'Today' => 'today', 'Last 7 days' => 'd7', 'This month' => 'month', 'This year' => 'year', 'All time' => 'all' );
+			$html .= '<table class="widefat striped"><thead><tr>';
+			foreach ( array_keys( $cells ) as $label ) {
+				$html .= '<th>' . esc_html( $label ) . '</th>';
+			}
+			$html .= '</tr></thead><tbody><tr>';
+			foreach ( $cells as $k ) {
+				$html .= '<td>' . db_hits_cell( $h->{$k . '_h'}, $h->{$k . '_u'} ) . '</td>';
+			}
+			$html .= '</tr></tbody></table><p><a href="' . esc_url( admin_url( 'admin.php?page=db-hits&q=' . rawurlencode( $name ) ) ) . '">Pick a date range</a></p>';
+		} else {
+			$html .= '<p class="dbs-sub">No visit data for this domain yet (it may not be published).</p>';
+		}
+
+		// Offers on this domain, from every buyer
+		$dt = db_deal_table();
+		$et = db_deal_table( 'events' );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$ev = (array) $wpdb->get_results( $wpdb->prepare(
+			"SELECT e.created_at, e.actor, e.action, e.amount, d.id AS deal, d.buyer_email, d.buyer_name FROM {$et} e JOIN {$dt} d ON d.id = e.deal_id WHERE d.domain = %s AND e.action IN ('offer','counter','accept','decline','paid') ORDER BY e.id DESC LIMIT 40",
+			$name
+		) );
+		// phpcs:enable
+		$buyer_amts = array();
+		$buyers     = array();
+		foreach ( $ev as $e ) {
+			if ( 'buyer' === $e->actor && 'offer' === $e->action && null !== $e->amount ) {
+				$buyer_amts[]                    = (float) $e->amount;
+				$buyers[ strtolower( $e->buyer_email ) ] = true;
+			}
+		}
+		$html .= '<h3>Offers on this domain</h3>';
+		if ( $buyer_amts ) {
+			$html .= sprintf( '<p><strong>%d</strong> offer%s from <strong>%d</strong> buyer%s. Highest %s, lowest %s, average %s.</p>', count( $buyer_amts ), 1 === count( $buyer_amts ) ? '' : 's', count( $buyers ), 1 === count( $buyers ) ? '' : 's', esc_html( db_deal_money( max( $buyer_amts ) ) ), esc_html( db_deal_money( min( $buyer_amts ) ) ), esc_html( db_deal_money( array_sum( $buyer_amts ) / count( $buyer_amts ) ) ) );
+			$labels = array( 'offer' => 'Buyer offered', 'counter' => 'We proposed', 'accept' => 'Accepted', 'decline' => 'Declined', 'paid' => 'Paid' );
+			$html  .= '<table class="widefat striped"><thead><tr><th>When</th><th>Buyer</th><th>What happened</th><th>Amount</th></tr></thead><tbody>';
+			foreach ( $ev as $e ) {
+				$who   = ( 'seller' === $e->actor ? 'Us' : ( 'system' === $e->actor ? 'Payment' : ( $e->buyer_name ?: $e->buyer_email ) ) );
+				$what  = $labels[ $e->action ] ?? $e->action;
+				if ( in_array( $e->action, array( 'accept', 'decline' ), true ) ) {
+					$what = ( 'seller' === $e->actor ? 'We ' : 'Buyer ' ) . strtolower( $what );
+				}
+				$html .= '<tr><td>' . esc_html( wp_date( 'M j, Y', strtotime( $e->created_at . ' UTC' ) ) ) . '</td><td>' . esc_html( $e->buyer_email ) . ( (int) $e->deal === (int) $deal->id ? ' <span class="dbs-sub">(this offer)</span>' : '' ) . '</td><td>' . esc_html( $what ) . '</td><td>' . ( null !== $e->amount ? esc_html( db_deal_money( $e->amount ) ) : '-' ) . '</td></tr>';
+			}
+			$html .= '</tbody></table>';
+		} else {
+			$html .= '<p class="dbs-sub">No other offers recorded.</p>';
+		}
+
+		// Comparable sales
+		$sim   = db_deal_similar_sold( $name, $post );
+		$html .= '<h3>Similar domains sold</h3>';
+		if ( $sim ) {
+			$prices = array_column( $sim, 'price' );
+			$html  .= sprintf( '<p>%d similar sale%s: average %s, from %s to %s.</p>', count( $sim ), 1 === count( $sim ) ? '' : 's', esc_html( db_deal_money( array_sum( $prices ) / count( $prices ) ) ), esc_html( db_deal_money( min( $prices ) ) ), esc_html( db_deal_money( max( $prices ) ) ) );
+			$html  .= '<table class="widefat striped"><thead><tr><th>Domain</th><th>Sold for</th><th>Date</th><th>How</th></tr></thead><tbody>';
+			foreach ( $sim as $r ) {
+				$html .= '<tr><td>' . esc_html( $r['name'] ) . '</td><td>' . esc_html( db_deal_money( $r['price'] ) ) . '</td><td>' . ( $r['date'] ? esc_html( wp_date( 'M j, Y', $r['date'] ) ) : '-' ) . '</td><td>' . esc_html( function_exists( 'db_sold_via_label' ) ? db_sold_via_label( $r['via'] ) : $r['via'] ) . '</td></tr>';
+			}
+			$html .= '</tbody></table><p class="dbs-sub">Similar means the same extension, a name of about the same length, or the same category. Only sales with a recorded price are shown; see Sold domains to add earlier prices.</p>';
+		} else {
+			$html .= '<p class="dbs-sub">No similar sold domains with a recorded price yet.</p>';
+		}
+		return $html . '</div>';
+	}
+}
+
 if ( ! function_exists( 'db_deal_admin_detail' ) ) {
 	function db_deal_admin_detail( $deal ) {
 		$act    = admin_url( 'admin-post.php' );
@@ -866,7 +991,7 @@ if ( ! function_exists( 'db_deal_admin_detail' ) ) {
 		if ( $msg ) {
 			echo '<div class="notice notice-' . ( 0 === strpos( $msg, 'Done' ) ? 'success' : 'error' ) . ' is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
 		}
-		echo '<style>.dbo-card{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:16px 20px;margin:14px 0;max-width:760px}.dbo-card h2{margin-top:0}.dbo-big{font-size:28px;font-weight:700}.dbo-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef2f7}</style>';
+		echo '<style>.dbo-card{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:16px 20px;margin:14px 0;max-width:760px}.dbo-card h2{margin-top:0}.dbo-big{font-size:28px;font-weight:700}.dbo-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef2f7}.dbo-intel h3{margin:18px 0 6px}.dbo-intel table{margin-bottom:6px}.dbh-u,.dbs-sub{color:#646970}.dbs-sub{font-size:12px}</style>';
 		echo '<div class="dbo-card"><div class="dbo-big">' . esc_html( (float) $deal->amount > 0 ? db_deal_money( $deal->amount ) : 'No amount yet' ) . '</div>';
 		echo '<p><span class="dbo-pill">' . esc_html( db_deal_states()[ $deal->state ] ?? $deal->state ) . '</span> &nbsp; ' . ( 'seller' === $deal->proposer ? 'Our price' : "Buyer's offer" ) . '</p>';
 		echo '<p>Buyer: <a href="mailto:' . esc_attr( $deal->buyer_email ) . '">' . esc_html( trim( $deal->buyer_name . ' ' . $deal->buyer_email ) ) . '</a><br>Buyer\'s page: <a href="' . esc_url( db_deal_url( $deal ) ) . '" target="_blank" rel="noopener">open</a> (private link, sent to them by email)</p></div>';
@@ -885,6 +1010,8 @@ if ( ! function_exists( 'db_deal_admin_detail' ) ) {
 		if ( ! array_filter( $can ) ) {
 			echo '<div class="dbo-card"><p>' . ( 'accepted' === $deal->state ? 'A price is agreed. Waiting for the buyer to pay.' : ( 'paid' === $deal->state ? 'Paid. See Domain Brothers > Sales.' : 'Nothing to do right now.' ) ) . '</p></div>';
 		}
+
+		echo db_deal_intel_html( $deal ); // phpcs:ignore WordPress.Security.EscapeOutput
 
 		echo '<div class="dbo-card"><h2>History</h2><table class="widefat striped"><tbody>';
 		foreach ( $events as $e ) {
