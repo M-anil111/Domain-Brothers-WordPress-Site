@@ -189,7 +189,7 @@ add_action( 'template_redirect', function () {
 	// Built before the buffer callback runs (WP_Query/ob use inside an
 	// output-buffer handler is unsafe).
 	$GLOBALS['db_dd_post'] = $post;
-	$GLOBALS['db_dd_html'] = db_dd_html( $post );
+	$GLOBALS['db_dd_html'] = apply_filters( 'db_dd_html', db_dd_html( $post ), $post );
 	ob_start( 'db_dd_inject' );
 }, 28 );
 

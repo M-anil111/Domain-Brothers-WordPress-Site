@@ -386,3 +386,75 @@ html body.db-ui-active .db-hp-search button[type=submit] {
 html body.db-ui-active .db-hp-search button[type=submit]:hover { background: #2b3445 !important; }
 html body.db-ui-active .db-hp-search input[type=search] { height: 52px; border-radius: 999px !important; }
 @media (max-width: 600px) { html body.db-ui-active .db-hp-search button[type=submit] { width: 100%; border-radius: 14px !important; } }
+
+/* ---- 17. Domain Statistics ------------------------------------------------ */
+.db-stats { background: #fff; border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 24px 28px 28px; margin: 28px 0; }
+.db-stats h2 { margin: 0 0 14px; font-size: clamp(22px, 3vw, 28px); font-weight: 600; color: var(--m-ink); letter-spacing: -.02em; }
+.db-stats-list { display: flex; flex-wrap: wrap; gap: 18px clamp(28px, 6vw, 72px); margin: 0; padding: 0; list-style: none; }
+.db-stats-list li { display: flex; flex-direction: column; align-items: center; min-width: 110px; text-align: center; }
+.db-stats-list strong { font-size: clamp(40px, 6vw, 58px); font-weight: 500; line-height: 1.05; letter-spacing: -.03em; color: #0b5fa5; font-variant-numeric: tabular-nums; }
+.db-stats-list span { margin-top: 4px; font-size: 16px; color: var(--m-muted); }
+
+/* ---- 18. Home: buyers and sellers, how it works ---------------------------- */
+.db-aud, .db-how { max-width: var(--m-max); margin: 0 auto; padding: 0 var(--m-gutter); box-sizing: border-box; clear: both; }
+.db-aud { padding-top: clamp(32px, 5vw, 64px); }
+.db-aud-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 5vw, 64px); background: #fff; border: 1px solid var(--m-line); border-radius: 16px; padding: clamp(22px, 4vw, 44px); }
+.db-aud-col h3 { margin: 0 0 18px; font-size: clamp(24px, 3vw, 32px); font-weight: 600; letter-spacing: -.025em; color: var(--m-ink); }
+.db-aud-list { margin: 0 0 24px; padding: 0; list-style: none; display: grid; gap: 14px; }
+.db-aud-list li { display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start; font-size: 17px; line-height: 1.45; color: var(--m-text); }
+.db-aud-list svg { width: 28px; height: 28px; }
+.db-aud-list svg circle { fill: #0b5fa5; }
+.db-aud-list svg path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+html body.db-ui-active a.db-aud-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 26px; border-radius: 999px; background: #111827; color: #fff !important; font-weight: 700; text-decoration: none !important; }
+html body.db-ui-active a.db-aud-btn:hover { background: #2b3445; }
+.db-how { padding-top: clamp(32px, 5vw, 56px); padding-bottom: clamp(28px, 5vw, 56px); }
+.db-how h2 { text-align: center; margin: 0 0 28px; font-size: clamp(28px, 4vw, 40px); font-weight: 700; letter-spacing: -.03em; color: var(--m-ink); }
+.db-how-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 4vw, 48px); }
+.db-how-step { text-align: center; }
+.db-how-icon { display: inline-flex; align-items: center; justify-content: center; width: 96px; height: 96px; margin-bottom: 14px; border-radius: 50%; background: var(--m-soft); border: 1px solid var(--m-line); }
+.db-how-icon svg { width: 48px; height: 48px; fill: none; stroke: var(--m-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.db-how-icon svg circle:first-child, .db-how-icon svg rect:first-child, .db-how-icon svg path:first-child { stroke: var(--m-ink); }
+.db-how-icon svg path:last-child { stroke: #2b8be0; }
+.db-how-step h3 { margin: 0 0 8px; font-size: 24px; font-weight: 600; color: var(--m-ink); }
+.db-how-step p { margin: 0 auto; max-width: 360px; font-size: 16px; line-height: 1.6; color: var(--m-text); }
+@media (max-width: 860px) { .db-aud-grid { grid-template-columns: 1fr; } .db-how-grid { grid-template-columns: 1fr; } }
+
+/* ---- 19. Wishlist ---------------------------------------------------------- */
+.db-wl-wrap { margin-top: 14px; text-align: center; }
+.db-wl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 46px; border: 1.5px solid var(--m-ink); border-radius: 999px; background: #fff; color: var(--m-ink); font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; transition: background .15s; }
+.db-wl-btn:hover { background: var(--m-soft); }
+.db-wl-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.db-wl-btn.is-on { background: #fdecef; border-color: #d1365b; color: #a3173d; }
+.db-wl-btn.is-on svg { fill: #d1365b; stroke: #d1365b; }
+.db-wl-note { margin: 8px 0 0; font-size: 13px; color: var(--m-muted); }
+.db-wl-dialog { width: min(440px, calc(100vw - 32px)); border: 0; border-radius: 18px; padding: 28px; box-shadow: 0 24px 70px rgba(17,24,39,.35); color: var(--m-text); }
+.db-wl-dialog::backdrop { background: rgba(17,24,39,.55); }
+.db-wl-dialog h2 { margin: 0 0 6px; font-size: 24px; color: var(--m-ink); }
+.db-wl-lead { margin: 0 0 16px; color: var(--m-muted); }
+.db-wl-dialog label { display: block; font-weight: 700; font-size: 14px; color: var(--m-ink); }
+.db-wl-dialog input { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 14px; min-height: 50px; padding: 0 14px; font-size: 18px; border: 1.5px solid var(--m-line-2); border-radius: var(--m-radius-sm); }
+.db-wl-dialog input[name=code] { letter-spacing: .4em; text-align: center; font-size: 24px; font-variant-numeric: tabular-nums; }
+.db-wl-x { position: absolute; top: 10px; right: 12px; margin: 0; }
+.db-wl-x button { border: 0; background: transparent; font-size: 28px; line-height: 1; cursor: pointer; color: var(--m-muted); width: 40px; height: 40px; }
+html body.db-ui-active .db-wl-primary, html body.db-ui-active a.db-wl-primary { display: inline-flex; align-items: center; justify-content: center; width: auto; min-height: 48px; padding: 0 26px; border: 0; border-radius: 999px; background: #111827; color: #fff !important; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none !important; }
+html body.db-ui-active .db-wl-dialog .db-wl-primary { width: 100%; }
+html body.db-ui-active .db-wl-primary:hover { background: #2b3445; }
+.db-wl-link { border: 0; background: none; padding: 8px 0; color: var(--m-accent); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.db-wl-msg { min-height: 22px; margin: 12px 0 0; font-size: 14px; color: var(--m-muted); }
+.db-wl-msg.is-bad { color: #b42318; }
+.db-wl-toast { position: fixed; left: 50%; bottom: 22px; z-index: 99999; transform: translate(-50%, 20px); opacity: 0; max-width: calc(100vw - 32px); padding: 14px 20px; border-radius: 999px; background: #111827; color: #fff; font-weight: 600; box-shadow: 0 10px 30px rgba(17,24,39,.35); transition: opacity .25s, transform .25s; }
+.db-wl-toast.is-in { opacity: 1; transform: translate(-50%, 0); }
+.db-wl-toast a { color: #9be8c4 !important; margin-left: 8px; }
+.db-wl-page { max-width: 860px; margin: 0 auto; padding: 0 var(--m-gutter) 48px; }
+.db-wl-who { color: var(--m-muted); }
+.db-wl-card { border: 1px solid var(--m-line); border-radius: var(--m-radius); padding: 24px 28px; background: #fff; }
+.db-wl-card h2 { margin-top: 0; }
+.db-wl-list { margin: 8px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--m-line); }
+.db-wl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 12px 18px; align-items: center; padding: 16px 4px; border-bottom: 1px solid var(--m-line); }
+html body.db-ui-active .db-wl-name { font-size: 20px; font-weight: 800; color: var(--m-ink) !important; text-decoration: none; word-break: break-word; }
+.db-wl-price { font-weight: 800; font-size: 18px; color: var(--m-ink); }
+.db-wl-price.is-off { color: var(--m-muted); font-weight: 600; }
+html body.db-ui-active a.db-wl-view { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 20px; border-radius: 999px; background: #111827; color: #fff !important; font-weight: 700; text-decoration: none !important; }
+html body.db-ui-active a.db-wl-view.is-offer { background: #d9f6e4; border: 1.5px solid #2f9e5e; color: #0b2f73 !important; }
+.db-wl-remove { border: 0; background: none; color: var(--m-muted); text-decoration: underline; cursor: pointer; font: inherit; padding: 8px; }
+@media (max-width: 640px) { .db-wl-row { grid-template-columns: 1fr auto; } .db-wl-name { grid-column: 1 / -1; } }

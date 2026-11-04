@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.58.4
+ * Version:     3.59.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.58.4' );
+define( 'DB_BLOCKS_LOADED', '3.59.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -411,11 +411,19 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 		if ( is_admin() || ! is_front_page() || is_feed() || is_robots() ) {
 			return;
 		}
-		ob_start( function ( $html ) {
+		// Built here, not inside the buffer handler.
+		$sections = (string) apply_filters( 'db_hp_sections', '' );
+		ob_start( function ( $html ) use ( $sections ) {
 			if ( $GLOBALS['db_hero_rendered'] || false === stripos( $html, '<body' ) ) {
 				return $html;
 			}
 			$GLOBALS['db_hero_rendered'] = true;
+			if ( '' !== $sections ) {
+				// Who it is for and how it works: just before the "easy steps" band.
+				$html = preg_replace_callback( '/<div[^>]*class="[^"]*middle-blue-bg/i', function ( $m ) use ( $sections ) {
+					return $sections . $m[0];
+				}, $html, 1 );
+			}
 			// Callback, not '$1' . $html: any "$<digit>" in the hero (a price)
 			// would be expanded as a backreference.
 			$hero = db_hp_hero_html();
@@ -4499,3 +4507,5 @@ require_once __DIR__ . '/db-offers-block.php';
 require_once __DIR__ . '/db-sold-block.php';
 require_once __DIR__ . '/db-hits-block.php';
 require_once __DIR__ . '/db-modern-block.php';
+require_once __DIR__ . '/db-wishlist-block.php';
+require_once __DIR__ . '/db-sections-block.php';
