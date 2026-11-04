@@ -799,14 +799,25 @@ if ( ! function_exists( 'db_safety_strip_adsense' ) ) {
 		if ( ! is_string( $html ) || false === strpos( $html, 'adsbygoogle' ) ) {
 			return $html;
 		}
-		// <script async src="https://pagead2.googlesyndication.com/...adsbygoogle.js..."></script>
-		$pos = strpos( $html, 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js' );
-		if ( false !== $pos ) {
+		// <script async src="https://pagead2.googlesyndication.com/...adsbygoogle.js?client=..."></script>
+		// Only the THEME's old script goes. The site's own AdSense code (the publisher id saved
+		// under Domain Brothers > Ads, db-ads-block.php) is the one Google checks for ownership
+		// verification and must stay in the page.
+		$ours = function_exists( 'db_ads_client' ) ? db_ads_client() : '';
+		$from = 0;
+		while ( false !== ( $pos = strpos( $html, 'pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', $from ) ) ) {
 			$start = strrpos( substr( $html, 0, $pos ), '<script' );
 			$end   = strpos( $html, '</script>', $pos );
-			if ( false !== $start && false !== $end ) {
-				$html = substr_replace( $html, '', $start, $end + 9 - $start );
+			if ( false === $start || false === $end ) {
+				break;
 			}
+			$tag = substr( $html, $start, $end + 9 - $start );
+			if ( '' !== $ours && false !== strpos( $tag, 'client=' . $ours ) ) {
+				$from = $end;
+				continue;
+			}
+			$html = substr_replace( $html, '', $start, $end + 9 - $start );
+			$from = $start;
 		}
 		// <div class="google_adsense"> <ins ...></ins> <script>(adsbygoogle...).push({});</script> </div>
 		// Domain pages use a variant with style="display: none;", so match the
