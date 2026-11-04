@@ -40,6 +40,7 @@ const UAS = ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.
 		await f.locator('input[type=submit], button[type=submit]').first().click(); await p.waitForURL(/thank-you/, { timeout: 60000 }).catch(() => {}); await p.waitForTimeout(3000); await c.close();
 	}
 	await a.goto(`${BASE}/wp-admin/admin.php?page=db-hits&q=${STAMP}`, { waitUntil: 'domcontentloaded' }); await shot('1-domain-hits');
+	await a.goto(`${BASE}/wp-admin/admin.php?page=db-hits&q=${STAMP}&from=2026-11-01&to=2026-11-30`, { waitUntil: 'domcontentloaded' }); await shot('1b-domain-hits-date-range');
 	await a.goto(`${BASE}/wp-admin/edit.php?post_type=domain&s=${STAMP}`, { waitUntil: 'domcontentloaded' }); await shot('2-domain-list-hits-and-listing-columns');
 	await a.goto(`${BASE}/wp-admin/admin.php?page=db-offers&tab=all&q=${STAMP}`, { waitUntil: 'domcontentloaded' }); await shot('3-all-offers-received');
 	await a.goto(`${BASE}/wp-admin/admin.php?page=db-offers`, { waitUntil: 'domcontentloaded' });
