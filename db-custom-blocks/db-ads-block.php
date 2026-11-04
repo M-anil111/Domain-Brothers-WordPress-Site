@@ -48,6 +48,14 @@ if ( ! function_exists( 'db_ads_client' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ads_extra_lines' ) ) {
+	/** Other ads.txt lines to publish: what is saved under Domain Brothers > Ads, else the one the live site already had. */
+	function db_ads_extra_lines() {
+		$o = get_option( 'db_ads', array() );
+		return is_array( $o ) && isset( $o['extra'] ) ? (string) $o['extra'] : 'google.com, pub-7194359990997088, DIRECT, f08c47fec0942fa0';
+	}
+}
+
 if ( ! function_exists( 'db_ads_settings' ) ) {
 	function db_ads_settings() {
 		$o = get_option( 'db_ads', array() );
@@ -105,6 +113,13 @@ add_action( 'init', function () {
 	header( 'Content-Type: text/plain; charset=utf-8' );
 	header( 'Cache-Control: public, max-age=3600' );
 	echo 'google.com, ' . str_replace( 'ca-pub-', 'pub-', db_ads_client() ) . ", DIRECT, f08c47fec0942fa0\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	// Lines that were already in the live ads.txt (other publisher accounts) stay, so no ad income is cut off.
+	foreach ( preg_split( '/\r\n|\r|\n/', db_ads_extra_lines() ) as $line ) {
+		$line = trim( $line );
+		if ( '' !== $line && preg_match( '/^[a-z0-9.\-]+,\s*[A-Za-z0-9\-_]+,\s*(DIRECT|RESELLER)(,\s*[a-f0-9]+)?$/i', $line ) ) {
+			echo $line . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- matched against a strict ads.txt line pattern.
+		}
+	}
 	exit;
 }, 1 );
 
@@ -129,6 +144,7 @@ if ( ! function_exists( 'db_ads_admin_page' ) ) {
 		foreach ( db_ads_slots() as $k => $label ) {
 			echo '<tr><th><label for="db_ads_' . esc_attr( $k ) . '">' . esc_html( $label ) . '</label></th><td><input type="text" id="db_ads_' . esc_attr( $k ) . '" name="' . esc_attr( $k ) . '" class="regular-text" placeholder="Ad unit id, digits only" value="' . esc_attr( $o[ $k ] ?? '' ) . '"></td></tr>';
 		}
+		echo '<tr><th><label for="db_ads_extra">Other ads.txt lines</label></th><td><textarea id="db_ads_extra" name="extra" rows="4" class="large-text code">' . esc_textarea( db_ads_extra_lines() ) . '</textarea><p class="description">Published in /ads.txt after your own line. Keep the lines of any other ad account you still use.</p></td></tr>';
 		echo '</table><p class="description">Ads that personalise need a consent banner for visitors in the EEA, UK and Switzerland. Set that up before turning ads on.</p>';
 		submit_button( 'Save' );
 		echo '</form></div>';
@@ -146,6 +162,7 @@ add_action( 'admin_post_db_ads_save', function () {
 		$v         = isset( $_POST[ $k ] ) ? preg_replace( '/\D/', '', (string) wp_unslash( $_POST[ $k ] ) ) : '';
 		$out[ $k ] = $v;
 	}
+	$out['extra'] = isset( $_POST['extra'] ) ? sanitize_textarea_field( wp_unslash( $_POST['extra'] ) ) : '';
 	update_option( 'db_ads', $out, false );
 	do_action( 'litespeed_purge_all' );
 	wp_safe_redirect( admin_url( 'admin.php?page=db-ads&saved=1' ) );
