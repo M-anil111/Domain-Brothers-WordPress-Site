@@ -529,3 +529,10 @@ Seven slots, set under Domain Brothers > Ads (publisher id plus an ad unit id pe
 **Cause.** The Contact Form 7 offer notification sends its own full HTML document. The email wrapper treated every CF7 body as plain text and escaped it, so Gmail showed `<!DOCTYPE html ...<style>...` inside the card.
 **Fix.** (1) The offer form's notification is now built from the submitted fields with the editable template "Offer form submitted (to the team)": domain, offer, name, email, phone, message. (2) Any other CF7 body that is HTML is reduced to tidy text, never escaped markup. (3) Safety net in the shared email shell: any body that is a whole HTML document, or its escaped form, is reduced to readable text, for every email the site sends. Visitor text is still always escaped.
 **Checks.** `tests/qa/email-templates.js` 14/14, including a full HTML document through the CF7 path and straight into the shell (no `&lt;!DOCTYPE`, no `<style>` text, no script). A real submission of the live offer form (#1878) on staging produced an email with the card, the amount and the name, and no source code.
+
+## 30. AdSense site verification code and ads.txt (v3.65.0)
+
+- The AdSense code for publisher `ca-pub-1077085934387393` is printed in the `<head>` of every public page (home, pages, domain pages, lists, news). Not on checkout, thank-you, terms, privacy or account pages. The publisher id is built in (`DB_ADSENSE_CLIENT`) and can be changed under Domain Brothers > Ads.
+- `/ads.txt` is served by the plugin: `google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0` (a real ads.txt file on the server would take priority).
+- Fix: the older safety filter removed the first AdSense script on every page, which would have removed this one. It now removes only the theme's old script (publisher `ca-pub-2138271276562459`) and the theme's old ad boxes, and keeps the site's own.
+- Checked on staging: the code is in the head of home, about, domain, all-domains; absent on buy-now and thank-you; `/ads.txt` returns the line above. Site QA 407/407.

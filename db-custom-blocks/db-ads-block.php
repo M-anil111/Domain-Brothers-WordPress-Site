@@ -34,6 +34,20 @@ if ( ! function_exists( 'db_ads_slots' ) ) {
 	}
 }
 
+if ( ! defined( 'DB_ADSENSE_CLIENT' ) ) {
+	// The site's AdSense publisher id (not a secret: it is printed in every page's source).
+	define( 'DB_ADSENSE_CLIENT', 'ca-pub-1077085934387393' );
+}
+
+if ( ! function_exists( 'db_ads_client' ) ) {
+	/** The publisher id: the one saved under Domain Brothers > Ads, else the built-in one. */
+	function db_ads_client() {
+		$o = get_option( 'db_ads', array() );
+		$c = is_array( $o ) && ! empty( $o['client'] ) ? (string) $o['client'] : (string) DB_ADSENSE_CLIENT;
+		return preg_match( '/^ca-pub-\d{10,20}$/', $c ) ? $c : '';
+	}
+}
+
 if ( ! function_exists( 'db_ads_settings' ) ) {
 	function db_ads_settings() {
 		$o = get_option( 'db_ads', array() );
@@ -48,7 +62,7 @@ if ( ! function_exists( 'db_ad_html' ) ) {
 			return '';
 		}
 		$o      = db_ads_settings();
-		$client = isset( $o['client'] ) ? (string) $o['client'] : '';
+		$client = db_ads_client();
 		$slot   = isset( $o[ $key ] ) ? (string) $o[ $key ] : '';
 		$ready  = (bool) preg_match( '/^ca-pub-\d{10,20}$/', $client ) && (bool) preg_match( '/^\d{6,20}$/', $slot );
 		$GLOBALS['db_ads_used'] = $ready ? true : ( $GLOBALS['db_ads_used'] ?? false );
@@ -62,13 +76,37 @@ if ( ! function_exists( 'db_ad_html' ) ) {
 	}
 }
 
-add_action( 'wp_footer', function () {
-	if ( empty( $GLOBALS['db_ads_used'] ) ) {
+// The AdSense code goes in the <head> of every public page (this is also what Google checks to verify site ownership).
+add_action( 'wp_head', function () {
+	$client = db_ads_client();
+	if ( '' === $client || ! db_ads_page_allowed() ) {
 		return;
 	}
-	$o = db_ads_settings();
-	echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . esc_attr( $o['client'] ) . '" crossorigin="anonymous"></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources
+	$GLOBALS['db_ads_head'] = true;
+	echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . esc_attr( $client ) . '" crossorigin="anonymous"></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources
+}, 2 );
+
+// Pages kept out of the head script that still carry a slot load it with the slot.
+add_action( 'wp_footer', function () {
+	if ( empty( $GLOBALS['db_ads_used'] ) || ! empty( $GLOBALS['db_ads_head'] ) ) {
+		return;
+	}
+	echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' . esc_attr( db_ads_client() ) . '" crossorigin="anonymous"></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources
 }, 90 );
+
+// /ads.txt, which AdSense asks for: lists Google as the authorised seller. A real ads.txt file on the server wins.
+add_action( 'init', function () {
+	$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$path = (string) wp_parse_url( $uri, PHP_URL_PATH );
+	if ( '/ads.txt' !== $path || '' === db_ads_client() ) {
+		return;
+	}
+	status_header( 200 );
+	header( 'Content-Type: text/plain; charset=utf-8' );
+	header( 'Cache-Control: public, max-age=3600' );
+	echo 'google.com, ' . str_replace( 'ca-pub-', 'pub-', db_ads_client() ) . ", DIRECT, f08c47fec0942fa0\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	exit;
+}, 1 );
 
 add_action( 'admin_menu', function () {
 	add_submenu_page( 'db-crm-leads', 'Ads', 'Ads', 'manage_options', 'db-ads', 'db_ads_admin_page' );
@@ -87,7 +125,7 @@ if ( ! function_exists( 'db_ads_admin_page' ) ) {
 		echo '<p>Banner slots show on domain pages, the home page, domain lists, news and other content pages (never on checkout, thank-you, account or admin pages). Create <em>Display ad units</em> in AdSense (one can be reused for several slots), then paste your publisher id and the ad unit ids here. A slot left empty shows nothing. Leave the publisher id empty to show no ads on the live site.</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="db_ads_save">';
 		wp_nonce_field( 'db_ads_save' );
-		echo '<table class="form-table" role="presentation"><tr><th><label for="db_ads_client">Publisher id</label></th><td><input type="text" id="db_ads_client" name="client" class="regular-text" placeholder="ca-pub-1234567890123456" value="' . esc_attr( $o['client'] ?? '' ) . '"></td></tr>';
+		echo '<table class="form-table" role="presentation"><tr><th><label for="db_ads_client">Publisher id</label></th><td><input type="text" id="db_ads_client" name="client" class="regular-text" placeholder="ca-pub-1234567890123456" value="' . esc_attr( db_ads_client() ) . '"></td></tr>';
 		foreach ( db_ads_slots() as $k => $label ) {
 			echo '<tr><th><label for="db_ads_' . esc_attr( $k ) . '">' . esc_html( $label ) . '</label></th><td><input type="text" id="db_ads_' . esc_attr( $k ) . '" name="' . esc_attr( $k ) . '" class="regular-text" placeholder="Ad unit id, digits only" value="' . esc_attr( $o[ $k ] ?? '' ) . '"></td></tr>';
 		}
