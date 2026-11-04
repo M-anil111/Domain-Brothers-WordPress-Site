@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.56.0
+ * Version:     3.56.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,12 +26,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.56.0' );
+define( 'DB_BLOCKS_LOADED', '3.56.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
 	 * The Domain Brothers logo URL, resolved once for the hero, the nav
-	 * drawer and the page curtain.
+	 * drawer.
 	 *
 	 * The three of them each hardcoded the same uploads path built from
 	 * home_url(), which is the wrong base for an uploads file — it breaks
@@ -4397,11 +4397,6 @@ require_once __DIR__ . '/db-seo-meta-block.php';
    MOBILE NAV — site-wide hamburger drawer
    ============================================================ */
 require_once __DIR__ . '/db-mobilenav-block.php';
-
-/* ============================================================
-   PAGE CURTAIN — branded transition overlay
-   ============================================================ */
-require_once __DIR__ . '/db-curtain-block.php';
 
 /* ============================================================
    SAFETY — fatal-error recorder + branded failure page
