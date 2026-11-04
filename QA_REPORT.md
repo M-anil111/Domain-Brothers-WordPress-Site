@@ -460,3 +460,17 @@ Not-for-sale uses the same layout (amber "NOT FOR SALE" sign, the "Ask the owner
 - **Domain hits** now show Today, Last 7 days, This month, This year and All time, each as hits / unique visitors, plus a From / To date range column and CSV. A new table (`db_hit_vdays`) records which visitor came on which day, so unique visitors can be counted for any period; unique counts therefore start from the release of v3.57.0 (hit totals continue from v3.56.0). Days follow the site time zone.
 - **Offer page** (Offers > open an offer) has an "About this domain" card: visits by period, every offer and reply on that domain with highest / lowest / average, and similar sold domains (same extension, similar length or same category) with their prices. Only sales with a recorded price are compared, so older sold domains appear once their prices are filled in on Sold domains.
 - Test: `tests/qa/hits-offers-log.js` 11/11.
+
+## 22. Modern white redesign, list and grid views, platform versions (v3.58.0)
+
+**Platform.** WordPress 6.9.11 and PHP 8.5.12 (nginx, php-fpm) were already the latest releases on staging. The two plugins with updates pending were updated (Advanced Custom Fields 6.8.10 to 6.8.11, WPForms Lite 2.0.2.2 to 2.0.3.1); all plugins and the theme are now current and the site was re-tested afterwards. The PHP version itself is set in the hosting panel, not in WordPress.
+
+**Design.** A GoDaddy-style marketplace look, loaded last (`assets/modern.css`, `db-modern-block.php`): white pages, black pill buttons, thin borders, one calm teal for links, a light footer, and no dark sections. Home has a search-first hero (one large search box, the most common extensions as chips, a short trust row). Listings are clean rows or cards. The domain page is a two-column layout with a sticky purchase card on desktop and a stacked layout below 900 px. Bug fixed on the way: the domain page had a screen-high blank gap above its content (the page frame stretched to fill the viewport while the domain template closes that frame early); it now starts at the top.
+
+**List and grid views.** Domain lists (all domains, categories, home) default to a simple list: name on the left, price and Buy / Make an offer on the right. A List / Grid switch changes it to the card grid; the choice is remembered in the browser. The switch sits above the filter bar so filtering still finds its results (found by the site QA when the first version sat below it).
+
+**Devices.** `tests/responsive/run-responsive.js` now scans 13 pages at 20 sizes: iPhone SE, small and large phones, foldables (Galaxy Z Fold cover and open, Pixel Fold, Z Flip half-folded, Surface Duo single and spanned), iPad Mini, iPad, iPad Air, iPad Pro 11 and 12.9 inch in portrait and landscape, laptop and 1920 desktop. Result: 260 scans, 0 with horizontal overflow, cut-off content, targets under 24 px, or tiny text. Screenshots: `docs/screenshots/redesign/` (desktop, iPad, iPhone, foldable; home, list, grid, domain page).
+
+**Regression.** Site QA 407/407; axe-core (WCAG 2.1 A and AA) 0 violations on 28 scans; listing templates 6/6, offer flow 17/17, sold and EPP flow 17/17, hits and offers log 11/11; offline suites pass.
+
+**Notes.** The header, mobile menu and every checkout, offer and sold page keep their existing behaviour and now use the same palette. Third-party widgets (payment badges, Stripe elements) keep their own styling.
