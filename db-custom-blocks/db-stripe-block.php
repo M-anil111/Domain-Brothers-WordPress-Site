@@ -447,63 +447,6 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 
 // ─── Checkout page HTML render ─────────────────────────────────────────────────
 
-if ( ! function_exists( 'db_stripe_checkout_footer_links' ) ) {
-	/**
-	 * Footer links for the checkout page, matching the production footer.
-	 * Each label maps to candidate page slugs; the first slug that exists as a
-	 * published page wins, and labels with no matching page are left out so
-	 * the checkout never links to a 404.
-	 *
-	 * @return array<string, string> label => URL
-	 */
-	function db_stripe_checkout_footer_links() : array {
-		$candidates = [
-			'Blog'           => [ 'blog', 'news' ],
-			'About'          => [ 'about-us', 'about' ],
-			'Our Team'       => [ 'our-team', 'team' ],
-			'News'           => [ 'news' ],
-			'Privacy Policy' => [ 'privacy-policy' ],
-			'Refund Policy'  => [ 'refund-policy', 'refunds' ],
-			'Terms of Use'   => [ 'terms-of-use', 'terms-and-conditions', 'terms' ],
-			'FAQs'           => [ 'faqs', 'faq' ],
-			'Sitemap'        => [ 'sitemap' ],
-		];
-		$links = [];
-		foreach ( $candidates as $label => $slugs ) {
-			foreach ( $slugs as $slug ) {
-				$page = get_page_by_path( $slug );
-				if ( $page && 'publish' === $page->post_status ) {
-					$links[ $label ] = (string) get_permalink( $page );
-					break;
-				}
-			}
-		}
-		return (array) apply_filters( 'db_checkout_footer_links', $links );
-	}
-}
-
-if ( ! function_exists( 'db_stripe_checkout_social_links' ) ) {
-	/**
-	 * Social profile URLs for the checkout footer. Empty by default: set them
-	 * with the DB_SOCIAL_FACEBOOK / DB_SOCIAL_TWITTER / DB_SOCIAL_INSTAGRAM
-	 * constants in wp-config.php, or the db_checkout_social_links filter.
-	 * An icon is shown only when its URL is set.
-	 *
-	 * @return array<string, string> network => URL
-	 */
-	function db_stripe_checkout_social_links() : array {
-		$links = [
-			'facebook'  => defined( 'DB_SOCIAL_FACEBOOK' ) ? (string) DB_SOCIAL_FACEBOOK : '',
-			'twitter'   => defined( 'DB_SOCIAL_TWITTER' ) ? (string) DB_SOCIAL_TWITTER : '',
-			'instagram' => defined( 'DB_SOCIAL_INSTAGRAM' ) ? (string) DB_SOCIAL_INSTAGRAM : '',
-		];
-		$links = (array) apply_filters( 'db_checkout_social_links', $links );
-		return array_filter( $links, static function ( $url ) {
-			return is_string( $url ) && '' !== $url;
-		} );
-	}
-}
-
 if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 	/**
 	 * Renders /buy-now/ as the three-step checkout used on production:
@@ -574,215 +517,191 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		);
 
 		$support_email = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
-		$logo_url      = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
-		$footer_links  = db_stripe_checkout_footer_links();
-		$social_links  = db_stripe_checkout_social_links();
 		$grace_days    = defined( 'DB_PLAN_GRACE_DAYS' ) ? (int) DB_PLAN_GRACE_DAYS : 10;
 		$check_svg     = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>';
 
 		header( 'Content-Type: text/html; charset=UTF-8' );
 		header( 'Cache-Control: no-store, no-cache, must-revalidate' );
 		header( 'Pragma: no-cache' );
-		?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>Checkout — <?php echo esc_html( $domain ); ?> — Domain Brothers</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap">
-<style>
-:root{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#2f8a17;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-footer:#6abf40;--co-bar:#0f2230;--co-err:#c62828}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--co-bg);color:var(--co-ink);min-height:100vh;display:flex;flex-direction:column;line-height:1.5;font-size:15px}
-a{color:inherit}
-.co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
-.co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-/* Header */
-.co-header{background:var(--co-navy);color:#fff}
-.co-header .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:140px;padding-top:20px;padding-bottom:20px}
-.co-logo{display:inline-flex;align-items:center;min-height:44px}
-.co-logo img{display:block;height:56px;width:auto}
-.co-help{text-align:right;font-size:20px;line-height:1.5}
-.co-help a{display:inline-block;color:#8fd45f;text-decoration:none}
-.co-help a:hover,.co-help a:focus-visible{text-decoration:underline}
+
+		// Rendered inside the theme's own header and footer (get_header() /
+		// get_footer()), so /buy-now/ carries the same site header, menu,
+		// mobile menu and footer as every other page.
+		add_filter( 'body_class', static function ( $classes ) {
+			$classes[] = 'db-co-page';
+			return $classes;
+		} );
+		add_filter( 'pre_get_document_title', static function () use ( $domain ) {
+			return 'Checkout — ' . $domain . ' — Domain Brothers';
+		} );
+		wp_enqueue_style( 'db-co-lato', 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap', [], null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+		add_action( 'wp_head', static function () {
+			?>
+<style id="db-checkout">
+/* Checkout content, isolated from the theme and db-design-block styles
+   (which restyle every input, label, heading and link on the page). Every
+   rule is scoped to #db-co so an id outranks those class-based rules. */
+#db-co{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#2f8a17;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-err:#c62828;position:relative;background:var(--co-bg);box-shadow:0 0 0 100vmax var(--co-bg);clip-path:inset(0 -100vmax);display:flow-root;color:var(--co-ink);font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px;padding-bottom:40px}
+#db-co,#db-co *,#db-co *::before,#db-co *::after{box-sizing:border-box}
+#db-co *{margin:0;padding:0}
+#db-co :is(h1,h2,h3,h4,h5,h6,p,li,a,td,th,label,input,select,textarea,button,small,strong,em,dt,dd,span){font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important}
+#db-co :is(h1,h2,h3,h4,h5,h6,p,li,dt,dd,label){color:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;text-transform:none}
+#db-co :is(ol,ul){list-style:none}
+#db-co :is(button,a,span,strong){text-transform:none;letter-spacing:inherit}
+#db-co a{color:inherit}
+#db-co :is(input,select,textarea){min-height:0;max-width:none;box-shadow:none}
+#db-co .co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
+/* The theme's content column is boxed and padded; the checkout runs full width. */
+body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#e7edf0 !important}
+#db-co .co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Stepper */
-.co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
-.co-steps{--w:190px;--p:.5;list-style:none;position:relative;display:flex;justify-content:space-between}
-.co-steps::before,.co-steps::after{content:"";position:absolute;top:17px;left:calc(var(--w) / 2);height:2px}
-.co-steps::before{right:calc(var(--w) / 2);background:var(--co-line)}
-.co-steps::after{width:calc((100% - var(--w)) * var(--p));background:var(--co-green);transition:width .3s}
-.co-step{position:relative;z-index:1;flex:0 0 var(--w);display:flex;justify-content:center}
-.co-step-btn{display:flex;flex-direction:column;align-items:center;gap:12px;background:none;border:0;font:inherit;color:inherit;padding:0;cursor:default;text-align:center}
-.co-step.is-done .co-step-btn{cursor:pointer}
-.co-step-num{width:36px;height:36px;border-radius:50%;border:2px solid #6d7a84;background:#fff;color:#33424e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
-.co-step.is-active .co-step-num,.co-step.is-done .co-step-num{background:var(--co-green);border-color:var(--co-green);color:#fff}
-.co-step-num svg{width:18px;height:18px;fill:#fff}
-.co-step-label{font-size:17px;letter-spacing:.03em;color:#2d3d4a}
-.co-step.is-active .co-step-label{font-weight:700;color:var(--co-ink)}
-.co-step.is-done .co-step-btn:hover .co-step-label,.co-step.is-done .co-step-btn:focus-visible .co-step-label{text-decoration:underline}
-.co-step-btn:focus-visible{outline:3px solid var(--co-green-text);outline-offset:4px;border-radius:6px}
+#db-co .co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
+#db-co .co-steps{--w:190px;--p:.5;list-style:none;position:relative;display:flex;justify-content:space-between}
+#db-co .co-steps::before,#db-co .co-steps::after{content:"";position:absolute;top:17px;left:calc(var(--w) / 2);height:2px}
+#db-co .co-steps::before{right:calc(var(--w) / 2);background:var(--co-line)}
+#db-co .co-steps::after{width:calc((100% - var(--w)) * var(--p));background:var(--co-green);transition:width .3s}
+#db-co .co-step{position:relative;z-index:1;flex:0 0 var(--w);display:flex;justify-content:center}
+#db-co .co-step-btn{display:flex;flex-direction:column;align-items:center;gap:12px;background:none;border:0;font:inherit;color:inherit;padding:0;cursor:default;text-align:center}
+#db-co .co-step.is-done .co-step-btn{cursor:pointer}
+#db-co .co-step-num{width:36px;height:36px;border-radius:50%;border:2px solid #6d7a84;background:#fff;color:#33424e;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700}
+#db-co .co-step.is-active .co-step-num,#db-co .co-step.is-done .co-step-num{background:var(--co-green);border-color:var(--co-green);color:#fff}
+#db-co .co-step-num svg{width:18px;height:18px;fill:#fff}
+#db-co .co-step-label{font-size:17px;letter-spacing:.03em;color:#2d3d4a;white-space:nowrap}
+#db-co .co-step.is-active .co-step-label{font-weight:700;color:var(--co-ink)}
+#db-co .co-step.is-done .co-step-btn:hover .co-step-label,#db-co .co-step.is-done .co-step-btn:focus-visible .co-step-label{text-decoration:underline}
+#db-co .co-step-btn:focus-visible{outline:3px solid var(--co-green-text);outline-offset:4px;border-radius:6px}
 /* Layout */
-.co-main{flex:1;padding-bottom:40px}
-.co-grid{display:grid;grid-template-columns:minmax(0,840px) minmax(0,1fr);gap:24px 40px;align-items:start}
-.co-card{display:grid;grid-template-columns:58.5% 41.5%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 14px rgba(15,34,48,.06)}
-.co-left{padding:16px 32px 48px}
-.co-right{background:var(--co-panel);padding:16px 16px 32px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+#db-co .co-grid{display:grid;grid-template-columns:minmax(0,840px) minmax(0,1fr);gap:24px 40px;align-items:start}
+#db-co .co-card{display:grid;grid-template-columns:58.5% 41.5%;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 14px rgba(15,34,48,.06)}
+#db-co .co-left{padding:16px 32px 48px}
+#db-co .co-right{background:var(--co-panel);padding:16px 16px 32px;display:flex;flex-direction:column;justify-content:space-between;gap:24px}
 /* Pay option toggle */
-.co-toggle{display:grid;grid-template-columns:auto 1fr;gap:10px;margin:0 0 26px -16px}
-.co-opt{position:relative;display:flex;gap:8px;align-items:flex-start;border:1px solid #6d7a84;border-radius:3px;padding:10px 6px 8px;background:#fff;text-decoration:none;color:var(--co-ink);min-height:70px;transition:border-color .15s,background .15s}
-.co-opt:hover{border-color:var(--co-green)}
-.co-opt:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px}
-.co-opt.is-on{background:var(--co-green-soft);border-color:var(--co-green)}
-.co-opt-tick{flex:0 0 20px;width:20px;height:20px;border-radius:50%;background:#8a949b;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.co-opt.is-on .co-opt-tick{background:var(--co-green)}
-.co-opt-tick svg{width:14px;height:14px;fill:#fff}
-.co-opt-body{display:flex;flex-direction:column;flex:1;min-width:0}
-.co-opt-title{font-size:16px;letter-spacing:.03em;line-height:1.35}
-.co-opt-amt{font-size:17px;letter-spacing:.03em;line-height:1.35}
-.co-opt-sub{font-size:13px;line-height:1.4;color:var(--co-ink);white-space:nowrap}
-.co-opt-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;margin-left:auto;padding-right:2px;gap:4px}
-.co-opt-side strong{font-size:17px;font-weight:700;letter-spacing:.02em}
-.co-opt-side span{font-size:13px}
-.co-opt-change{display:inline-block;margin:-16px 0 20px 4px;font-size:13px;color:var(--co-green-text)}
+#db-co .co-toggle{display:grid;grid-template-columns:auto 1fr;gap:10px;margin:0 0 26px -16px}
+#db-co .co-opt{position:relative;display:flex;gap:8px;align-items:flex-start;border:1px solid #6d7a84;border-radius:3px;padding:10px 6px 8px;background:#fff;text-decoration:none;color:var(--co-ink);min-height:70px;transition:border-color .15s,background .15s}
+#db-co .co-opt:hover{border-color:var(--co-green)}
+#db-co .co-opt:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px}
+#db-co .co-opt.is-on{background:var(--co-green-soft);border-color:var(--co-green)}
+#db-co .co-opt-tick{flex:0 0 20px;width:20px;height:20px;border-radius:50%;background:#8a949b;display:flex;align-items:center;justify-content:center;margin-top:1px}
+#db-co .co-opt.is-on .co-opt-tick{background:var(--co-green)}
+#db-co .co-opt-tick svg{width:14px;height:14px;fill:#fff}
+#db-co .co-opt-body{display:flex;flex-direction:column;flex:1;min-width:0}
+#db-co .co-opt-title{font-size:16px;letter-spacing:.03em;line-height:1.35}
+#db-co .co-opt-amt{font-size:17px;letter-spacing:.03em;line-height:1.35}
+#db-co .co-opt-sub{font-size:13px;line-height:1.4;color:var(--co-ink);white-space:nowrap}
+#db-co .co-opt-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;margin-left:auto;padding-right:2px;gap:4px}
+#db-co .co-opt-side strong{font-size:17px;font-weight:700;letter-spacing:.02em}
+#db-co .co-opt-side span{font-size:13px}
+#db-co .co-opt-change{display:inline-block;margin:-16px 0 20px 4px;font-size:13px;color:var(--co-green-text)}
 /* Step panels */
-.co-panel[hidden]{display:none}
-.co-pill{background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(15,34,48,.16);text-align:center;font-size:17px;font-weight:700;letter-spacing:.03em;padding:8px 14px;margin:0 16px 0 0}
-.co-intro{font-size:14px;letter-spacing:.02em;margin:14px 0 30px}
-.co-field{margin-bottom:26px}
-.co-field label{display:block;font-size:14px;letter-spacing:.02em;margin-bottom:12px}
-.co-input-row{display:flex;align-items:center;gap:10px}
-.co-req{color:#e53935;font-size:16px;line-height:1;width:6px}
-.co-input{flex:1;min-width:0;height:38px;border:1px solid #98a3ab;border-radius:20px;padding:0 16px;font:inherit;font-size:15px;color:var(--co-ink);background:#fff;transition:border-color .15s,box-shadow .15s}
-.co-input:focus{outline:none;border-color:var(--co-green);box-shadow:0 0 0 3px rgba(92,181,49,.25)}
-.co-input[aria-invalid="true"]{border-color:var(--co-err)}
-.co-field-err{display:none;color:var(--co-err);font-size:13px;margin:6px 0 0 16px}
-.co-field-err.is-on{display:block}
-.co-actions{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:22px;flex-wrap:wrap}
-.co-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:148px;min-height:44px;padding:10px 28px;border:0;border-radius:22px;background:var(--co-green-btn);color:#fff;font:inherit;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .15s,transform .1s}
-.co-btn:hover:not(:disabled){background:#2f8a17}
-.co-btn:active:not(:disabled){transform:scale(.98)}
-.co-btn:focus-visible{outline:3px solid var(--co-navy);outline-offset:3px}
-.co-btn:disabled{background:#8a949b;cursor:not-allowed}
-.co-btn svg{width:15px;height:15px;fill:currentColor}
-.co-btn-wide{width:100%}
-.co-back{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;padding:10px 4px;min-height:44px}
-.co-back:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px;border-radius:4px}
+#db-co .co-panel[hidden]{display:none}
+#db-co .co-pill{background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(15,34,48,.16);text-align:center;font-size:17px;font-weight:700;letter-spacing:.03em;padding:8px 14px;margin:0 16px 0 0}
+#db-co .co-intro{font-size:14px;letter-spacing:.02em;margin:14px 0 30px}
+#db-co .co-field{margin-bottom:26px}
+#db-co .co-field label{display:block;font-size:14px;letter-spacing:.02em;margin-bottom:12px}
+#db-co .co-input-row{display:flex;align-items:center;gap:10px}
+#db-co .co-req{color:#e53935;font-size:16px;line-height:1;width:6px}
+#db-co .co-input{min-height:38px;flex:1;min-width:0;height:38px;border:1px solid #98a3ab;border-radius:20px;padding:0 16px;font:inherit;font-size:15px;color:var(--co-ink);background:#fff;transition:border-color .15s,box-shadow .15s}
+#db-co .co-input:focus{outline:none;border-color:var(--co-green);box-shadow:0 0 0 3px rgba(92,181,49,.25)}
+#db-co .co-field label{font-weight:400;color:var(--co-ink)}
+#db-co .co-input[aria-invalid="true"]{border-color:var(--co-err)}
+#db-co .co-field-err{display:none;color:var(--co-err);font-size:13px;margin:6px 0 0 16px}
+#db-co .co-field-err.is-on{display:block}
+#db-co .co-actions{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:22px;flex-wrap:wrap}
+#db-co .co-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:148px;min-height:44px;padding:10px 28px;border:0;border-radius:22px;background:var(--co-green-btn);color:#fff;font:inherit;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .15s,transform .1s}
+#db-co .co-btn:hover:not(:disabled){background:#2f8a17}
+#db-co .co-btn:active:not(:disabled){transform:scale(.98)}
+#db-co .co-btn:focus-visible{outline:3px solid var(--co-navy);outline-offset:3px}
+#db-co .co-btn:disabled{background:#8a949b;cursor:not-allowed}
+#db-co .co-btn svg{width:15px;height:15px;fill:currentColor}
+#db-co .co-btn-wide{width:100%}
+#db-co .co-back{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;padding:10px 4px;min-height:44px}
+#db-co .co-back:focus-visible{outline:3px solid var(--co-green-text);outline-offset:2px;border-radius:4px}
 /* Review */
-.co-review{border:1px solid #dde3e7;border-radius:8px;margin-top:20px}
-.co-review-row{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid #e8ecef;font-size:14px}
-.co-review-row:last-child{border-bottom:0}
-.co-review-row dt{color:var(--co-muted)}
-.co-review-row dd{font-weight:700;text-align:right;word-break:break-word}
-.co-review-head{display:flex;justify-content:space-between;align-items:center;margin-top:24px}
-.co-review-head h3{font-size:16px;letter-spacing:.03em}
-.co-edit{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;min-height:32px}
-.co-terms{font-size:13px;line-height:1.5;background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:12px 14px;margin:20px 0 12px}
-.co-agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;cursor:pointer}
-.co-agree input{margin-top:3px;flex:0 0 auto;width:16px;height:16px;accent-color:var(--co-green-btn)}
+#db-co .co-review{border:1px solid #dde3e7;border-radius:8px;margin-top:20px}
+#db-co .co-review-row{display:flex;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid #e8ecef;font-size:14px}
+#db-co .co-review-row:last-child{border-bottom:0}
+#db-co .co-review-row dt{color:var(--co-muted)}
+#db-co .co-review-row dd{font-weight:700;text-align:right;word-break:break-word}
+#db-co .co-review-head{display:flex;justify-content:space-between;align-items:center;margin-top:24px}
+#db-co .co-review-head h3{font-size:16px;letter-spacing:.03em}
+#db-co .co-edit{background:none;border:0;font:inherit;font-size:14px;color:var(--co-green-text);text-decoration:underline;cursor:pointer;min-height:32px}
+#db-co .co-terms{font-size:13px;line-height:1.5;background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:12px 14px;margin:20px 0 12px}
+#db-co .co-agree{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;cursor:pointer}
+#db-co .co-agree input{margin-top:3px;flex:0 0 auto;width:16px;height:16px;accent-color:var(--co-green-btn)}
 /* Payment */
-.co-due{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:20px 0 16px;font-size:15px}
-.co-due strong{font-size:22px;color:var(--co-green-text)}
-.co-pe{background:#fff;border:1px solid #dde3e7;border-radius:8px;padding:16px;margin-bottom:16px;min-height:80px}
-.co-err{display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:11px 15px;color:#991b1b;font-size:14px;margin-bottom:14px}
-.co-trust{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-.co-trust span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--co-muted)}
-.co-trust svg{width:13px;height:13px;fill:var(--co-muted);flex-shrink:0}
-.co-notice{text-align:center;padding:40px 8px;color:#374151;font-size:15px;line-height:1.6}
-.co-notice a{color:var(--co-green-text);text-decoration:underline}
+#db-co .co-due{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:20px 0 16px;font-size:15px}
+#db-co .co-due strong{font-size:22px;color:var(--co-green-text)}
+#db-co .co-pe{background:#fff;border:1px solid #dde3e7;border-radius:8px;padding:16px;margin-bottom:16px;min-height:80px}
+#db-co .co-err{display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:11px 15px;color:#991b1b;font-size:14px;margin-bottom:14px}
+#db-co .co-trust{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+#db-co .co-trust span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--co-muted)}
+#db-co .co-trust svg{width:13px;height:13px;fill:var(--co-muted);flex-shrink:0}
+#db-co .co-notice{text-align:center;padding:40px 8px;color:#374151;font-size:15px;line-height:1.6}
+#db-co .co-notice a{color:var(--co-green-text);text-decoration:underline}
 /* Order summary */
-.co-sum{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(15,34,48,.08);padding:20px 14px 14px}
-.co-sum h2{font-size:17px;font-weight:400;letter-spacing:.03em;margin-bottom:12px}
-.co-sum-item{display:flex;align-items:center;gap:10px}
-.co-sum-item .co-ico{flex:0 0 30px;width:30px;height:30px}
-.co-sum-domain{font-size:17px;font-weight:700;letter-spacing:.02em;word-break:break-all;flex:1}
-.co-remove{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin-right:-6px;border-radius:50%;color:#8a949b;text-decoration:none}
-.co-remove:hover,.co-remove:focus-visible{color:var(--co-err)}
-.co-remove svg{width:20px;height:20px}
-.co-sum-price{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
-.co-sum-price .co-ico{flex:0 0 32px;width:32px;height:32px}
-.co-sum-amt{font-size:22px;color:var(--co-green-text);letter-spacing:.02em}
-.co-sum-note{font-size:15px;color:var(--co-ink);margin-left:auto;padding-right:24px}
-.co-sum-plan{font-size:13px;color:var(--co-muted);margin-top:10px;line-height:1.5}
-.co-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.co-cards svg{width:46px;height:32px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+#db-co .co-sum{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(15,34,48,.08);padding:20px 14px 14px}
+#db-co .co-sum h2{font-size:17px;font-weight:400;letter-spacing:.03em;margin-bottom:12px}
+#db-co .co-sum-item{display:flex;align-items:center;gap:10px}
+#db-co .co-sum-item .co-ico{flex:0 0 30px;width:30px;height:30px}
+#db-co .co-sum-domain{font-size:17px;font-weight:700;letter-spacing:.02em;word-break:break-all;flex:1}
+#db-co .co-remove{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;margin-right:-6px;border-radius:50%;color:#8a949b;text-decoration:none}
+#db-co .co-remove:hover,#db-co .co-remove:focus-visible{color:var(--co-err)}
+#db-co .co-remove svg{width:20px;height:20px}
+#db-co .co-sum-price{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+#db-co .co-sum-price .co-ico{flex:0 0 32px;width:32px;height:32px}
+#db-co .co-sum-amt{font-size:22px;color:var(--co-green-text);letter-spacing:.02em}
+#db-co .co-sum-note{font-size:15px;color:var(--co-ink);margin-left:auto;padding-right:24px}
+#db-co .co-sum-plan{font-size:13px;color:var(--co-muted);margin-top:10px;line-height:1.5}
+#db-co .co-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+#db-co .co-cards svg{width:46px;height:32px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 /* Next steps */
-.co-next{padding-top:16px}
-.co-next h2{font-size:21px;font-weight:400;text-align:center;letter-spacing:.02em}
-.co-next h2::after{content:"";display:block;width:60px;height:2px;background:var(--co-ink);margin:16px auto 28px}
-.co-next ul{list-style:none;display:flex;flex-direction:column;gap:18px}
-.co-next li{display:flex;align-items:center;gap:24px;font-size:16px;letter-spacing:.02em;line-height:1.45}
-.co-next .co-bubble{flex:0 0 84px;width:84px;height:84px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(15,34,48,.08);display:flex;align-items:center;justify-content:center}
-.co-next .co-bubble svg{width:50px;height:50px}
+#db-co .co-next{padding-top:16px}
+#db-co .co-next h2{font-size:21px;font-weight:400;text-align:center;letter-spacing:.02em}
+#db-co .co-next h2::after{content:"";display:block;width:60px;height:2px;background:var(--co-ink);margin:16px auto 28px}
+#db-co .co-next ul{list-style:none;display:flex;flex-direction:column;gap:18px}
+#db-co .co-next li{display:flex;align-items:center;gap:24px;font-size:16px;letter-spacing:.02em;line-height:1.45}
+#db-co .co-next .co-bubble{flex:0 0 84px;width:84px;height:84px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(15,34,48,.08);display:flex;align-items:center;justify-content:center}
+#db-co .co-next .co-bubble svg{width:50px;height:50px}
 /* Footer */
-.co-foot{background:var(--co-footer);color:#fff}
-.co-foot .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:120px;padding-top:24px;padding-bottom:24px}
-.co-foot img{display:block;height:56px;width:auto}
-.co-social{display:flex;gap:28px;padding-right:24px}
-.co-social a{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#fff}
-.co-social a:focus-visible{outline:3px solid #fff;outline-offset:2px;border-radius:4px}
-.co-social svg{width:22px;height:22px;fill:currentColor}
-.co-bar{background:var(--co-bar);color:#c9d6df;font-family:Arial,Helvetica,sans-serif;font-size:12px}
-.co-bar .co-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px 24px;min-height:66px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
-.co-copy{color:#8fd45f}
-.co-bar nav ul{list-style:none;display:flex;flex-wrap:wrap;gap:4px 16px}
-.co-bar nav a{color:#c9d6df;text-decoration:none}
-.co-bar nav a:hover,.co-bar nav a:focus-visible{color:#fff;text-decoration:underline}
-/* Responsive */
 @media (max-width:1180px){
-	.co-grid{grid-template-columns:1fr}
-	.co-card{max-width:840px;width:100%;margin:0 auto}
-	.co-next{max-width:840px;width:100%;margin:0 auto}
-	.co-next ul{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-	.co-next li{flex-direction:column;text-align:center;gap:12px}
+	#db-co .co-grid{grid-template-columns:1fr}
+	#db-co .co-card{max-width:840px;width:100%;margin:0 auto}
+	#db-co .co-next{max-width:840px;width:100%;margin:0 auto}
+	#db-co .co-next ul{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+	#db-co .co-next li{flex-direction:column;text-align:center;gap:12px}
 }
 @media (max-width:860px){
-	.co-header .co-wrap{min-height:110px}
-	.co-help{font-size:16px}
-	.co-steps-wrap{margin:32px auto 28px}
-	.co-steps{--w:160px}
-	.co-step-label{font-size:15px}
-	.co-card{grid-template-columns:1fr}
-	.co-right{order:-1;padding:16px}
-	.co-cards{display:none}
-	.co-left{padding:20px 20px 36px}
+	#db-co .co-steps-wrap{margin:32px auto 28px}
+	#db-co .co-steps{--w:160px}
+	#db-co .co-step-label{font-size:15px}
+	#db-co .co-card{grid-template-columns:1fr}
+	#db-co .co-right{order:-1;padding:16px}
+	#db-co .co-cards{display:none}
+	#db-co .co-left{padding:20px 20px 36px}
 }
 @media (max-width:600px){
-	.co-wrap{padding:0 16px}
-	.co-header .co-wrap{flex-direction:column;justify-content:center;gap:10px;text-align:center;min-height:0}
-	.co-help{text-align:center;font-size:14px}
-	.co-logo img{height:44px}
-	.co-steps-wrap{padding:0 12px}
-	.co-steps{--w:96px}
-	.co-step-label{font-size:12px;letter-spacing:0;line-height:1.3}
-	.co-toggle{grid-template-columns:1fr;margin-left:0}
-	.co-pill{margin-right:0;font-size:15px}
-	.co-next ul{grid-template-columns:1fr}
-	.co-next li{flex-direction:row;text-align:left}
-	.co-next .co-bubble{flex-basis:64px;width:64px;height:64px}
-	.co-next .co-bubble svg{width:38px;height:38px}
-	.co-foot .co-wrap{flex-direction:column;justify-content:center;min-height:0}
-	.co-social{padding-right:0}
-	.co-bar .co-wrap{flex-direction:column;justify-content:center;text-align:center}
-	.co-bar nav ul{justify-content:center}
-	.co-sum-note{padding-right:0}
+	#db-co .co-wrap{padding:0 16px}
+	#db-co .co-steps-wrap{padding:0 12px}
+	#db-co .co-steps{--w:96px}
+	#db-co .co-step-label{font-size:12px;letter-spacing:0;line-height:1.3;white-space:normal}
+	#db-co .co-toggle{grid-template-columns:1fr;margin-left:0}
+	#db-co .co-pill{margin-right:0;font-size:15px}
+	#db-co .co-next ul{grid-template-columns:1fr}
+	#db-co .co-next li{flex-direction:row;text-align:left}
+	#db-co .co-next .co-bubble{flex-basis:64px;width:64px;height:64px}
+	#db-co .co-next .co-bubble svg{width:38px;height:38px}
+	#db-co .co-sum-note{padding-right:0}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion:reduce){
+	#db-co *{transition:none!important;scroll-behavior:auto!important}
+}
 </style>
-</head>
-<body>
-<header class="co-header">
-	<div class="co-wrap">
-		<a class="co-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo_url ); ?>" alt="Domain Brothers" width="200" height="56"></a>
-		<p class="co-help">Questions? We're here to help! Email today:<br><a href="mailto:<?php echo esc_attr( $support_email ); ?>">Sales@DomainBrothers.com</a></p>
-	</div>
-</header>
+			<?php
+		}, 120 );
 
-<main class="co-main" id="co-main">
+		get_header();
+		?>
+<div id="db-co" class="db-co">
 	<nav class="co-steps-wrap" aria-label="Checkout progress"><ol class="co-steps" id="co-steps">
 		<li class="co-step is-active" data-step="1"><button type="button" class="co-step-btn" aria-current="step" disabled><span class="co-step-num">1</span><span class="co-step-label">Billing Information</span></button></li>
 		<li class="co-step" data-step="2"><button type="button" class="co-step-btn" disabled><span class="co-step-num">2</span><span class="co-step-label">Order Confirmation</span></button></li>
@@ -932,40 +851,7 @@ a{color:inherit}
 			</aside>
 		</div>
 	</div>
-</main>
-
-<footer>
-	<div class="co-foot">
-		<div class="co-wrap">
-			<a class="co-logo" href="<?php echo esc_url( home_url( '/' ) ); ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo_url ); ?>" alt="Domain Brothers" width="200" height="56" loading="lazy"></a>
-<?php if ( $social_links ) : ?>
-			<div class="co-social">
-<?php if ( ! empty( $social_links['facebook'] ) ) : ?>
-				<a href="<?php echo esc_url( $social_links['facebook'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.5 1.6-1.5h1.7V4.4c-.3 0-1.3-.1-2.4-.1-2.4 0-4.1 1.5-4.1 4.2v2.3H7.6V14h2.7v8z"/></svg></a>
-<?php endif; ?>
-<?php if ( ! empty( $social_links['twitter'] ) ) : ?>
-				<a href="<?php echo esc_url( $social_links['twitter'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on X (Twitter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 5.9c-.7.3-1.5.5-2.4.6.9-.5 1.5-1.3 1.8-2.3-.8.5-1.7.8-2.6 1a4.1 4.1 0 0 0-7 3.7A11.6 11.6 0 0 1 3.4 4.6a4.1 4.1 0 0 0 1.3 5.5c-.7 0-1.3-.2-1.9-.5 0 2 1.4 3.7 3.3 4.1-.6.2-1.2.2-1.8.1.5 1.6 2 2.8 3.8 2.9A8.2 8.2 0 0 1 2 18.4 11.6 11.6 0 0 0 8.3 20c7.5 0 11.7-6.3 11.7-11.7v-.5c.8-.6 1.5-1.3 2-2z"/></svg></a>
-<?php endif; ?>
-<?php if ( ! empty( $social_links['instagram'] ) ) : ?>
-				<a href="<?php echo esc_url( $social_links['instagram'] ); ?>" target="_blank" rel="noopener" aria-label="Domain Brothers on Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h18v18H3zm2 2v14h14V5zm7 3.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7zm0 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM16.5 6.3a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></svg></a>
-<?php endif; ?>
-			</div>
-<?php endif; ?>
-		</div>
-	</div>
-	<div class="co-bar">
-		<div class="co-wrap">
-			<p class="co-copy">Copyright &copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> | A Mindshare Consulting Inc company | All Rights Reserved.</p>
-<?php if ( $footer_links ) : ?>
-			<nav aria-label="Footer"><ul>
-<?php foreach ( $footer_links as $label => $url ) : ?>
-				<li><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $label ); ?></a></li>
-<?php endforeach; ?>
-			</ul></nav>
-<?php endif; ?>
-		</div>
-	</div>
-</footer>
+</div><!-- #db-co -->
 
 <?php if ( $can_pay ) : ?>
 <script>
@@ -1022,7 +908,15 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		if (n === 3) { mountPayment(); }
 		var focusTarget = document.querySelector('#co-panel-' + n + ' .co-pill');
 		if (n > 1 && focusTarget) { focusTarget.focus({ preventScroll: true }); }
-		var top = document.getElementById('co-steps').getBoundingClientRect().top + window.pageYOffset - 16;
+		// Keep the steps bar in view below the site's fixed header bar.
+		var offset = 16;
+		Array.prototype.forEach.call(document.querySelectorAll('#masthead, .site-header .domain-search, #wpadminbar'), function (el) {
+			var cs = window.getComputedStyle(el);
+			if ((cs.position === 'fixed' || cs.position === 'sticky') && cs.display !== 'none') {
+				offset = Math.max(offset, el.getBoundingClientRect().bottom + 16);
+			}
+		});
+		var top = document.getElementById('co-steps').getBoundingClientRect().top + window.pageYOffset - offset;
 		if (window.pageYOffset > top) { window.scrollTo(0, top); }
 	}
 
@@ -1145,9 +1039,8 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 }());
 </script>
 <?php endif; ?>
-</body>
-</html>
 		<?php
+		get_footer();
 	}
 }
 
