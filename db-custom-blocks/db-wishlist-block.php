@@ -616,26 +616,37 @@ add_action( 'template_redirect', function () {
 	$wp_query->is_404 = false;
 
 	$email = db_wl_email();
+	$stop  = function_exists( 'db_acct_handle_stop' ) ? db_acct_handle_stop() : '';
 	get_header();
 	echo '<div id="primary" class="content-area"><main id="main" class="site-main db-wl-page">';
-	echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">My wishlist</span></li></ol></nav>';
+	echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">My account</span></li></ol></nav>';
+	if ( 'ok' === $stop ) {
+		echo '<div class="db-wl-card db-ac-notice" role="status"><h2>Alert emails are off</h2><p>We will not email you about domains you follow. You can still see every alert in your account, and turn emails back on from the Alerts tab.</p></div>';
+	} elseif ( 'bad' === $stop ) {
+		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
+	}
 	if ( '' === $email ) {
-		echo '<h1 class="page-title">My wishlist</h1><div class="db-wl-card" id="db-wl-signin"><h2>Sign in with your email</h2><p>Save the domains you like and find them here again. We email you a 6-digit code; there is no password to remember.</p><button type="button" class="db-wl-primary">Email me a code</button></div>';
+		echo '<h1 class="page-title">My account</h1><div class="db-wl-card" id="db-wl-signin"><h2>Sign in with your email</h2><p>Save the domains you like and follow them: we tell you when the price changes, a domain sells or someone makes an offer. See recently listed and hot domains, and make and track your offers. We email you a 6-digit code; there is no password to remember.</p><button type="button" class="db-wl-primary">Email me a code</button></div>';
 	} else {
 		$ids  = db_wl_ids( $email );
 		$rows = '';
 		foreach ( $ids as $id ) {
 			$rows .= db_wl_row_html( $id );
 		}
-		echo '<h1 class="page-title">My wishlist <span>(<span id="db-wl-count">' . (int) substr_count( $rows, 'data-wl-row' ) . '</span>)</span></h1>';
-		echo '<p class="db-wl-who">Signed in as <strong>' . esc_html( $email ) . '</strong> <button type="button" class="db-wl-link" id="db-wl-signout">Sign out</button></p>';
-		if ( '' === $rows ) {
-			echo '<div class="db-wl-card"><h2>Nothing saved yet</h2><p>Open any domain and choose <strong>Add to wishlist</strong>. It will appear here.</p><p><a class="db-wl-primary" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains</a></p></div>';
+		$count = (int) substr_count( $rows, 'data-wl-row' );
+		if ( function_exists( 'db_acct_render' ) ) {
+			echo db_acct_render( $email, $rows, $count ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
 		} else {
-			echo '<ul class="db-wl-list">' . $rows . '</ul>'; // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+			echo '<h1 class="page-title">My wishlist <span>(<span id="db-wl-count">' . (int) $count . '</span>)</span></h1>';
+			echo '<p class="db-wl-who">Signed in as <strong>' . esc_html( $email ) . '</strong> <button type="button" class="db-wl-link" id="db-wl-signout">Sign out</button></p>';
+			echo '' === $rows ? '<div class="db-wl-card"><h2>Nothing saved yet</h2><p>Open any domain and choose <strong>Add to wishlist</strong>.</p></div>' : '<ul class="db-wl-list">' . $rows . '</ul>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 	}
 	echo '</main></div>';
+	if ( '' !== $email && function_exists( 'db_acct_script' ) ) {
+		$t = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'saved'; // phpcs:ignore WordPress.Security.NonceVerification
+		echo db_acct_script( $t ); // phpcs:ignore WordPress.Security.EscapeOutput
+	}
 	echo db_wl_script( 0, '' ); // phpcs:ignore WordPress.Security.EscapeOutput
 	get_footer();
 	exit;
@@ -678,7 +689,9 @@ if ( ! function_exists( 'db_wl_admin_page' ) ) {
 		foreach ( $rows as $r ) {
 			echo '<tr><td><strong><a href="' . esc_url( get_edit_post_link( $r->post_id ) ) . '">' . esc_html( strtolower( $r->post_title ) ) . '</a></strong></td><td>' . (int) $r->watchers . '</td><td>' . esc_html( wp_date( 'M j, Y g:i a', strtotime( $r->last_at . ' UTC' ) ) ) . '</td><td>' . esc_html( $r->emails ) . '</td></tr>';
 		}
-		echo '</tbody></table></div>';
+		echo '</tbody></table>';
+		do_action( 'db_wl_admin_after' );
+		echo '</div>';
 	}
 }
 

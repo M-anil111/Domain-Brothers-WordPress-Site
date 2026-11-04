@@ -93,8 +93,8 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		$h .= '<article class="db-pr-card db-pr-card--offer"><span class="db-pr-num" aria-hidden="true">' . ( $plan ? '3' : '2' ) . '</span><h2>Make a custom offer</h2><p class="db-pr-price db-pr-price--text">Name your price</p><p class="db-pr-note">The owner will consider other proposals</p><ul class="db-pr-list">'
 			. $li( 'No offer is too big or too small.' )
 			. $li( 'Our team negotiates on your behalf and replies personally.' )
-			. '</ul><div class="db-pr-offer"><label for="number-99">My offer (USD, excl. taxes)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div>'
-			. '<div id="buy_now" class="db-pr-offerbtn"><button type="button" class="db-pr-btn" data-toggle="modal" data-target="#first" onclick="checkoffervalue();">Make a custom offer</button></div></div></article>';
+			. '</ul><div class="db-pr-offer"><label for="number-99">My offer (USD, excl. taxes)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div></div>'
+			. '<div id="buy_now" class="db-pr-offerbtn"><button type="button" class="db-pr-btn" data-toggle="modal" data-target="#first" onclick="checkoffervalue();">Make a custom offer</button></div><p class="db-pr-fine">Free to ask. No obligation until we agree a price.</p></article>';
 		$h .= '</section>';
 
 		$tld = strrchr( $name, '.' );
@@ -103,6 +103,7 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 			$h .= '<p class="db-pr-ca">To register a .ca domain name you must be a registered Canadian business or organization, a Canadian trademark holder, a citizen of Canada, have permanent residency in Canada, or otherwise qualify under the Canadian Presence Requirements.</p>';
 		}
 		$h .= '</div>';
+		$h .= function_exists( 'db_ad_html' ) ? db_ad_html( 'after_offers' ) : '';
 
 		// Details, statistics and recommendations (built once in db-domain-details-block.php).
 		$h .= '<div class="db-pr-details">' . (string) ( $GLOBALS['db_dd_html'] ?? '' ) . '</div>';

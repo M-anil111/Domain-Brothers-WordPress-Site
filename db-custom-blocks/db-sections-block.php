@@ -138,11 +138,50 @@ if ( ! function_exists( 'db_develop_banner_html' ) ) {
 	}
 }
 
+/** The "Domain status" panel beside the details: price, how to get it, and why it is safe. Strings only. */
+if ( ! function_exists( 'db_dd_side_html' ) ) {
+	function db_dd_side_html( $post ) {
+		$state = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'offer';
+		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
+		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
+		$label = array( 'standard' => 'For sale', 'offer' => 'Open to offers', 'sold' => 'Sold', 'not_for_sale' => 'Not for sale' )[ $state ] ?? 'For sale';
+		$h     = '<aside class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
+		if ( 'standard' === $state && $price > 0 ) {
+			$urls = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
+			$h   .= '<p class="db-dd-side-price">$' . esc_html( number_format( $price, 0 ) ) . '</p>';
+			if ( function_exists( 'db_dd_monthly' ) && $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) ) {
+				$h .= '<p class="db-dd-side-sub">or from ' . esc_html( db_dd_monthly( $price ) ) . '/month</p>';
+			}
+			$h .= '<a class="db-dd-side-btn" href="' . esc_url( $urls['buy'] ) . '">Buy now</a>';
+			if ( function_exists( 'db_dd_monthly' ) && $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) ) {
+				$h .= '<a class="db-dd-side-btn db-dd-side-btn--ghost" href="' . esc_url( $urls['plan'] ) . '">Start a payment plan</a>';
+			}
+		} elseif ( 'offer' === $state ) {
+			$h .= '<p class="db-dd-side-price db-dd-side-price--text">Make an offer</p><p class="db-dd-side-sub">Name your price. We reply personally.</p><a class="db-dd-side-btn" href="#buy_now">Make an offer</a>';
+		} else {
+			$h .= '<p class="db-dd-side-sub">This domain is not available right now.</p><a class="db-dd-side-btn db-dd-side-btn--ghost" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other domains</a>';
+		}
+		$h .= '<ul class="db-dd-side-list"><li>Escrow-protected payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></aside>';
+		return $h;
+	}
+}
+
 // Domain Statistics goes in front of the domain details section on a domain page; the "develop this domain" banner sits before the recommendations.
+// The status panel goes into the details grid; banner ads go after the details and after "How buying works".
 add_filter( 'db_dd_html', function ( $html, $post ) {
-	$banner = db_develop_banner_html( $post );
+	$ad2    = function_exists( 'db_ad_html' ) ? db_ad_html( 'after_details' ) : '';
+	$ad3    = function_exists( 'db_ad_html' ) ? db_ad_html( 'after_steps' ) : '';
+	$banner = $ad3 . db_develop_banner_html( $post );
 	$marker = '<h3>Recommended domains</h3>';
 	$html   = false !== strpos( $html, $marker ) ? str_replace( $marker, $banner . $marker, $html ) : $html . $banner;
+	$how    = '<h3>How buying works</h3>';
+	if ( false !== strpos( $html, $how ) ) {
+		$html = str_replace( $how, $ad2 . $how, $html );
+	}
+	$open = '<section class="db-dd" aria-label="Domain details">';
+	if ( false !== strpos( $html, $open ) ) {
+		$html = str_replace( $open, $open . db_dd_side_html( $post ), $html );
+	}
 	return db_stats_html( $post ) . $html;
 }, 10, 2 );
 

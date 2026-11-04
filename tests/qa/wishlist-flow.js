@@ -132,7 +132,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.locator('.db-stats').first().scrollIntoViewIfNeeded().catch(() => {});
 	await page.screenshot({ path: SHOTS + '/4-domain-statistics.png' });
 	const stats = (await page.locator('.db-stats').first().innerText().catch(() => '')).replace(/\s+/g, ' ');
-	check('the domain page shows Domain Statistics with Watching 1', /Domain Statistics/.test(stats) && /1\s*Watching/.test(stats), stats.slice(0, 120));
+	check('the domain page shows Domain Statistics with Watching 1', /Domain Statistics/i.test(stats) && /1\s*Watching/i.test(stats), stats.slice(0, 120));
 
 	// 9. admin view, then removal and sign out
 	await admin.goto(`${BASE}/wp-admin/admin.php?page=db-wishlists`, { waitUntil: 'domcontentloaded' });
