@@ -34,6 +34,23 @@ get_header();
 				</div>
 			</div>
 			<script>
+			/* Same helpers the theme's own domain page defines (its header prints them only for that template). */
+			function checkoffervalue() {
+				var $ = window.jQuery;
+				if (!$) { return true; }
+				var v = $('#number-99').val();
+				if (v === '') { $('#number-99').css('border', '1px solid red'); $('.loginpopup').prop('id', 'firs1t'); return false; }
+				$('#number-99').css('border', '');
+				$('.loginpopup').prop('id', 'first');
+				$('#offer_popup').val(v);
+				$('#offer_popup').prop('readonly', true);
+			}
+			function KeycheckOnlyPhonenumber(e) {
+				var k = e.which || e.keyCode || e.charCode;
+				return !((k >= 65 && k <= 90) || (k >= 97 && k <= 122) || (k >= 33 && k <= 39) || k === 42 || k === 44 || (k >= 46 && k <= 47) || (k >= 58 && k <= 64) || (k >= 91 && k <= 96) || (k >= 123 && k <= 126));
+			}
+			</script>
+			<script>
 			(function () {
 				var domain = <?php echo wp_json_encode( strtolower( wp_strip_all_tags( $db_post->post_title ) ) ); ?>;
 				function fill() { var f = document.getElementById('hide_domainname'); if (f) { f.value = domain; } }

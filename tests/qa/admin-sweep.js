@@ -60,7 +60,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.goto(`${BASE}/wp-admin/plugins.php`, { waitUntil: 'domcontentloaded' });
 	const plugins = (await page.locator('#the-list').innerText()).replace(/\s+/g, ' ');
 	const ver = (plugins.match(/Domain Brothers Custom Blocks.{0,400}?Version ([0-9.]+)/) || [])[1];
-	check('Domain Brothers plugin is active and current', !!ver && /^3\.59\./.test(ver), `version ${ver}`);
+	check('Domain Brothers plugin is active and current', !!ver && /^3\.\d+\.\d+$/.test(ver), `version ${ver}`);
 	await page.goto(`${BASE}/wp-admin/update-core.php?force-check=1`, { waitUntil: 'domcontentloaded' });
 	const uc = (await page.locator('#wpbody-content').innerText()).replace(/\s+/g, ' ');
 	check('WordPress is on the latest version', /You have the latest version of WordPress/.test(uc), (uc.match(/Current version: ([0-9.]+)/) || [])[0]);

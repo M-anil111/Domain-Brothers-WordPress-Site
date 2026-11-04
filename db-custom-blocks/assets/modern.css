@@ -743,3 +743,5 @@ html body.db-ui-active.db-ui-active .db-priced .db-pr-card h2 { color: #5b6472 !
 /* the photo tile: a stronger veil so type is always readable, and a size that keeps .com on the line */
 html body.db-ui-active.single-domain .banner_contant::before { background: linear-gradient(180deg, rgba(8,12,20,.52) 0%, rgba(8,12,20,.58) 40%, rgba(8,12,20,.88) 100%) !important; }
 html body.db-ui-active.single-domain .banner_contant .text_normal h2 .domain_name { font-size: clamp(30px, 3.9vw, 56px) !important; overflow-wrap: break-word; word-break: normal; }
+/* wishlist button on the priced page sits under the payment badges */
+.db-pr-pay .db-wl-wrap { max-width: 420px; margin: 18px auto 0; }

@@ -511,7 +511,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 	}
 	function mountButton() {
 		if (!C.post) { return; }
-		var host = document.querySelector('.domain-detail-form.make_an_offer');
+		var host = document.querySelector('.domain-detail-form.make_an_offer') || document.querySelector('.db-pr-pay');
 		if (!host) { return; }
 		btn = el('<button type="button" class="db-wl-btn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.700 3.600 4.500 7 4.500c2 0 3.400 1 5 3 1.600-2 3-3 5-3 3.400 0 5.400 3.200 4.200 6.700-1.700 4.700-9.200 9.300-9.200 9.300z"/></svg><span>Add to wishlist</span></button>');
 		var wrap = el('<div class="db-wl-wrap"></div>'); wrap.appendChild(btn);
