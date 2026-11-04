@@ -81,6 +81,12 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 
     QA_MONTHS=3 BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g) node tests/qa/stripe-test-purchase.js out-dir
 
+## `checkout/checkout-render-test.php` — checkout page markup, offline (26 checks)
+
+Renders `/buy-now/` against stubs and checks the live-site layout (Billing Information → Order Confirmation → Payment steps, Pay in full / Pay less up front, order summary, next steps, footer), plan wording, escaping, and that the Stripe hooks used by the payment script and the live suites are still present. The live suites walk the three steps with `walkCheckout()` before the Payment Element mounts.
+
+    php tests/checkout/checkout-render-test.php
+
 ## Listing states and offers
 
 - `listing/listing-state-test.php` (offline): which of standard / custom offer / not for sale / sold a listing is in.

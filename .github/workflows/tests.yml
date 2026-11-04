@@ -32,6 +32,8 @@ jobs:
           echo "lint ok"
       - name: Payment plans and Stripe (offline)
         run: php tests/plan/plan-lifecycle-test.php
+      - name: Checkout page markup (offline)
+        run: php tests/checkout/checkout-render-test.php
       - name: Page markup hygiene
         run: php tests/seo/html-hygiene-test.php
       - name: Titles

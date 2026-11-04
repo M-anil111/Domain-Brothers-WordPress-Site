@@ -30,6 +30,18 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 const text = async (page) => (await page.locator('body').innerText()).replace(/\s+/g, ' ');
 const authCtx = (browser, extra = {}) => browser.newContext({ ...(process.env.BETA_USER ? { httpCredentials: { username: process.env.BETA_USER, password: process.env.BETA_PASS } } : {}), viewport: { width: 1200, height: 1400 }, ...extra });
 
+// The checkout is three steps (Billing Information → Order Confirmation →
+// Payment); the Stripe Payment Element mounts on the third.
+async function walkCheckout(page, email) {
+	await page.fill('#co-name', 'QA Test Buyer');
+	await page.fill('#db-stripe-email', email);
+	await page.fill('#co-phone', '+1 512 555 0100');
+	await page.click('#co-next-1');
+	const agree = page.locator('#db-stripe-agree');
+	if (await agree.count() && await agree.isVisible()) { await agree.check(); }
+	await page.click('#co-next-2');
+}
+
 (async () => {
 	const browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
 	const adminCtx = await authCtx(browser);
@@ -105,19 +117,17 @@ const authCtx = (browser, extra = {}) => browser.newContext({ ...(process.env.BE
 	// ── 8. checkout charges the deal's price, whatever the URL says ──
 	const payHref = await buyer.locator('a.db-un-btn--primary').first().getAttribute('href');
 	await buyer.goto(payHref + '&p=MQ%3D%3D&d=eC5jb20%3D', { waitUntil: 'domcontentloaded' });
-	await buyer.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 60000 });
 	t = await text(buyer);
-	check('checkout shows the agreed domain and $2,000 (extra URL parameters ignored)', new RegExp(DOMAIN.replace('.', '\\.'), 'i').test(t) && /\$2,000/.test(t));
+	check('checkout shows the agreed domain and $2,000 (extra URL parameters ignored)', new RegExp(DOMAIN.replace('.', '\\.'), 'i').test(t) && /\$2,?000/.test(t));
+	await walkCheckout(buyer, EMAIL);
+	await buyer.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 60000 });
 	await buyer.waitForTimeout(3000);
-	await buyer.locator('input[type=email]').first().fill(EMAIL);
 	const fr = buyer.frameLocator('iframe[name^="__privateStripeFrame"]').first();
 	await fr.locator('input[name="number"], input[autocomplete="cc-number"]').first().fill('4242424242424242');
 	await fr.locator('input[name="expiry"], input[autocomplete="cc-exp"]').first().fill('12 / 34');
 	await fr.locator('input[name="cvc"], input[autocomplete="cc-csc"]').first().fill('123');
 	const zip = fr.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
 	if (await zip.count()) { await zip.first().fill('78701'); }
-	const agree = buyer.locator('#db-stripe-agree');
-	if (await agree.count() && await agree.isVisible()) { await agree.check(); }
 	await buyer.locator('button.db-stripe-btn, button[type=submit]').first().click();
 	await buyer.waitForURL(/thank-you/, { timeout: 90000 }).catch(() => {});
 	check('test payment completes and reaches the thank-you page', /thank-you/.test(buyer.url()));

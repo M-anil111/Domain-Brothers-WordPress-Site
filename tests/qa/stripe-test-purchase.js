@@ -21,6 +21,18 @@ const MONTHS = process.env.QA_MONTHS || ''; // set to 3/6/9/12 to test a payment
 const OUT = process.argv[2] || path.join(process.cwd(), 'stripe-purchase-report');
 fs.mkdirSync(OUT, { recursive: true });
 
+// The checkout is three steps (Billing Information → Order Confirmation →
+// Payment); the Stripe Payment Element mounts on the third.
+async function walkCheckout(page, email) {
+	await page.fill('#co-name', 'QA Test Buyer');
+	await page.fill('#db-stripe-email', email);
+	await page.fill('#co-phone', '+1 512 555 0100');
+	await page.click('#co-next-1');
+	const agree = page.locator('#db-stripe-agree');
+	if (await agree.count() && await agree.isVisible()) { await agree.check(); }
+	await page.click('#co-next-2');
+}
+
 (async () => {
 	const browser = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
 	const ctx = await browser.newContext({
@@ -32,22 +44,19 @@ fs.mkdirSync(OUT, { recursive: true });
 	const check = (name, pass, detail = '') => { results.push({ name, pass }); console.log(`${pass ? 'PASS' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`); };
 
 	await page.goto(`${BASE}/buy-now/?d=${DOMAIN_B64}&p=${PRICE_B64}${MONTHS ? '&months=' + MONTHS : ''}`, { waitUntil: 'load' });
+	await walkCheckout(page, 'qa-test@example.com');
 	const frame = await page.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 30000 }).catch(() => null);
 	check('checkout shows the Stripe Payment Element', !!frame);
 	if (!frame) { await browser.close(); process.exit(1); }
 	await page.waitForTimeout(3000);
 	await page.screenshot({ path: path.join(OUT, 'checkout.png') });
 
-	await page.locator('input[type=email]').first().fill('qa-test@example.com');
 	const fr = page.frameLocator('iframe[name^="__privateStripeFrame"]').first();
 	await fr.locator('input[name="number"], input[autocomplete="cc-number"]').first().fill('4242424242424242');
 	await fr.locator('input[name="expiry"], input[autocomplete="cc-exp"]').first().fill('12 / 34');
 	await fr.locator('input[name="cvc"], input[autocomplete="cc-csc"]').first().fill('123');
 	const zip = fr.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
 	if (await zip.count()) { await zip.first().fill('78701'); }
-	const agree = page.locator('#db-stripe-agree');
-	if (await agree.count() && await agree.isVisible()) { await agree.check(); }
-
 	const [resp] = await Promise.all([
 		page.waitForResponse((r) => /\/thank-you\//.test(r.url()) && r.request().resourceType() === 'document', { timeout: 60000 }).catch(() => null),
 		page.locator('button.db-stripe-btn, button[type=submit]').first().click(),
