@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.63.1
+ * Version:     3.64.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.63.1' );
+define( 'DB_BLOCKS_LOADED', '3.64.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -110,7 +110,65 @@ if ( ! function_exists( 'db_sg_api_key' ) ) {
 	}
 }
 
+/* ── General SMTP (SMTP2GO or any provider). Takes priority over the SendGrid key when saved. ── */
+
+if ( ! function_exists( 'db_smtp_crypt_key' ) ) {
+	function db_smtp_crypt_key() {
+		return substr( hash( 'sha256', 'db-smtp|' . wp_salt( 'auth' ), true ), 0, SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+	}
+}
+if ( ! function_exists( 'db_smtp_encrypt' ) ) {
+	/** The SMTP password is stored encrypted with a key derived from this site's secret salts. */
+	function db_smtp_encrypt( $plain ) {
+		$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+		return base64_encode( $nonce . sodium_crypto_secretbox( (string) $plain, $nonce, db_smtp_crypt_key() ) );
+	}
+}
+if ( ! function_exists( 'db_smtp_decrypt' ) ) {
+	function db_smtp_decrypt( $blob ) {
+		$raw = base64_decode( (string) $blob, true );
+		if ( false === $raw || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
+			return '';
+		}
+		$plain = sodium_crypto_secretbox_open( substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), db_smtp_crypt_key() );
+		return false === $plain ? '' : $plain;
+	}
+}
+if ( ! function_exists( 'db_smtp_config' ) ) {
+	/** @return array{host:string,port:int,secure:string,user:string,pass:string,from:string,name:string}|null null = not set up */
+	function db_smtp_config() {
+		$o = get_option( 'db_smtp', array() );
+		$o = is_array( $o ) ? $o : array();
+		$pass = defined( 'DB_SMTP_PASS' ) ? (string) DB_SMTP_PASS : db_smtp_decrypt( $o['pass'] ?? '' );
+		$c = array(
+			'host'   => defined( 'DB_SMTP_HOST' ) ? (string) DB_SMTP_HOST : (string) ( $o['host'] ?? '' ),
+			'port'   => (int) ( defined( 'DB_SMTP_PORT' ) ? DB_SMTP_PORT : ( $o['port'] ?? 587 ) ),
+			'secure' => (string) ( $o['secure'] ?? 'tls' ),
+			'user'   => defined( 'DB_SMTP_USER' ) ? (string) DB_SMTP_USER : (string) ( $o['user'] ?? '' ),
+			'pass'   => $pass,
+			'from'   => (string) ( $o['from'] ?? DB_SG_FROM ),
+			'name'   => (string) ( $o['name'] ?? DB_SG_NAME ),
+		);
+		return ( '' !== $c['host'] && '' !== $c['user'] && '' !== $c['pass'] ) ? $c : null;
+	}
+}
+
 add_action( 'phpmailer_init', function ( $phpmailer ) {
+	$smtp = db_smtp_config();
+	if ( $smtp ) {
+		$phpmailer->isSMTP();
+		$phpmailer->SMTPAuth    = true;
+		$phpmailer->SMTPSecure  = in_array( $smtp['secure'], array( 'tls', 'ssl' ), true ) ? $smtp['secure'] : '';
+		$phpmailer->SMTPAutoTLS = in_array( $smtp['secure'], array( 'tls', 'ssl' ), true );
+		$phpmailer->Host        = $smtp['host'];
+		$phpmailer->Port        = $smtp['port'];
+		$phpmailer->Username    = $smtp['user'];
+		$phpmailer->Password    = $smtp['pass'];
+		$phpmailer->From        = is_email( $smtp['from'] ) ? $smtp['from'] : DB_SG_FROM;
+		$phpmailer->FromName    = $smtp['name'];
+		$phpmailer->SMTPOptions = array( 'ssl' => array( 'verify_peer' => true, 'verify_peer_name' => true, 'allow_self_signed' => false ) );
+		return;
+	}
 	$key = db_sg_api_key();
 	if ( ! $key ) {
 		return;
@@ -133,13 +191,34 @@ add_action( 'phpmailer_init', function ( $phpmailer ) {
 	);
 } );
 
-add_filter( 'wp_mail_from',      function ( $email ) { return db_sg_api_key() ? DB_SG_FROM : $email; } );
-add_filter( 'wp_mail_from_name', function ( $name )  { return db_sg_api_key() ? DB_SG_NAME : $name; } );
+add_filter( 'wp_mail_from',      function ( $email ) { $c = db_smtp_config(); return $c && is_email( $c['from'] ) ? $c['from'] : ( db_sg_api_key() ? DB_SG_FROM : $email ); } );
+add_filter( 'wp_mail_from_name', function ( $name )  { $c = db_smtp_config(); return $c ? $c['name'] : ( db_sg_api_key() ? DB_SG_NAME : $name ); } );
+
+add_action( 'admin_post_db_smtp_save', function () {
+	if ( ! current_user_can( 'manage_options' ) || ! check_admin_referer( 'db_smtp_save' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	$old = get_option( 'db_smtp', array() );
+	$old = is_array( $old ) ? $old : array();
+	$pw  = isset( $_POST['pass'] ) ? (string) wp_unslash( $_POST['pass'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- a password is stored as typed, encrypted.
+	$new = array(
+		'host'   => preg_replace( '/[^a-z0-9.\-]/i', '', (string) ( $_POST['host'] ?? '' ) ),
+		'port'   => max( 1, min( 65535, (int) ( $_POST['port'] ?? 587 ) ) ),
+		'secure' => in_array( $_POST['secure'] ?? '', array( 'tls', 'ssl', '' ), true ) ? (string) $_POST['secure'] : 'tls',
+		'user'   => sanitize_text_field( wp_unslash( $_POST['user'] ?? '' ) ),
+		'pass'   => '' !== $pw ? db_smtp_encrypt( $pw ) : (string) ( $old['pass'] ?? '' ), // blank = keep the saved password
+		'from'   => sanitize_email( wp_unslash( $_POST['from'] ?? '' ) ),
+		'name'   => sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ),
+	);
+	update_option( 'db_smtp', $new, false );
+	wp_safe_redirect( admin_url( 'options-general.php?page=db-smtp-sendgrid&smtp_saved=1' ) );
+	exit;
+} );
 
 add_action( 'admin_menu', function () {
 	add_options_page(
-		'DB SMTP (SendGrid)',
-		'DB SMTP (SendGrid)',
+		'DB Email delivery (SMTP)',
+		'DB Email delivery (SMTP)',
 		'manage_options',
 		'db-smtp-sendgrid',
 		'db_sg_settings_page'
@@ -187,6 +266,27 @@ if ( ! function_exists( 'db_sg_settings_page' ) ) {
 				</tr>
 			</table>
 
+			<?php $smtp = db_smtp_config(); $sv = get_option( 'db_smtp', array() ); $sv = is_array( $sv ) ? $sv : array(); ?>
+			<h2>Email delivery (SMTP): used for every email</h2>
+			<?php if ( isset( $_GET['smtp_saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+				<div class="notice notice-success"><p>Saved.</p></div>
+			<?php endif; ?>
+			<p><?php echo $smtp ? '<span style="color:#1a7f37;font-weight:600">&#10003; Active: ' . esc_html( $smtp['host'] . ':' . $smtp['port'] ) . ' as ' . esc_html( $smtp['user'] ) . '. SendGrid below is not used.</span>' : '<span style="color:#d63638;font-weight:600">&#9888; Not set. The SendGrid key below is used if saved.</span>'; ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="db_smtp_save">
+				<?php wp_nonce_field( 'db_smtp_save' ); ?>
+				<table class="form-table" role="presentation">
+					<tr><th><label for="db_smtp_host">Server</label></th><td><input id="db_smtp_host" name="host" class="regular-text" value="<?php echo esc_attr( $sv['host'] ?? '' ); ?>" placeholder="mail.smtp2go.com"></td></tr>
+					<tr><th><label for="db_smtp_port">Port</label></th><td><input id="db_smtp_port" name="port" type="number" value="<?php echo esc_attr( (string) ( $sv['port'] ?? 2525 ) ); ?>"> <select name="secure"><?php foreach ( array( 'tls' => 'STARTTLS', 'ssl' => 'SSL/TLS', '' => 'None' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $sv['secure'] ?? 'tls', $k, false ) . '>' . esc_html( $l ) . '</option>'; } ?></select></td></tr>
+					<tr><th><label for="db_smtp_user">Username</label></th><td><input id="db_smtp_user" name="user" class="regular-text" autocomplete="off" value="<?php echo esc_attr( $sv['user'] ?? '' ); ?>"></td></tr>
+					<tr><th><label for="db_smtp_pass">Password</label></th><td><input id="db_smtp_pass" name="pass" type="password" class="regular-text" autocomplete="new-password" value="" placeholder="<?php echo esc_attr( $smtp ? 'Saved: leave blank to keep' : '' ); ?>"><p class="description">Stored encrypted. Never shown again.</p></td></tr>
+					<tr><th><label for="db_smtp_from">From address</label></th><td><input id="db_smtp_from" name="from" type="email" class="regular-text" value="<?php echo esc_attr( $sv['from'] ?? DB_SG_FROM ); ?>"><p class="description">Must be a sender or domain verified with your SMTP provider.</p></td></tr>
+					<tr><th><label for="db_smtp_name">From name</label></th><td><input id="db_smtp_name" name="name" class="regular-text" value="<?php echo esc_attr( $sv['name'] ?? DB_SG_NAME ); ?>"></td></tr>
+				</table>
+				<?php submit_button( 'Save email delivery settings' ); ?>
+			</form>
+			<hr>
+			<h2>SendGrid (only used when the SMTP settings above are empty)</h2>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'db_sg_settings' ); ?>
 				<table class="form-table">
@@ -249,15 +349,15 @@ add_action( 'init', function () {
 	if ( ! is_email( $to ) ) {
 		wp_die( 'Invalid email address.', 'DB Mail Test', array( 'response' => 400 ) );
 	}
-	if ( ! db_sg_api_key() ) {
-		wp_die( '<strong style="color:#d63638">API key not set.</strong><br>Go to Settings → DB SMTP (SendGrid) and enter the key first.', 'DB Mail Test', array( 'response' => 200 ) );
+	if ( ! db_sg_api_key() && ! db_smtp_config() ) {
+		wp_die( '<strong style="color:#d63638">API key not set.</strong><br>Go to Settings → DB Email delivery (SMTP) and enter the key first.', 'DB Mail Test', array( 'response' => 200 ) );
 	}
 	$mail_error = '';
 	add_action( 'wp_mail_failed', function ( $wp_error ) use ( &$mail_error ) {
 		$mail_error = $wp_error->get_error_message();
 	} );
-	$sent = wp_mail( $to, 'Domain Brothers — SendGrid SMTP test',
-		'<p>Test email from <strong>Domain Brothers</strong> via SendGrid SMTP.</p><p>If you received this, SMTP is working.</p>',
+	$sent = wp_mail( $to, 'Domain Brothers — SMTP test',
+		'<p>Test email from <strong>Domain Brothers</strong> via SMTP.</p><p>If you received this, SMTP is working.</p>',
 		array( 'Content-Type: text/html; charset=UTF-8' )
 	);
 	if ( $sent ) {
