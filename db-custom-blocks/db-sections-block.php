@@ -93,9 +93,13 @@ if ( ! function_exists( 'db_hp_sections_html' ) ) {
 			'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="6" y="12" width="36" height="24" rx="4"/><path d="M6 20h36M14 29h8"/></svg>',
 			'<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 5l15 6v11c0 9.500-6.200 17.600-15 21-8.800-3.400-15-11.500-15-21V11l15-6z"/><path d="M17 24l5 5 9-10"/></svg>',
 		);
-		$html  = '<section class="db-aud" aria-labelledby="db-aud-h"><h2 id="db-aud-h" class="screen-reader-text">Who Domain Brothers is for</h2><div class="db-aud-grid">';
-		$html .= '<div class="db-aud-col"><h3>Perfect for domain buyers &hellip;</h3>' . $list( $buyers ) . '<a class="db-aud-btn" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains for sale</a></div>';
-		$html .= '<div class="db-aud-col"><h3>&hellip; and domain sellers</h3>' . $list( $sellers ) . '<a class="db-aud-btn" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Talk to us about selling</a></div>';
+		$badge_buy  = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg>';
+		$badge_sell = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12.500V4h8.500L21 13.500 13.500 21 3 12.500z"/><circle cx="7.500" cy="8.500" r="1.200"/></svg>';
+		$html  = '<section class="db-aud" aria-labelledby="db-aud-h">';
+		$html .= '<header class="db-aud-head"><p class="db-aud-eyebrow">Buy or sell with confidence</p><h2 id="db-aud-h">Whether you are buying or selling, we make it simple</h2><p class="db-aud-sub">Premium domains, personal service and escrow-protected transfers, from the first search to the final handover.</p></header>';
+		$html .= '<div class="db-aud-grid">';
+		$html .= '<div class="db-aud-col db-aud-col--buy"><span class="db-aud-badge">' . $badge_buy . '</span><h3>Perfect for domain buyers</h3><p class="db-aud-lede">Find a name that makes your brand easy to remember.</p>' . $list( $buyers ) . '<a class="db-aud-btn" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains for sale</a></div>';
+		$html .= '<div class="db-aud-col db-aud-col--sell"><span class="db-aud-badge">' . $badge_sell . '</span><h3>Perfect for domain sellers</h3><p class="db-aud-lede">Turn a name you are not using into money.</p>' . $list( $sellers ) . '<a class="db-aud-btn db-aud-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Talk to us about selling</a></div>';
 		$html .= '</div></section>';
 		$html .= '<section class="db-how" aria-labelledby="db-how-h"><h2 id="db-how-h">How it works</h2><div class="db-how-grid">';
 		$html .= '<div class="db-how-step"><span class="db-how-icon">' . $icons[0] . '</span><h3>Find your name</h3><p>Browse premium domains or search by keyword. Every listing shows its price, a monthly payment option, or a button to make an offer.</p></div>';
@@ -106,8 +110,39 @@ if ( ! function_exists( 'db_hp_sections_html' ) ) {
 	}
 }
 
-// Domain Statistics goes in front of the domain details section on a domain page.
+if ( ! function_exists( 'db_develop_banner_html' ) ) {
+	/** "Want to develop this domain?": the build services, with a call to action. Strings only. */
+	function db_develop_banner_html( $post ) {
+		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
+		$quote = add_query_arg( array( 'domain' => $name, 'topic' => 'develop' ), home_url( '/contact-us/' ) );
+		$icons = array(
+			'logo'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.400 6.800 19.200l1-5.900L3.500 9.200l5.900-.8L12 3z"/></svg>',
+			'social'  => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.500h8M8 12.500h5"/></svg>',
+			'website' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="14" rx="2.500"/><path d="M3 9h18M8 21h8M12 18v3"/></svg>',
+			'app'     => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="2.500" width="10" height="19" rx="2.500"/><path d="M11 18.500h2"/></svg>',
+		);
+		$cards = array(
+			array( 'logo', 'Get a logo designed', 'A mark and brand look that fit the name.', home_url( '/other-services/' ) ),
+			array( 'social', 'Social media marketing', 'Launch campaigns that find your first customers.', home_url( '/digital-marketing/' ) ),
+			array( 'website', 'Website design and build', 'A fast, modern site, live on ' . $name . '.', home_url( '/website-design-development/' ) ),
+			array( 'app', 'Mobile apps', 'iPhone and Android apps for your idea.', home_url( '/mobile-app-development/' ) ),
+		);
+		$html  = '<section class="db-dev" aria-labelledby="db-dev-h"><div class="db-dev-inner">';
+		$html .= '<div class="db-dev-copy"><p class="db-dev-eyebrow">Domain Brothers Studio</p><h2 id="db-dev-h">Want to develop this domain?</h2><p class="db-dev-sub">Buy <strong>' . esc_html( $name ) . '</strong> and build on it with one team: logo, social media, website and mobile apps, from first sketch to launch day.</p>';
+		$html .= '<div class="db-dev-cta"><a class="db-dev-btn" href="' . esc_url( $quote ) . '">Get a free quote</a><a class="db-dev-link" href="' . esc_url( home_url( '/our-services/' ) ) . '">See all services <span aria-hidden="true">&rsaquo;</span></a></div></div>';
+		$html .= '<ul class="db-dev-grid">';
+		foreach ( $cards as $c ) {
+			$html .= '<li><a href="' . esc_url( $c[3] ) . '"><span class="db-dev-ico">' . $icons[ $c[0] ] . '</span><strong>' . esc_html( $c[1] ) . '</strong><span class="db-dev-txt">' . esc_html( $c[2] ) . '</span><span class="db-dev-more" aria-hidden="true">Learn more &rsaquo;</span></a></li>';
+		}
+		return $html . '</ul></div></section>';
+	}
+}
+
+// Domain Statistics goes in front of the domain details section on a domain page; the "develop this domain" banner sits before the recommendations.
 add_filter( 'db_dd_html', function ( $html, $post ) {
+	$banner = db_develop_banner_html( $post );
+	$marker = '<h3>Recommended domains</h3>';
+	$html   = false !== strpos( $html, $marker ) ? str_replace( $marker, $banner . $marker, $html ) : $html . $banner;
 	return db_stats_html( $post ) . $html;
 }, 10, 2 );
 
