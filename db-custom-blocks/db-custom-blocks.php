@@ -336,7 +336,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// A search-first hero: one big search box, then the extensions people actually browse.
 		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
 		$html .= '<label class="screen-reader-text" for="db-hp-q">Search for a domain, keyword or brand</label>';
-		$html .= '<input id="db-hp-q" type="search" name="q" placeholder="Search for a domain, keyword or brand" autocomplete="off" required>';
+		$html .= '<input id="db-hp-q" type="search" name="q" placeholder="Search a domain or keyword" autocomplete="off" required>';
 		$html .= '<button type="submit">Search</button></form>';
 		$chips = '';
 		if ( function_exists( 'db_domain_index' ) ) {
