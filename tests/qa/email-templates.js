@@ -94,6 +94,13 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	m = await lastMail(EMAIL);
 	check('Reset brings back the original subject', /^Your Domain Brothers sign-in code: \d{6}$/.test(m.subject), m.subject);
 
+	// 6b. a form that sends its own HTML document must never show as source code (the bug seen in Gmail)
+	const doc = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html;charset=utf-8" /><title>Domain Brothers</title><style type="text/css">body{background:#fff;margin:0;} .logo{}</style></head><body><table><tr><td>Domain</td><td>brandable.com</td></tr><tr><td>Offer</td><td>$1,500</td></tr></table><script>alert(1)</script></body></html>';
+	const sample = await (await ctx.request.post(`${BASE}/wp-json/db/v1/email/cf7-sample`, { headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' }, data: { body: doc } })).json();
+	const leaks = (h) => /&lt;\s*(!doctype|html|head|body|style)|<style type=|<script>alert|DOCTYPE html PUBLIC/i.test(h.replace(/<style>@media[\s\S]*?<\/style>/, ''));
+	check('a form\'s HTML document is shown as tidy text, not source code', !leaks(sample.html) && /brandable\.com/.test(sample.html) && /\$1,500/.test(sample.html));
+	check('a whole HTML document handed to the email shell is reduced to text (safety net)', !leaks(sample.wrapped) && /brandable\.com/.test(sample.wrapped));
+
 	// 7. security: only administrators
 	const anon = await browser.newContext({ ...creds });
 	const r = await anon.request.fetch(`${BASE}/wp-admin/admin-post.php`, { method: 'POST', form: { action: 'db_mail_save', tpl: 'signin_code', subject: 'hacked' }, maxRedirects: 0 });

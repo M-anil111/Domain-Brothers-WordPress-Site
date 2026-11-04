@@ -332,13 +332,18 @@ add_filter( 'wpcf7_mail_components', function ( $components, $cf7 ) {
 		$subj       = ! empty( $components['subject'] ) ? (string) $components['subject'] : 'Message — Domain Brothers';
 		$raw_body   = (string) $components['body'];
 
-		// CF7's default mail body is plain text — always escape it before we
-		// force an HTML content-type below. Treating any '<' in the visitor's
-		// own message as "already safe HTML" would let attacker-supplied
-		// markup render live in the recipient's mail client.
-		$body_html = '<p>' . nl2br( esc_html( $raw_body ) ) . '</p>';
-
-		$components['body'] = db_mail_wrap( $subj, $body_html, $from_name, $from_email );
+		// The body is plain text or the form's own HTML template. Either way it is turned
+		// into tidy text (or the offer template) and escaped: visitor text never becomes
+		// live markup, and a form's HTML document is never shown as source code.
+		if ( function_exists( 'db_mail_cf7_body' ) ) {
+			$posted = class_exists( 'WPCF7_Submission' ) && WPCF7_Submission::get_instance() ? WPCF7_Submission::get_instance()->get_posted_data() : null;
+			$r      = db_mail_cf7_body( $raw_body, function_exists( 'db_is_offer_form' ) && db_is_offer_form( $cf7 ), $posted );
+			$GLOBALS['db_mail_pre'] = $r['pre'];
+			$components['body'] = db_mail_wrap( $subj, $r['inner'], $from_name, $from_email );
+		} else {
+			$body_html = '<p>' . nl2br( esc_html( $raw_body ) ) . '</p>';
+			$components['body'] = db_mail_wrap( $subj, $body_html, $from_name, $from_email );
+		}
 	}
 
 	// Ensure HTML content-type header.

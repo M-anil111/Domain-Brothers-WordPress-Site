@@ -186,6 +186,72 @@ if ( ! function_exists( 'db_plan_email_shell' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_mail_html_to_text' ) ) {
+	/** Readable text from an HTML document: head, styles and scripts dropped, rows and paragraphs kept as lines. */
+	function db_mail_html_to_text( $html ) {
+		$html = (string) $html;
+		if ( preg_match( '#<body[^>]*>(.*)</body>#is', $html, $m ) ) {
+			$html = $m[1];
+		}
+		$html = preg_replace( '#<(head|style|script|title)\b.*?</\1>#is', '', $html );
+		$html = preg_replace( '#<(br|/p|/div|/tr|/h[1-6]|/li|/table)\s*/?>#i', "\n", $html );
+		$html = preg_replace( '#</t[dh]>#i', ' ', $html );
+		$text = html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' );
+		$text = preg_replace( "/[ \t]+/", ' ', $text );
+		$text = preg_replace( "/ ?\n ?/", "\n", $text );
+		return trim( preg_replace( "/\n{3,}/", "\n\n", $text ) );
+	}
+}
+
+if ( ! function_exists( 'db_mail_safe_body' ) ) {
+	/**
+	 * Last line of defence for every email: the body must never be the source code of a page.
+	 * A whole HTML document is reduced to its readable text, and so is an escaped one
+	 * (the "&lt;!DOCTYPE ..." mistake that showed raw markup in an inbox).
+	 */
+	function db_mail_safe_body( $body_html ) {
+		$b = (string) $body_html;
+		if ( preg_match( '/&lt;\s*(!doctype|html|head|body)\b/i', $b ) ) {
+			return '<p>' . nl2br( esc_html( db_mail_html_to_text( html_entity_decode( $b, ENT_QUOTES, 'UTF-8' ) ) ) ) . '</p>';
+		}
+		if ( preg_match( '/^\s*(<!doctype|<html\b)/i', $b ) || preg_match( '/<html\b[^>]*>.*<head\b/is', $b ) ) {
+			return '<p>' . nl2br( esc_html( db_mail_html_to_text( $b ) ) ) . '</p>';
+		}
+		return $b;
+	}
+}
+
+if ( ! function_exists( 'db_mail_cf7_body' ) ) {
+	/**
+	 * The inner content for a Contact Form 7 notification. An offer form becomes the structured
+	 * "Offer form submitted" template; any other form becomes tidy text. A form that sends its
+	 * own HTML is never escaped and shown as source, and visitor text is always escaped.
+	 *
+	 * @param array|null $posted The submitted fields.
+	 * @return array{inner:string,pre:string}
+	 */
+	function db_mail_cf7_body( $raw_body, $is_offer, $posted ) {
+		if ( $is_offer && is_array( $posted ) && function_exists( 'db_offer_value' ) && '' !== db_offer_value( $posted, 'domain' ) ) {
+			$amt = db_offer_value( $posted, 'amount' );
+			$m   = db_mail_compose( 'admin_form_offer', array(
+				'domain'       => strtolower( db_offer_value( $posted, 'domain' ) ),
+				'name'         => db_offer_value( $posted, 'name' ),
+				'email'        => db_offer_value( $posted, 'email' ),
+				'phone'        => db_offer_value( $posted, 'phone' ),
+				'offer_amount' => '' !== $amt ? ( '$' === substr( $amt, 0, 1 ) ? $amt : '$' . $amt ) : '',
+				'message_html' => '' !== db_offer_value( $posted, 'message' ) ? '<p>' . nl2br( esc_html( db_offer_value( $posted, 'message' ) ) ) . '</p>' : '',
+				'admin_url'    => admin_url( 'admin.php?page=db-offers' ),
+			) );
+			if ( $m && $m['enabled'] ) {
+				return array( 'inner' => $m['inner'], 'pre' => $m['pre'] );
+			}
+		}
+		$text  = db_mail_html_to_text( (string) $raw_body );
+		$inner = db_mail_inner( array( 'body_html' => '<p style="text-align:left">' . nl2br( esc_html( $text ) ) . '</p>', 'raw_body' => true ) );
+		return array( 'inner' => $inner, 'pre' => '' );
+	}
+}
+
 if ( ! function_exists( 'db_mail_wrap' ) ) {
 	/** The full email: soft background, white rounded card, logo on top, small centred footer. */
 	function db_mail_wrap( $subject, $body_html, $from_name = 'Domain Brothers', $from_email = 'sales@domainbrothers.com' ) {
@@ -199,6 +265,7 @@ if ( ! function_exists( 'db_mail_wrap' ) ) {
 		$fonts  = db_mail_fonts();
 		$stack  = ( $fonts[ $d['font'] ] ?? $fonts['system'] )[1];
 		$logo_w = max( 80, min( 320, (int) $d['logo_width'] ) );
+		$body_html = db_mail_safe_body( $body_html );
 		$pre    = isset( $GLOBALS['db_mail_pre'] ) ? (string) $GLOBALS['db_mail_pre'] : '';
 		unset( $GLOBALS['db_mail_pre'] );
 		$site   = esc_url( home_url( '/' ) );
@@ -384,6 +451,14 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 				'subject' => '{{subject_line}}', 'eyebrow' => 'Alert', 'heading' => '{{title}}',
 				'body'  => '{{lines_html}}',
 				'details' => '', 'cta' => '', 'cta_var' => '', 'tone' => 'warn',
+			),
+			'admin_form_offer' => array(
+				'group' => 'Team notices', 'label' => 'Offer form submitted (to the team)', 'to' => 'team', 'critical' => false,
+				'when'  => 'Someone sends the Make an offer form on a domain page.',
+				'vars'  => $dom + array( 'name' => array( 'Their name', 'Alex Buyer' ), 'email' => array( 'Their email', 'buyer@example.com' ), 'phone' => array( 'Their phone', '+1 555 0100' ), 'offer_amount' => array( 'The amount offered', '$1,500' ), 'message_html' => array( 'Their message', '<p>Interested for my startup.</p>' ), 'admin_url' => array( 'Link to the offers screen', admin_url( 'admin.php?page=db-offers' ) ) ),
+				'subject' => 'You have received an offer for {{domain}}', 'eyebrow' => 'New offer', 'heading' => 'An offer on {{domain}}',
+				'body'  => '<p>Someone sent an offer through the website.</p>{{message_html}}',
+				'details' => "Domain|{{domain}}\nOffer|{{offer_amount}}\nName|{{name}}\nEmail|{{email}}\nPhone|{{phone}}", 'cta' => 'Respond to the offer', 'cta_var' => 'admin_url', 'tone' => 'good',
 			),
 			'admin_enquiry'    => array(
 				'group' => 'Team notices', 'label' => 'Not-for-sale enquiry (to the team)', 'to' => 'team', 'critical' => false,
@@ -887,6 +962,20 @@ add_action( 'rest_api_init', function () {
 			$to = strtolower( trim( (string) $req->get_param( 'to' ) ) );
 			$m  = get_transient( 'db_mail_last_' . md5( $to ) );
 			return new WP_REST_Response( is_array( $m ) ? $m : array( 'subject' => '', 'html' => '' ) );
+		},
+	) );
+} );
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'db/v1', '/email/cf7-sample', array(
+		'methods'             => 'POST',
+		'permission_callback' => function () {
+			return function_exists( 'db_wl_is_staging' ) && db_wl_is_staging() && current_user_can( 'manage_options' );
+		},
+		'callback'            => function ( WP_REST_Request $req ) {
+			$body = (string) $req->get_param( 'body' );
+			$r    = db_mail_cf7_body( $body, false, null );
+			return new WP_REST_Response( array( 'html' => db_mail_wrap( 'Sample', $r['inner'] ), 'wrapped' => db_mail_wrap( 'Sample', $body ) ) );
 		},
 	) );
 } );
