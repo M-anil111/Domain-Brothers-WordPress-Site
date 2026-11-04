@@ -79,9 +79,12 @@ add_action( 'wp_footer', function () {
 	}
 	function ensure() {
 		var grid = document.querySelector('.db-domain-grid');
-		if (!grid || (grid.previousElementSibling && grid.previousElementSibling.classList.contains('db-viewbar'))) { return; }
+		if (!grid) { return; }
+		// Sit above the filter bar when there is one: the filter finds its results grid as its next sibling.
+		var anchor = document.querySelector('.db-dfilter') || grid;
+		if (anchor.previousElementSibling && anchor.previousElementSibling.classList.contains('db-viewbar')) { return; }
 		document.querySelectorAll('.db-viewbar').forEach(function (n) { n.remove(); });
-		grid.parentNode.insertBefore(make(), grid);
+		anchor.parentNode.insertBefore(make(), anchor);
 	}
 	ensure();
 	var tries = 0, t = setInterval(function () { ensure(); if (++tries > 40) { clearInterval(t); } }, 250);
