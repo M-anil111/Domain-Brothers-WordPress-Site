@@ -64,6 +64,7 @@ const PAGES = [
 	['offer', '/offer/'],
 	['sold', '/sold/'],
 	['plan', '/payment-plan-setup/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D'],
+	['wishlist', '/my-wishlist/'],
 ];
 
 const MEASURE = () => {
