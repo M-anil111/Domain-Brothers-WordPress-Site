@@ -21,7 +21,7 @@ Everything below has been built and tested on **staging only** (`beta.domainbrot
 
 1. Build the zip from this repo: `cd` to the repo root and run `zip -r db-custom-blocks.zip db-custom-blocks`.
 2. WP Admin → Plugins → Add New → Upload Plugin → choose the zip → **Replace current with uploaded** (or Install + Activate if it isn't there yet).
-3. Check that Plugins shows **Domain Brothers Custom Blocks 3.50.2** as active.
+3. Check that Plugins shows **Domain Brothers Custom Blocks 3.51.0** as active.
 4. Purge the caches: LiteSpeed Cache → Toolbox → Purge All, or visit `/?db_purge_cache=1` while logged in as admin and click **Confirm**. Then purge the CDN or Cloudflare cache if one is in front.
 
 Production-specific behaviour, already handled in code:
