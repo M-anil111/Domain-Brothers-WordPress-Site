@@ -536,3 +536,19 @@ Seven slots, set under Domain Brothers > Ads (publisher id plus an ad unit id pe
 - `/ads.txt` is served by the plugin: `google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0` (a real ads.txt file on the server would take priority).
 - Fix: the older safety filter removed the first AdSense script on every page, which would have removed this one. It now removes only the theme's old script (publisher `ca-pub-2138271276562459`) and the theme's old ad boxes, and keeps the site's own.
 - Checked on staging: the code is in the head of home, about, domain, all-domains; absent on buy-now and thank-you; `/ads.txt` returns the line above. Site QA 407/407.
+
+## 31. Ad banners on every page: three quiet spots (v3.66.0)
+
+Every public page now carries at least three Google ad banners, at natural breaks and never in front of a price or a form:
+
+| Page | Spots |
+|---|---|
+| Home | in the domain list (a quarter of the way down), after "Perfect for buyers and sellers / How it works", end of the page |
+| Domain pages (priced) | after the three ways to buy, after details and pricing, after How buying works |
+| Domain pages (open to offers) | after details, after How buying works, end of the page |
+| Domain lists and categories | under the title, inside the list (after its middle card, kept on filtering and in list or grid view), end of the page |
+| Pages, news, posts, services, sold, FAQs | under the title, in the middle of the content (before a heading near the middle, or after a paragraph, never under a lead-in line ending in a colon), end of the content |
+
+Never on checkout, payment plan, thank-you, terms, privacy, account or admin pages, and never when printing. No pop-ups, overlays or sticky banners.
+
+**Look.** Each banner sits in a soft framed card with a small "Advertisement" label, rounded corners and generous space; a slot Google leaves unfilled is hidden, so a visitor never sees an empty frame. **Setup.** Domain Brothers > Ads: one "Default ad unit id" serves every slot, or give a slot its own. Until an id is saved, live visitors see nothing; staging shows dashed placeholders. Checked on staging: three slots on home, lists, categories, about, contact, FAQs, EPP, news, posts, services, sold and domain pages; none on buy-now, thank-you, terms and the account page; no horizontal scroll at 1440 and 390 wide. Site QA 407/407, listing templates 6/6.
