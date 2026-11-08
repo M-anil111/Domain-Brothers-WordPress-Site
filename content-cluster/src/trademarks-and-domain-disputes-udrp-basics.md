@@ -13,6 +13,8 @@ A domain name can be perfectly valid and still cause a legal problem if it clash
 - The UDRP is a fast process in which a trademark owner can ask for a domain to be transferred or cancelled.
 - A name that is a common word or phrase, used in good faith for its ordinary meaning, is usually safer.
 
+!img:infographic-i11|Three requirements a UDRP complainant must show: similarity to a trademark, no legitimate interest and bad faith|The three requirements of a UDRP complaint.
+
 ## How trademarks and domains relate
 
 A **trademark** protects a name, logo or phrase used to identify goods or services. A **domain name** is a registered address. They are separate systems, and they can collide. If a domain is identical or confusingly similar to someone else's trademark and is used to trade on it, the trademark owner may have a claim.

@@ -13,6 +13,8 @@ A strong domain can cost more than a small business wants to pay on one day. Tha
 - Shorter plans cost less overall; longer plans lower each payment.
 - Always read the missed-payment terms before you start.
 
+!img:infographic-i9|Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, use the domain while it is held in escrow, own it after the final payment|Pay, use, own: how a payment plan works.
+
 ## Why people pay over time
 
 Most buyers who use a plan are not short of money. They are keeping cash for the things that make the name useful: the website, the marketing, the first hires. A plan lets the domain start working for the business while the cost is spread across the months it earns.

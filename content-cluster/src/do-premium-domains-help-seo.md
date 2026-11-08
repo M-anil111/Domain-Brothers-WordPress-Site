@@ -13,6 +13,8 @@ People often buy a premium domain hoping it will lift their search rankings. The
 - If you change domains, follow a proper site-move process to keep your rankings.
 - Content, site quality and links matter far more than the address.
 
+!img:infographic-i6|Two column infographic: what moves search rankings (content, speed, structure, links, technical health) and what a strong domain adds (clicks, brand searches, links, trust, fewer mistypes)|Rankings come from the site; a strong domain improves the signals around it.
+
 ## What Google's guidance says
 
 Google's [SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) and its [Search Essentials](https://developers.google.com/search/docs/essentials) focus on helpful, people-first content, a clear site structure, good page experience and technical health. They do not tell site owners to buy keyword-rich domains. Exact-match domains used to be easier to rank years ago, and Google has since reduced the advantage of low-quality exact-match sites.

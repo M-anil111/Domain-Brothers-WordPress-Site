@@ -13,6 +13,8 @@ A premium domain is both a tool and an asset. For a company it is the address of
 - Domains carry risks: no income by themselves, renewal costs, legal issues and slow sales.
 - Treat it like any asset: research, diversify, keep records, and only use money you can leave tied up.
 
+!img:infographic-i10|Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it|Four ways to benefit from a premium domain.
+
 ## Why domains hold value
 
 A domain is a unique, tradable asset. There is only one of each name, and demand comes from every business that could use it. As more business moves online, short and clear names become more valuable to the companies that want them, and supply does not grow.

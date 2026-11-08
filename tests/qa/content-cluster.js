@@ -51,7 +51,8 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 		if (!ok) { continue; }
 		// load every lazy image first
 		await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); } window.scrollTo(0, 0); });
-		await page.waitForTimeout(1500);
+		await page.evaluate(async () => { const all = [...document.images]; all.forEach((i) => { i.loading = 'eager'; }); await Promise.all(all.map((i) => (i.decode ? i.decode().catch(() => {}) : null))); });
+		await page.waitForTimeout(1000);
 		const info = await page.evaluate((host) => {
 			const root = document.querySelector('.entry-content, article, main') || document.body;
 			const text = root.innerText.replace(/\s+/g, ' ');

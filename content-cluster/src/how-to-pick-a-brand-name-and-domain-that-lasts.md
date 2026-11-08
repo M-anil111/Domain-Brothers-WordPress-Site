@@ -13,6 +13,8 @@ A name is the most expensive thing to change after you launch. It is on your sit
 - Avoid hyphens, odd spellings and names that tie you to one product.
 - Check trademarks before you fall in love with a name.
 
+!img:infographic-i8|Four tests for a brand name: the phone test, the radio test, the search test and the picture test|Run every candidate name through all four tests.
+
 ## What a good name does
 
 A good name has five jobs.

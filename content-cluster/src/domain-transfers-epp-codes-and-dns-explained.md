@@ -13,6 +13,8 @@ The moment you buy a premium domain, the next question is how it actually gets t
 - DNS controls where the name points. Keep it working through the move.
 - Most transfers take a few days. Keep your records and secure the name afterwards.
 
+!img:infographic-i7|Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain|The five steps of a change of registrar.
+
 ## The cast of characters
 
 | Term | What it is |
