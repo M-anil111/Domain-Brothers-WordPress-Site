@@ -761,6 +761,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 								<div class="co-input-row"><input class="co-input" type="tel" id="co-phone" name="phone" autocomplete="tel" inputmode="tel" required aria-required="true" aria-describedby="co-phone-err" maxlength="30"><span class="co-req" aria-hidden="true">*</span></div>
 								<p class="co-field-err" id="co-phone-err">Please enter a valid phone number.</p>
 							</div>
+							<div class="co-field co-remind"><label class="co-agree" for="co-remind"><input type="checkbox" id="co-remind" name="remind" value="1"> <span>Email me one reminder if I do not finish my purchase. Optional.</span></label></div>
 							<div class="co-actions"><button type="submit" class="co-btn">Next</button></div>
 						</form>
 					</div>
@@ -876,6 +877,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 	var billing  = document.getElementById('co-billing');
 	var nameInp  = document.getElementById('co-name');
 	var emailInp = document.getElementById('co-email');
+	var remindInp = document.getElementById('co-remind');
 	var phoneInp = document.getElementById('co-phone');
 	var agreeInp = document.getElementById('co-agree');
 	var payForm  = document.getElementById('co-pay');
@@ -1005,7 +1007,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		fetch(window.DB_EMAIL_REST, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: buyer.email, name: buyer.name, phone: buyer.phone, terms_accepted: !!(agreeInp && agreeInp.checked) })
+			body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: buyer.email, name: buyer.name, phone: buyer.phone, terms_accepted: !!(agreeInp && agreeInp.checked), remind: !!(remindInp && remindInp.checked) })
 		}).then(function (res) {
 			// Payment plans: the terms acceptance is recorded by this call,
 			// so it must succeed before the card is charged.
@@ -1115,6 +1117,11 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 			return new WP_REST_Response( [ 'error' => 'Invalid parameters.' ], 400 );
 		}
 		$pi_id = $m[1];
+
+		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php).
+		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
+			db_ops_reminder_opt_in( $pi_id, $email );
+		}
 
 		$keys = db_stripe_keys();
 		if ( empty( $keys['sec'] ) ) {

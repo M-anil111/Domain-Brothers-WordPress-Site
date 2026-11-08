@@ -85,6 +85,10 @@ if ( ! function_exists( 'db_funnel_steps' ) ) {
 			'saved_search'   => 'Search saved',
 			'broker_request' => 'Broker call requested',
 			'trust_view'     => 'Trust center viewed',
+			'exp_view_A'     => 'CTA test: copy A seen',
+			'exp_view_B'     => 'CTA test: copy B seen',
+			'exp_click_A'    => 'CTA test: copy A clicked',
+			'exp_click_B'    => 'CTA test: copy B clicked',
 		);
 	}
 }
@@ -537,6 +541,9 @@ if ( ! function_exists( 'db_sales_handle_broker' ) ) {
 			db_sales_back( array( 'broker' => 'error' ) );
 		}
 		db_funnel_track( 'broker_request' );
+		if ( function_exists( 'db_ops_broker_notify' ) ) {
+			db_ops_broker_notify( $email, $name, $phone, $domain, $note, $crit );
+		}
 		db_sales_back( array( 'broker' => 'sent' ) );
 	}
 }
@@ -858,6 +865,9 @@ if ( ! function_exists( 'db_sales_meta_box' ) ) {
 		echo '<p><label for="db_transfer_note"><strong>Note for the buyer</strong> (shown in their account)</label><textarea id="db_transfer_note" name="db_transfer_note" rows="3" style="width:100%">' . esc_textarea( $note ) . '</textarea></p>';
 		echo '<p><label for="db_offer_guidance"><strong>Offer guidance</strong> (shown on the domain page; leave blank to hide)</label><textarea id="db_offer_guidance" name="db_offer_guidance" rows="3" style="width:100%">' . esc_textarea( $guide ) . '</textarea></p>';
 		echo '<p class="description">Set the stage only after the step is done. Buyers see the stage and this note, nothing else.</p>';
+		if ( function_exists( 'db_ops_team_thread_html' ) ) {
+			db_ops_team_thread_html( $post );
+		}
 	}
 }
 
@@ -872,9 +882,16 @@ add_action( 'save_post_domain', function ( $post_id ) {
 	if ( '' !== $stage && ! isset( db_transfer_stages()[ $stage ] ) ) {
 		$stage = '';
 	}
+	$old_stage = (string) get_post_meta( $post_id, 'db_transfer_stage', true );
 	update_post_meta( $post_id, 'db_transfer_stage', $stage );
 	update_post_meta( $post_id, 'db_transfer_note', isset( $_POST['db_transfer_note'] ) ? sanitize_textarea_field( wp_unslash( $_POST['db_transfer_note'] ) ) : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	update_post_meta( $post_id, 'db_offer_guidance', isset( $_POST['db_offer_guidance'] ) ? sanitize_textarea_field( wp_unslash( $_POST['db_offer_guidance'] ) ) : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	if ( function_exists( 'db_ops_stage_changed' ) ) {
+		db_ops_stage_changed( $post_id, $old_stage, $stage, isset( $_POST['db_transfer_note'] ) ? wp_unslash( $_POST['db_transfer_note'] ) : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	}
+	if ( function_exists( 'db_ops_team_reply' ) ) {
+		db_ops_team_reply( $post_id );
+	}
 } );
 
 if ( ! function_exists( 'db_sales_service_options' ) ) {
@@ -904,6 +921,10 @@ if ( ! function_exists( 'db_sales_transfers_html' ) ) {
 		$stages = db_transfer_stages();
 		$keys   = array_keys( $stages );
 		$h      = db_sales_css();
+		$msgs   = array( 'sent' => 'Message sent. We will reply by email.', 'busy' => 'You have sent several messages in the last hour. Please try again later.', 'empty' => 'Please write a message before sending.', 'denied' => 'That domain is not on your account.', 'signin' => 'Sign in to write to our team.' );
+		if ( isset( $_GET['msg'] ) && isset( $msgs[ sanitize_key( wp_unslash( $_GET['msg'] ) ) ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			$h .= '<div class="db-sales-card db-sales-notice" role="status"><p>' . esc_html( $msgs[ sanitize_key( wp_unslash( $_GET['msg'] ) ) ] ) . '</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification
+		}
 		foreach ( $q->posts as $p ) {
 			$cur  = (string) get_post_meta( $p->ID, 'db_transfer_stage', true );
 			$idx  = array_search( $cur, $keys, true );
@@ -921,7 +942,10 @@ if ( ! function_exists( 'db_sales_transfers_html' ) ) {
 			if ( '' !== $note ) {
 				$h .= '<p class="db-sales-note"><strong>From our team:</strong> ' . esc_html( $note ) . '</p>';
 			}
-			$h .= '<p><a class="db-ac-btn db-ac-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Message us</a></p></section>';
+			if ( function_exists( 'db_ops_thread_html' ) ) {
+				$h .= db_ops_thread_html( $p->ID, $email );
+			}
+			$h .= '</section>';
 		}
 		$h .= '<h2 class="db-ac-h">Services for your new name</h2><p class="db-ac-lead">Optional. Each one is quoted separately; nothing here is added to your purchase.</p><ul class="db-sales-services">';
 		foreach ( db_sales_service_options() as $s ) {

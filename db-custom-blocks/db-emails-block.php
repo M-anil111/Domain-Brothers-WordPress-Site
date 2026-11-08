@@ -469,6 +469,7 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 				'details' => "Domain|{{domain}}\nEmail|{{email}}", 'cta' => '', 'cta_var' => '', 'tone' => 'neutral',
 			),
 		);
+		$r = $r + ( function_exists( 'db_sales_mail_registry' ) ? db_sales_mail_registry() : array() );
 		return $r;
 	}
 

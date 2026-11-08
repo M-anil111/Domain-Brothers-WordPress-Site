@@ -123,7 +123,8 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			$urls  = db_dd_checkout_urls( $name_for_url, $f['price'] );
 			$buy   = $urls['buy'];
 			$plan  = $urls['plan'];
-			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" href="' . esc_url( $buy ) . '">Buy now &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
+			$exp   = function_exists( 'db_exp_variant' ) ? db_exp_variant() : 'A';
+			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" data-exp="' . esc_attr( $exp ) . '" href="' . esc_url( $buy ) . '">' . esc_html( function_exists( 'db_exp_cta_label' ) ? db_exp_cta_label() : 'Buy now' ) . ' &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
 				. '<a class="db-dd-btn" href="' . esc_url( $plan ) . '">Pay monthly from ' . esc_html( db_dd_monthly( $f['price'] ) ) . '/mo</a></div>';
 		}
 
