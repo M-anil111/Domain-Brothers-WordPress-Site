@@ -582,3 +582,45 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 **How to use it.** Domain Brothers > Content cluster > Import as drafts (read and edit, then publish) or Import and publish. Running it again updates the same posts. Source files are in `content-cluster/src`; `python3 tools/build-cluster.py` rebuilds the block markup.
 
 **Checks** (`tests/qa/content-cluster.js`, 159/159 on staging): every article returns 200 with one h1, title, description, canonical and Article data; the pillar has FAQPage data; enough text; headings do not skip levels; every contents anchor exists; every image loads with alt text; every distinct internal link resolves and every external link responds; each article opens in the block editor with no invalid-content warning; no horizontal scroll on a 390 px phone. Site QA and wishlist flow still pass.
+
+## 33. Sales features and go-live follow-ups (v3.69.1)
+
+**What was built** (`db-custom-blocks/db-sales-block.php`, v3.69.0; fixed in v3.69.1):
+
+- **Guided domain finder** at `/find-a-domain/`: five questions (industry, audience, geography, tone, budget). Each shortlist entry lists its reasons; no unexplained scores. Budget applies to fixed prices; open-to-offers names stay in and say so.
+- **Saved searches with alerts**: signed-in visitors save a search (up to 10). A 15-minute job adds a "match" alert to the account for each new matching name (at most five per run per search). The Alerts tab labels them "Match".
+- **Broker call request**: on the finder page and on results; creates a CRM lead (source "inquiry") with the criteria and shortlist. Turnstile-checked when enabled; five requests per visitor per hour.
+- **Collections** at `/collections/` and `/collections/<slug>/`: three fixed searches, published only with three or more live matches.
+- **"Why this price?"** on every domain page: name facts, recorded sales of similar names (same extension, length within two characters, newest first), and seller guidance when set. No valuation is estimated.
+- **Transfer workspace**: admin sets each domain's transfer stage (payment received → registrar lock removed → transfer code sent → transfer approved → DNS configured → completed) and a note. Buyers see the timeline on a new **Transfers** account tab, with four service options linking to `/our-services/`. Services are not added to the purchase.
+- **Buyer-intent score** (admin: Buyer intent): views (up to 10), wishlist saves (2 each, up to 5) and offers (4 each, up to 3) in 30 days; hot is 12 or more. Next-step tasks, counts only, no buyer emails.
+- **Sales funnel** (admin: Sales funnel): six server-side counts over 30 days; no IP, cookie or email stored; staff and known bots excluded.
+- **Trust center** at `/trust-center/`: only statements the plugin enforces (Stripe card entry, signed receipt links, plan acceptance records, encrypted transfer codes behind a private link, offers answered by email, stop links). No escrow claim.
+
+**Not built in this pass** (owner decisions or follow-up work):
+
+- Abandoned checkout and unanswered-offer reminders. This needs a marketing-consent step in the Stripe checkout and owner sign-off on the wording, so it was not added to the payment flow.
+- Experiments (A/B tests of CTA copy or plan visibility). The funnel counts exist; variant assignment does not.
+- Automatic offer acknowledgements and internal response-time timers.
+- Document history and secure two-way messaging in the Transfers tab (the tab links to the contact page).
+
+**Checks**
+
+- Offline, `tests/sales/sales-features-test.php`: all checks pass. Covers filters, ranking reasons, collection rules, funnel privacy, comparables, trust center wording, and stage order. Stubs WordPress; `db_finder_candidates()` and `db_dd_facts()` are supplied in the test.
+- Live, `tests/qa/sales-features.js` on beta (v3.69.1): 14/14. Finder shows five questions and the broker form; shortlist entries show reasons; trust center; all three collections show at least three names; domain pages show "Why this price?"; no horizontal overflow at 375px; both admin reports load.
+- Axe (`tests/a11y/run-axe.js`, now scans the two new pages): the new pages have no violations at desktop or phone width. Existing pages still show color-contrast (serious) findings on the about, services, FAQ, contact, offer, sold and home pages — a site-wide theme colour issue, not changed in this pass.
+
+**Go-live follow-ups found and fixed in this pass**
+
+- The broker link from a domain page landed on a finder page with no form. The form now shows on the bare finder page.
+- The new pages were served before the SEO output buffer, so they missed the viewport fix (the theme's `user-scalable=no`). They now run after it. Axe reported `meta-viewport` (critical) on both pages before the fix; it is clear after.
+- `tests/a11y/run-axe.js` needed an output path and was not scanning the new pages. Both fixed.
+
+**Still open from the matrix run (before this build)**
+
+- Site QA: 403/405 passed; the failures were host 508 responses under load, not page defects. Needs a rerun.
+- Responsive matrix: 280 scans, one context error on the iPad plan page (navigation during evaluation). Needs a rerun.
+- Admin sweep: WordPress core 6.9.11 is not the latest, and plugin/theme updates are pending. Owner action in wp-admin.
+- Crawl: not run (needs `BETA_BASIC`).
+- Account-flow "My offers" check: passed on rerun (27/27).
+- Listing templates: passed on rerun (6/6).

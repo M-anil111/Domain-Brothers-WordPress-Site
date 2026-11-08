@@ -105,4 +105,4 @@ Production-specific behaviour, already handled in code:
 | Escrow statements | Owner decision: the plugin has no escrow integration. Confirm the arrangement, or the statements change. Tracked in Launch checks. |
 | Credentials, backups, webhook reachability, SPF/DKIM, legal review, CDN mode, ad ids | Owner or host actions, listed in Launch checks. |
 | Real cron | Launch checks reports overdue jobs. Owner action: a real cron job every 5 minutes. |
-| Sales roadmap (10 items) | Product features, not go-live defects. Not started in this pass. |
+| Sales roadmap (10 items) | Built in v3.69.1 (QA_REPORT section 33): finder, buyer-intent score, verified "Why this price?", transfer workspace, service options, collections, offer guidance and broker request, funnel, trust center. Not built: abandoned checkout and offer reminders (needs marketing consent and owner sign-off on wording), experiments, automatic offer acknowledgements and response timers, transfer document history and two-way messaging. |

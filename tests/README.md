@@ -91,6 +91,8 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 - `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded) and the All offers received log with repeat offers merged.
 - `qa/content-cluster.js` (live): the Domain Guides articles: pages, links, images, structured data, block editor validity, phone layout.
 - `qa/account-flow.js` (live): the account tabs, follower alerts (price, offer, sale), the one alert email with its stop link, My offers, Discover; removes its test data.
+- `qa/sales-features.js` (live): the domain finder and its shortlist, trust center, collections, "Why this price?" on domain pages, phone-width overflow, admin Sales funnel and Buyer intent reports.
+- `sales/sales-features-test.php` (offline): finder filters and ranking reasons, collection rules, funnel privacy, comparables, trust center wording, transfer stage order. Run: `php tests/sales/sales-features-test.php`.
 - `qa/email-templates.js` (live): the email template editor, every template rendered in the brand shell, edit/design/reset reaching real emails, access control.
 - `qa/wishlist-flow.js` (live): wishlist sign-in by emailed code (read back through a staging-only admin route), saving, the wishlist page, Domain Statistics, rate and origin limits; removes its test domain.
 - `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.
