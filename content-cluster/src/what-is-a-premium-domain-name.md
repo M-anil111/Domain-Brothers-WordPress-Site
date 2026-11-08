@@ -91,6 +91,6 @@ When in doubt, ask for an independent opinion. Our [domain appraisal](/domain-ap
 - Read the background on [domain names](https://en.wikipedia.org/wiki/Domain_name) and [domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale).
 - Look at the extension question in [Choosing a Domain Extension](/choosing-a-domain-extension-com-ca-io-and-more/).
 
-!cta Browse names that are already for sale|Every listing shows its price or invites an offer, and every sale is escrow protected.|Browse premium domains|/all-domains/|See recent sales|/sold/
+!cta Browse names that are already for sale|Every listing shows its price or invites an offer.|Browse premium domains|/all-domains/|See recent sales|/sold/
 
 !related

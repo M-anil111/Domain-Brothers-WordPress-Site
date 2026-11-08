@@ -87,6 +87,6 @@ Think in terms of the questions below rather than numbers, because every busines
 - Learn how names are marketed in the [Domain Name Marketing Playbook](/domain-name-marketing-playbook/).
 - See what has sold on our [sold domains](/sold/) page.
 
-!cta Own a name you want to sell?|Our brokers market premium domains to buyers who are ready to pay, and handle the negotiation and escrow.|Sell a domain|/sell-domains-service/|Browse premium domains|/all-domains/
+!cta Own a name you want to sell?|Our brokers market premium domains to buyers who are ready to pay, and handle the negotiation.|Sell a domain|/sell-domains-service/|Browse premium domains|/all-domains/
 
 !related

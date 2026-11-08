@@ -72,7 +72,7 @@ Our [website launch checklist](/website-launch-checklist-after-buying-a-domain/)
 
 ## How we handle transfers
 
-For names bought from us: after payment clears, we start the transfer within the agreed time and send you what you need. For payment plans, we hold the name in escrow and release it after the final payment. Read more on the [EPP guidelines](/epp-guidelines/) page, in the [FAQs](/faqs/), or ask our [team](/contact-us/).
+For names bought from us: after payment clears, we start the transfer within the agreed time and send you what you need. For payment plans, the plan terms set out that the domain stays with us until the final payment clears. Read more on the [EPP guidelines](/epp-guidelines/) page, in the [FAQs](/faqs/), or ask our [team](/contact-us/).
 
 ## Where to go next
 

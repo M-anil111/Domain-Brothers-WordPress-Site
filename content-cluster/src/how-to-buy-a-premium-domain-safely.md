@@ -34,7 +34,7 @@ Start with what you need the name to do. Write down three to five candidates, th
 
 - Ask the seller to prove control, for example by changing a harmless text record at the DNS or by logging in at the registrar while you watch on a call.
 - If you are dealing with a broker, ask who they represent and ask for the agreement.
-- Check the seller's history, reviews and business details. We have been selling premium domains for many years, and you can [read about us](/about-domain-brothers/) and meet [our team](/our-team/).
+- Check the seller's history, reviews and business details. You can [read about us](/about-domain-brothers/) and meet [our team](/our-team/).
 
 ## Stage 3: Agree the price and the terms
 
@@ -55,7 +55,7 @@ Escrow means a neutral third party holds your money until the seller delivers th
 
 !callout Never do this|Do not send a wire, crypto or gift card payment straight to a stranger. Do not move the name first on a promise to pay. Do not accept a "transfer" that is only a login to an account. If the seller refuses escrow, treat it as a red flag and walk away.
 
-If you are buying from us, payments are processed securely and the transfer is protected by escrow, so you and the name are both protected during the process.
+If you buy from us, we set out how payment and transfer work in writing before you pay, and you can ask any question first.
 
 ## Stage 5: Transfer, lock and secure
 
@@ -89,6 +89,6 @@ We handle every step for buyers: checks, price negotiation, escrow and transfer.
 - Make sure the name is safe to use with [Trademarks and Domain Disputes](/trademarks-and-domain-disputes-udrp-basics/).
 - Plan the launch with the [Website Launch Checklist](/website-launch-checklist-after-buying-a-domain/).
 
-!cta Buy with confidence|Escrow-protected transfers, personal service and clear terms from the first message to the final handover.|Browse premium domains|/all-domains/|Ask us to find a name|/domain-brokerage-services/
+!cta Buy with confidence|Clear written terms, personal service and a transfer you can follow from the first message to the final handover.|Browse premium domains|/all-domains/|Ask us to find a name|/domain-brokerage-services/
 
 !related

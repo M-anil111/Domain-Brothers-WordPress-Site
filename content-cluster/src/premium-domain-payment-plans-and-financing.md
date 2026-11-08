@@ -29,7 +29,7 @@ The details differ by seller, so here is how ours works as an example.
 4. You can already **use the name**: tell us where your website is hosted and we point the name to it.
 5. After the **final payment clears**, ownership transfers to you and we send the transfer details.
 
-A reminder email goes out before each payment, so nothing arrives as a surprise. Escrow is what keeps both sides safe while the plan runs: the [Escrow.com explanation](https://www.escrow.com/what-is-escrow) shows how a neutral party holds the asset until the terms are met.
+A reminder email goes out before each payment, so nothing arrives as a surprise.
 
 ## Paying in full or paying over time
 

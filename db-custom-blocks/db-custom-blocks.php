@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.67.0
+ * Version:     3.68.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.67.0' );
+define( 'DB_BLOCKS_LOADED', '3.68.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -3856,7 +3856,7 @@ add_action( 'wp_footer', function () {
 				function (p) { return /founded by the accomplished Kartik and Jay Mehta/i.test(p.textContent || ''); }
 			);
 			if (founderPara && !document.querySelector('.db-founders-row')) {
-				var uploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var uploads = '/wp-content/uploads/2024/04/';
 				var founders = [
 					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
 					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
@@ -3911,7 +3911,7 @@ add_action( 'wp_footer', function () {
 				}
 			);
 			if (aboutFounderPara && !document.querySelector('.db-founders-row')) {
-				var auploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var auploads = '/wp-content/uploads/2024/04/';
 				var afounders = [
 					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
 					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
@@ -4623,5 +4623,7 @@ require_once __DIR__ . '/db-wishlist-block.php';
 require_once __DIR__ . '/db-account-block.php';
 require_once __DIR__ . '/db-ads-block.php';
 require_once __DIR__ . '/db-cluster-block.php';
+require_once __DIR__ . '/db-turnstile-block.php';
+require_once __DIR__ . '/db-launch-block.php';
 require_once __DIR__ . '/db-sections-block.php';
 require_once __DIR__ . '/db-priced-block.php';
