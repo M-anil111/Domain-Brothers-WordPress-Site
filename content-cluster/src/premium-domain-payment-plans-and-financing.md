@@ -27,7 +27,7 @@ The details differ by seller, so here is how ours works as an example.
 4. You can already **use the name**: tell us where your website is hosted and we point the name to it.
 5. After the **final payment clears**, ownership transfers to you and we send the transfer details.
 
-A reminder email goes out before each payment, so nothing arrives as a surprise.
+A reminder email goes out before each payment, so nothing arrives as a surprise. Escrow is what keeps both sides safe while the plan runs: the [Escrow.com explanation](https://www.escrow.com/what-is-escrow) shows how a neutral party holds the asset until the terms are met.
 
 ## Paying in full or paying over time
 
@@ -61,6 +61,8 @@ If the price is within your budget and you want the name outright, paying in ful
 If the name will help you win customers within the plan, it usually is. A strong domain can improve how many people click, remember and trust you. The way to test it is to compare the monthly payment with what one extra customer a month would bring. If one customer repays the payment, the plan is easy to justify. Our method in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/) shows how to run that comparison.
 
 ## Alternatives to a seller plan
+
+Payment plans are one of several ways the aftermarket handles price; the [Wikipedia overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale) describes the others, including auctions, brokered sales and lease-to-own deals.
 
 - **Business credit card or line of credit.** Check the rate against a plan with no interest.
 - **Lease to own.** Some brokers let you lease a domain with the right to buy; make sure the contract says what happens to the payments.

@@ -39,6 +39,8 @@ Comparable sales are the closest thing the market has to a price list. Public sa
 
 The [Verisign Domain Name Industry Brief](https://www.verisign.com/en_US/domain-names/dnib/index.xhtml) gives context on the size and direction of the market, and you can see what has sold through us on our [sold domains](/sold/) page.
 
+The [overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale) explains how the aftermarket sets prices, if you want the background before you start comparing.
+
 ## Step 3: Estimate what the name is worth to you
 
 A name is worth what it earns or saves your business. Try this arithmetic.

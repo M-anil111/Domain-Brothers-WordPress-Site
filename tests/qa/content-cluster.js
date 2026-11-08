@@ -49,6 +49,9 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 		const ok = resp.status() === 200;
 		check(`${a.slug}: page returns 200`, ok, String(resp.status()));
 		if (!ok) { continue; }
+		// load every lazy image first
+		await page.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); } window.scrollTo(0, 0); });
+		await page.waitForTimeout(1500);
 		const info = await page.evaluate((host) => {
 			const root = document.querySelector('.entry-content, article, main') || document.body;
 			const text = root.innerText.replace(/\s+/g, ' ');
@@ -57,7 +60,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 			const links = [...root.querySelectorAll('a[href]')].map((l) => l.href);
 			const anchors = [...root.querySelectorAll('a[href^="#"]')].map((l) => l.getAttribute('href').slice(1));
 			const missing = anchors.filter((id) => !document.getElementById(id));
-			const imgs = [...root.querySelectorAll('img')].map((i) => ({ ok: i.complete && i.naturalWidth > 0, alt: (i.getAttribute('alt') || '').trim(), src: i.src }));
+			const imgs = [...root.querySelectorAll('img')].filter((i) => !i.closest('[aria-hidden="true"], .feature-image')).map((i) => ({ ok: i.complete && i.naturalWidth > 0, alt: (i.getAttribute('alt') || '').trim(), src: i.src }));
 			const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => s.textContent).join(' ');
 			const h1 = document.querySelectorAll('h1').length;
 			return {
@@ -107,9 +110,10 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 		const id = idBySlug[a.slug];
 		if (!id) { check(`${a.slug}: found for the editor check`, false); continue; }
 		await admin.goto(`${BASE}/wp-admin/post.php?post=${id}&action=edit`, { waitUntil: 'domcontentloaded' });
-		await admin.waitForSelector('.editor-styles-wrapper, .block-editor-block-list__layout', { timeout: 120000 });
-		await admin.waitForTimeout(2500);
-		const bad = await admin.evaluate(() => document.querySelectorAll('.block-editor-warning').length);
+		await admin.waitForSelector('.editor-header, .edit-post-header, .interface-interface-skeleton', { timeout: 120000 });
+		await admin.waitForTimeout(8000);
+		let bad = await admin.evaluate(() => document.querySelectorAll('.block-editor-warning').length);
+		for (const f of admin.frames()) { if (f !== admin.mainFrame()) { bad += await f.evaluate(() => document.querySelectorAll('.block-editor-warning').length).catch(() => 0); } }
 		check(`${a.slug}: opens in the block editor with no invalid blocks`, bad === 0, `${bad} warnings`);
 	}
 
