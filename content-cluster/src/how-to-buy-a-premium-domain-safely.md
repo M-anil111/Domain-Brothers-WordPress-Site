@@ -81,7 +81,7 @@ For most names, the seller unlocks the domain at their registrar and gives you a
 
 ## If you would rather have help
 
-We handle every step for buyers: checks, price negotiation, escrow and transfer. Read about our [buy domains service](/buy-domains-service/) or ask our [brokers](/domain-brokerage-services/) to find a name for you.
+We handle every step for buyers: checks, price negotiation and transfer. Read about our [buy domains service](/buy-domains-service/) or ask our [brokers](/domain-brokerage-services/) to find a name for you.
 
 ## Where to go next
 

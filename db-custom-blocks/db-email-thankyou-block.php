@@ -544,7 +544,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 				$html .= '<p style="font-size:13px;">' . db_plan_terms_html() . '</p>';
 			}
 			$html .= '<div class="db-ty-infobox">';
-			$html .= '<strong>&#128274; Escrow-protected for the full term.</strong><br>';
+			$html .= '<strong>&#128274; Your domain stays with us until the plan completes.</strong><br>';
 			$html .= 'Remaining installments bill automatically each month &mdash; no action needed. We\'ll email you before each charge, and your domain is held securely until the plan completes.';
 			$html .= '</div>';
 
@@ -568,7 +568,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$offer_steps = array(
 				array( 'n' => 1, 'label' => 'We personally review your offer',   'sub' => 'within 24 hours' ),
 				array( 'n' => 2, 'label' => 'You receive our response by email', 'sub' => 'a decision or counter-offer' ),
-				array( 'n' => 3, 'label' => 'We negotiate &amp; close',          'sub' => 'secure transfer via escrow' ),
+				array( 'n' => 3, 'label' => 'We negotiate &amp; close',          'sub' => 'step-by-step transfer' ),
 			);
 			foreach ( $offer_steps as $step ) {
 				$html .= '<div class="db-ty-step" role="listitem">';

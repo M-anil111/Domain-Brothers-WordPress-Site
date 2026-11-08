@@ -651,3 +651,26 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 **Needs owner or counsel before go-live**
 - The terms, the thank-you page and the registry emails still say the domain is "held in escrow" and the thank-you box says "Escrow-protected for the full term". The plugin has no escrow integration; this wording needs confirming or changing. Section 5 of the checklist already lists it as an owner decision.
 - The forfeiture and retry wording needs legal review (`db-plan-lifecycle-block.php` header).
+
+## 35. Escrow wording removed; payment-plan emails verified; cron status (v3.69.6)
+
+**Escrow.** The plugin has no escrow integration, so every escrow claim about Domain Brothers' own service was removed:
+- Plugin copy: trust badges, the homepage, the audience and how-it-works sections, listing side panels, the thank-you box and step, the plan terms, the plan-start and monthly email bodies, the offer page, the Organization and FAQ structured data, the AI-readable summary, and the meta descriptions and titles.
+- Content guides: the payment-plan article ("held in escrow" becomes "stays with Domain Brothers until your final payment clears") and the buying article's line "we handle ... escrow".
+- General buyer advice in the guides ("pay through escrow when buying from a stranger") is kept. It describes third-party services, not ours.
+- Regression check: `tests/copy/escrow-claims-test.php` fails if escrow is described as part of this service, in plugin copy, guides or the cluster HTML (69 files, pass).
+- Root-level `db_*.php` files in the repository (for example `db_aeo_block.php`, with "Yes... secure escrow handling") are not loaded by the plugin and were not changed. Delete them or update them before they are used anywhere.
+
+**Payment-plan emails, verified.** Rendered with `tests/plan/dump-plan-emails.php` and screenshotted:
+- Reminder: remaining payments with dates and amounts, and the terms.
+- Failure notices 1-4: each numbered, with the first-decline date, the three retry dates and the termination date. The declined instalment is labelled "Declined, retrying" (it was labelled "Next charge" before this check; corrected).
+- Back on track and terminated: the terms and the non-refund rule.
+- Not verified: delivery. No test mailbox was available, and beta buyer addresses are example.com.
+
+**Cron.** Not configured. The beta host is not on the Hostinger account reachable from this session (the domain returns no websites), and the session has no SSH or server access. Retries, notices and termination all depend on a real cron calling `wp-cron.php` every 15 minutes. Owner action on the host:
+```
+*/15 * * * * curl -s -o /dev/null https://beta.domainbrothers.com/wp-cron.php?doing_wp_cron
+```
+(add `DISABLE_WP_CRON` to `wp-config.php` once the real cron is confirmed, so visitors do not trigger it).
+
+**Checks.** `tests/plan/plan-schedule-test.php` 20/20 (with the Overdue status), `tests/copy/escrow-claims-test.php` pass, and the existing SEO, security, plan-lifecycle, offer, listing and EPP suites pass unchanged.

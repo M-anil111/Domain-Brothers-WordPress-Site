@@ -202,7 +202,7 @@ add_filter( 'the_content', function ( $content ) {
 	}
 	$extra  = '<section class="db-contact-extra" style="max-width:760px;margin:28px auto;line-height:1.65">';
 	$extra .= '<h2 style="font-size:22px">How we can help</h2>';
-	$extra .= '<p>Domain Brothers brokers premium domain names, with escrow-protected transfers and payment plans over 3 to 12 months. Tell us what you are looking for and a member of the team will reply personally.</p>';
+	$extra .= '<p>Domain Brothers brokers premium domain names, with step-by-step transfers and payment plans over 3 to 12 months. Tell us what you are looking for and a member of the team will reply personally.</p>';
 	$extra .= '<h3 style="font-size:18px">Include in your message</h3><ul><li>The domain you are interested in, or the kind of name you need (length, extension, industry).</li><li>Your budget, and whether you would like to pay in full or monthly.</li><li>If you are selling a domain, where it is registered and how long you have held it.</li></ul>';
 	$extra .= '<p>You can also email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>. Before you write, these may already answer your question: <a href="' . esc_url( home_url( '/faqs/' ) ) . '">FAQs</a>, <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">browse all domains</a>, <a href="' . esc_url( home_url( '/our-services/' ) ) . '">our services</a>.</p>';
 	$extra .= '</section>';

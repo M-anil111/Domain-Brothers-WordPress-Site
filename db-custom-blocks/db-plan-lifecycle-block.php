@@ -3,7 +3,7 @@
  * DB Plan Lifecycle Block — monthly reminders, failed-payment recovery, default
  *
  * A payment plan is a lease-to-own: the customer pays in installments, the
- * domain stays ours (held in escrow) and is transferred ONLY after the final
+ * domain stays ours and is transferred ONLY after the final
  * installment clears. Industry practice (GoDaddy Lease to Own, Atom, Dan):
  * a declined installment starts a short grace period with repeated warnings;
  * if it is not cured the plan is terminated, the domain goes back to the
@@ -92,7 +92,7 @@ if ( ! function_exists( 'db_plan_schedule' ) ) {
 		$next = (int) ( $plan['next_installment'] ?? ( $paid + 1 ) );
 		$rows = array();
 		for ( $i = 1; $i <= $months; $i++ ) {
-			$state  = $i <= $paid ? 'paid' : ( $i === $next ? 'next' : 'scheduled' );
+			$state  = $i <= $paid ? 'paid' : ( $i === $next ? ( 'past_due' === ( $plan['status'] ?? '' ) ? 'overdue' : 'next' ) : 'scheduled' );
 			$rows[] = array(
 				'n'       => $i,
 				'due'     => 1 === $i ? $start : (int) strtotime( '+' . ( $i - 1 ) . ' months', $start ),
@@ -148,12 +148,12 @@ if ( ! function_exists( 'db_plan_schedule_html' ) ) {
 			}
 			$paid  = 'paid' === $r['state'];
 			$when  = wp_date( 'F j, Y', $paid && $r['paid_ts'] ? (int) $r['paid_ts'] : (int) $r['due'] );
-			$label = array( 'paid' => 'Paid', 'next' => 'Next charge', 'scheduled' => 'Scheduled' )[ $r['state'] ];
+			$label = array( 'paid' => 'Paid', 'next' => 'Next charge', 'overdue' => 'Declined, retrying', 'scheduled' => 'Scheduled' )[ $r['state'] ];
 			$td    = 'padding:8px 12px;border-bottom:1px solid #f3f4f6;';
 			$h    .= '<tr><td style="' . $td . '">' . (int) $r['n'] . ' of ' . count( $rows ) . '</td>'
 				. '<td style="' . $td . '">' . esc_html( $when ) . '</td>'
 				. '<td align="right" style="' . $td . '">' . esc_html( db_plan_money( $r['amount'] ) ) . '</td>'
-				. '<td style="' . $td . ( 'next' === $r['state'] ? 'font-weight:700;' : '' ) . '">' . esc_html( $label ) . '</td></tr>';
+				. '<td style="' . $td . ( in_array( $r['state'], array( 'next', 'overdue' ), true ) ? 'font-weight:700;' : '' ) . '">' . esc_html( $label ) . '</td></tr>';
 		}
 		return $h . '</table>';
 	}
@@ -176,7 +176,7 @@ if ( ! function_exists( 'db_plan_terms_html' ) ) {
 			. 'If the payment is still unpaid ' . $g . ' days after the first decline, the plan ends automatically. '
 			. 'The domain then returns to our inventory and may be sold to someone else. '
 			. '<strong>Payments already made are non-refundable and are not credited toward any other purchase.</strong> '
-			. 'The domain stays with Domain Brothers, held in escrow, until your final payment clears; ownership transfers to you only then.';
+			. 'The domain stays with Domain Brothers until your final payment clears; ownership transfers to you only then.';
 	}
 }
 

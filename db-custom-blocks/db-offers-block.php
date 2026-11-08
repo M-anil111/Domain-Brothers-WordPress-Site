@@ -671,7 +671,7 @@ if ( ! function_exists( 'db_deal_buyer_html' ) ) {
 				}
 				$h .= '</div></div>';
 			}
-			$h .= '<p class="db-of-sub" style="margin-top:16px">Your domain is held in escrow and transferred when payment is complete.</p>';
+			$h .= '<p class="db-of-sub" style="margin-top:16px">Your domain is transferred when payment is complete.</p>';
 		} elseif ( 'paid' === $state ) {
 			$h .= '<p class="db-un-lead">Paid. Thank you. Your domain transfer is under way, and we will email you the next steps.</p>';
 		} else { // declined | expired

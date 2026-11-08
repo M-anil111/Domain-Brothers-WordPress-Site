@@ -45,8 +45,8 @@ if ( ! function_exists( 'db_seo_defs' ) ) {
 	function db_seo_defs() {
 		$defs = array(
 			'_front' => array(
-				'title' => 'Buy Premium Domains, Escrow Protected | Domain Brothers',
-				'desc'  => 'Browse premium domains for sale with escrow-protected transfers and flexible payment plans. Find the perfect domain for your brand and buy it today.',
+				'title' => 'Buy Premium Domains, Payment Plans | Domain Brothers',
+				'desc'  => 'Browse premium domains for sale with step-by-step transfers and flexible payment plans. Find the perfect domain for your brand and buy it today.',
 				'kw'    => 'buy premium domains',
 			),
 			'website-design-development' => array(
@@ -96,17 +96,17 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 		return array(
 			'all-domains' => array(
 				'title' => 'Premium Domains for Sale: Browse 200+ | Domain Brothers',
-				'desc'  => 'Browse premium domains for sale across .com, .ca and more, every name backed by escrow-protected transfer and flexible payment plans. Start looking today.',
+				'desc'  => 'Browse premium domains for sale across .com, .ca and more, every name backed by step-by-step transfer and flexible payment plans. Start looking today.',
 				'kw'    => 'premium domains for sale',
 			),
 			'sold' => array(
 				'title' => 'Sold Premium Domains: Our Track Record | Domain Brothers',
-				'desc'  => 'Review the sold premium domains behind 15+ years of deals and $5,000,000 brokered. Proof the escrow process works, so browse what is still available now.',
+				'desc'  => 'Review the sold premium domains behind 15+ years of deals and $5,000,000 brokered. Browse what is still available now, and see how sales are recorded.',
 				'kw'    => 'sold premium domains',
 			),
 			'about-us' => array(
 				'title' => 'Domain Brokerage Experts Since Day One | Domain Brothers',
-				'desc'  => 'Meet the domain brokerage experts with 15+ years matching businesses to the right name. Strategy, escrow and transfer help included. Browse our inventory now.',
+				'desc'  => 'Meet the domain brokerage experts with 15+ years matching businesses to the right name. Strategy, transfer help included. Browse our inventory now.',
 				'kw'    => 'domain brokerage experts',
 			),
 			'about-domain-brothers' => array(
@@ -121,7 +121,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'faqs' => array(
 				'title' => 'Domain Buying FAQs: Answers for Buyers | Domain Brothers',
-				'desc'  => 'Clear domain buying FAQs on premium pricing, escrow, DNS and flexible instalments over 3 to 12 months. Get the answers, then pick your domain.',
+				'desc'  => 'Clear domain buying FAQs on premium pricing, transfers, DNS and flexible instalments over 3 to 12 months. Get the answers, then pick your domain.',
 				'kw'    => 'domain buying faqs',
 			),
 			'contact-us' => array(
@@ -136,7 +136,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'terms-of-use' => array(
 				'title' => 'Terms of Use for Domain Purchases | Domain Brothers',
-				'desc'  => 'Our terms of use set out how purchases, escrow transfers and payment plans work on this marketplace, so nothing is hidden. Read them before you buy.',
+				'desc'  => 'Our terms of use set out how purchases, transfer supports and payment plans work on this marketplace, so nothing is hidden. Read them before you buy.',
 				'kw'    => 'terms of use',
 			),
 			'privacy-policy' => array(
@@ -156,7 +156,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'premium-domain-deals' => array(
 				'title' => 'Premium Domain Deals and Price Drops | Domain Brothers',
-				'desc'  => 'Catch premium domain deals with reduced pricing, filtered by extension and length, all with escrow transfer and instalments. Grab a bargain before it sells.',
+				'desc'  => 'Catch premium domain deals with reduced pricing, filtered by extension and length, all with transfer support and instalments. Grab a bargain before it sells.',
 				'kw'    => 'premium domain deals',
 			),
 			'domains-under-review' => array(
@@ -166,12 +166,12 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'offer' => array(
 				'title' => 'Make an Offer on a Premium Domain | Domain Brothers',
-				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Escrow protection and flexible payment plans apply. Submit your offer now.',
+				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Step-by-step support and flexible payment plans apply. Submit your offer now.',
 				'kw'    => 'make an offer',
 			),
 			'domain-transfer' => array(
 				'title' => 'Domain Transfer Help from Real Experts | Domain Brothers',
-				'desc'  => 'Get domain transfer help from specialists who move names every week, with EPP handling and escrow protection at every step. Submit your transfer details here.',
+				'desc'  => 'Get domain transfer help from specialists who move names every week, with EPP handling and step-by-step support at every step. Submit your transfer details here.',
 				'kw'    => 'domain transfer help',
 			),
 			'epp-guidelines' => array(
@@ -181,12 +181,12 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'3-character-domains' => array(
 				'title' => '3 Character Domains for Sale, Ultra Rare | Domain Brothers',
-				'desc'  => 'Shop 3 character domains for sale, the scarcest asset class online, with escrow transfer and instalments available. Claim one before it is gone for good.',
+				'desc'  => 'Shop 3 character domains for sale, the scarcest asset class online, with transfer support and instalments available. Claim one before it is gone for good.',
 				'kw'    => '3 character domains',
 			),
 			'4-character-domains' => array(
 				'title' => '4 Character Domains for Sale and Ready | Domain Brothers',
-				'desc'  => 'Find 4 character domains for sale that stay memorable, type fast and travel well across markets. Escrow protected with 0% plans. Pick yours and buy today.',
+				'desc'  => 'Find 4 character domains for sale that stay memorable, type fast and travel well across markets. Payment plans at 0%. Pick yours and buy today.',
 				'kw'    => '4 character domains',
 			),
 			'5-character-domains' => array(
@@ -196,12 +196,12 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'6-character-domains' => array(
 				'title' => '6 Character Domains for Brand Builders | Domain Brothers',
-				'desc'  => 'Explore 6 character domains that read as real words and still feel premium, priced for growing brands. Escrow transfer included. Secure yours this week.',
+				'desc'  => 'Explore 6 character domains that read as real words and still feel premium, priced for growing brands. Transfer support included. Secure yours this week.',
 				'kw'    => '6 character domains',
 			),
 			'numeric-domains-for-sale' => array(
 				'title' => 'Numeric Domains for Sale: All Digits | Domain Brothers',
-				'desc'  => 'Shop numeric domains for sale that cross language barriers and rank well in Asian markets. Escrow protected with 0% instalments. Choose your digits today.',
+				'desc'  => 'Shop numeric domains for sale that cross language barriers and rank well in Asian markets. Payment plans at 0% on short terms. Choose your digits today.',
 				'kw'    => 'numeric domains for sale',
 			),
 			'our-services' => array(
@@ -210,8 +210,8 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 				'kw'    => 'domain and digital services',
 			),
 			'buy-domains-service' => array(
-				'title' => 'Buy Domains with Escrow and Payment Plans | Domain Brothers',
-				'desc'  => 'Buy domains from a curated inventory with escrow-protected transfer, flexible instalments and strategy advice from 15+ year veterans. Start browsing now.',
+				'title' => 'Buy Domains with Payment Plans | Domain Brothers',
+				'desc'  => 'Buy domains from a curated inventory with step-by-step transfer, flexible instalments and strategy advice from 15+ year veterans. Start browsing now.',
 				'kw'    => 'buy domains',
 			),
 			'sell-domains-service' => array(
@@ -260,13 +260,13 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 				'kw'    => 'digital solutions agency',
 			),
 			'acquire-social-media-handles' => array(
-				'title' => 'Buy Social Media Handles, Escrow Backed | Domain Brothers',
-				'desc'  => 'Looking to buy social media handles that match your brand? We negotiate and transfer them safely through escrow. Bids start at $5,000, so tell us the handle.',
+				'title' => 'Buy Social Media Handles, Step by Step | Domain Brothers',
+				'desc'  => 'Looking to buy social media handles that match your brand? We negotiate and transfer them with a step-by-step process. Bids start at $5,000, so tell us the handle.',
 				'kw'    => 'buy social media handles',
 			),
 			'sell-social-media-handles' => array(
 				'title' => 'Sell Social Media Handles Discreetly | Domain Brothers',
-				'desc'  => 'Own a valuable username? You can sell social media handles through our vetted buyer network with confidential, escrow-backed transfers. Ask about the process.',
+				'desc'  => 'Own a valuable username? You can sell social media handles through our vetted buyer network with confidential, step-by-step transfers. Ask about the process.',
 				'kw'    => 'sell social media handles',
 			),
 			'acquire-a-handle-now' => array(
@@ -397,7 +397,7 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 		if ( 'sold' === $state ) {
 			return array(
 				'title' => sprintf( '%s Has Been Sold%s', $name, DB_SEO_SUFFIX ),
-				'desc'  => sprintf( '%s has been sold. Browse similar premium domains with escrow-protected transfer and payment plans at Domain Brothers.', $name ),
+				'desc'  => sprintf( '%s has been sold. Browse similar premium domains with step-by-step transfer and payment plans at Domain Brothers.', $name ),
 				'kw'    => strtolower( $name ),
 			);
 		}
@@ -416,14 +416,14 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 			? sprintf( '%s for Sale, %s%s', $name, $price, DB_SEO_SUFFIX )
 			: sprintf( '%s for Sale%s', $name, DB_SEO_SUFFIX );
 		$desc  = $price
-			? sprintf( 'Buy %s for %s. A premium domain with escrow-protected transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
-			: sprintf( 'Buy %s, a premium domain, with an escrow-protected transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name );
+			? sprintf( 'Buy %s for %s. A premium domain with step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
+			: sprintf( 'Buy %s, a premium domain, with an step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name );
 		// Long names (e.g. canadaimmigrationcounsel.ca) pushed this to 162–168
 		// characters, past the 160 that search results show.
 		if ( mb_strlen( $desc ) > 160 ) {
 			$desc = $price
-				? sprintf( 'Buy %s for %s. Escrow-protected transfer and 0%% interest payment plans at Domain Brothers.', $name, $price )
-				: sprintf( 'Buy %s. Escrow-protected transfer and 0%% interest payment plans at Domain Brothers.', $name );
+				? sprintf( 'Buy %s for %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name, $price )
+				: sprintf( 'Buy %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name );
 		}
 
 		return array( 'title' => $title, 'desc' => $desc, 'kw' => strtolower( $name ) );
@@ -530,7 +530,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 			$desc = db_seo_trim_desc( $desc );
 			if ( '' === $desc ) {
 				$desc = sprintf(
-					'%s at Domain Brothers, a premium domain marketplace offering escrow-protected transfers and 0%% interest payment plans on every listing.',
+					'%s at Domain Brothers, a premium domain marketplace offering step-by-step transfers and 0%% interest payment plans on every listing.',
 					$post->post_title
 				);
 			}
@@ -545,7 +545,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 			$q = get_search_query();
 			return array(
 				'title' => sprintf( 'Search results for %s%s', $q, $brand ),
-				'desc'  => sprintf( 'Premium domains matching %s. Browse the Domain Brothers marketplace and buy with escrow-protected transfer and 0%% interest payment plans.', $q ),
+				'desc'  => sprintf( 'Premium domains matching %s. Browse the Domain Brothers marketplace and buy with step-by-step transfer and 0%% interest payment plans.', $q ),
 				'kw'    => '',
 			);
 		}
@@ -568,7 +568,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 				$desc = $is_blog_term
 					? sprintf( 'Posts filed under %s on the Domain Brothers blog — domain industry news and market insights.', $term->name )
 					: sprintf(
-						'Browse %s domains for sale at Domain Brothers. Every listing includes an escrow-protected transfer and 0%% interest payment plans. Find yours today.',
+						'Browse %s domains for sale at Domain Brothers. Every listing includes an step-by-step transfer and 0%% interest payment plans. Find yours today.',
 						$term->name
 					);
 			}
@@ -598,7 +598,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 		if ( is_post_type_archive( 'domain' ) || is_home() ) {
 			return array(
 				'title' => 'Premium Domains for Sale' . $brand,
-				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an escrow-protected transfer and flexible payment plans. Find your domain today.',
+				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an step-by-step transfer and flexible payment plans. Find your domain today.',
 				'kw'    => 'premium domains for sale',
 			);
 		}

@@ -94,6 +94,8 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 - `qa/sales-features.js` (live): the domain finder and its shortlist, trust center, collections, "Why this price?" on domain pages, phone-width overflow, admin Sales funnel and Buyer intent reports.
 - `sales/sales-features-test.php` (offline): finder filters and ranking reasons, collection rules, funnel privacy, comparables, trust center wording, transfer stage order. Run: `php tests/sales/sales-features-test.php`.
 - `plan/plan-schedule-test.php` (offline): payment dates and amounts, remaining-payment tables, retry and terms wording, failure notice numbers and dates. Run: `php tests/plan/plan-schedule-test.php`.
+- `copy/escrow-claims-test.php` (offline): fails if any plugin page, email, meta description or guide describes escrow as part of this service.
+- `plan/dump-plan-emails.php` (offline): writes each plan email to a folder so it can be reviewed or screenshotted. Run: `php tests/plan/dump-plan-emails.php <folder>`.
 - `qa/email-templates.js` (live): the email template editor, every template rendered in the brand shell, edit/design/reset reaching real emails, access control.
 - `qa/wishlist-flow.js` (live): wishlist sign-in by emailed code (read back through a staging-only admin route), saving, the wishlist page, Domain Statistics, rate and origin limits; removes its test domain.
 - `qa/send-test-webhook.js`: sends a correctly signed synthetic Stripe event (`full` or `plan`) to a test-mode site, for example to try the orders log.

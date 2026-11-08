@@ -174,7 +174,7 @@ if ( ! function_exists( 'db_launch_checks' ) ) {
 			'spf'     => 'SPF, DKIM and DMARC records are published for the sending domain.',
 			'legal'   => 'Legal review of the payment plan terms (forfeiture and transfer on final payment).',
 			'cdn'     => 'Cloudflare development mode is off and the cache was tested for logged-out pages.',
-			'escrow'  => 'Every escrow statement on the site (listing pages, status panel, plan terms and the guides) matches an escrow arrangement you can show. The plugin does not integrate an escrow service.',
+			'escrow'  => 'The site makes no escrow claim. Any new copy that mentions escrow must describe an arrangement you can show; the plugin does not integrate an escrow service.',
 			'ads'     => 'AdSense ad unit ids are saved, and a consent banner is live for EEA, UK and Swiss visitors.',
 		) as $id => $text ) {
 			$add( $id, $text, 'owner', 'Owner or host action.' );

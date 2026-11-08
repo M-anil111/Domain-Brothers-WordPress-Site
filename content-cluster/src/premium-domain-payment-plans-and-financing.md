@@ -13,7 +13,7 @@ A strong domain can cost more than a small business wants to pay on one day. Tha
 - Shorter plans cost less overall; longer plans lower each payment.
 - Always read the missed-payment terms before you start.
 
-!img:infographic-i9|Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, use the domain while it is held in escrow, own it after the final payment|Pay, use, own: how a payment plan works.
+!img:infographic-i9|Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, use the domain while it stays with the seller until the final payment, own it after the final payment|Pay, use, own: how a payment plan works.
 
 ## Why people pay over time
 
@@ -25,7 +25,7 @@ The details differ by seller, so here is how ours works as an example.
 
 1. You pick the domain and a plan of **3, 6, 9 or 12 months**.
 2. The first monthly payment starts the plan. The three and six month plans carry no interest; longer plans carry a small rate that is shown before you pay.
-3. The domain is **held in escrow** for you while you pay.
+3. The domain stays with Domain Brothers until your final payment clears.
 4. You can already **use the name**: tell us where your website is hosted and we point the name to it.
 5. After the **final payment clears**, ownership transfers to you and we send the transfer details.
 
@@ -46,7 +46,7 @@ If the price is within your budget and you want the name outright, paying in ful
 
 - **Term and total cost.** Add up every payment. If a seller advertises a low monthly figure, check the total.
 - **Interest.** A zero-interest option on shorter terms is a good sign.
-- **Ownership during the plan.** Who is the registered owner until the last payment? Ownership held back is normal, but the arrangement should be in writing and the name should be held securely, for example in escrow.
+- **Ownership during the plan.** Who is the registered owner until the last payment? Ownership held back is normal, but the arrangement should be in writing, and the terms should say who holds the name and what happens if a payment is missed.
 - **Use of the name.** Can you point it at your site now? You should be able to.
 - **Missed payments.** Find out how many days you have, how many retries there are, and what happens at the end. On our plans a failed card payment is retried for a set number of days with reminders, and after that the plan ends and the domain returns to our inventory. Payments already made are non-refundable. Read the terms before you start, and tell us early if you expect a problem.
 - **Early payoff.** Can you pay the balance sooner? It is worth asking.

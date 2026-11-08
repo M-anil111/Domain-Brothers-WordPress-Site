@@ -810,7 +810,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<div class="co-actions"><button type="button" class="co-back" data-goto="2">&larr; Back to order confirmation</button></div>
 						<div class="co-trust">
 							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>SSL Secured</span>
-							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Escrow Protected</span>
+							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Secure payment</span>
 							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>24-hr Support</span>
 						</div>
 					</div>
@@ -1844,7 +1844,7 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active</p>';
 				$body .= '<p>We received your first payment of <strong>' . esc_html( $paid_fmt ) . '</strong> for <strong>' . $d . '</strong>. Your plan: <strong>' . (int) $months . ' monthly payments</strong>, ' . esc_html( $rate_label ) . ', total <strong>$' . esc_html( number_format( $total, 2 ) ) . '</strong>.</p>';
 				$body .= '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;font-size:14px;"><tr><th align="left" style="padding:8px 14px;background:#f8f9fb;">#</th><th align="left" style="padding:8px 14px;background:#f8f9fb;">Date</th><th align="right" style="padding:8px 14px;background:#f8f9fb;">Amount</th></tr>' . $rows . '</table>';
-				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain is held securely in escrow.</p>';
+				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain stays with Domain Brothers.</p>';
 				if ( function_exists( 'db_plan_terms_html' ) ) {
 					$body .= '<p style="font-size:13px;color:#374151;background:#f8f9fb;padding:12px 14px;border-radius:8px;">' . db_plan_terms_html() . '</p>';
 					$body .= '<p style="font-size:13px;color:#6b7280;">We will email you a reminder ' . (int) DB_PLAN_REMIND_DAYS . ' days before each payment.</p>';
