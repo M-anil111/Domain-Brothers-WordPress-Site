@@ -472,6 +472,8 @@ if ( ! function_exists( 'db_finder_body' ) ) {
 			$h   .= '</section>';
 		} else {
 			db_funnel_track( 'finder_start' );
+			$hint = isset( $_GET['domain'] ) ? sanitize_text_field( wp_unslash( $_GET['domain'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+			$h   .= db_sales_broker_form( $hint );
 		}
 		return $h;
 	}
@@ -721,7 +723,7 @@ add_action( 'template_redirect', function () {
 		$body .= db_sales_save_form( $c );
 		db_sales_render( $cols[ $m[1] ]['title'], 'Collections', $body );
 	}
-}, 6 );
+}, 27 ); // After db-onpage-seo's output buffer (priority 26), so these pages get the same viewport and link fixes.
 
 if ( ! function_exists( 'db_trust_center_body' ) ) {
 	/** Only statements the plugin enforces in code. Refund and response terms link to their source pages. */
