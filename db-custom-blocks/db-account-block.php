@@ -537,8 +537,9 @@ if ( ! function_exists( 'db_acct_tabs' ) ) {
 		return array(
 			'saved'    => 'Wishlist',
 			'alerts'   => 'Alerts',
-			'offers'   => 'My offers',
-			'discover' => 'Discover',
+			'offers'    => 'My offers',
+			'transfers' => 'Transfers',
+			'discover'  => 'Discover',
 		);
 	}
 }
@@ -622,7 +623,7 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			if ( ! $notes ) {
 				$h .= '<div class="db-wl-card"><h2>No alerts yet</h2><p>When a domain on your wishlist changes price, sells or gets a new offer, it shows up here.</p></div>';
 			} else {
-				$icons = array( 'price' => 'Price', 'sold' => 'Sold', 'offer' => 'Offer', 'status' => 'Status' );
+				$icons = array( 'price' => 'Price', 'sold' => 'Sold', 'offer' => 'Offer', 'status' => 'Status', 'match' => 'Match' );
 				$h    .= '<ol class="db-ac-feed">';
 				foreach ( $notes as $n ) {
 					$p  = get_post( (int) $n->post_id );
@@ -630,6 +631,8 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				}
 				$h .= '</ol>';
 			}
+		} elseif ( 'transfers' === $tab ) {
+			$h .= '<h2 class="db-ac-h">Transfers</h2>' . ( function_exists( 'db_sales_transfers_html' ) ? db_sales_transfers_html( $email ) : '' );
 		} elseif ( 'offers' === $tab ) {
 			$states = function_exists( 'db_deal_states' ) ? db_deal_states() : array();
 			$h     .= '<h2 class="db-ac-h">My offers</h2>';

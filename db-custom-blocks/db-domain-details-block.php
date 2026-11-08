@@ -154,6 +154,7 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			. '.db-dd-btn--primary{background:#0a1628;color:#fff !important}.db-dd-steps{padding-left:22px;list-style:decimal !important}.db-dd-steps li{list-style:decimal !important}.db-dd-steps li{margin:6px 0}'
 			. '.db-dd-terms{font-size:13px;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;display:block !important}'
 			. '.db-dd-rec-intro{font-size:14px;color:#4b5563;margin:0 0 12px}' . db_rec_css() . '</style>';
+		$out .= function_exists( 'db_sales_value_html' ) ? db_sales_value_html( $post ) : '';
 		return $out;
 	}
 }
