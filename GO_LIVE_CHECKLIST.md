@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.69.6** (2026-11-08). Before approval, record the exact commit that is deployed: run `tools/build-release.sh` before packaging, then check Domain Brothers > Launch checks, which shows the version and commit. A test pass only counts for the commit it was run against. This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.70.2** (2026-11-08). Before approval, record the exact commit that is deployed: run `tools/build-release.sh` before packaging, then check Domain Brothers > Launch checks, which shows the version and commit. A test pass only counts for the commit it was run against. This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -105,4 +105,4 @@ Production-specific behaviour, already handled in code:
 | Escrow statements | Removed in v3.69.6 (QA_REPORT section 35). The site makes no escrow claim; `tests/copy/escrow-claims-test.php` enforces it. Owner: if an escrow arrangement is ever offered, add it back with its terms. |
 | Credentials, backups, webhook reachability, SPF/DKIM, legal review, CDN mode, ad ids | Owner or host actions, listed in Launch checks. |
 | Real cron | Launch checks reports overdue jobs. Owner action: a real cron job every 5 minutes. |
-| Sales roadmap (10 items) | Built in v3.69.1 (QA_REPORT section 33): finder, buyer-intent score, verified "Why this price?", transfer workspace, service options, collections, offer guidance and broker request, funnel, trust center. Not built: abandoned checkout and offer reminders (needs marketing consent and owner sign-off on wording), experiments, automatic offer acknowledgements and response timers, transfer document history and two-way messaging. |
+| Sales roadmap (10 items) | Built (QA_REPORT sections 33 and 36): finder, saved searches, collections, buyer-intent score, funnel, "Why this price?", transfer workspace with stage emails and messages, service options, offer guidance and broker emails, trust center, checkout reminders with consent, offer response timer, one CTA experiment. Not built: transfer document upload, a multi-test experiment framework. Owner: the reminders and timers need the real cron. |

@@ -676,3 +676,29 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 **Checks.** `tests/plan/plan-schedule-test.php` 20/20 (with the Overdue status), `tests/copy/escrow-claims-test.php` pass, and the existing SEO, security, plan-lifecycle, offer, listing and EPP suites pass unchanged.
 
 **Addendum (v3.69.7): live site.** Six pages held escrow claims in their own content (`sell-social-media-handles`, `acquire-social-media-handles`, `sell-domains-service`, `buy-domains-service`, `privacy-policy`, `faqs`). They were rewritten through the REST API. The home page "Get started" step comes from the theme template, which is outside this repository, so the plugin corrects that string on output (`db_copy_fix_claims`) until the template changes. Escrow stays in third-party news posts, which report the industry and were not changed. After the change, the home page, buy and sell pages, handles pages, FAQ, privacy policy, all-domains, our-services, about, payment-plan-setup, trust-center and contact return no escrow text. **Owner check:** the social-handles and privacy text was rewritten to what the site can show (written confirmation of each step, Stripe for card payments). Confirm it matches how those services actually work.
+
+## 36. Sales operations, checkout reminders, transfer messages, accessibility (v3.70.0 - v3.70.2)
+
+**What was built** (`db-custom-blocks/db-sales-ops-block.php`):
+- **Broker requests:** the team gets a "Broker call request" email with the buyer as reply-to; the buyer gets "We received your call request". Previously neither was sent.
+- **Transfer stage emails:** when a domain moves to a new stage, the buyer is emailed the stage and the team note (no email when the stage is unchanged or cleared).
+- **Transfer messages:** a thread on the buyer's Transfers tab (table `db_transfer_msgs`). Buyers write only for domains recorded as bought by their signed-in email, max 10 messages an hour, 2,000 characters. The team replies from the domain's screen (the reply box is sent with Update); the buyer is emailed. Team messages are emailed to the team address.
+- **Offer response timer:** an open offer with no reply for 24 hours sends the team one "No reply yet" email (once per offer).
+- **Checkout reminder:** an unticked box on checkout step 1 ("Email me one reminder if I do not finish my purchase"). If ticked, the buyer gets one reminder about two hours after an unfinished checkout, only if the payment is still open and the domain is still for sale. The email has a signed one-click stop link. A paid, cancelled or processing payment sends nothing. Table `db_checkout_reminders`.
+- **CTA copy experiment:** a 30-day cookie assigns domain-page visitors to copy A ("Buy now") or B ("Buy this domain"). Views and clicks are recorded and shown in the Sales funnel report.
+
+**Checks**
+- Offline `tests/sales/sales-ops-test.php`: 32/32. Covers every template's variables, the emails each path sends (including reply-to and escaping of the buyer's note), stage-change rules, message validation, the stop-link signature, and the variant cookie.
+- Live `tests/qa/sales-security.js`: 13/13 on beta. Covers a broker request with an invalid email, forged and missing nonces on the broker, saved-search and message handlers (403), saved search without sign-in, the collection page ignoring `ext` and `maxlen` query parameters, the funnel endpoint refusing unknown events and accepting the experiment events, a forged stop link, and admin reports redirecting anonymous visitors.
+- Live: the consent box appears on checkout; the domain page assigns A or B; the purchase test and the sales-feature suite pass.
+- Live: axe WCAG 2.1 A/AA, 32 scans (16 pages, desktop and phone), all pass. The colour-contrast failures on older pages were all the ad placeholder text; its colour was raised (v3.70.2).
+
+**Found and fixed while testing:** the funnel endpoint lowercased experiment event names, so valid clicks were refused (v3.70.1).
+
+**Not verified live:**
+- Delivery of the broker, transfer, message and reminder emails. No buyer mailbox is available, and beta buyers are example.com addresses.
+- Sending of the checkout reminder and the offer timer. Both run from the 15-minute job, and that job needs the real cron (QA_REPORT section 35). The reminder also needs a checkout left unfinished for two hours.
+- The buyer side of transfer messages. It needs a signed-in buyer, which needs an email code. The team side is covered by the offline checks.
+- The two new database tables: the code creates them on load, but no page reads them back directly, so the creation is not confirmed in the database.
+
+**Still not built:** transfer document upload; a multi-variant experiment framework (one CTA test exists); automatic response timers beyond the 24-hour offer alert.
