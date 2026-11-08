@@ -1,0 +1,324 @@
+{
+ "category": {
+  "slug": "domain-guides",
+  "name": "Domain Guides",
+  "description": "Guides to premium domain names, websites and marketing from the Domain Brothers team."
+ },
+ "images": {
+  "choosing-a-domain-extension-com-ca-io-and-more": {
+   "file": "choosing-a-domain-extension-com-ca-io-and-more.jpg",
+   "alt": "Cover image for: Choosing a Domain Extension: .com, .ca, .io and More",
+   "title": "Choosing a Domain Extension: .com, .ca, .io and More"
+  },
+  "do-premium-domains-help-seo": {
+   "file": "do-premium-domains-help-seo.jpg",
+   "alt": "Cover image for: Do Premium Domains Help SEO? What Google Says and What Actually Matters",
+   "title": "Do Premium Domains Help SEO? What Google Says and What Actually Matters"
+  },
+  "domain-name-marketing-playbook": {
+   "file": "domain-name-marketing-playbook.jpg",
+   "alt": "Cover image for: The Domain Name Marketing Playbook: Email, Ads, QR Codes and Vanity URLs",
+   "title": "The Domain Name Marketing Playbook: Email, Ads, QR Codes and Vanity URLs"
+  },
+  "domain-transfers-epp-codes-and-dns-explained": {
+   "file": "domain-transfers-epp-codes-and-dns-explained.jpg",
+   "alt": "Cover image for: Domain Transfers, EPP Codes and DNS Explained in Plain English",
+   "title": "Domain Transfers, EPP Codes and DNS Explained in Plain English"
+  },
+  "how-to-buy-a-premium-domain-safely": {
+   "file": "how-to-buy-a-premium-domain-safely.jpg",
+   "alt": "Cover image for: How to Buy a Premium Domain Safely: Escrow, Checks and Transfer, Step by Step",
+   "title": "How to Buy a Premium Domain Safely: Escrow, Checks and Transfer, Step by Step"
+  },
+  "how-to-pick-a-brand-name-and-domain-that-lasts": {
+   "file": "how-to-pick-a-brand-name-and-domain-that-lasts.jpg",
+   "alt": "Cover image for: How to Pick a Brand Name and Domain That Lasts",
+   "title": "How to Pick a Brand Name and Domain That Lasts"
+  },
+  "how-to-value-a-premium-domain-name": {
+   "file": "how-to-value-a-premium-domain-name.jpg",
+   "alt": "Cover image for: How to Value a Premium Domain Name: A Practical Method With Examples",
+   "title": "How to Value a Premium Domain Name: A Practical Method With Examples"
+  },
+  "infographic-i1": {
+   "file": "infographic-i1.png",
+   "alt": "Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history",
+   "title": "Infographic of six factors that decide domain value: length, extension, keyword fit, brand"
+  },
+  "infographic-i2": {
+   "file": "infographic-i2.png",
+   "alt": "Five step infographic: find, check, agree, pay safely through escrow and transfer",
+   "title": "Five step infographic: find, check, agree, pay safely through escrow and transfer"
+  },
+  "infographic-i3": {
+   "file": "infographic-i3.png",
+   "alt": "Infographic comparing domain extensions: .com for global trust, country codes for local trust, .io .ai and .co for technology start-ups, and new descriptive extensions",
+   "title": "Infographic comparing domain extensions: .com for global trust, country codes for local tr"
+  },
+  "infographic-i4": {
+   "file": "infographic-i4.png",
+   "alt": "Checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, analytics and Search Console, and the core pages",
+   "title": "Checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, "
+  },
+  "infographic-i5": {
+   "file": "infographic-i5.png",
+   "alt": "Infographic showing six marketing channels where a short memorable domain helps: email, paid ads, print and QR codes, social profiles, word of mouth and search",
+   "title": "Infographic showing six marketing channels where a short memorable domain helps: email, pa"
+  },
+  "premium-domain-names-complete-guide": {
+   "file": "premium-domain-names-complete-guide.jpg",
+   "alt": "Cover image for: The Complete Guide to Premium Domain Names: Value, Buying, Branding and Marketing",
+   "title": "The Complete Guide to Premium Domain Names: Value, Buying, Branding and Marketing"
+  },
+  "premium-domain-payment-plans-and-financing": {
+   "file": "premium-domain-payment-plans-and-financing.jpg",
+   "alt": "Cover image for: Premium Domain Payment Plans and Financing: How to Pay Over Time",
+   "title": "Premium Domain Payment Plans and Financing: How to Pay Over Time"
+  },
+  "premium-domains-as-business-assets-and-investments": {
+   "file": "premium-domains-as-business-assets-and-investments.jpg",
+   "alt": "Cover image for: Premium Domains as Business Assets and Investments",
+   "title": "Premium Domains as Business Assets and Investments"
+  },
+  "trademarks-and-domain-disputes-udrp-basics": {
+   "file": "trademarks-and-domain-disputes-udrp-basics.jpg",
+   "alt": "Cover image for: Trademarks and Domain Disputes: UDRP Basics for Domain Buyers",
+   "title": "Trademarks and Domain Disputes: UDRP Basics for Domain Buyers"
+  },
+  "website-launch-checklist-after-buying-a-domain": {
+   "file": "website-launch-checklist-after-buying-a-domain.jpg",
+   "alt": "Cover image for: Website Launch Checklist After Buying a Domain: Your First Week",
+   "title": "Website Launch Checklist After Buying a Domain: Your First Week"
+  },
+  "what-is-a-premium-domain-name": {
+   "file": "what-is-a-premium-domain-name.jpg",
+   "alt": "Cover image for: What Is a Premium Domain Name? Meaning, Examples and Why It Costs More",
+   "title": "What Is a Premium Domain Name? Meaning, Examples and Why It Costs More"
+  }
+ },
+ "articles": [
+  {
+   "slug": "premium-domain-names-complete-guide",
+   "title": "The Complete Guide to Premium Domain Names: Value, Buying, Branding and Marketing",
+   "role": "pillar",
+   "excerpt": "Everything you need to know about premium domain names: what they are, how to value one, how to buy it safely, how to pay for it, and how to turn it into traffic, trust and sales.",
+   "tags": [
+    "premium domains",
+    "domain names",
+    "domain buying guide"
+   ],
+   "file": "premium-domain-names-complete-guide.html",
+   "featured": "premium-domain-names-complete-guide",
+   "images": [
+    "infographic-i1",
+    "infographic-i2",
+    "infographic-i3",
+    "infographic-i4",
+    "infographic-i5"
+   ],
+   "words": 2954
+  },
+  {
+   "slug": "choosing-a-domain-extension-com-ca-io-and-more",
+   "title": "Choosing a Domain Extension: .com, .ca, .io and More",
+   "role": "spoke",
+   "excerpt": "How to choose between .com, country codes like .ca, technology extensions like .io and .ai, and new descriptive extensions. Trust, price, renewal cost and who each one suits.",
+   "tags": [
+    "domain extensions",
+    "TLD",
+    ".com",
+    ".ca",
+    "premium domains"
+   ],
+   "file": "choosing-a-domain-extension-com-ca-io-and-more.html",
+   "featured": "choosing-a-domain-extension-com-ca-io-and-more",
+   "images": [
+    "infographic-i3"
+   ],
+   "words": 769
+  },
+  {
+   "slug": "do-premium-domains-help-seo",
+   "title": "Do Premium Domains Help SEO? What Google Says and What Actually Matters",
+   "role": "spoke",
+   "excerpt": "Does a premium or exact-match domain improve search rankings? What Google's own guidance says, how a better domain still helps your marketing, and how to move to a new domain without losing traffic.",
+   "tags": [
+    "SEO",
+    "domain names",
+    "premium domains",
+    "site move"
+   ],
+   "file": "do-premium-domains-help-seo.html",
+   "featured": "do-premium-domains-help-seo",
+   "images": [],
+   "words": 714
+  },
+  {
+   "slug": "domain-name-marketing-playbook",
+   "title": "The Domain Name Marketing Playbook: Email, Ads, QR Codes and Vanity URLs",
+   "role": "spoke",
+   "excerpt": "How to market with a premium domain: branded email, paid ads, print and QR codes, social profiles, vanity URLs, campaign pages and word of mouth, with a 30 day plan to launch a new name.",
+   "tags": [
+    "domain marketing",
+    "digital marketing",
+    "branding",
+    "premium domains"
+   ],
+   "file": "domain-name-marketing-playbook.html",
+   "featured": "domain-name-marketing-playbook",
+   "images": [
+    "infographic-i5"
+   ],
+   "words": 712
+  },
+  {
+   "slug": "domain-transfers-epp-codes-and-dns-explained",
+   "title": "Domain Transfers, EPP Codes and DNS Explained in Plain English",
+   "role": "spoke",
+   "excerpt": "How a domain transfer works from start to finish: registrar, registry and registrant, the EPP authorisation code, the transfer lock, waiting periods, DNS records and what to check so nothing breaks.",
+   "tags": [
+    "domain transfer",
+    "EPP code",
+    "DNS",
+    "registrar"
+   ],
+   "file": "domain-transfers-epp-codes-and-dns-explained.html",
+   "featured": "domain-transfers-epp-codes-and-dns-explained",
+   "images": [],
+   "words": 794
+  },
+  {
+   "slug": "how-to-buy-a-premium-domain-safely",
+   "title": "How to Buy a Premium Domain Safely: Escrow, Checks and Transfer, Step by Step",
+   "role": "spoke",
+   "excerpt": "A safe buying process for premium domains: how to check the seller and the name, use escrow, agree terms, take the transfer and secure the domain, plus the red flags that should make you stop.",
+   "tags": [
+    "buy a domain",
+    "escrow",
+    "domain transfer",
+    "premium domains"
+   ],
+   "file": "how-to-buy-a-premium-domain-safely.html",
+   "featured": "how-to-buy-a-premium-domain-safely",
+   "images": [
+    "infographic-i2"
+   ],
+   "words": 731
+  },
+  {
+   "slug": "how-to-pick-a-brand-name-and-domain-that-lasts",
+   "title": "How to Pick a Brand Name and Domain That Lasts",
+   "role": "spoke",
+   "excerpt": "A practical naming method for founders: what makes a name memorable, the tests to run before you commit, the mistakes that force a rename, and how to match the name to a domain you can own.",
+   "tags": [
+    "branding",
+    "naming",
+    "domain names",
+    "premium domains"
+   ],
+   "file": "how-to-pick-a-brand-name-and-domain-that-lasts.html",
+   "featured": "how-to-pick-a-brand-name-and-domain-that-lasts",
+   "images": [],
+   "words": 802
+  },
+  {
+   "slug": "how-to-value-a-premium-domain-name",
+   "title": "How to Value a Premium Domain Name: A Practical Method With Examples",
+   "role": "spoke",
+   "excerpt": "A step-by-step method for valuing a premium domain: score the name on six factors, check comparable sales, estimate what the name is worth to your business, and set a fair offer.",
+   "tags": [
+    "premium domains",
+    "domain valuation",
+    "domain appraisal"
+   ],
+   "file": "how-to-value-a-premium-domain-name.html",
+   "featured": "how-to-value-a-premium-domain-name",
+   "images": [
+    "infographic-i1"
+   ],
+   "words": 910
+  },
+  {
+   "slug": "premium-domain-payment-plans-and-financing",
+   "title": "Premium Domain Payment Plans and Financing: How to Pay Over Time",
+   "role": "spoke",
+   "excerpt": "How payment plans for premium domains work, what to compare (term, interest, ownership and missed-payment rules), and how to decide between paying in full and paying over three to twelve months.",
+   "tags": [
+    "domain payment plans",
+    "domain financing",
+    "premium domains"
+   ],
+   "file": "premium-domain-payment-plans-and-financing.html",
+   "featured": "premium-domain-payment-plans-and-financing",
+   "images": [],
+   "words": 892
+  },
+  {
+   "slug": "premium-domains-as-business-assets-and-investments",
+   "title": "Premium Domains as Business Assets and Investments",
+   "role": "spoke",
+   "excerpt": "How premium domains work as business assets and as investments: where the value comes from, how owners earn from them, the risks, how to hold and account for a domain, and a sensible way to start.",
+   "tags": [
+    "domain investing",
+    "business assets",
+    "premium domains"
+   ],
+   "file": "premium-domains-as-business-assets-and-investments.html",
+   "featured": "premium-domains-as-business-assets-and-investments",
+   "images": [],
+   "words": 781
+  },
+  {
+   "slug": "trademarks-and-domain-disputes-udrp-basics",
+   "title": "Trademarks and Domain Disputes: UDRP Basics for Domain Buyers",
+   "role": "spoke",
+   "excerpt": "How trademarks and domain names interact, how to check a name before you buy, and what the UDRP dispute process is: three requirements, how cases work, and how to protect yourself. General information, not legal advice.",
+   "tags": [
+    "trademarks",
+    "UDRP",
+    "domain disputes",
+    "legal basics"
+   ],
+   "file": "trademarks-and-domain-disputes-udrp-basics.html",
+   "featured": "trademarks-and-domain-disputes-udrp-basics",
+   "images": [],
+   "words": 806
+  },
+  {
+   "slug": "website-launch-checklist-after-buying-a-domain",
+   "title": "Website Launch Checklist After Buying a Domain: Your First Week",
+   "role": "spoke",
+   "excerpt": "What to do in the first week after you buy a domain: secure it, connect DNS, turn on HTTPS, set up authenticated email, redirect properly, add analytics and Search Console, and publish the core pages.",
+   "tags": [
+    "website",
+    "launch checklist",
+    "DNS",
+    "email",
+    "SEO"
+   ],
+   "file": "website-launch-checklist-after-buying-a-domain.html",
+   "featured": "website-launch-checklist-after-buying-a-domain",
+   "images": [
+    "infographic-i4"
+   ],
+   "words": 677
+  },
+  {
+   "slug": "what-is-a-premium-domain-name",
+   "title": "What Is a Premium Domain Name? Meaning, Examples and Why It Costs More",
+   "role": "spoke",
+   "excerpt": "A premium domain is a short, memorable, high-demand name that sells for far more than a normal registration. Learn the two meanings of the term, the main types, and how to tell a real premium name from an overpriced one.",
+   "tags": [
+    "premium domains",
+    "domain names",
+    "domain basics"
+   ],
+   "file": "what-is-a-premium-domain-name.html",
+   "featured": "what-is-a-premium-domain-name",
+   "images": [
+    "infographic-i1"
+   ],
+   "words": 924
+  }
+ ]
+}

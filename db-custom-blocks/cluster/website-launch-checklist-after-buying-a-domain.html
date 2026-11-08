@@ -1,0 +1,252 @@
+<!-- wp:paragraph -->
+<p>You have the name. Now it has to do something. The first week sets up everything you will rely on for years: security, email that reaches inboxes, a clean address structure and the ability to measure. This checklist works for a new site and for a site moving to a new domain. It is part of our <a href="__HOME__/premium-domain-names-complete-guide/">complete guide to premium domain names</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:group {"className":"db-takeaways","layout":{"type":"constrained"}} -->
+<div class="wp-block-group db-takeaways">
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="in-short-websit">In short</h2>
+<!-- /wp:heading -->
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Secure the domain first: lock, two-factor sign-in, auto-renew.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Connect DNS, turn on HTTPS and choose one preferred address.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Set up email with SPF, DKIM and DMARC before you send anything.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Add analytics and Search Console on day one.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:image {"id":__IMGID:infographic-i4__,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="__IMGURL:infographic-i4__" alt="Checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, analytics and Search Console, and the core pages" class="wp-image-__IMGID:infographic-i4__"/><figcaption class="wp-element-caption">The six launch tasks, in the order we recommend.</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-1-secure-the-domain">Day 1: Secure the domain</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li><strong>Confirm ownership.</strong> Check that the registrant details and email address are yours.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Turn on the registrar lock</strong> so the name cannot be transferred without you.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Turn on two-factor sign-in</strong> on the registrar account and on the email address that receives its messages.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Switch on auto-renew</strong> and add a payment method that will not expire soon.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Save records:</strong> the purchase agreement, the receipt and the transfer confirmation.</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>If you bought through us on a payment plan, remember that ownership transfers after the final payment; meanwhile we can point the name at your site.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-1-to-2-connect-dns">Day 1 to 2: Connect DNS</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>DNS is the system that turns your name into the address of your server. The <a href="https://en.wikipedia.org/wiki/Domain_Name_System" target="_blank" rel="noopener noreferrer">Wikipedia article on the Domain Name System</a> gives the background; in practice you do a few things.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Add an <strong>A record</strong> (or CNAME) that points the name to your host.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Add a record for the <strong>www</strong> version, or redirect it.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Keep the <strong>TTL</strong> low (a few minutes) while you set up, then raise it.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Add <strong>MX records</strong> for email.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Note every record in a document so you can restore it.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>See <a href="__HOME__/domain-transfers-epp-codes-and-dns-explained/">Domain Transfers, EPP Codes and DNS Explained</a> for more on DNS.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-2-turn-on-https">Day 2: Turn on HTTPS</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Install an SSL/TLS certificate. Most hosts offer free ones.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Redirect every http address to its https version.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Fix mixed-content warnings, where a secure page loads an insecure image or script.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-2-to-3-set-up-email-properly">Day 2 to 3: Set up email properly</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>A premium domain deserves a professional email address, and email needs three records to be trusted.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li><strong>SPF</strong> lists the servers allowed to send for your domain.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>DKIM</strong> signs your messages so they cannot be forged.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>DMARC</strong> tells receivers what to do with messages that fail, and gives you reports. The <a href="https://dmarc.org/overview/" target="_blank" rel="noopener noreferrer">DMARC overview</a> explains it.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:paragraph -->
+<p>Start DMARC in monitoring mode, read the reports for a few weeks, then tighten the policy. Send a test message to several providers before you launch a campaign.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-3-choose-one-preferred-address-and-redirect-the-rest">Day 3: Choose one preferred address and redirect the rest</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Decide whether the site lives at <code>example.com</code> or <code>www.example.com</code>, and redirect the other.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Redirect any other domains you own to the main one with permanent (301) redirects.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>If you are moving from an old site, map each old page to its new equivalent. Google's <a href="https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes" target="_blank" rel="noopener noreferrer">site-move guide</a> lists the steps.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-4-measure">Day 4: Measure</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Install analytics and set up conversions for your main goals: a contact form, a purchase, a booking.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Add the domain to <a href="https://search.google.com/search-console/about" target="_blank" rel="noopener noreferrer">Google Search Console</a> and verify it, then submit your sitemap.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Check the <a href="https://support.google.com/webmasters/answer/9008080" target="_blank" rel="noopener noreferrer">Search Console help</a> if you are new to it.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-5-publish-the-basics">Day 5: Publish the basics</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>At least:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li>A clear <strong>home page</strong> that says who you help and how.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>An <strong>about page</strong> with real names and photos.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>A <strong>contact page</strong> with a form, an email and a phone number if you have one.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>A <strong>privacy policy</strong> and, if you collect payments or data, terms.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>One <strong>page per service or product</strong> with a clear next step.</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="day-6-to-7-speed-and-quality-check">Day 6 to 7: Speed and quality check</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Test the site on a phone. Most visitors will be on one.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Run a speed test and read about <a href="https://web.dev/articles/vitals" target="_blank" rel="noopener noreferrer">Core Web Vitals</a> to learn what the scores mean.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Check every form and every link.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Add alt text to images and titles and descriptions to pages.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Ask a friend to find your phone number in ten seconds.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="after-the-first-week">After the first week</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Keep a <strong>changelog</strong> of DNS and site changes.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Review email reports and search data monthly.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Put the renewal date in your calendar.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="need-a-hand">Need a hand?</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>If you would rather not do it yourself, we build and run sites. See our <a href="__HOME__/website-design-development/">website design and development</a>, <a href="__HOME__/web-hosting-maintenance-services/">hosting and maintenance</a> and <a href="__HOME__/comprehensive-digital-solutions/">comprehensive digital solutions</a>. For mobile, see <a href="__HOME__/mobile-app-development-services/">app development</a>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="where-to-go-next">Where to go next</h2>
+<!-- /wp:heading -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li>Learn how the name helps marketing in the <a href="__HOME__/domain-name-marketing-playbook/">Domain Name Marketing Playbook</a>.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li>Understand <a href="__HOME__/do-premium-domains-help-seo/">SEO and domains</a>.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:group {"className":"db-cta","layout":{"type":"constrained"}} -->
+<div class="wp-block-group db-cta">
+<!-- wp:heading -->
+<h2 class="wp-block-heading">Launch with a team beside you</h2>
+<!-- /wp:heading -->
+<!-- wp:paragraph -->
+<p>Design, hosting, email and marketing from the people who found you the name.</p>
+<!-- /wp:paragraph -->
+<!-- wp:buttons -->
+<div class="wp-block-buttons">
+<!-- wp:button -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="__HOME__/website-design-development/">Website design and development</a></div>
+<!-- /wp:button -->
+<!-- wp:button -->
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="__HOME__/web-hosting-maintenance-services/">Hosting and maintenance</a></div>
+<!-- /wp:button -->
+</div>
+<!-- /wp:buttons -->
+</div>
+<!-- /wp:group -->
+
+<!-- wp:group {"className":"db-related","layout":{"type":"constrained"}} -->
+<div class="wp-block-group db-related">
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="keep-reading-websit">Keep reading</h2>
+<!-- /wp:heading -->
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li><a href="__HOME__/premium-domain-names-complete-guide/">The Complete Guide to Premium Domain Names</a>: the complete guide</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><a href="__HOME__/what-is-a-premium-domain-name/">What Is a Premium Domain Name? Meaning, Examples and Why It Costs More</a></li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><a href="__HOME__/choosing-a-domain-extension-com-ca-io-and-more/">Choosing a Domain Extension</a></li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><a href="__HOME__/do-premium-domains-help-seo/">Do Premium Domains Help SEO? What Google Says and What Actually Matters</a></li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+</div>
+<!-- /wp:group -->
