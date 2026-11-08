@@ -59,8 +59,6 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	const r6 = await req.post(`${BASE}/wp-admin/admin-post.php`, { ...noRedirect, form: { action: 'db_ops_transfer_msg', _db_nonce: 'forged00', post_id: '1', body: 'hello' } });
 	check('buyer message with a forged nonce is refused (403)', r6.status() === 403, String(r6.status()));
 
-	const r7 = await req.post(`${BASE}/wp-admin/admin-post.php`, { ...noRedirect, form: { action: 'db_ops_transfer_msg', _db_nonce: 'forged00', post_id: '1', body: 'hello' } });
-	check('buyer message is never accepted without a valid nonce', r7.status() === 403);
 
 	await page.goto(`${BASE}/collections/canadian-names-for-business-under-5000/`, { waitUntil: 'domcontentloaded' });
 	const plain = await page.$$eval('.db-sales-result', (l) => l.length);

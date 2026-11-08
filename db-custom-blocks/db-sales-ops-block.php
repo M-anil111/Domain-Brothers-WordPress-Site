@@ -438,7 +438,7 @@ add_action( 'rest_api_init', static function () {
 	register_rest_route( 'db/v1', '/funnel', array(
 		'methods'             => WP_REST_Server::CREATABLE,
 		'callback'            => function ( WP_REST_Request $r ) {
-			$ev = sanitize_key( (string) $r->get_param( 'ev' ) );
+			$ev = sanitize_text_field( (string) $r->get_param( 'ev' ) ); // Exact names only: sanitize_key would lowercase them.
 			if ( ! in_array( $ev, array( 'exp_view_A', 'exp_view_B', 'exp_click_A', 'exp_click_B' ), true ) ) {
 				return new WP_REST_Response( array( 'error' => 'unknown event' ), 400 );
 			}

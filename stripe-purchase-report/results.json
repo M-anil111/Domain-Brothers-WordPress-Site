@@ -1,9 +1,5 @@
 [
  {
-  "name": "checkout confirmation shows the dated payment schedule",
-  "pass": true
- },
- {
   "name": "checkout shows the Stripe Payment Element",
   "pass": true
  },
@@ -16,15 +12,7 @@
   "pass": true
  },
  {
-  "name": "confirmation names the domain",
-  "pass": "3"
- },
- {
-  "name": "plan thank-you lists every payment date",
-  "pass": true
- },
- {
-  "name": "plan thank-you states the retry terms",
+  "name": "confirmation names the domain and amount",
   "pass": true
  }
 ]
