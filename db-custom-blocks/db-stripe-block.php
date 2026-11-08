@@ -783,6 +783,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 							<div class="co-review-row"><dt>Due today</dt><dd><?php echo esc_html( $due_today_display ); ?></dd></div>
 						</dl>
 <?php if ( $is_plan ) : ?>
+						<?php echo function_exists( 'db_plan_preview_html' ) ? wp_kses( db_plan_preview_html( $price, $months ), array( 'p' => array( 'class' => array(), 'style' => array() ), 'strong' => array(), 'table' => array( 'border' => array(), 'cellpadding' => array(), 'cellspacing' => array(), 'width' => array(), 'style' => array() ), 'tr' => array(), 'th' => array( 'align' => array(), 'style' => array() ), 'td' => array( 'align' => array(), 'style' => array() ) ) ) : ''; // phpcs:ignore ?>
 						<p class="co-terms"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
 						<label class="co-agree" for="co-agree">
 							<input type="checkbox" id="co-agree" required aria-describedby="co-agree-err">
@@ -1809,19 +1810,18 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 		if ( function_exists( 'db_mail_send' ) ) {
 			if ( $customer_email ) {
 				if ( 1 === $n ) {
-					$sched = '';
-					for ( $i = 1; $i <= $months; $i++ ) {
-						$when   = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
-						$sched .= esc_html( $i . '. ' . $when . ': $' . number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '<br>';
-					}
+					$sched = function_exists( 'db_plan_schedule_html' ) ? db_plan_schedule_html( db_plan_schedule( db_plan_get( $domain ) ) ) : '';
 					db_mail_send( 'plan_started', $customer_email, [
 						'domain' => $domain, 'amount' => $paid_fmt, 'months' => (string) $months, 'rate' => $rate_label, 'total' => '$' . number_format( $total, 2 ),
-						'schedule_html' => '<p>' . $sched . '</p>',
+						'schedule_html' => $sched,
 						'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
 						'reminder_days' => (string) ( defined( 'DB_PLAN_REMIND_DAYS' ) ? DB_PLAN_REMIND_DAYS : 3 ),
 					], 'sales@domainbrothers.com' );
 				} else {
-					db_mail_send( 'plan_installment', $customer_email, [ 'domain' => $domain, 'number' => (string) $n, 'months' => (string) $months, 'amount' => $paid_fmt, 'remaining' => (string) max( 0, $months - $n ) ], 'sales@domainbrothers.com' );
+					db_mail_send( 'plan_installment', $customer_email, [ 'domain' => $domain, 'number' => (string) $n, 'months' => (string) $months, 'amount' => $paid_fmt, 'remaining' => (string) max( 0, $months - $n ),
+						'schedule_html' => function_exists( 'db_plan_schedule_html' ) ? db_plan_schedule_html( db_plan_schedule( db_plan_get( $domain ) ), true ) : '',
+						'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
+					], 'sales@domainbrothers.com' );
 				}
 			}
 			db_mail_send( 'admin_plan_payment', $admin_email, [

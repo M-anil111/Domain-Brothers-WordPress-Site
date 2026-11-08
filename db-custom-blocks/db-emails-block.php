@@ -383,9 +383,9 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 			'plan_installment' => array(
 				'group' => 'Payments', 'label' => 'Plan payment received (to the buyer)', 'to' => 'customer', 'critical' => false,
 				'when'  => 'Each later payment of a plan clears.',
-				'vars'  => $dom + array( 'number' => array( 'Payment number', '4' ), 'months' => array( 'Number of payments', '12' ), 'amount' => array( 'Amount', '$733.00' ), 'remaining' => array( 'Payments remaining', '8' ) ),
+				'vars'  => $dom + array( 'number' => array( 'Payment number', '4' ), 'months' => array( 'Number of payments', '12' ), 'amount' => array( 'Amount', '$733.00' ), 'remaining' => array( 'Payments remaining', '8' ), 'schedule_html' => array( 'Remaining payments', '<p>5 of 12, September 8, 2026, $733.00, Next charge</p>' ), 'terms_html' => array( 'The plan terms', '<p>Payment plan terms.</p>' ) ),
 				'subject' => 'Payment {{number}} of {{months}} received for {{domain}}', 'eyebrow' => 'Payment received', 'heading' => 'Payment {{number}} of {{months}} received',
-				'body'  => '<p>We received <strong>{{amount}}</strong> for <strong>{{domain}}</strong>. {{remaining}} payment(s) remain.</p>',
+				'body'  => '<p>We received <strong>{{amount}}</strong> for <strong>{{domain}}</strong>. {{remaining}} payment(s) remain.</p>{{schedule_html}}{{terms_html}}',
 				'details' => "Domain|{{domain}}\nAmount|{{amount}}", 'cta' => '', 'cta_var' => '', 'tone' => 'good',
 			),
 			'payment_failed'   => array(

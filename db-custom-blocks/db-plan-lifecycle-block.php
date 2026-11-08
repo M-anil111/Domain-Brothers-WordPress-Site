@@ -41,6 +41,8 @@ defined( 'ABSPATH' ) || exit;
 if ( ! defined( 'DB_PLAN_GRACE_DAYS' ) )    define( 'DB_PLAN_GRACE_DAYS', 10 );
 if ( ! defined( 'DB_PLAN_REMIND_DAYS' ) )   define( 'DB_PLAN_REMIND_DAYS', 3 );
 if ( ! defined( 'DB_PLAN_SUPPORT_EMAIL' ) ) define( 'DB_PLAN_SUPPORT_EMAIL', 'sales@domainbrothers.com' );
+// Automatic retries after the first decline (the dunning job sends notices on these days).
+if ( ! defined( 'DB_PLAN_RETRY_DAYS' ) )    define( 'DB_PLAN_RETRY_DAYS', array( 3, 6, 9 ) );
 
 /* ─── Plan record helpers ───────────────────────────────────────────────────── */
 
@@ -69,6 +71,94 @@ if ( ! function_exists( 'db_plan_money' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_plan_schedule' ) ) {
+	/**
+	 * Every instalment of a plan: number, date, amount and state (paid | next |
+	 * scheduled). Instalment 1 is the first payment. Each later instalment falls
+	 * one month after the one before, which is how the charge logic schedules
+	 * them, so these dates hold while payments are on time.
+	 *
+	 * @return array<int, array{n:int, due:int, amount:float, state:string, paid_ts:int}>
+	 */
+	function db_plan_schedule( array $plan ) {
+		$months = (int) ( $plan['total_months'] ?? 0 );
+		$price  = (float) ( $plan['price_usd'] ?? 0 );
+		$hist   = array_values( (array) ( $plan['history'] ?? array() ) );
+		$start  = (int) ( $hist[0]['ts'] ?? 0 );
+		if ( $months < 1 || $price <= 0 || $start <= 0 ) {
+			return array();
+		}
+		$paid = (int) ( $plan['paid_installments'] ?? count( $hist ) );
+		$next = (int) ( $plan['next_installment'] ?? ( $paid + 1 ) );
+		$rows = array();
+		for ( $i = 1; $i <= $months; $i++ ) {
+			$state  = $i <= $paid ? 'paid' : ( $i === $next ? 'next' : 'scheduled' );
+			$rows[] = array(
+				'n'       => $i,
+				'due'     => 1 === $i ? $start : (int) strtotime( '+' . ( $i - 1 ) . ' months', $start ),
+				'amount'  => db_stripe_installment_cents( $price, $months, $i ) / 100,
+				'state'   => $state,
+				'paid_ts' => (int) ( $hist[ $i - 1 ]['ts'] ?? 0 ),
+			);
+		}
+		return $rows;
+	}
+}
+
+if ( ! function_exists( 'db_plan_preview_html' ) ) {
+	/**
+	 * Before the first payment: the dates and amounts the plan would charge if
+	 * it starts today and every payment is on time. Shown at checkout so the
+	 * customer agrees to the actual schedule.
+	 */
+	function db_plan_preview_html( $price, $months ) {
+		$price  = (float) $price;
+		$months = (int) $months;
+		if ( $price <= 0 || $months < 1 ) {
+			return '';
+		}
+		$now  = time();
+		$rows = array();
+		for ( $i = 1; $i <= $months; $i++ ) {
+			$rows[] = array(
+				'n'       => $i,
+				'due'     => 1 === $i ? $now : (int) strtotime( '+' . ( $i - 1 ) . ' months', $now ),
+				'amount'  => db_stripe_installment_cents( $price, $months, $i ) / 100,
+				'state'   => 1 === $i ? 'next' : 'scheduled',
+				'paid_ts' => 0,
+			);
+		}
+		$h = db_plan_schedule_html( $rows );
+		return '<p class="co-plan-schedule" style="font-size:14px;margin:12px 0 0;"><strong>Your payment dates</strong> (if every payment is on time). Payment 1 is charged today; the others on the same day of each following month.</p>' . $h;
+	}
+}
+
+if ( ! function_exists( 'db_plan_schedule_html' ) ) {
+	/** The schedule as an email/page table. $remaining_only drops instalments already paid. */
+	function db_plan_schedule_html( array $rows, $remaining_only = false ) {
+		if ( ! $rows ) {
+			return '';
+		}
+		$th = 'padding:8px 12px;background:#f8f9fb;font-size:13px;color:#374151;';
+		$h  = '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:14px 0;font-size:14px;">'
+			. '<tr><th align="left" style="' . $th . '">Payment</th><th align="left" style="' . $th . '">Date</th><th align="right" style="' . $th . '">Amount</th><th align="left" style="' . $th . '">Status</th></tr>';
+		foreach ( $rows as $r ) {
+			if ( $remaining_only && 'paid' === $r['state'] ) {
+				continue;
+			}
+			$paid  = 'paid' === $r['state'];
+			$when  = wp_date( 'F j, Y', $paid && $r['paid_ts'] ? (int) $r['paid_ts'] : (int) $r['due'] );
+			$label = array( 'paid' => 'Paid', 'next' => 'Next charge', 'scheduled' => 'Scheduled' )[ $r['state'] ];
+			$td    = 'padding:8px 12px;border-bottom:1px solid #f3f4f6;';
+			$h    .= '<tr><td style="' . $td . '">' . (int) $r['n'] . ' of ' . count( $rows ) . '</td>'
+				. '<td style="' . $td . '">' . esc_html( $when ) . '</td>'
+				. '<td align="right" style="' . $td . '">' . esc_html( db_plan_money( $r['amount'] ) ) . '</td>'
+				. '<td style="' . $td . ( 'next' === $r['state'] ? 'font-weight:700;' : '' ) . '">' . esc_html( $label ) . '</td></tr>';
+		}
+		return $h . '</table>';
+	}
+}
+
 /* ─── Customer-facing terms (single source of wording) ──────────────────────── */
 
 if ( ! function_exists( 'db_plan_terms_html' ) ) {
@@ -78,11 +168,15 @@ if ( ! function_exists( 'db_plan_terms_html' ) ) {
 	 * seen them before and after the first payment.
 	 */
 	function db_plan_terms_html() {
-		$g = (int) DB_PLAN_GRACE_DAYS;
-		return '<strong>Payment plan terms.</strong> The domain stays with Domain Brothers, held in escrow, until your <em>final</em> payment clears; ownership transfers to you only then. '
-			. 'If a payment fails we will email you and retry for up to ' . $g . ' days. '
-			. 'If it is still unpaid after ' . $g . ' days the plan is terminated and the domain returns to our inventory. '
-			. '<strong>Payments already made are non-refundable and are not credited toward any other purchase.</strong>';
+		$g       = (int) DB_PLAN_GRACE_DAYS;
+		$retries = count( DB_PLAN_RETRY_DAYS );
+		return '<strong>Payment plan terms.</strong> You pay in monthly instalments on the dates in your payment schedule, starting with your first payment. '
+			. 'Each later payment is charged automatically to the card on file, one month after the previous one. '
+			. 'If a payment is declined we email you and retry automatically ' . $retries . ' more times, on days ' . implode( ', ', DB_PLAN_RETRY_DAYS ) . ' after the first decline (' . ( $retries + 1 ) . ' attempts in total). '
+			. 'If the payment is still unpaid ' . $g . ' days after the first decline, the plan ends automatically. '
+			. 'The domain then returns to our inventory and may be sold to someone else. '
+			. '<strong>Payments already made are non-refundable and are not credited toward any other purchase.</strong> '
+			. 'The domain stays with Domain Brothers, held in escrow, until your final payment clears; ownership transfers to you only then.';
 	}
 }
 
@@ -168,7 +262,7 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 	 * @param array  $plan Plan record.
 	 * @param array  $x    Extra context: amount, due_ts, grace_end_ts, days_left.
 	 */
-	function db_plan_message( $key, array $plan, array $x = array() ) {
+	function db_plan_message_base( $key, array $plan, array $x = array() ) {
 		$domain   = (string) ( $plan['domain'] ?? '' );
 		$months   = (int) ( $plan['total_months'] ?? 0 );
 		$n        = (int) ( $plan['next_installment'] ?? 1 );
@@ -319,6 +413,52 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 				);
 		}
 		return array( '', '' );
+	}
+}
+
+if ( ! function_exists( 'db_plan_extra_html' ) ) {
+	/**
+	 * What every plan email adds: the failure notice number and the automatic
+	 * retry dates (failures), the instalments still to be paid, and the terms.
+	 */
+	function db_plan_extra_html( $key, array $plan, array $x = array() ) {
+		$notice = array( 'failed_1' => 1, 'failed_2' => 2, 'failed_3' => 3, 'failed_4' => 4 );
+		$h      = '';
+		if ( isset( $notice[ $key ] ) ) {
+			$since = (int) ( $plan['past_due_since'] ?? 0 );
+			$h    .= '<p style="font-size:14px;margin:14px 0 4px;"><strong>Failed payment notice ' . (int) $notice[ $key ] . ' of 4</strong> for installment ' . (int) ( $plan['next_installment'] ?? 0 ) . ' of ' . (int) ( $plan['total_months'] ?? 0 ) . '.</p>';
+			if ( $since > 0 ) {
+				$parts = array();
+				foreach ( DB_PLAN_RETRY_DAYS as $i => $d ) {
+					$parts[] = 'retry ' . ( $i + 1 ) . ' on ' . wp_date( 'F j, Y', $since + (int) $d * DAY_IN_SECONDS ) . ' (day ' . (int) $d . ')';
+				}
+				$h .= '<p style="font-size:14px;margin:4px 0;">First decline: ' . esc_html( wp_date( 'F j, Y', $since ) ) . '. Automatic ' . count( DB_PLAN_RETRY_DAYS ) . ' retries: ' . esc_html( implode( '; ', $parts ) ) . '. The plan ends on ' . esc_html( wp_date( 'F j, Y', $since + DB_PLAN_GRACE_DAYS * DAY_IN_SECONDS ) ) . ' if no payment clears.</p>';
+			}
+		}
+		$rows = db_plan_schedule( $plan );
+		if ( $rows ) {
+			$remaining = array_filter( $rows, function ( $r ) { return 'paid' !== $r['state']; } );
+			if ( $remaining ) {
+				$h .= '<p style="font-size:14px;margin:14px 0 0;"><strong>Remaining payments</strong></p>' . db_plan_schedule_html( $rows, true );
+			}
+		}
+		$h .= '<p style="font-size:13px;color:#374151;background:#f8f9fb;padding:12px 14px;border-radius:8px;">' . db_plan_terms_html() . '</p>';
+		return $h;
+	}
+}
+
+if ( ! function_exists( 'db_plan_message' ) ) {
+	/** Subject and body for a plan email, with the schedule, retry and terms blocks added. */
+	function db_plan_message( $key, array $plan, array $x = array() ) {
+		list( $subj, $html ) = db_plan_message_base( $key, $plan, $x );
+		if ( '' === $html ) {
+			return array( $subj, $html );
+		}
+		$extra  = db_plan_extra_html( $key, $plan, $x );
+		$marker = '<p style="font-size:13px;color:#6b7280;">Questions or need more time?';
+		$pos    = strpos( $html, $marker );
+		$html   = false === $pos ? $html . $extra : substr_replace( $html, $extra, $pos, 0 );
+		return array( $subj, $html );
 	}
 }
 

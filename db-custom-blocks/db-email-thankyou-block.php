@@ -527,6 +527,13 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 				: 'Your first installment has been processed. The domain transfers to you right after your final payment.';
 			$html .= '<p class="db-ty-sub">' . $sub . '</p>';
 
+			$plan_rec = function_exists( 'db_plan_get' ) ? db_plan_get( $domain ) : array();
+			$sched    = function_exists( 'db_plan_schedule' ) ? db_plan_schedule( $plan_rec ) : array();
+			if ( $sched ) {
+				$html .= '<h2 class="db-ty-sub" style="font-size:18px;margin:22px 0 6px;">Your payment schedule</h2>';
+				$html .= db_plan_schedule_html( $sched );
+				$html .= '<p style="font-size:13px;">' . db_plan_terms_html() . '</p>';
+			}
 			$html .= '<div class="db-ty-infobox">';
 			$html .= '<strong>&#128274; Escrow-protected for the full term.</strong><br>';
 			$html .= 'Remaining installments bill automatically each month &mdash; no action needed. We\'ll email you before each charge, and your domain is held securely until the plan completes.';
