@@ -864,7 +864,7 @@ html body.db-ui-active.db-ui-active .db-dd-side a.db-dd-side-btn--ghost { backgr
 .db-ad ins.adsbygoogle { min-height: 90px; max-width: 100%; margin: 0 auto; }
 .db-ad--none { display: none !important; }
 .db-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none !important; }
-.db-ad--empty { display: flex; align-items: center; justify-content: center; padding: 18px; background: #f9fafb; border: 1.5px dashed #d6dbe3; box-shadow: none; color: #7b8494; font-size: 13px; letter-spacing: .01em; }
+.db-ad--empty { display: flex; align-items: center; justify-content: center; padding: 18px; background: #f9fafb; border: 1.5px dashed #d6dbe3; box-shadow: none; color: #4b5563; font-size: 13px; letter-spacing: .01em; }
 /* inside a long list: one full-width row (a full card in grid view) */
 .db-domain-grid > .db-ad-row { grid-column: 1 / -1; width: 100%; }
 .db-domain-grid > .db-ad-row .db-ad { margin: 14px auto; }
