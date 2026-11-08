@@ -9,11 +9,11 @@
  },
  {
   "name": "thank-you page returns HTTP 200",
-  "pass": false
+  "pass": true
  },
  {
   "name": "confirmation names the domain",
-  "pass": false
+  "pass": "3"
  },
  {
   "name": "plan thank-you lists every payment date",

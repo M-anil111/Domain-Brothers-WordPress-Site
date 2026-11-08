@@ -930,13 +930,13 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 
 	// Values from the shortcode itself were written by an editor; values that
 	// came from the URL go through the same checks as the_content path.
+	$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 	if ( ! $atts['domain'] && ! $atts['amount'] ) {
 		$sig = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-		$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 	}
 
-	return db_ty_html( $type, $domain, $amount );
+	return db_ty_html( $type, $domain, $amount, $months );
 } );
 
 /* -----------------------------------------------------------
