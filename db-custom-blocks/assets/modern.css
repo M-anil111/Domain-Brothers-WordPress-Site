@@ -918,3 +918,8 @@ html body.db-ui-active.db-cluster-post .entry-content .wp-block-group.db-cta p {
 html body.db-ui-active.db-cluster-post .entry-content .wp-block-group.db-takeaways .wp-block-list, html body.db-ui-active.db-cluster-post .entry-content .wp-block-group.db-toc .wp-block-list, html body.db-ui-active.db-cluster-post .entry-content .wp-block-group.db-related .wp-block-list { max-width: none; margin-left: 0; margin-right: 0; }
 html body.db-ui-active.db-cluster-post .entry-content figure.feature-image { max-width: 920px; margin: 0 auto 28px; }
 html body.db-ui-active.db-cluster-post .entry-content .wp-block-table th, html body.db-ui-active.db-cluster-post .entry-content .wp-block-table td { font-size: 16px; line-height: 1.45; }
+html body.db-ui-active.db-cluster-post .entry-content .wp-block-table { width: 100%; }
+html body.db-ui-active.db-cluster-post .entry-content .wp-block-table table { width: 100% !important; table-layout: auto; }
+html body.db-ui-active.db-cluster-post .entry-content .db-cta .wp-block-button .wp-block-button__link { background: #fff !important; color: #12356f !important; border: 1.5px solid #fff !important; border-radius: 999px; padding: 14px 28px; font-weight: 700; box-shadow: none; text-decoration: none !important; }
+html body.db-ui-active.db-cluster-post .entry-content .db-cta .wp-block-button + .wp-block-button .wp-block-button__link { background: transparent !important; color: #fff !important; border: 1.5px solid rgba(255,255,255,.85) !important; }
+html body.db-ui-active.db-cluster-post .entry-content .db-cta .wp-block-button .wp-block-button__link:hover { opacity: .92; }

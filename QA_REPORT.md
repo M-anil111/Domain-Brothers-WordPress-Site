@@ -552,3 +552,33 @@ Every public page now carries at least three Google ad banners, at natural break
 Never on checkout, payment plan, thank-you, terms, privacy, account or admin pages, and never when printing. No pop-ups, overlays or sticky banners.
 
 **Look.** Each banner sits in a soft framed card with a small "Advertisement" label, rounded corners and generous space; a slot Google leaves unfilled is hidden, so a visitor never sees an empty frame. **Setup.** Domain Brothers > Ads: one "Default ad unit id" serves every slot, or give a slot its own. Until an id is saved, live visitors see nothing; staging shows dashed placeholders. Checked on staging: three slots on home, lists, categories, about, contact, FAQs, EPP, news, posts, services, sold and domain pages; none on buy-now, thank-you, terms and the account page; no horizontal scroll at 1440 and 390 wide. Site QA 407/407, listing templates 6/6.
+
+## 32. Content cluster: Domain Guides (v3.67.0)
+
+A pillar guide and twelve supporting articles about premium domains, websites and marketing (about 12,500 words), built as block-editor content with internal links, sourced external links, images and structured data.
+
+| Article | Focus |
+|---|---|
+| The Complete Guide to Premium Domain Names (pillar, about 3,500 words) | definition, types, value, buying, payment, extensions, SEO, branding, launch, marketing, legal, checklist, red flags, glossary, FAQ |
+| What Is a Premium Domain Name? | meaning, two kinds of "premium", types, how to spot an overpriced name |
+| How to Value a Premium Domain Name | six-factor score, comparable sales, worth to you, risk, offer range |
+| How to Buy a Premium Domain Safely | five stages, escrow, red flags |
+| Premium Domain Payment Plans and Financing | terms to compare, pay in full versus over time |
+| Choosing a Domain Extension: .com, .ca, .io and More | extension families, renewal costs, protection |
+| Do Premium Domains Help SEO? What Google Says | what Google says, indirect gains, safe site moves |
+| How to Pick a Brand Name and Domain That Lasts | four tests, mistakes, workshop |
+| Website Launch Checklist After Buying a Domain | secure, DNS, HTTPS, email authentication, redirects, analytics |
+| Premium Domains as Business Assets and Investments | four ways to benefit, risks, a sensible start |
+| Domain Transfers, EPP Codes and DNS Explained | roles, steps, locks, DNS, fixes |
+| Trademarks and Domain Disputes: UDRP Basics | checks, the three UDRP requirements, protection |
+| The Domain Name Marketing Playbook | email, ads, print and QR, social, vanity URLs, 30 day plan |
+
+**Blocks used (the "skyscraper" parts of the pillar):** contents list with jump links, key takeaways box, comparison tables, step lists, checklists, infographics with captions and alt text, call-out boxes, collapsible FAQ and glossary (the FAQ is also published as FAQPage structured data), calls to action with buttons, and a "keep reading" block that links each article to the pillar and its neighbours.
+
+**Links.** Internal: every article links to the pillar and to at least two other articles, and the pillar links to all twelve; articles also link to our listing, category, appraisal, brokerage, services and EPP pages. External: only sources checked to load (ICANN transfer policy and UDRP, WIPO, Verisign Domain Name Industry Brief, IANA root zone, Google Search Central, Search Console, web.dev, DMARC.org, USPTO, Escrow.com, W3C, Nielsen Norman Group, Wikipedia). No unverified statistics are used.
+
+**Images.** 13 covers and 11 infographics are drawn from the site's own brand (logo, colours; covers use the credited Unsplash photos in `assets/hero/`), uploaded to the media library with alt text.
+
+**How to use it.** Domain Brothers > Content cluster > Import as drafts (read and edit, then publish) or Import and publish. Running it again updates the same posts. Source files are in `content-cluster/src`; `python3 tools/build-cluster.py` rebuilds the block markup.
+
+**Checks** (`tests/qa/content-cluster.js`, 159/159 on staging): every article returns 200 with one h1, title, description, canonical and Article data; the pillar has FAQPage data; enough text; headings do not skip levels; every contents anchor exists; every image loads with alt text; every distinct internal link resolves and every external link responds; each article opens in the block editor with no invalid-content warning; no horizontal scroll on a 390 px phone. Site QA and wishlist flow still pass.
