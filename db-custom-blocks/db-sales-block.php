@@ -1027,3 +1027,27 @@ if ( ! function_exists( 'db_intent_admin_page' ) ) {
 		echo '</tbody></table></div>';
 	}
 }
+
+/* ------------------------------------------- theme copy that claims escrow */
+
+if ( ! function_exists( 'db_copy_fix_claims' ) ) {
+	/**
+	 * The theme's "Get started" steps (home page) say "Pay securely using Escrow".
+	 * The theme template is outside this plugin, so its output is corrected here
+	 * until the template text is changed. Each pair is an exact string match.
+	 */
+	function db_copy_fix_claims( $html ) {
+		return str_replace(
+			array( 'Pay securely using Escrow &amp; own it', 'Pay securely using Escrow & own it' ),
+			array( 'Pay securely and own it', 'Pay securely and own it' ),
+			$html
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) ) {
+		return;
+	}
+	ob_start( 'db_copy_fix_claims' );
+}, 1000 );
