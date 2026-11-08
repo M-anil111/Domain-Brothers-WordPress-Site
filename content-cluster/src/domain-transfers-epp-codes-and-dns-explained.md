@@ -1,5 +1,5 @@
 ---
-title: Domain Transfers, EPP Codes and DNS Explained in Plain English
+title: Domain Transfers, EPP Codes and DNS Explained
 slug: domain-transfers-epp-codes-and-dns-explained
 role: spoke
 excerpt: How a domain transfer works from start to finish: registrar, registry and registrant, the EPP authorisation code, the transfer lock, waiting periods, DNS records and what to check so nothing breaks.

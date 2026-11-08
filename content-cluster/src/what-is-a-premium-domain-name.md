@@ -1,5 +1,5 @@
 ---
-title: What Is a Premium Domain Name? Meaning, Examples and Why It Costs More
+title: What Is a Premium Domain Name? Meaning and Examples
 slug: what-is-a-premium-domain-name
 role: spoke
 excerpt: A premium domain is a short, memorable, high-demand name that sells for far more than a normal registration. Learn the two meanings of the term, the main types, and how to tell a real premium name from an overpriced one.

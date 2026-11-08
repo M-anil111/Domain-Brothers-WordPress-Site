@@ -216,3 +216,11 @@ add_action( 'wp_head', function () {
 		echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $q ), JSON_UNESCAPED_SLASHES ) . "</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 }, 20 );
+
+// Lets the stylesheet target a cluster article.
+add_filter( 'body_class', function ( $c ) {
+	if ( is_singular( 'post' ) && get_post_meta( get_queried_object_id(), '_db_cluster_key', true ) ) {
+		$c[] = 'db-cluster-post';
+	}
+	return $c;
+} );

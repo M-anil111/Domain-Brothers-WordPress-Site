@@ -1,5 +1,5 @@
 ---
-title: How to Buy a Premium Domain Safely: Escrow, Checks and Transfer, Step by Step
+title: How to Buy a Premium Domain Safely, Step by Step
 slug: how-to-buy-a-premium-domain-safely
 role: spoke
 excerpt: A safe buying process for premium domains: how to check the seller and the name, use escrow, agree terms, take the transfer and secure the domain, plus the red flags that should make you stop.

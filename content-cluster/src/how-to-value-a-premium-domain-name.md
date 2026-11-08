@@ -1,5 +1,5 @@
 ---
-title: How to Value a Premium Domain Name: A Practical Method With Examples
+title: How to Value a Premium Domain Name: A Practical Method
 slug: how-to-value-a-premium-domain-name
 role: spoke
 excerpt: A step-by-step method for valuing a premium domain: score the name on six factors, check comparable sales, estimate what the name is worth to your business, and set a fair offer.

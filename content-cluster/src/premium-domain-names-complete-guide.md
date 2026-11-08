@@ -1,5 +1,5 @@
 ---
-title: The Complete Guide to Premium Domain Names: Value, Buying, Branding and Marketing
+title: The Complete Guide to Premium Domain Names
 slug: premium-domain-names-complete-guide
 role: pillar
 excerpt: Everything you need to know about premium domain names: what they are, how to value one, how to buy it safely, how to pay for it, and how to turn it into traffic, trust and sales.

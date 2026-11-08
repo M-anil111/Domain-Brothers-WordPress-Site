@@ -1,5 +1,5 @@
 ---
-title: The Domain Name Marketing Playbook: Email, Ads, QR Codes and Vanity URLs
+title: The Domain Name Marketing Playbook
 slug: domain-name-marketing-playbook
 role: spoke
 excerpt: How to market with a premium domain: branded email, paid ads, print and QR codes, social profiles, vanity URLs, campaign pages and word of mouth, with a 30 day plan to launch a new name.

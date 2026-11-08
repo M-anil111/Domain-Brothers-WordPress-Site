@@ -1,5 +1,5 @@
 ---
-title: Premium Domain Payment Plans and Financing: How to Pay Over Time
+title: Premium Domain Payment Plans and Financing
 slug: premium-domain-payment-plans-and-financing
 role: spoke
 excerpt: How payment plans for premium domains work, what to compare (term, interest, ownership and missed-payment rules), and how to decide between paying in full and paying over three to twelve months.

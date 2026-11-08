@@ -1,5 +1,5 @@
 ---
-title: Trademarks and Domain Disputes: UDRP Basics for Domain Buyers
+title: Trademarks and Domain Disputes: UDRP Basics
 slug: trademarks-and-domain-disputes-udrp-basics
 role: spoke
 excerpt: How trademarks and domain names interact, how to check a name before you buy, and what the UDRP dispute process is: three requirements, how cases work, and how to protect yourself. General information, not legal advice.

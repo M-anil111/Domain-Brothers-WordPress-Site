@@ -1,5 +1,5 @@
 ---
-title: Website Launch Checklist After Buying a Domain: Your First Week
+title: Website Launch Checklist After Buying a Domain
 slug: website-launch-checklist-after-buying-a-domain
 role: spoke
 excerpt: What to do in the first week after you buy a domain: secure it, connect DNS, turn on HTTPS, set up authenticated email, redirect properly, add analytics and Search Console, and publish the core pages.

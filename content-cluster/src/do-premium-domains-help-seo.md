@@ -1,5 +1,5 @@
 ---
-title: Do Premium Domains Help SEO? What Google Says and What Actually Matters
+title: Do Premium Domains Help SEO? What Google Says
 slug: do-premium-domains-help-seo
 role: spoke
 excerpt: Does a premium or exact-match domain improve search rankings? What Google's own guidance says, how a better domain still helps your marketing, and how to move to a new domain without losing traffic.
