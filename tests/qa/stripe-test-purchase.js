@@ -38,6 +38,11 @@ fs.mkdirSync(OUT, { recursive: true });
 	await page.fill('#co-phone', '+1 555 010 0000');
 	await page.click('#co-billing button[type=submit]');
 	if (await page.locator('#co-agree').count()) { await page.check('#co-agree'); }
+	if (MONTHS) {
+		const review = await page.locator('#co-panel-2').innerText().catch(() => '');
+		const dated = (review.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}/g) || []).length;
+		check('checkout confirmation shows the dated payment schedule', /Your payment dates/.test(review) && dated >= Number(MONTHS), `${dated} dates for ${MONTHS} payments`);
+	}
 	await page.click('#co-confirm');
 	const frame = await page.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 30000 }).catch(() => null);
 	check('checkout shows the Stripe Payment Element', !!frame);

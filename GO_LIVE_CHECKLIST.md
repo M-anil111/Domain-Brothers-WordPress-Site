@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.69.1** (2026-11-08). Before approval, record the exact commit that is deployed: run `tools/build-release.sh` before packaging, then check Domain Brothers > Launch checks, which shows the version and commit. A test pass only counts for the commit it was run against. This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.69.5** (2026-11-08). Before approval, record the exact commit that is deployed: run `tools/build-release.sh` before packaging, then check Domain Brothers > Launch checks, which shows the version and commit. A test pass only counts for the commit it was run against. This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 

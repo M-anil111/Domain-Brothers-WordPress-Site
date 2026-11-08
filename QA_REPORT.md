@@ -624,3 +624,30 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 - Crawl: not run (needs `BETA_BASIC`).
 - Account-flow "My offers" check: passed on rerun (27/27).
 - Listing templates: passed on rerun (6/6).
+
+## 34. Payment plans: dates, terms and notices in every email (v3.69.5)
+
+**Customer sees the dates before paying.** The checkout confirmation step shows a table of every payment with its date and amount ("Payment 1 is charged today; the others on the same day of each following month").
+
+**The thank-you page shows the schedule** with each payment marked Paid, Next charge or Scheduled, followed by the plan terms. The return link carries the term length (`plan_months`), signed with the rest of the link, so the page shows the dates even before the payment webhook has written the plan record.
+
+**First email** (plan started): the same schedule table and the terms. Previously the schedule was never filled in on this path.
+
+**Every monthly email** (reminder, payment received, back on track): the instalments still to be paid, and the terms.
+
+**Terms** (`db_plan_terms_html()`, used at checkout, on the domain page, in emails and on the thank-you page): one charge per month to the card on file; a declined payment is retried automatically 3 more times, on days 3, 6 and 9 after the first decline (4 attempts in total); if still unpaid 10 days after the first decline the plan ends; the domain returns to inventory and may be sold to someone else; payments already made are non-refundable and not credited to another purchase.
+
+**Failure notices** are numbered "Failed payment notice 1 of 4" to "4 of 4" and each gives the first-decline date, the three retry dates, and the termination date.
+
+**Checks**
+- `tests/plan/plan-schedule-test.php` (offline): 20/20. Covers instalment dates and amounts (sum to the plan total), states, the remaining-only table, the retry wording, the failure notice numbering and retry dates, and that the notice sits above the email footer.
+- `tests/plan/plan-lifecycle-test.php`: 50/50 (unchanged behaviour).
+- `tests/qa/stripe-test-purchase.js` on beta with `QA_MONTHS=3`: checkout confirmation lists 3 dates; the thank-you page lists 3 schedule rows and the retry terms; the purchase completes.
+
+**Not verified live:** the wording of the monthly and failure emails was checked offline, not by reading a delivered message. The beta test buyer addresses are example.com, so no mailbox was available here.
+
+**Dependency:** the retries (days 3, 6, 9), the notices and the termination all run from the daily job. On beta no real cron is configured yet (GO_LIVE_CHECKLIST, section 1). Until it is, no retry or notice is sent, so the terms describe behaviour that will not happen on beta.
+
+**Needs owner or counsel before go-live**
+- The terms, the thank-you page and the registry emails still say the domain is "held in escrow" and the thank-you box says "Escrow-protected for the full term". The plugin has no escrow integration; this wording needs confirming or changing. Section 5 of the checklist already lists it as an owner decision.
+- The forfeiture and retry wording needs legal review (`db-plan-lifecycle-block.php` header).
