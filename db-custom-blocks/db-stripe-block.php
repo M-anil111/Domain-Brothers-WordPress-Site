@@ -513,7 +513,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 			. '&d=' . rawurlencode( $domain )
 			. '&amt=' . rawurlencode( $ty_amount )
 			// Signed, so the confirmation page can't be faked by editing the URL.
-			. ( $is_plan ? '&m=' . (int) $months : '' )
+			. ( $is_plan ? '&plan_months=' . (int) $months : '' )
 			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount, $is_plan ? (int) $months : 0 ) : '' )
 		);
 

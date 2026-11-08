@@ -439,7 +439,7 @@ add_filter( 'the_content', function ( $content ) {
 	$domain = ! empty( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$amount = ! empty( $_GET['amt'] ) ? sanitize_text_field( wp_unslash( $_GET['amt'] ) ) : '';
 	$sig    = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-	$months = ! empty( $_GET['m'] ) ? absint( $_GET['m'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+	$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 
 	$done = true;
@@ -932,7 +932,7 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 	// came from the URL go through the same checks as the_content path.
 	if ( ! $atts['domain'] && ! $atts['amount'] ) {
 		$sig = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-		$months = ! empty( $_GET['m'] ) ? absint( $_GET['m'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 	}
 
