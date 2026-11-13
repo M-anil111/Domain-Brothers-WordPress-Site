@@ -41,8 +41,16 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 	 * @return array<int, array{id:string, title:string, intro:string, icon:string, items:array<int, array{q:string, a:string}>}>
 	 */
 	function db_faq_topics() {
+		$email   = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
+		$mail    = '<a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
+		$contact = '<a href="' . esc_url( home_url( '/contact-us/' ) ) . '">contact page</a>';
+		$floor   = defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? (int) DB_DEAL_MIN_PLAN_AMOUNT : 600;
 		// Questions and answers as published on www.domainbrothers.com/faqs/,
-		// word for word, grouped into the page's six topics.
+		// grouped into the page's six topics. Word for word, except three answers
+		// reworded to match how this site works: listing a domain for sale (the
+		// old SELL page now redirects to /contact-us/), payment methods (Stripe
+		// checkout and payment plans, not escrow-only) and transfer time (same
+		// figures as the checkout and the domain pages).
 		$topics = array(
 			array(
 				'id'    => 'domain-basics',
@@ -96,15 +104,15 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'items' => array(
 					array(
 						'q' => 'How do I list my domains for sale with your company?',
-						'a' => 'Visit our SELL page and complete the request form. We’ll review your submission and get back to you shortly.',
+						'a' => 'Send us the domain name and your asking price through our ' . $contact . ' or by email to ' . $mail . '. We’ll review your submission and get back to you shortly.',
 					),
 					array(
 						'q' => 'What sort of payment methods do you accept?',
-						'a' => 'We primarily accept payments via Escrow for secure transactions.',
+						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3- and 6-month plans are interest-free, the 9-month plan carries 5% interest and the 12-month plan 10%.',
 					),
 					array(
 						'q' => 'How long does the domain transfer take?',
-						'a' => 'Generally, domain transfers can take anywhere from one day to a week, depending on several factors.',
+						'a' => 'Once your payment is confirmed, we start the transfer within 1–2 business days. Most .com transfers then finish in 5–7 days; country-code domains can be faster.',
 					),
 				),
 			),
