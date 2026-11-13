@@ -15,7 +15,7 @@
  * the theme and the other style layers cannot change the page, and the page
  * cannot change the header or footer.
  *
- * The questions live in db_faq_topics() (filterable with db_faq_topics). The
+ * The questions (taken word for word from the live FAQs page) live in db_faq_topics() (filterable with db_faq_topics). The
  * same list feeds the FAQPage structured data, so the schema always matches
  * what the page shows.
  *
@@ -41,13 +41,8 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 	 * @return array<int, array{id:string, title:string, intro:string, icon:string, items:array<int, array{q:string, a:string}>}>
 	 */
 	function db_faq_topics() {
-		$email    = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
-		$mail     = '<a href="mailto:' . esc_attr( $email ) . '">' . esc_html( $email ) . '</a>';
-		$contact  = '<a href="' . esc_url( home_url( '/contact-us/' ) ) . '">contact our team</a>';
-		$services = '<a href="' . esc_url( home_url( '/our-services/' ) ) . '">our services</a>';
-		$browse   = '<a href="' . esc_url( home_url( '/all-domains/' ) ) . '">browse all domains</a>';
-		$grace    = defined( 'DB_PLAN_GRACE_DAYS' ) ? (int) DB_PLAN_GRACE_DAYS : 10;
-
+		// Questions and answers as published on www.domainbrothers.com/faqs/,
+		// word for word, grouped into the page's six topics.
 		$topics = array(
 			array(
 				'id'    => 'domain-basics',
@@ -57,19 +52,19 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'items' => array(
 					array(
 						'q' => 'What are premium domains?',
-						'a' => 'Premium domains are names offered for resale, often valued for their length, memorability or relevance to a business.',
+						'a' => 'A premium domain name is a domain that has already been registered but is still available for purchase. They are usually more expensive than standard domains due to their perceived value, keyword relevance, and potential for high website traffic.',
 					),
 					array(
-						'q' => 'Can I transfer my domain to another registrar?',
-						'a' => 'Yes. Once the domain is in your name you can move it to any registrar you prefer. The current registrar gives you an authorization (EPP) code and the domain must be unlocked. Most registrars also block a move for 60 days after a new registration or a change of owner.',
+						'q' => 'How does a good domain name help with competition?',
+						'a' => 'Owning a strong domain name can give you a competitive edge. It helps you capture traffic that might otherwise go to competitors and ensures that customers find you first, enhancing your online visibility.',
+					),
+					array(
+						'q' => 'Can I transfer my domain name to a different registrar?',
+						'a' => 'Yes, domain names can be transferred between registrars. However, there are specific guidelines and timelines to follow, which can vary.',
 					),
 					array(
 						'q' => 'What is DNS propagation?',
-						'a' => 'When you change a domain&rsquo;s DNS records, such as pointing it to a new website host or email provider, the update has to spread to servers around the world. That is DNS propagation. It usually takes a few hours and can take up to 48 hours, so some visitors may see the old site for a short while.',
-					),
-					array(
-						'q' => 'What is a country-code domain extension?',
-						'a' => 'A country-code extension (ccTLD) is a two-letter ending tied to a country or territory, such as .ca for Canada or .co.uk for the United Kingdom. Some have rules about who can own them; .ca, for example, requires a Canadian presence.',
+						'a' => 'DNS propagation refers to the time it takes for changes to your domain’s DNS settings to update across the Internet. This can take from a few minutes up to 48 hours.',
 					),
 				),
 			),
@@ -80,16 +75,16 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'icon'  => 'chart',
 				'items' => array(
 					array(
-						'q' => 'Why does a premium domain matter for my business?',
-						'a' => 'A short, memorable name is easier for customers to remember, type and trust. It strengthens your brand, helps word of mouth, and keeps visitors from landing on a competitor&rsquo;s site by mistake.',
+						'q' => 'I have a good domain name already, why do I need another one?',
+						'a' => 'Owning multiple domain names can increase your online reach, help with SEO, and protect your brand identity, among other benefits.',
 					),
 					array(
-						'q' => 'Should I choose a .com or a country-code domain?',
-						'a' => 'A .com suits a business that sells internationally or wants the most widely recognized ending. A country-code domain, such as .ca, tells local customers you serve their market. Many businesses own both and point one to the other.',
+						'q' => 'Do I need a new hosting account for the new domain?',
+						'a' => 'No, a new hosting account is not required. You can point the new domain to your existing hosting account.',
 					),
 					array(
-						'q' => 'Will a premium domain improve my search rankings?',
-						'a' => 'A domain name alone does not guarantee rankings. What a strong name does is make your brand easier to recall and click, which brings more direct visits and returning customers over time.',
+						'q' => 'What are parked domains?',
+						'a' => 'Parked domains are registered domains not currently associated with a website or service. They are often used to reserve a domain name for future use.',
 					),
 				),
 			),
@@ -100,24 +95,16 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'icon'  => 'tag',
 				'items' => array(
 					array(
-						'q' => 'How do I list my domain for sale?',
-						'a' => 'Send us the domain name and your asking price: ' . $contact . ' or email ' . $mail . '. We will reply with the next steps.',
+						'q' => 'How do I list my domains for sale with your company?',
+						'a' => 'Visit our SELL page and complete the request form. We’ll review your submission and get back to you shortly.',
 					),
 					array(
-						'q' => 'What payment options are available?',
-						'a' => 'Pay in full by card (Visa, Mastercard, American Express) or a supported digital wallet through our secure Stripe checkout. You can also spread the cost over 3, 6, 9 or 12 monthly payments: the 3- and 6-month plans are interest-free, the 9-month plan carries 5% interest and the 12-month plan 10%.',
+						'q' => 'What sort of payment methods do you accept?',
+						'a' => 'We primarily accept payments via Escrow for secure transactions.',
 					),
 					array(
-						'q' => 'How long does a domain transfer take?',
-						'a' => 'Most .com transfers complete within 5&ndash;7 days. Country-code domains can complete faster, sometimes within 24 hours.',
-					),
-					array(
-						'q' => 'Can I make an offer on a domain?',
-						'a' => 'Yes. Listings that accept offers show a Make an Offer option. We pass your offer on and reply by email. To find a name, ' . $browse . '.',
-					),
-					array(
-						'q' => 'Can I use a domain while I am still paying for it?',
-						'a' => 'Yes. During a payment plan we can point the domain&rsquo;s DNS records to your hosting and email so you can start using it straight away. Ownership transfers to you once the final payment clears.',
+						'q' => 'How long does the domain transfer take?',
+						'a' => 'Generally, domain transfers can take anywhere from one day to a week, depending on several factors.',
 					),
 				),
 			),
@@ -128,16 +115,16 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'icon'  => 'shield',
 				'items' => array(
 					array(
-						'q' => 'Is it safe to buy a domain through Domain Brothers?',
-						'a' => 'Yes. We use secure escrow and the standard registrar transfer process, and payments are processed by Stripe, which is PCI-DSS compliant.',
+						'q' => 'My domain and business names are trademarked, is that sufficient?',
+						'a' => 'While trademarks offer some protection, owning variations of your domain can provide an additional safeguard against brand confusion.',
 					),
 					array(
-						'q' => 'Who owns the domain during a payment plan?',
-						'a' => 'The domain is held securely in escrow on your behalf until the final installment clears, then ownership transfers to you. If a payment stays unpaid ' . $grace . ' days after its due date, the plan ends and installments already paid are not refunded.',
+						'q' => 'What is the UDRP?',
+						'a' => 'The UDRP is the Uniform Domain-Name Dispute-Resolution Policy, a mechanism established by ICANN for resolving domain name disputes.',
 					),
 					array(
-						'q' => 'Do you store my card details?',
-						'a' => 'No. Card details are entered into Stripe&rsquo;s secure payment form and go straight to Stripe. They are never stored on our website.',
+						'q' => 'How secure are domain transactions?',
+						'a' => 'Transactions are made secure through the use of trusted third-party escrow services, which hold funds until the domain transfer is complete.',
 					),
 				),
 			),
@@ -148,12 +135,12 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'icon'  => 'layers',
 				'items' => array(
 					array(
-						'q' => 'Do you offer website design and marketing?',
-						'a' => 'Yes. Through our agency partners we offer website design and development, digital marketing, software and mobile app development. See ' . $services . ' for details.',
+						'q' => 'Do you provide services other than domain brokerage?',
+						'a' => 'Absolutely, we offer a range of digital services like web design, marketing, and software development, among others.',
 					),
 					array(
-						'q' => 'How can I request a quote?',
-						'a' => 'Tell us what you need through our contact page or email ' . $mail . '. We will reply with a scope and a quote.',
+						'q' => 'How do I get a quote for your other services?',
+						'a' => 'Send us an email with your requirements, and we’ll provide you with a quote within 24 hours.',
 					),
 				),
 			),
@@ -164,12 +151,16 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 				'icon'  => 'chat',
 				'items' => array(
 					array(
-						'q' => 'What happens after I pay?',
-						'a' => 'Your payment is processed securely, the domain is held and secured for you, and we send you instructions for the domain transfer by email.',
+						'q' => 'What is a ccTLD?',
+						'a' => 'A ccTLD (Country Code Top-Level Domain) is a domain extension representing a specific country, like .uk for the United Kingdom.',
 					),
 					array(
-						'q' => 'How do I contact Domain Brothers?',
-						'a' => 'Email ' . $mail . ' or ' . $contact . ' through the contact page. We are happy to help.',
+						'q' => 'What is domain privacy?',
+						'a' => 'Domain privacy is a service that hides your personal information from public view in the WHOIS database, replacing it with forwarding service details.',
+					),
+					array(
+						'q' => 'What are expired domains?',
+						'a' => 'Expired domains are those whose registration has lapsed due to non-renewal. They may go through an auction or backorder process before becoming available again.',
 					),
 				),
 			),
