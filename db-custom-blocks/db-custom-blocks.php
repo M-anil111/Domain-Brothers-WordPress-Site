@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: Domain Brothers Custom Blocks
- * Plugin URI:  https://beta.domainbrothers.com
+ * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.66.3
+ * Version:     3.66.4
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.66.3' );
+define( 'DB_BLOCKS_LOADED', '3.66.4' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -3342,6 +3342,9 @@ add_action( 'wp_footer', function () {
 	<script id="db-ui-enhancer">
 	(function () {
 		'use strict';
+		// This site's own uploads folder (beta on beta, the live site on the
+		// live site), so images never load from a hard-coded hostname.
+		var DB_UPLOADS = <?php echo wp_json_encode( trailingslashit( (string) wp_upload_dir( null, false )['baseurl'] ) ); ?>;
 		try {
 			// Icon replacements (several steps below, plus the footer social
 			// links fix) all draw from this one SVG set — declared up front
@@ -3851,7 +3854,7 @@ add_action( 'wp_footer', function () {
 				function (p) { return /founded by the accomplished Kartik and Jay Mehta/i.test(p.textContent || ''); }
 			);
 			if (founderPara && !document.querySelector('.db-founders-row')) {
-				var uploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var uploads = DB_UPLOADS + '2024/04/';
 				var founders = [
 					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
 					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
@@ -3906,7 +3909,7 @@ add_action( 'wp_footer', function () {
 				}
 			);
 			if (aboutFounderPara && !document.querySelector('.db-founders-row')) {
-				var auploads = 'https://beta.domainbrothers.com/wp-content/uploads/2024/04/';
+				var auploads = DB_UPLOADS + '2024/04/';
 				var afounders = [
 					{ file: 'kartikmehta.jpg', name: 'Kartik Mehta' },
 					{ file: 'jaymehta.jpg', name: 'Jay Mehta' }
