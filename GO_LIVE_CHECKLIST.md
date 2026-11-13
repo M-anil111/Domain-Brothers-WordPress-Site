@@ -79,3 +79,16 @@ Production-specific behaviour, already handled in code:
 - Plugins → deactivate **Domain Brothers Custom Blocks**. The site falls back to the plain theme.
 - Payment plans already running keep their records in `wp_options` (`db_stripe_plan_*`). Re-activating the plugin resumes them.
 - For a full rollback, restore the database export from step 1.3.
+
+## Added in v3.62 - v3.63 (account, alerts, ads, emails)
+
+| # | What to do |
+|---|---|
+| 8.1 | **Email delivery first.** Alerts, sign-in codes, receipts and every other email depend on working SMTP/SendGrid. Send a test of the sign-in code and one receipt to a real Gmail, Outlook and Apple Mail inbox (Domain Brothers > Email templates > a template > Send test email) and check the look. |
+| 8.2 | WordPress cron must run (alert emails go out every 15 minutes from `db_acct_digest`). On shared hosting add a real cron job for `wp-cron.php`. |
+| 8.3 | **Ads:** create three responsive display ad units in AdSense, then Domain Brothers > Ads: paste the publisher id (`ca-pub-...`) and the three ad unit ids. Add a consent banner for visitors in the EEA, UK and Switzerland before turning personalised ads on. Leave the publisher id empty to show no ads. |
+| 8.4 | Review each email template's wording (Domain Brothers > Email templates), especially payment plan terms, and the Design tab (logo, colours, footer). |
+| 8.5 | The follower alerts say only that "a new offer was made", never the amount or who. Keep it that way unless counsel advises otherwise. |
+| 8.6 | **Email delivery (SMTP2GO)** is set under Settings > DB Email delivery (SMTP): server `mail.smtp2go.com`, port 2525 (STARTTLS), the SMTP2GO username and password, From `sales@domainbrothers.com`. The password is stored encrypted; it is never shown again or kept in the code. Enter the same settings on the production site (or define `DB_SMTP_HOST`, `DB_SMTP_USER`, `DB_SMTP_PASS` in `wp-config.php`). In SMTP2GO, verify the sender domain (SPF and DKIM DNS records) so mail does not land in spam. |
+| 8.7 | **AdSense verification:** the code snippet and `/ads.txt` ship with the plugin (v3.65.0). After deploying to production, open `https://www.domainbrothers.com/ads.txt` and view the source of the home page to confirm both, then choose Verify in AdSense. Ads.txt can take Google up to a day to be picked up. |
+| 8.8 | **Live ads.txt already exists as a real file** on www.domainbrothers.com with a different publisher (`pub-7194359990997088`), and the live theme prints an older AdSense script (`ca-pub-2138271276562459`). A real file overrides the plugin's `/ads.txt`. After deploying v3.65.1 either add the line `google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0` to that file, or delete the file so the plugin serves both lines (it keeps the old publisher's line under Domain Brothers > Ads > Other ads.txt lines). Beta cannot be verified by Google: it is behind a password and tells crawlers not to index it, so verify the live domain. |

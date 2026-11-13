@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://beta.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.60.0
+ * Version:     3.65.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.60.0' );
+define( 'DB_BLOCKS_LOADED', '3.65.1' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -110,7 +110,65 @@ if ( ! function_exists( 'db_sg_api_key' ) ) {
 	}
 }
 
+/* ── General SMTP (SMTP2GO or any provider). Takes priority over the SendGrid key when saved. ── */
+
+if ( ! function_exists( 'db_smtp_crypt_key' ) ) {
+	function db_smtp_crypt_key() {
+		return substr( hash( 'sha256', 'db-smtp|' . wp_salt( 'auth' ), true ), 0, SODIUM_CRYPTO_SECRETBOX_KEYBYTES );
+	}
+}
+if ( ! function_exists( 'db_smtp_encrypt' ) ) {
+	/** The SMTP password is stored encrypted with a key derived from this site's secret salts. */
+	function db_smtp_encrypt( $plain ) {
+		$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+		return base64_encode( $nonce . sodium_crypto_secretbox( (string) $plain, $nonce, db_smtp_crypt_key() ) );
+	}
+}
+if ( ! function_exists( 'db_smtp_decrypt' ) ) {
+	function db_smtp_decrypt( $blob ) {
+		$raw = base64_decode( (string) $blob, true );
+		if ( false === $raw || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
+			return '';
+		}
+		$plain = sodium_crypto_secretbox_open( substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ), db_smtp_crypt_key() );
+		return false === $plain ? '' : $plain;
+	}
+}
+if ( ! function_exists( 'db_smtp_config' ) ) {
+	/** @return array{host:string,port:int,secure:string,user:string,pass:string,from:string,name:string}|null null = not set up */
+	function db_smtp_config() {
+		$o = get_option( 'db_smtp', array() );
+		$o = is_array( $o ) ? $o : array();
+		$pass = defined( 'DB_SMTP_PASS' ) ? (string) DB_SMTP_PASS : db_smtp_decrypt( $o['pass'] ?? '' );
+		$c = array(
+			'host'   => defined( 'DB_SMTP_HOST' ) ? (string) DB_SMTP_HOST : (string) ( $o['host'] ?? '' ),
+			'port'   => (int) ( defined( 'DB_SMTP_PORT' ) ? DB_SMTP_PORT : ( $o['port'] ?? 587 ) ),
+			'secure' => (string) ( $o['secure'] ?? 'tls' ),
+			'user'   => defined( 'DB_SMTP_USER' ) ? (string) DB_SMTP_USER : (string) ( $o['user'] ?? '' ),
+			'pass'   => $pass,
+			'from'   => (string) ( $o['from'] ?? DB_SG_FROM ),
+			'name'   => (string) ( $o['name'] ?? DB_SG_NAME ),
+		);
+		return ( '' !== $c['host'] && '' !== $c['user'] && '' !== $c['pass'] ) ? $c : null;
+	}
+}
+
 add_action( 'phpmailer_init', function ( $phpmailer ) {
+	$smtp = db_smtp_config();
+	if ( $smtp ) {
+		$phpmailer->isSMTP();
+		$phpmailer->SMTPAuth    = true;
+		$phpmailer->SMTPSecure  = in_array( $smtp['secure'], array( 'tls', 'ssl' ), true ) ? $smtp['secure'] : '';
+		$phpmailer->SMTPAutoTLS = in_array( $smtp['secure'], array( 'tls', 'ssl' ), true );
+		$phpmailer->Host        = $smtp['host'];
+		$phpmailer->Port        = $smtp['port'];
+		$phpmailer->Username    = $smtp['user'];
+		$phpmailer->Password    = $smtp['pass'];
+		$phpmailer->From        = is_email( $smtp['from'] ) ? $smtp['from'] : DB_SG_FROM;
+		$phpmailer->FromName    = $smtp['name'];
+		$phpmailer->SMTPOptions = array( 'ssl' => array( 'verify_peer' => true, 'verify_peer_name' => true, 'allow_self_signed' => false ) );
+		return;
+	}
 	$key = db_sg_api_key();
 	if ( ! $key ) {
 		return;
@@ -133,13 +191,34 @@ add_action( 'phpmailer_init', function ( $phpmailer ) {
 	);
 } );
 
-add_filter( 'wp_mail_from',      function ( $email ) { return db_sg_api_key() ? DB_SG_FROM : $email; } );
-add_filter( 'wp_mail_from_name', function ( $name )  { return db_sg_api_key() ? DB_SG_NAME : $name; } );
+add_filter( 'wp_mail_from',      function ( $email ) { $c = db_smtp_config(); return $c && is_email( $c['from'] ) ? $c['from'] : ( db_sg_api_key() ? DB_SG_FROM : $email ); } );
+add_filter( 'wp_mail_from_name', function ( $name )  { $c = db_smtp_config(); return $c ? $c['name'] : ( db_sg_api_key() ? DB_SG_NAME : $name ); } );
+
+add_action( 'admin_post_db_smtp_save', function () {
+	if ( ! current_user_can( 'manage_options' ) || ! check_admin_referer( 'db_smtp_save' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	$old = get_option( 'db_smtp', array() );
+	$old = is_array( $old ) ? $old : array();
+	$pw  = isset( $_POST['pass'] ) ? (string) wp_unslash( $_POST['pass'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- a password is stored as typed, encrypted.
+	$new = array(
+		'host'   => preg_replace( '/[^a-z0-9.\-]/i', '', (string) ( $_POST['host'] ?? '' ) ),
+		'port'   => max( 1, min( 65535, (int) ( $_POST['port'] ?? 587 ) ) ),
+		'secure' => in_array( $_POST['secure'] ?? '', array( 'tls', 'ssl', '' ), true ) ? (string) $_POST['secure'] : 'tls',
+		'user'   => sanitize_text_field( wp_unslash( $_POST['user'] ?? '' ) ),
+		'pass'   => '' !== $pw ? db_smtp_encrypt( $pw ) : (string) ( $old['pass'] ?? '' ), // blank = keep the saved password
+		'from'   => sanitize_email( wp_unslash( $_POST['from'] ?? '' ) ),
+		'name'   => sanitize_text_field( wp_unslash( $_POST['name'] ?? '' ) ),
+	);
+	update_option( 'db_smtp', $new, false );
+	wp_safe_redirect( admin_url( 'options-general.php?page=db-smtp-sendgrid&smtp_saved=1' ) );
+	exit;
+} );
 
 add_action( 'admin_menu', function () {
 	add_options_page(
-		'DB SMTP (SendGrid)',
-		'DB SMTP (SendGrid)',
+		'DB Email delivery (SMTP)',
+		'DB Email delivery (SMTP)',
 		'manage_options',
 		'db-smtp-sendgrid',
 		'db_sg_settings_page'
@@ -187,6 +266,27 @@ if ( ! function_exists( 'db_sg_settings_page' ) ) {
 				</tr>
 			</table>
 
+			<?php $smtp = db_smtp_config(); $sv = get_option( 'db_smtp', array() ); $sv = is_array( $sv ) ? $sv : array(); ?>
+			<h2>Email delivery (SMTP): used for every email</h2>
+			<?php if ( isset( $_GET['smtp_saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+				<div class="notice notice-success"><p>Saved.</p></div>
+			<?php endif; ?>
+			<p><?php echo $smtp ? '<span style="color:#1a7f37;font-weight:600">&#10003; Active: ' . esc_html( $smtp['host'] . ':' . $smtp['port'] ) . ' as ' . esc_html( $smtp['user'] ) . '. SendGrid below is not used.</span>' : '<span style="color:#d63638;font-weight:600">&#9888; Not set. The SendGrid key below is used if saved.</span>'; ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="db_smtp_save">
+				<?php wp_nonce_field( 'db_smtp_save' ); ?>
+				<table class="form-table" role="presentation">
+					<tr><th><label for="db_smtp_host">Server</label></th><td><input id="db_smtp_host" name="host" class="regular-text" value="<?php echo esc_attr( $sv['host'] ?? '' ); ?>" placeholder="mail.smtp2go.com"></td></tr>
+					<tr><th><label for="db_smtp_port">Port</label></th><td><input id="db_smtp_port" name="port" type="number" value="<?php echo esc_attr( (string) ( $sv['port'] ?? 2525 ) ); ?>"> <select name="secure"><?php foreach ( array( 'tls' => 'STARTTLS', 'ssl' => 'SSL/TLS', '' => 'None' ) as $k => $l ) { echo '<option value="' . esc_attr( $k ) . '"' . selected( $sv['secure'] ?? 'tls', $k, false ) . '>' . esc_html( $l ) . '</option>'; } ?></select></td></tr>
+					<tr><th><label for="db_smtp_user">Username</label></th><td><input id="db_smtp_user" name="user" class="regular-text" autocomplete="off" value="<?php echo esc_attr( $sv['user'] ?? '' ); ?>"></td></tr>
+					<tr><th><label for="db_smtp_pass">Password</label></th><td><input id="db_smtp_pass" name="pass" type="password" class="regular-text" autocomplete="new-password" value="" placeholder="<?php echo esc_attr( $smtp ? 'Saved: leave blank to keep' : '' ); ?>"><p class="description">Stored encrypted. Never shown again.</p></td></tr>
+					<tr><th><label for="db_smtp_from">From address</label></th><td><input id="db_smtp_from" name="from" type="email" class="regular-text" value="<?php echo esc_attr( $sv['from'] ?? DB_SG_FROM ); ?>"><p class="description">Must be a sender or domain verified with your SMTP provider.</p></td></tr>
+					<tr><th><label for="db_smtp_name">From name</label></th><td><input id="db_smtp_name" name="name" class="regular-text" value="<?php echo esc_attr( $sv['name'] ?? DB_SG_NAME ); ?>"></td></tr>
+				</table>
+				<?php submit_button( 'Save email delivery settings' ); ?>
+			</form>
+			<hr>
+			<h2>SendGrid (only used when the SMTP settings above are empty)</h2>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'db_sg_settings' ); ?>
 				<table class="form-table">
@@ -249,15 +349,15 @@ add_action( 'init', function () {
 	if ( ! is_email( $to ) ) {
 		wp_die( 'Invalid email address.', 'DB Mail Test', array( 'response' => 400 ) );
 	}
-	if ( ! db_sg_api_key() ) {
-		wp_die( '<strong style="color:#d63638">API key not set.</strong><br>Go to Settings → DB SMTP (SendGrid) and enter the key first.', 'DB Mail Test', array( 'response' => 200 ) );
+	if ( ! db_sg_api_key() && ! db_smtp_config() ) {
+		wp_die( '<strong style="color:#d63638">API key not set.</strong><br>Go to Settings → DB Email delivery (SMTP) and enter the key first.', 'DB Mail Test', array( 'response' => 200 ) );
 	}
 	$mail_error = '';
 	add_action( 'wp_mail_failed', function ( $wp_error ) use ( &$mail_error ) {
 		$mail_error = $wp_error->get_error_message();
 	} );
-	$sent = wp_mail( $to, 'Domain Brothers — SendGrid SMTP test',
-		'<p>Test email from <strong>Domain Brothers</strong> via SendGrid SMTP.</p><p>If you received this, SMTP is working.</p>',
+	$sent = wp_mail( $to, 'Domain Brothers — SMTP test',
+		'<p>Test email from <strong>Domain Brothers</strong> via SMTP.</p><p>If you received this, SMTP is working.</p>',
 		array( 'Content-Type: text/html; charset=UTF-8' )
 	);
 	if ( $sent ) {
@@ -286,14 +386,39 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 	function db_hp_hero_html() {
 		$browse_href = DB_HERO_BROWSE_URL ? esc_url( DB_HERO_BROWSE_URL ) : '#db-below-hero';
 		$offer_href  = esc_url( home_url( DB_HERO_OFFER_URL ) );
-		$trust_items = array( 'Escrow-Protected Transfers', 'Flexible Payment Plans', '27+ Years Combined Experience', '500+ Domains Sold' );
-		$trust_html  = '';
-		foreach ( $trust_items as $i => $item ) {
-			if ( $i > 0 ) {
-				$trust_html .= '<span class="db-hp-tdot" aria-hidden="true"></span>';
-			}
-			$trust_html .= '<span class="db-hp-titem">' . esc_html( $item ) . '</span>';
+		// Trust points, shown as a slow scrolling row of pills. Each has a small icon.
+		$icons = array(
+			'shield'   => '<path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 10-4.1-1.7-7-5.6-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/>',
+			'card'     => '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/>',
+			'award'    => '<circle cx="12" cy="9" r="5"/><path d="M9 13.5L8 21l4-2 4 2-1-7.5"/>',
+			'globe'    => '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+			'clock'    => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+			'lock'     => '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+			'calendar' => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+			'check'    => '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+		);
+		$trust_items = array(
+			array( 'shield', 'Escrow-Protected Transfers' ),
+			array( 'card', 'Flexible Payment Plans' ),
+			array( 'award', '27+ Years Combined Experience' ),
+			array( 'globe', '5,000+ Domains Sold' ),
+			array( 'clock', 'Domains Transferred in Under 2 Hours' ),
+			array( 'lock', 'Buyer Protection Program' ),
+			array( 'calendar', 'Pay Over 3 to 12 Months' ),
+			array( 'check', '100% Money-Back Guarantee' ),
+		);
+		$pill = static function ( $item, $hidden ) use ( $icons ) {
+			return '<li class="db-hp-titem"' . ( $hidden ? ' aria-hidden="true"' : '' ) . '><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $icons[ $item[0] ] . '</svg><span>' . esc_html( $item[1] ) . '</span></li>';
+		};
+		$trust_html = '<ul class="db-hp-track">';
+		foreach ( $trust_items as $item ) {
+			$trust_html .= $pill( $item, false );
 		}
+		// A second copy makes the loop seamless; screen readers skip it.
+		foreach ( $trust_items as $item ) {
+			$trust_html .= $pill( $item, true );
+		}
+		$trust_html .= '</ul>';
 		$logo_url = DB_HERO_LOGO_URL ? DB_HERO_LOGO_URL : db_brand_logo_url();
 
 		// Burger menu links (no WP nav menu is registered on this theme).
@@ -354,7 +479,8 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 		}
 		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
-		$html .= '<div class="db-hp-trust">' . $trust_html . '</div>';
+		$html .= '<div class="db-hp-trust db-hp-marquee" role="group" aria-label="Why buyers choose Domain Brothers"><div class="db-hp-viewport">' . $trust_html . '</div><button type="button" class="db-hp-pause" aria-pressed="false" aria-label="Pause scrolling"><span aria-hidden="true">&#10074;&#10074;</span></button></div>';
+		$html .= '<script>(function(){var b=document.querySelector(".db-hp-pause");if(!b){return;}b.addEventListener("click",function(){var m=b.closest(".db-hp-marquee"),p=m.classList.toggle("is-paused");b.setAttribute("aria-pressed",p?"true":"false");b.setAttribute("aria-label",p?"Resume scrolling":"Pause scrolling");b.firstChild.innerHTML=p?"&#9654;":"&#10074;&#10074;";});})();</script>';
 		$html .= '</div></section>';
 		$html .= '<span id="db-below-hero" aria-hidden="true"></span>';
 		return $html;
@@ -385,11 +511,19 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 		if ( is_admin() || ! is_front_page() || is_feed() || is_robots() ) {
 			return;
 		}
-		ob_start( function ( $html ) {
+		// Built here, not inside the buffer handler.
+		$sections = (string) apply_filters( 'db_hp_sections', '' );
+		ob_start( function ( $html ) use ( $sections ) {
 			if ( $GLOBALS['db_hero_rendered'] || false === stripos( $html, '<body' ) ) {
 				return $html;
 			}
 			$GLOBALS['db_hero_rendered'] = true;
+			if ( '' !== $sections ) {
+				// Who it is for and how it works: just before the "easy steps" band.
+				$html = preg_replace_callback( '/<div[^>]*class="[^"]*middle-blue-bg/i', function ( $m ) use ( $sections ) {
+					return $sections . $m[0];
+				}, $html, 1 );
+			}
 			// Callback, not '$1' . $html: any "$<digit>" in the hero (a price)
 			// would be expanded as a backreference.
 			$hero = db_hp_hero_html();
@@ -1088,8 +1222,19 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 	if ( $mail ) {
 		// The buyer's private offer page (created by the CRM hook, which runs at priority 10).
 		$link = (string) apply_filters( 'db_offer_confirmation_link', '', $mail['to'], db_offer_value( $data, 'domain' ) );
-		$mail = db_offer_email_with_link( $mail, $link );
-		wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+		$sent = null;
+		if ( function_exists( 'db_mail_send' ) ) {
+			$sent = db_mail_send( 'offer_received', $mail['to'], array(
+				'domain'       => '' !== (string) ( $mail['domain'] ?? '' ) ? $mail['domain'] : 'your domain',
+				'offer_amount' => (string) ( $mail['amount'] ?? '' ),
+				'offer_url'    => db_mail_local_url( $link ),
+				'email'        => $mail['to'],
+			), 'sales@domainbrothers.com' );
+		}
+		if ( null === $sent ) {
+			$mail = db_offer_email_with_link( $mail, $link );
+			wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+		}
 	}
 }, 20, 1 ); // after the CRM lead (and its offer page) exists
 
@@ -4382,6 +4527,7 @@ require_once __DIR__ . '/db-crm-block.php';
 /* ============================================================
    EMAIL + THANK-YOU BLOCK — Branded emails & thank-you page
    ============================================================ */
+require_once __DIR__ . '/db-emails-block.php';
 require_once __DIR__ . '/db-email-thankyou-block.php';
 
 /* ============================================================
@@ -4473,3 +4619,8 @@ require_once __DIR__ . '/db-offers-block.php';
 require_once __DIR__ . '/db-sold-block.php';
 require_once __DIR__ . '/db-hits-block.php';
 require_once __DIR__ . '/db-modern-block.php';
+require_once __DIR__ . '/db-wishlist-block.php';
+require_once __DIR__ . '/db-account-block.php';
+require_once __DIR__ . '/db-ads-block.php';
+require_once __DIR__ . '/db-sections-block.php';
+require_once __DIR__ . '/db-priced-block.php';

@@ -46,6 +46,7 @@ add_action( 'wp_footer', function () {
 		// /contact/ 301s to /contact-us/; link the destination directly so
 		// every menu click doesn't pay for a redirect hop.
 		'Contact'       => esc_url( home_url( '/contact-us/' ) ),
+		'Wishlist'      => esc_url( home_url( '/my-wishlist/' ) ),
 	);
 	// The 5 dedicated service pages (see db_service_page_defs() in
 	// db-custom-blocks.php — each already has its own real content and SEO
