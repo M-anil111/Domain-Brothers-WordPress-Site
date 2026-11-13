@@ -1,0 +1,149 @@
+/* =========================================================================
+   Domain Brothers: Our Team page (/our-team/), after the production design.
+
+   Every rule is scoped to #db-team (an id) so the theme and the other style
+   layers cannot change it, and nothing here touches the header or footer.
+   ========================================================================= */
+
+/* ---- Page frame: full width inside the theme's content box --------------- */
+body.db-team-page #content#content.site-content { max-width: none !important; width: auto !important; padding: 0 !important; margin: 0 !important; background: #fff !important; float: none !important; }
+body #main#main.db-team-main { padding: 0 !important; margin: 0 !important; max-width: none !important; width: auto !important; float: none !important; background: none !important; }
+
+/* ---- Tokens and resets ---------------------------------------------------- */
+#db-team {
+	--t-navy: #0a1b3a;
+	--t-navy-btn: #09192a;
+	--t-navy-2: #1d2b46;
+	--t-ink: #0a1b3a;
+	--t-text: #3d4656;
+	--t-muted: #6b7381;
+	--t-line: #e6e8ec;
+	--t-lime: #b3d216;
+	--t-lime-text: #8fae14;
+	--t-pill: #e6f5a8;
+	--t-band: #eef9cf;
+	--t-hero: #edf1f7;
+	--t-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+	display: block;
+	color: var(--t-text);
+	font-family: var(--t-font);
+	font-size: 16px;
+	line-height: 1.6;
+	background: #fff;
+	overflow-x: clip;
+}
+#db-team, #db-team *, #db-team *::before, #db-team *::after { box-sizing: border-box; }
+#db-team :is(h1, h2, h3, p, ul, ol, li, figure) { margin: 0; padding: 0; }
+#db-team :is(h1, h2, h3, h4, p, li, a, span, strong) { font-family: var(--t-font) !important; text-transform: none; }
+#db-team :is(h1, h2, h3) { color: var(--t-ink); font-weight: 800; letter-spacing: -.025em; line-height: 1.1; }
+#db-team :is(ul, ol) { list-style: none; }
+#db-team img { display: block; max-width: 100%; height: auto; }
+#db-team svg { display: block; flex: 0 0 auto; }
+#db-team a { color: var(--t-ink); text-decoration: none; }
+#db-team :focus-visible { outline: 2px solid var(--t-navy) !important; outline-offset: 2px !important; box-shadow: none !important; }
+#db-team .dbt-wrap { width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px); }
+
+/* ---- Banner ---------------------------------------------------------------- */
+#db-team .dbt-hero { background: linear-gradient(115deg, #f1f4f9 0%, var(--t-hero) 45%, #e2e7f0 100%); }
+#db-team .dbt-hero-in { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); align-items: center; gap: 24px; min-height: 466px; padding-top: 40px; padding-bottom: 40px; }
+#db-team .dbt-crumbs { margin: 0 0 30px; }
+#db-team .dbt-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; }
+#db-team .dbt-crumbs li { display: inline-flex; align-items: center; color: #8b929c; font-size: 16px; line-height: 1.4; }
+#db-team .dbt-crumbs li + li::before { content: "/"; margin: 0 10px; color: #a9afb8; }
+#db-team .dbt-crumbs a { color: #8b929c; }
+#db-team .dbt-crumbs a:hover { color: var(--t-ink); text-decoration: underline; }
+#db-team .dbt-crumbs [aria-current] { color: var(--t-ink); font-weight: 700; }
+#db-team .dbt-eyebrow { margin-bottom: 18px; color: var(--t-lime-text); font-size: clamp(14px, 1.4vw, 20px); font-weight: 800; letter-spacing: .01em; text-transform: uppercase !important; }
+#db-team .dbt-title { max-width: 840px; font-size: clamp(32px, 4vw, 58px); line-height: 1.1; letter-spacing: -.03em; }
+#db-team .dbt-lead { margin-top: 22px; max-width: 700px; font-size: clamp(16px, 1.45vw, 21px); line-height: 1.5; color: #2b3445; }
+#db-team .dbt-hero-art { display: flex; justify-content: flex-end; align-items: center; }
+#db-team .dbt-hero-art img {
+	width: 100%; max-width: 470px;
+	-webkit-mask-image: radial-gradient(ellipse 58% 60% at 52% 50%, #000 70%, transparent 100%);
+	mask-image: radial-gradient(ellipse 58% 60% at 52% 50%, #000 70%, transparent 100%);
+}
+
+/* ---- Team ------------------------------------------------------------------ */
+#db-team .dbt-team { padding: 52px 0 46px; }
+#db-team .dbt-team-head { text-align: center; margin-bottom: 52px; }
+#db-team .dbt-team-head h2 { font-size: clamp(32px, 3.9vw, 56px); }
+#db-team .dbt-team-head p { margin-top: 12px; font-size: clamp(17px, 1.6vw, 23px); color: #2b3445; }
+#db-team .dbt-rule { display: block; width: 116px; height: 5px; margin: 26px auto 0; border-radius: 3px; background: var(--t-lime); }
+#db-team .dbt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 28px; }
+#db-team .dbt-card {
+	display: grid; grid-template-columns: 42% minmax(0, 1fr); align-items: start; gap: 38px;
+	padding: 22px; background: #fff; border: 1.5px solid var(--t-line); border-radius: 14px;
+	box-shadow: 0 1px 2px rgba(10, 27, 58, .03), 0 8px 24px rgba(10, 27, 58, .04);
+	transition: box-shadow .2s ease, transform .2s ease;
+}
+#db-team .dbt-card:hover { box-shadow: 0 2px 4px rgba(10, 27, 58, .05), 0 14px 32px rgba(10, 27, 58, .08); transform: translateY(-2px); }
+#db-team .dbt-photo { aspect-ratio: 197 / 223; overflow: hidden; border-radius: 12px; background: #a98d74; }
+#db-team .dbt-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+/* A cut-out portrait on a transparent/white background sits on the same warm tone as the others. */
+#db-team .dbt-photo-cut { background: linear-gradient(180deg, #b49a82 0%, #a28670 100%); }
+#db-team .dbt-photo-cut img { object-fit: cover; object-position: 50% 0%; transform: scale(1.75); transform-origin: 50% 6%; }
+#db-team .dbt-info { padding-top: 16px; }
+#db-team .dbt-name { font-size: clamp(22px, 2.1vw, 31px); letter-spacing: -.02em; }
+#db-team .dbt-role { display: inline-block; margin-top: 16px; padding: 5px 17px; border-radius: 999px; background: var(--t-pill); color: var(--t-ink); font-size: clamp(14px, 1.3vw, 19px); font-weight: 700; line-height: 1.35; }
+#db-team .dbt-bio { margin-top: 20px; font-size: clamp(15px, 1.35vw, 19.5px); line-height: 1.5; color: var(--t-text); }
+
+/* ---- CTA band --------------------------------------------------------------- */
+#db-team .dbt-cta {
+	display: flex; align-items: center; justify-content: space-between; gap: 24px 40px;
+	margin: 10px 0 44px; padding: 34px 50px 34px 60px; min-height: 166px;
+	background: var(--t-band); border-radius: 16px;
+}
+#db-team .dbt-cta-text h2 { font-size: clamp(26px, 3.1vw, 44px); letter-spacing: -.03em; }
+#db-team .dbt-cta-text p { margin-top: 10px; font-size: clamp(17px, 1.75vw, 25px); color: #2b3445; }
+#db-team .dbt-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 12px; flex: 0 0 auto;
+	min-height: 64px; padding: 14px 36px; border-radius: 999px; background: var(--t-navy-btn);
+	color: #fff !important; font-size: clamp(17px, 1.6vw, 23px); font-weight: 700; line-height: 1.2; white-space: nowrap;
+	text-decoration: none !important; transition: background-color .15s ease, transform .1s ease;
+}
+#db-team .dbt-btn:hover { background: var(--t-navy-2); color: #fff !important; }
+#db-team .dbt-btn:active { transform: translateY(1px); }
+#db-team .dbt-btn svg { width: 22px; height: 22px; }
+
+/* ---- Laptop ------------------------------------------------------------------- */
+@media (max-width: 1180px) {
+	#db-team .dbt-card { gap: 26px; padding: 18px; }
+	#db-team .dbt-info { padding-top: 6px; }
+}
+
+/* ---- Tablet: one card per row ---------------------------------------------- */
+@media (max-width: 900px) {
+	#db-team .dbt-hero-in { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); min-height: 0; padding-top: 32px; padding-bottom: 32px; }
+	#db-team .dbt-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+	#db-team .dbt-card { grid-template-columns: 240px minmax(0, 1fr); gap: 30px; }
+	#db-team .dbt-cta { padding: 30px 34px; }
+}
+
+/* ---- Mobile ------------------------------------------------------------------- */
+@media (max-width: 640px) {
+	#db-team .dbt-hero-in { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-top: 22px; padding-bottom: 28px; }
+	#db-team .dbt-hero-art { order: 2; justify-content: center; }
+	#db-team .dbt-hero-art img { max-width: 300px; width: 80%; }
+	#db-team .dbt-crumbs { margin-bottom: 18px; }
+	#db-team .dbt-crumbs li { font-size: 14px; }
+	#db-team .dbt-eyebrow { margin-bottom: 12px; }
+	#db-team .dbt-lead { margin-top: 14px; }
+	#db-team .dbt-team { padding: 40px 0 30px; }
+	#db-team .dbt-team-head { margin-bottom: 32px; }
+	#db-team .dbt-rule { width: 88px; height: 4px; margin-top: 18px; }
+	#db-team .dbt-card { grid-template-columns: 124px minmax(0, 1fr); gap: 18px; padding: 14px; }
+	#db-team .dbt-info { padding-top: 2px; }
+	#db-team .dbt-role { margin-top: 10px; padding: 4px 12px; }
+	#db-team .dbt-bio { margin-top: 12px; }
+	#db-team .dbt-cta { flex-direction: column; align-items: flex-start; margin-bottom: 32px; padding: 26px 22px; }
+	#db-team .dbt-btn { width: 100%; min-height: 56px; white-space: normal; }
+}
+@media (max-width: 380px) {
+	#db-team .dbt-card { grid-template-columns: minmax(0, 1fr); }
+	#db-team .dbt-photo { max-width: 220px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#db-team *, #db-team *::before, #db-team *::after { transition: none !important; }
+	#db-team .dbt-card:hover { transform: none; }
+}
