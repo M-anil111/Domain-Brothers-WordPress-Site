@@ -1,0 +1,317 @@
+/* =========================================================================
+   FAQs page (/faqs/) — db-faq-block.php
+   Only the page body is styled here. The theme header and footer are left
+   exactly as they are on every other page.
+   ========================================================================= */
+
+/* ---- 1. Undo the generic "content page" sheet for this page only -------- */
+/* The ids and repeated classes are there to outrank the site-wide page rules
+   (some of which use !important with several :not() selectors). */
+html body.db-faq-page.db-ui-active.page:not(.home):not(.check-out) #content.site-content {
+	padding: 0 !important; margin-left: 0 !important; margin-right: 0 !important; min-height: 0 !important; background: transparent !important;
+}
+html body.db-faq-page.db-ui-active.page:not(.home):not(.check-out) #primary.content-area.content-area {
+	float: none !important; width: 100% !important; max-width: none !important; flex: 0 0 100% !important;
+	margin: 0 !important; padding: 0 !important; background: transparent !important;
+}
+html body.db-faq-page.db-ui-active.page:not(.home):not(.check-out) #main.site-main.db-faq-main-wrap {
+	max-width: none !important; margin: 0 !important; padding: 0 !important;
+	border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+}
+
+/* ---- 2. Tokens ----------------------------------------------------------- */
+.db-faq {
+	--faq-navy: #0c1b31;
+	--faq-btn: #09182d;
+	--faq-btn-hover: #1b2d4a;
+	--faq-text: #3d4757;
+	--faq-muted: #5d6675;
+	--faq-line: #e6e9ee;
+	--faq-line-2: #eef0f3;
+	--faq-hero: #f0f3f8;
+	--faq-lime: #eafabd;
+	--faq-lime-band: #d6f18b;
+	--faq-lime-ink: #9ac23c;
+	--faq-soft: #f2f4f9;
+	--faq-radius: 12px;
+	--faq-max: 1200px;
+	--faq-gutter: clamp(16px, 3.4vw, 40px);
+	--faq-font: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-family: var(--faq-font);
+	color: var(--faq-text);
+	font-size: 16px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+}
+.db-faq *, .db-faq *::before, .db-faq *::after { box-sizing: border-box; }
+/* The site sets one font on every text element with !important; this page uses Figtree. */
+html body.db-ui-active #main .db-faq :is(h1, h2, h3, h4, p, li, a, span, label, input, button, strong, em) { font-family: var(--faq-font) !important; }
+.db-faq [hidden] { display: none !important; }
+.db-faq h1, .db-faq h2, .db-faq h3 { font-family: var(--faq-font); color: var(--faq-navy); margin: 0; letter-spacing: -.02em; }
+html body.db-ui-active #main .db-faq :is(h2, h3, p, button, a) { text-wrap: wrap; }
+.db-faq p { margin: 0; }
+.db-faq a { color: var(--faq-navy); text-decoration: underline; text-underline-offset: 2px; }
+.db-faq a:hover { color: #000; }
+.db-faq :focus-visible { outline: 3px solid var(--faq-navy) !important; outline-offset: 3px !important; }
+.db-faq-vh { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.db-faq-svg { display: block; flex: none; }
+.db-faq-wrap { width: 100%; max-width: var(--faq-max); margin-inline: auto; padding-inline: var(--faq-gutter); }
+
+/* ---- 3. Hero ------------------------------------------------------------- */
+.db-faq-hero {
+	position: relative;
+	background: var(--faq-hero);
+	box-shadow: 0 0 0 100vmax var(--faq-hero); /* full-bleed colour without a 100vw overflow */
+	clip-path: inset(0 -100vmax);
+}
+.db-faq-hero-in {
+	display: grid;
+	grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+	align-items: center;
+	gap: 24px;
+	padding-top: clamp(40px, 5.2vw, 72px);
+	padding-bottom: clamp(48px, 6.4vw, 92px);
+}
+.db-faq-hero-copy { min-width: 0; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs { margin: 0 0 22px !important; padding: 0; background: none; font-family: var(--faq-font); font-size: 15px; line-height: 1.4; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin: 0; padding: 0; list-style: none; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs li { display: inline-flex; align-items: center; margin: 0; padding: 0; color: var(--faq-muted) !important; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs li::before { content: none !important; display: none !important; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs li + li::before { content: "/" !important; display: inline !important; margin: 0 10px; color: var(--faq-muted) !important; background: none !important; width: auto; height: auto; border: 0; transform: none; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs a { color: var(--faq-muted) !important; text-decoration: none; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs a:hover { color: var(--faq-navy) !important; text-decoration: underline; }
+html body.db-ui-active .db-faq nav.db-breadcrumbs [aria-current] { color: var(--faq-navy) !important; font-weight: 700; }
+
+html body.db-ui-active .db-faq .db-faq-h1 {
+	font-size: clamp(38px, 5vw, 66px);
+	line-height: 1.04;
+	font-weight: 800;
+	letter-spacing: -.035em;
+	color: var(--faq-navy);
+	margin: 0;
+	text-wrap: balance;
+}
+.db-faq-swoosh { display: block; width: clamp(120px, 12vw, 170px); height: auto; margin: 18px 0 0; color: var(--faq-lime-ink); }
+.db-faq-lead { max-width: 560px; margin-top: 20px !important; font-size: clamp(17px, 1.55vw, 21px); line-height: 1.5; color: #374151; }
+
+.db-faq-search {
+	display: flex; align-items: stretch;
+	max-width: 612px; height: 60px; margin-top: 34px;
+	background: #fff; border: 1px solid #e3e6eb; border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(12,27,49,.05), 0 8px 24px rgba(12,27,49,.06);
+	overflow: hidden;
+}
+.db-faq-search:focus-within { border-color: var(--faq-navy); box-shadow: 0 0 0 3px rgba(12,27,49,.14); }
+.db-faq-search-ico { display: flex; align-items: center; padding: 0 6px 0 22px; color: var(--faq-navy); }
+html body.db-ui-active .db-faq input.db-faq-search-input {
+	flex: 1 1 auto; min-width: 0; height: 100%; margin: 0; padding: 0 16px;
+	border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; outline: 0;
+	font: 400 16px/1.2 var(--faq-font); color: var(--faq-navy);
+}
+.db-faq input.db-faq-search-input::placeholder { color: #6b7280; opacity: 1; }
+.db-faq input.db-faq-search-input::-webkit-search-cancel-button { cursor: pointer; }
+html body.db-ui-active .db-faq .db-faq-search-btn {
+	flex: none; margin: 0; padding: 0 30px; border: 0; border-radius: 0 9px 9px 0;
+	background: var(--faq-btn); color: #fff; font: 700 17px/1 var(--faq-font); cursor: pointer;
+	transition: background-color .2s ease;
+}
+html body.db-ui-active .db-faq .db-faq-search-btn:hover { background: var(--faq-btn-hover); }
+
+.db-faq-hero-art { display: flex; justify-content: flex-end; min-width: 0; }
+.db-faq .db-faq-hero-img {
+	display: block; width: 100%; max-width: 520px; height: auto;
+	filter: drop-shadow(0 26px 30px rgba(12,27,49,.18)) drop-shadow(0 6px 10px rgba(12,27,49,.10));
+}
+
+/* ---- 4. Body: topics, guidance, questions -------------------------------- */
+.db-faq-body {
+	display: grid;
+	grid-template-columns: minmax(0, 352px) minmax(0, 1fr);
+	gap: clamp(28px, 3.2vw, 44px);
+	align-items: start;
+	padding-top: clamp(40px, 4vw, 56px);
+}
+.db-faq-aside { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
+.db-faq-card { background: #fff; border: 1px solid var(--faq-line); border-radius: 14px; box-shadow: 0 1px 2px rgba(12,27,49,.03); }
+
+.db-faq-topics { padding: 28px 14px 14px; }
+html body.db-ui-active .db-faq .db-faq-topics-h { font-size: 24px; line-height: 1.2; font-weight: 800; margin: 0 14px 18px; }
+.db-faq-topics ul { list-style: none; margin: 0; padding: 0; }
+.db-faq-topics li { margin: 0; padding: 0; }
+.db-faq-topics li + li { border-top: 1px solid var(--faq-line-2); margin-inline: 4px; }
+.db-faq-topics li + li .db-faq-topic { margin-inline: -4px; }
+.db-faq-topics li:has(+ li .is-active), .db-faq-topics li:has(.is-active) + li { border-color: transparent; }
+html body.db-ui-active .db-faq a.db-faq-topic {
+	display: flex; align-items: center; gap: 22px;
+	min-height: 64px; padding: 10px 18px; border-radius: 10px;
+	color: var(--faq-navy) !important; text-decoration: none;
+	font-size: 18px; font-weight: 600; line-height: 1.25;
+	transition: background-color .2s ease;
+}
+html body.db-ui-active .db-faq a.db-faq-topic:hover { background: #f5f8ec; }
+html body.db-ui-active .db-faq a.db-faq-topic.is-active { background: var(--faq-lime); }
+.db-faq-topic-ico { display: inline-flex; color: var(--faq-navy); }
+.db-faq-topic-ico .db-faq-svg { width: 26px; height: 26px; }
+
+.db-faq-guide { padding: 36px 38px 40px; background: var(--faq-soft); border-radius: 14px; }
+.db-faq-guide-ico { display: inline-flex; color: var(--faq-lime-ink); margin-bottom: 20px; }
+.db-faq-guide-ico .db-faq-svg, .db-faq-cta-ico .db-faq-svg { stroke-width: 1.6; }
+html body.db-ui-active .db-faq .db-faq-guide-h { font-size: clamp(26px, 2.4vw, 32px); line-height: 1.14; font-weight: 800; margin: 0 0 16px; }
+.db-faq-guide p { font-size: 17px; line-height: 1.55; color: var(--faq-muted); margin-bottom: 30px; }
+
+html body.db-ui-active .db-faq a.db-faq-btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+	min-height: 58px; padding: 0 26px; border-radius: 10px;
+	background: var(--faq-btn); color: #fff !important; text-decoration: none !important;
+	font: 700 17px/1 var(--faq-font); white-space: nowrap;
+	transition: background-color .2s ease, transform .2s ease;
+}
+html body.db-ui-active .db-faq a.db-faq-btn:hover { background: var(--faq-btn-hover); }
+html body.db-ui-active .db-faq a.db-faq-btn:hover .db-faq-svg { transform: translateX(3px); }
+.db-faq-btn .db-faq-svg { transition: transform .2s ease; stroke-width: 2.2; }
+
+.db-faq-main { min-width: 0; }
+.db-faq-status:empty { display: none; }
+.db-faq-status { margin: 0 0 20px !important; font-size: 16px; font-weight: 600; color: var(--faq-navy); }
+.db-faq-sec { scroll-margin-top: 110px; }
+.db-faq-sec + .db-faq-sec { margin-top: clamp(48px, 5vw, 72px); }
+html body.db-ui-active .db-faq .db-faq-h2 { font-size: clamp(30px, 3vw, 40px); line-height: 1.12; font-weight: 800; margin: 0 0 22px; }
+html body.db-ui-active .db-faq .db-faq-h2:has(+ .db-faq-intro) { margin-bottom: 8px; }
+.db-faq-intro { font-size: 18px; color: #4b5563; margin: 0 0 24px !important; }
+.db-faq-list { display: flex; flex-direction: column; gap: 14px; }
+
+.db-faq-item { background: #fff; border: 1px solid var(--faq-line); border-radius: var(--faq-radius); overflow: hidden; scroll-margin-top: 110px; transition: border-color .2s ease, box-shadow .2s ease; }
+.db-faq-item:hover { border-color: #d5d9e0; }
+.db-faq-item.is-open { border-color: #e1e8cf; box-shadow: 0 1px 2px rgba(12,27,49,.04); }
+html body.db-ui-active .db-faq .db-faq-q { margin: 0; font-size: inherit; line-height: inherit; }
+html body.db-ui-active .db-faq .db-faq-q button {
+	display: flex; align-items: center; justify-content: space-between; gap: 20px;
+	width: 100%; min-height: 62px; margin: 0; padding: 16px 26px 16px 28px;
+	border: 0; border-radius: 0; background: #fff; box-shadow: none;
+	color: var(--faq-navy); text-align: left; cursor: pointer;
+	font: 700 19px/1.3 var(--faq-font); letter-spacing: -.01em;
+	transition: background-color .25s ease;
+}
+html body.db-ui-active .db-faq .db-faq-q button:hover { background: #fafbf5; }
+html body.db-ui-active .db-faq .db-faq-item.is-open .db-faq-q button { background: var(--faq-lime); }
+html body.db-ui-active .db-faq .db-faq-q button:focus-visible { outline-offset: -3px !important; }
+.db-faq-pm { position: relative; flex: none; width: 16px; height: 16px; }
+.db-faq-pm::before, .db-faq-pm::after {
+	content: ""; position: absolute; left: 0; top: 7px; width: 16px; height: 2px; border-radius: 2px; background: var(--faq-navy);
+	transition: transform .3s ease, opacity .3s ease;
+}
+.db-faq-pm::after { transform: rotate(90deg); }
+.db-faq-item.is-open .db-faq-pm::after { transform: rotate(0deg); opacity: 0; }
+
+.db-faq-a { overflow: hidden; }
+.db-faq-a.is-moving { transition: height .3s cubic-bezier(.4, 0, .2, 1); }
+.db-faq-a-in { padding: 20px 28px 24px; border-top: 1px solid #edf3dc; }
+.db-faq-a-in p { font-size: 17px; line-height: 1.6; color: var(--faq-text); }
+
+.db-faq-empty { padding: 28px; border: 1px dashed #cfd5de; border-radius: var(--faq-radius); background: #fafbfc; font-size: 17px; }
+
+/* ---- 5. Still have a question? ------------------------------------------ */
+.db-faq-cta {
+	display: flex; align-items: center; gap: 0;
+	margin: clamp(64px, 7vw, 84px) 0 clamp(48px, 5vw, 64px);
+	padding: 36px clamp(28px, 4.4vw, 56px);
+	min-height: 168px;
+	background: var(--faq-lime-band); border-radius: 16px;
+}
+.db-faq-cta-ico { display: inline-flex; color: var(--faq-navy); padding-right: clamp(24px, 3vw, 40px); margin-right: clamp(24px, 3vw, 40px); border-right: 1.5px solid rgba(12,27,49,.45); align-self: stretch; align-items: center; }
+.db-faq-cta-ico .db-faq-svg { width: 64px; height: 64px; }
+.db-faq-cta-copy { flex: 1 1 auto; min-width: 0; }
+html body.db-ui-active .db-faq .db-faq-cta-h { font-size: clamp(28px, 3vw, 42px); line-height: 1.1; font-weight: 800; margin: 0 0 8px; }
+.db-faq-cta-copy p { font-size: clamp(17px, 1.6vw, 22px); color: #3a4a2a; }
+html body.db-ui-active .db-faq a.db-faq-cta-btn { flex: none; margin-left: 24px; min-width: 260px; }
+
+/* ---- 6. Responsive ------------------------------------------------------- */
+/* Tall desktop screens: keep the topic list in view while reading. */
+@media (min-width: 992px) and (min-height: 1000px) {
+	.db-faq-aside { position: sticky; top: 96px; }
+}
+
+/* Laptop */
+@media (max-width: 1199px) {
+	.db-faq-body { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+	.db-faq-topics { padding: 24px 10px 10px; }
+	html body.db-ui-active .db-faq a.db-faq-topic { gap: 16px; font-size: 17px; min-height: 58px; }
+	.db-faq-guide { padding: 32px 30px 34px; }
+}
+
+/* Tablet and below: one column. Topics become a scrollable row of chips, the
+   guidance card moves under the questions. */
+@media (max-width: 991px) {
+	.db-faq-hero-in { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-bottom: 48px; }
+	.db-faq-hero-art { justify-content: center; order: 2; }
+	.db-faq .db-faq-hero-img { max-width: 440px; }
+	.db-faq-search { max-width: 100%; }
+
+	.db-faq-body { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+	.db-faq-aside { display: contents; }
+	.db-faq-topics { order: 1; padding: 18px 0 14px; border-radius: 14px; }
+	.db-faq-main { order: 2; }
+	.db-faq-guide { order: 3; }
+	html body.db-ui-active .db-faq .db-faq-topics-h { font-size: 20px; margin: 0 18px 12px; }
+	.db-faq-topics ul {
+		display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain;
+		padding: 2px 18px 6px; scroll-padding-inline: 18px; scrollbar-width: thin;
+	}
+	.db-faq-topics li, .db-faq-topics li + li { flex: none; border: 0; margin: 0; }
+	.db-faq-topics li + li .db-faq-topic { margin: 0; }
+	html body.db-ui-active .db-faq a.db-faq-topic {
+		gap: 10px; min-height: 46px; padding: 8px 16px; font-size: 16px; white-space: nowrap;
+		border: 1px solid var(--faq-line); border-radius: 999px;
+	}
+	html body.db-ui-active .db-faq a.db-faq-topic.is-active { border-color: #d3eb8f; }
+	.db-faq-topic-ico .db-faq-svg { width: 20px; height: 20px; }
+	.db-faq-guide { display: grid; grid-template-columns: auto 1fr; column-gap: 22px; align-items: start; }
+	.db-faq-guide-ico { grid-row: 1 / span 3; margin: 0; }
+	.db-faq-guide .db-faq-btn { justify-self: start; }
+}
+
+/* Phones */
+@media (max-width: 767px) {
+	.db-faq { font-size: 15px; }
+	.db-faq-hero-in { padding-top: 28px; padding-bottom: 36px; }
+	html body.db-ui-active .db-faq nav.db-breadcrumbs { margin-bottom: 16px !important; font-size: 14px; }
+	.db-faq-lead { margin-top: 16px !important; }
+	.db-faq-search { height: 54px; margin-top: 24px; }
+	.db-faq-search-ico { padding-left: 16px; }
+	html body.db-ui-active .db-faq input.db-faq-search-input { padding: 0 10px; font-size: 16px; }
+	html body.db-ui-active .db-faq .db-faq-search-btn { padding: 0 18px; font-size: 16px; }
+	.db-faq .db-faq-hero-img { max-width: min(340px, 86%); }
+
+	.db-faq-sec + .db-faq-sec { margin-top: 44px; }
+	.db-faq-intro { font-size: 16px; margin-bottom: 18px !important; }
+	.db-faq-list { gap: 10px; }
+	html body.db-ui-active .db-faq .db-faq-q button { min-height: 56px; padding: 14px 18px; font-size: 17px; gap: 14px; }
+	.db-faq-a-in { padding: 16px 18px 20px; }
+	.db-faq-a-in p { font-size: 16px; }
+
+	.db-faq-guide { display: block; padding: 28px 22px; }
+	.db-faq-guide-ico { margin-bottom: 14px; }
+	.db-faq-guide-ico .db-faq-svg { width: 42px; height: 42px; }
+	.db-faq-guide p { margin-bottom: 22px; }
+
+	.db-faq-cta { flex-direction: column; align-items: flex-start; gap: 14px; padding: 28px 22px; min-height: 0; margin-top: 56px; }
+	.db-faq-cta-ico { border: 0; padding: 0; margin: 0; }
+	.db-faq-cta-ico .db-faq-svg { width: 48px; height: 48px; }
+	html body.db-ui-active .db-faq a.db-faq-cta-btn { margin: 6px 0 0; min-width: 0; width: 100%; }
+	html body.db-ui-active .db-faq .db-faq-guide .db-faq-btn { width: 100%; }
+}
+
+@media (max-width: 380px) {
+	html body.db-ui-active .db-faq .db-faq-search-btn { padding: 0 14px; }
+	.db-faq-search-ico { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.db-faq *, .db-faq *::before, .db-faq *::after { transition: none !important; scroll-behavior: auto !important; }
+}
+
+@media print {
+	.db-faq-search, .db-faq-aside, .db-faq-cta, .db-faq-hero-art { display: none !important; }
+	.db-faq-body { display: block; }
+	.db-faq-a[hidden] { display: block !important; }
+}

@@ -44,6 +44,8 @@ jobs:
         run: php tests/offers/deal-transition-test.php
       - name: EPP code handling (offline)
         run: php tests/sold/epp-test.php
+      - name: FAQs page markup (offline)
+        run: php tests/faq/faq-render-test.php
 
   js:
     runs-on: ubuntu-latest
@@ -56,3 +58,4 @@ jobs:
         run: |
           node --check tests/qa/run-qa.js
           node --check tests/a11y/run-axe.js
+          node --check db-custom-blocks/assets/faq.js

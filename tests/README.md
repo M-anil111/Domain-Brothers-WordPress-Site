@@ -63,6 +63,17 @@ return), offer confirmation emails can't carry attacker text, and per-recipient
 
     php tests/security/forms-test.php
 
+## `faq/faq-render-test.php` — FAQs page markup, offline (40 checks)
+Renders the /faqs/ body from db-faq-block.php and checks the design's parts are
+there (hero heading, breadcrumb, image with alt text and size, search with a
+label, six topics that each have a section, "Need a little guidance?" and
+"Still have a question?"), the accordion wiring (aria-expanded, aria-controls,
+hidden answers, only the first open), unique ids and heading order, that the
+FAQPage structured data matches the visible questions word for word, and that
+ads are off on the page. `--html` prints the rendered body.
+
+    php tests/faq/faq-render-test.php
+
 ## Continuous integration
 `.github/workflows/tests.yml` runs on every push and pull request: PHP lint of
 the plugin and tests, then the four offline suites (plan, hygiene, titles,

@@ -179,7 +179,7 @@ if ( ! function_exists( 'db_ads_page_allowed' ) ) {
 		}
 		if ( is_page() ) {
 			$p = get_queried_object();
-			$bad = array( 'buy-now', 'checkout', 'payment-plan-setup', 'thank-you', 'terms-of-use', 'privacy-policy', 'cookie-policy', 'my-wishlist', 'epp', 'transfer-code' );
+			$bad = array( 'buy-now', 'checkout', 'payment-plan-setup', 'thank-you', 'terms-of-use', 'privacy-policy', 'cookie-policy', 'my-wishlist', 'epp', 'transfer-code', 'faqs', 'faq' );
 			if ( $p instanceof WP_Post && in_array( $p->post_name, $bad, true ) ) {
 				return false;
 			}
