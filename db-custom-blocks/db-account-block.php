@@ -477,6 +477,9 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'You have made a lot of offers in the last hour. Please try again later.' ), 429 );
 			}
 			$d      = $json( $req );
+			if ( function_exists( 'db_ts_verify' ) && ! db_ts_verify( $d['ts'] ?? '', db_wl_ip() ) ) {
+				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
+			}
 			$domain = strtolower( trim( preg_replace( '/^https?:\/\/(www\.)?/i', '', (string) ( $d['domain'] ?? '' ) ), " \t\n\r\0\x0B/" ) );
 			$amount = (float) preg_replace( '/[^0-9.]/', '', (string) ( $d['amount'] ?? '' ) );
 			$msg    = mb_substr( sanitize_textarea_field( (string) ( $d['message'] ?? '' ) ), 0, 1000 );
@@ -534,8 +537,9 @@ if ( ! function_exists( 'db_acct_tabs' ) ) {
 		return array(
 			'saved'    => 'Wishlist',
 			'alerts'   => 'Alerts',
-			'offers'   => 'My offers',
-			'discover' => 'Discover',
+			'offers'    => 'My offers',
+			'transfers' => 'Transfers',
+			'discover'  => 'Discover',
 		);
 	}
 }
@@ -619,7 +623,7 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			if ( ! $notes ) {
 				$h .= '<div class="db-wl-card"><h2>No alerts yet</h2><p>When a domain on your wishlist changes price, sells or gets a new offer, it shows up here.</p></div>';
 			} else {
-				$icons = array( 'price' => 'Price', 'sold' => 'Sold', 'offer' => 'Offer', 'status' => 'Status' );
+				$icons = array( 'price' => 'Price', 'sold' => 'Sold', 'offer' => 'Offer', 'status' => 'Status', 'match' => 'Match' );
 				$h    .= '<ol class="db-ac-feed">';
 				foreach ( $notes as $n ) {
 					$p  = get_post( (int) $n->post_id );
@@ -627,6 +631,8 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				}
 				$h .= '</ol>';
 			}
+		} elseif ( 'transfers' === $tab ) {
+			$h .= '<h2 class="db-ac-h">Transfers</h2>' . ( function_exists( 'db_sales_transfers_html' ) ? db_sales_transfers_html( $email ) : '' );
 		} elseif ( 'offers' === $tab ) {
 			$states = function_exists( 'db_deal_states' ) ? db_deal_states() : array();
 			$h     .= '<h2 class="db-ac-h">My offers</h2>';
@@ -653,7 +659,7 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			}
 			$h .= '</datalist><label>Your offer (USD)<input type="text" name="amount" inputmode="numeric" required autocomplete="off" placeholder="1500" maxlength="12"></label>'
 				. '<label>Message <span class="db-ac-opt">(optional)</span><textarea name="message" rows="3" maxlength="1000" placeholder="Tell us how you plan to use the name."></textarea></label>'
-				. '<button type="submit" class="db-wl-primary">Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>';
+				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary">Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>';
 		} else {
 			$ids    = db_wl_ids( $email );
 			$recent = db_acct_recent( 12 );
@@ -736,7 +742,7 @@ if ( ! function_exists( 'db_acct_script' ) ) {
 			f.addEventListener('submit', function (e) {
 				e.preventDefault();
 				var btn = f.querySelector('button[type=submit]'); btn.disabled = true; say('db-ac-offermsg', 'Sending…');
-				post('account/offer', { domain: f.domain.value, amount: f.amount.value, message: f.message.value }).then(function (j) {
+				post('account/offer', { domain: f.domain.value, amount: f.amount.value, message: f.message.value, ts: window.dbTsToken ? window.dbTsToken(f) : '' }).then(function (j) {
 					btn.disabled = false;
 					if (j.ok) { say('db-ac-offermsg', j.message); setTimeout(function () { window.location.href = C.offers + '&sent=1'; }, 900); }
 					else { say('db-ac-offermsg', j.message || 'Could not send that offer.', true); }

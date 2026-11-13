@@ -371,8 +371,10 @@ if ( ! function_exists( 'db_ty_sig' ) ) {
 	 * from ?d= and ?amt= alone, so anyone could mint a convincing fake
 	 * payment confirmation on this domain (e.g. ?type=full&d=google.com&amt=250000).
 	 */
-	function db_ty_sig( $type, $domain, $amount ) {
-		return hash_hmac( 'sha256', 'ty|' . $type . '|' . strtolower( (string) $domain ) . '|' . (string) $amount, wp_salt( 'auth' ) );
+	function db_ty_sig( $type, $domain, $amount, $months = 0 ) {
+		// The term length is signed too (plans only), so it cannot be edited in the URL.
+		$m = (int) $months > 0 ? '|m' . (int) $months : '';
+		return hash_hmac( 'sha256', 'ty|' . $type . '|' . strtolower( (string) $domain ) . '|' . (string) $amount . $m, wp_salt( 'auth' ) );
 	}
 }
 
@@ -398,9 +400,9 @@ if ( ! function_exists( 'db_ty_resolve' ) ) {
 	 *
 	 * @return array{0:string,1:string,2:string} type, domain, amount
 	 */
-	function db_ty_resolve( $type, $domain, $amount, $sig ) {
+	function db_ty_resolve( $type, $domain, $amount, $sig, $months = 0 ) {
 		if ( in_array( $type, array( 'full', 'plan' ), true ) ) {
-			if ( '' === (string) $sig || ! hash_equals( db_ty_sig( $type, $domain, $amount ), (string) $sig ) ) {
+			if ( '' === (string) $sig || ! hash_equals( db_ty_sig( $type, $domain, $amount, $months ), (string) $sig ) ) {
 				return array( 'generic', '', '' );
 			}
 			return array( $type, $domain, $amount );
@@ -437,10 +439,11 @@ add_filter( 'the_content', function ( $content ) {
 	$domain = ! empty( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$amount = ! empty( $_GET['amt'] ) ? sanitize_text_field( wp_unslash( $_GET['amt'] ) ) : '';
 	$sig    = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
+	$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 
 	$done = true;
-	return db_ty_html( $type, $domain, $amount ) . $content;
+	return db_ty_html( $type, $domain, $amount, $months ) . $content;
 }, 10 );
 
 /* -----------------------------------------------------------
@@ -448,7 +451,7 @@ add_filter( 'the_content', function ( $content ) {
    ----------------------------------------------------------- */
 
 if ( ! function_exists( 'db_ty_html' ) ) {
-	function db_ty_html( $type, $domain, $amount ) {
+	function db_ty_html( $type, $domain, $amount, $months = 0 ) {
 		$domain_safe = $domain ? esc_html( $domain ) : '';
 		$amount_safe = '';
 		if ( $amount ) {
@@ -527,8 +530,21 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 				: 'Your first installment has been processed. The domain transfers to you right after your final payment.';
 			$html .= '<p class="db-ty-sub">' . $sub . '</p>';
 
+			$plan_rec = function_exists( 'db_plan_get' ) ? db_plan_get( $domain ) : array();
+			$sched    = function_exists( 'db_plan_schedule' ) ? db_plan_schedule( $plan_rec ) : array();
+			if ( $sched ) {
+				$html .= '<h2 class="db-ty-sub" style="font-size:18px;margin:22px 0 6px;">Your payment schedule</h2>';
+				$html .= db_plan_schedule_html( $sched );
+			} elseif ( $months > 0 && function_exists( 'db_plan_preview_html' ) ) {
+				// The webhook may not have written the plan yet: show the same dates it will.
+				$html .= '<h2 class="db-ty-sub" style="font-size:18px;margin:22px 0 6px;">Your payment schedule</h2>';
+				$html .= db_plan_preview_html( (float) str_replace( ',', '', (string) $amount ), $months );
+			}
+			if ( $sched || ( $months > 0 && function_exists( 'db_plan_preview_html' ) ) ) {
+				$html .= '<p style="font-size:13px;">' . db_plan_terms_html() . '</p>';
+			}
 			$html .= '<div class="db-ty-infobox">';
-			$html .= '<strong>&#128274; Escrow-protected for the full term.</strong><br>';
+			$html .= '<strong>&#128274; Your domain stays with us until the plan completes.</strong><br>';
 			$html .= 'Remaining installments bill automatically each month &mdash; no action needed. We\'ll email you before each charge, and your domain is held securely until the plan completes.';
 			$html .= '</div>';
 
@@ -552,7 +568,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$offer_steps = array(
 				array( 'n' => 1, 'label' => 'We personally review your offer',   'sub' => 'within 24 hours' ),
 				array( 'n' => 2, 'label' => 'You receive our response by email', 'sub' => 'a decision or counter-offer' ),
-				array( 'n' => 3, 'label' => 'We negotiate &amp; close',          'sub' => 'secure transfer via escrow' ),
+				array( 'n' => 3, 'label' => 'We negotiate &amp; close',          'sub' => 'step-by-step transfer' ),
 			);
 			foreach ( $offer_steps as $step ) {
 				$html .= '<div class="db-ty-step" role="listitem">';
@@ -914,12 +930,13 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 
 	// Values from the shortcode itself were written by an editor; values that
 	// came from the URL go through the same checks as the_content path.
+	$months = ! empty( $_GET['plan_months'] ) ? absint( $_GET['plan_months'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 	if ( ! $atts['domain'] && ! $atts['amount'] ) {
 		$sig = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig );
+		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 	}
 
-	return db_ty_html( $type, $domain, $amount );
+	return db_ty_html( $type, $domain, $amount, $months );
 } );
 
 /* -----------------------------------------------------------

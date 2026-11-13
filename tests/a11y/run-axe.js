@@ -3,12 +3,15 @@
  *
  *     npm i axe-core@4.10.2
  *     BETA_USER=... BETA_PASS=... NODE_PATH=$(npm root -g):./node_modules node tests/a11y/run-axe.js out.json
+ * The output path is optional (default axe-results.json in the working directory).
  */
 const { chromium } = require('playwright');
 const fs = require('fs');
 const axe = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const B = 'https://beta.domainbrothers.com';
+const OUT = process.argv[2] || 'axe-results.json';
 const PAGES = ['/', '/domains/fatality-ca/', '/domains/aethereum-ca/', '/all-domains/', '/domain-category/business/', '/news/', '/centr-tld-market-report-2024/', '/our-services/', '/about-us/', '/faqs/', '/contact-us/', '/offer/', '/sold/', '/payment-plan-setup/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D'];
+PAGES.push('/find-a-domain/', '/trust-center/');
 (async () => {
   const b = await chromium.launch({ executablePath: process.env.QA_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] });
   const all = [];
@@ -27,5 +30,5 @@ const PAGES = ['/', '/domains/fatality-ca/', '/domains/aethereum-ca/', '/all-dom
     }
     await ctx.close();
   }
-  fs.writeFileSync(process.argv[2], JSON.stringify(all, null, 1)); await b.close();
+  fs.writeFileSync(OUT, JSON.stringify(all, null, 1)); await b.close();
 })();

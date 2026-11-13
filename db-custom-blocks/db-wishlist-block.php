@@ -98,7 +98,8 @@ add_action( 'deleted_post', function ( $post_id ) {
 
 if ( ! function_exists( 'db_wl_is_staging' ) ) {
 	function db_wl_is_staging() {
-		return false !== strpos( home_url(), '//beta.' );
+		// One definition of "staging" for the whole plugin (see db_is_staging_host in db-safety-block.php).
+		return function_exists( 'db_is_staging_host' ) ? db_is_staging_host() : false;
 	}
 }
 
@@ -337,7 +338,11 @@ add_action( 'rest_api_init', function () {
 			if ( ! db_wl_same_origin() ) {
 				return $send( array( 'ok' => false, 'message' => 'Please use the website.' ), 403 );
 			}
-			$email = db_wl_clean_email( $json( $req )['email'] ?? '' );
+			$body = $json( $req );
+			if ( function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
+				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
+			}
+			$email = db_wl_clean_email( $body['email'] ?? '' );
 			if ( '' === $email ) {
 				return $send( array( 'ok' => false, 'message' => 'Enter a valid email address.' ), 400 );
 			}
@@ -465,7 +470,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			'<form method="dialog" class="db-wl-x"><button aria-label="Close">&times;</button></form>' +
 			'<h2 id="db-wl-title">Save to your wishlist</h2>' +
 			'<p class="db-wl-lead">We email you a 6-digit code. No password needed.</p>' +
-			'<form class="db-wl-step" data-step="email"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="190" placeholder="you@example.com"></label><button type="submit" class="db-wl-primary">Email me a code</button></form>' +
+			'<form class="db-wl-step" data-step="email"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="190" placeholder="you@example.com"></label><div class="db-ts"></div><button type="submit" class="db-wl-primary">Email me a code</button></form>' +
 			'<form class="db-wl-step" data-step="code" hidden><label>6-digit code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button type="submit" class="db-wl-primary">Sign in</button><button type="button" class="db-wl-link" data-back>Use a different email</button></form>' +
 			'<p class="db-wl-msg" role="status" aria-live="polite"></p></dialog>');
 		document.body.appendChild(dlg);
@@ -473,7 +478,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		function say(t, bad) { msg.textContent = t; msg.className = 'db-wl-msg' + (bad ? ' is-bad' : ''); }
 		emailForm.addEventListener('submit', function (e) {
 			e.preventDefault(); email = emailForm.email.value.trim(); say('Sending…');
-			api('code', 'POST', { email: email }).then(function (j) {
+			api('code', 'POST', { email: email, ts: window.dbTsToken ? window.dbTsToken(emailForm) : '' }).then(function (j) {
 				if (j.ok) { emailForm.hidden = true; codeForm.hidden = false; codeForm.code.focus(); say(j.message); } else { say(j.message || 'Something went wrong.', true); }
 			}).catch(function () { say('Could not reach the server. Try again.', true); });
 		});
@@ -494,6 +499,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		var d = ensureDialog();
 		d.querySelector('[data-step=email]').hidden = false; d.querySelector('[data-step=code]').hidden = true; d.querySelector('.db-wl-msg').textContent = '';
 		if (d.showModal) { d.showModal(); } else { d.setAttribute('open', ''); }
+			if (window.dbTsRender) { window.dbTsRender(d); }
 		d.querySelector('input[name=email]').focus();
 	}
 

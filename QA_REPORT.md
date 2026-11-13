@@ -536,3 +536,169 @@ Seven slots, set under Domain Brothers > Ads (publisher id plus an ad unit id pe
 - `/ads.txt` is served by the plugin: `google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0` (a real ads.txt file on the server would take priority).
 - Fix: the older safety filter removed the first AdSense script on every page, which would have removed this one. It now removes only the theme's old script (publisher `ca-pub-2138271276562459`) and the theme's old ad boxes, and keeps the site's own.
 - Checked on staging: the code is in the head of home, about, domain, all-domains; absent on buy-now and thank-you; `/ads.txt` returns the line above. Site QA 407/407.
+
+## 31. Ad banners on every page: three quiet spots (v3.66.0)
+
+Every public page now carries at least three Google ad banners, at natural breaks and never in front of a price or a form:
+
+| Page | Spots |
+|---|---|
+| Home | in the domain list (a quarter of the way down), after "Perfect for buyers and sellers / How it works", end of the page |
+| Domain pages (priced) | after the three ways to buy, after details and pricing, after How buying works |
+| Domain pages (open to offers) | after details, after How buying works, end of the page |
+| Domain lists and categories | under the title, inside the list (after its middle card, kept on filtering and in list or grid view), end of the page |
+| Pages, news, posts, services, sold, FAQs | under the title, in the middle of the content (before a heading near the middle, or after a paragraph, never under a lead-in line ending in a colon), end of the content |
+
+Never on checkout, payment plan, thank-you, terms, privacy, account or admin pages, and never when printing. No pop-ups, overlays or sticky banners.
+
+**Look.** Each banner sits in a soft framed card with a small "Advertisement" label, rounded corners and generous space; a slot Google leaves unfilled is hidden, so a visitor never sees an empty frame. **Setup.** Domain Brothers > Ads: one "Default ad unit id" serves every slot, or give a slot its own. Until an id is saved, live visitors see nothing; staging shows dashed placeholders. Checked on staging: three slots on home, lists, categories, about, contact, FAQs, EPP, news, posts, services, sold and domain pages; none on buy-now, thank-you, terms and the account page; no horizontal scroll at 1440 and 390 wide. Site QA 407/407, listing templates 6/6.
+
+## 32. Content cluster: Domain Guides (v3.67.0)
+
+A pillar guide and twelve supporting articles about premium domains, websites and marketing (about 12,500 words), built as block-editor content with internal links, sourced external links, images and structured data.
+
+| Article | Focus |
+|---|---|
+| The Complete Guide to Premium Domain Names (pillar, about 3,500 words) | definition, types, value, buying, payment, extensions, SEO, branding, launch, marketing, legal, checklist, red flags, glossary, FAQ |
+| What Is a Premium Domain Name? | meaning, two kinds of "premium", types, how to spot an overpriced name |
+| How to Value a Premium Domain Name | six-factor score, comparable sales, worth to you, risk, offer range |
+| How to Buy a Premium Domain Safely | five stages, escrow, red flags |
+| Premium Domain Payment Plans and Financing | terms to compare, pay in full versus over time |
+| Choosing a Domain Extension: .com, .ca, .io and More | extension families, renewal costs, protection |
+| Do Premium Domains Help SEO? What Google Says | what Google says, indirect gains, safe site moves |
+| How to Pick a Brand Name and Domain That Lasts | four tests, mistakes, workshop |
+| Website Launch Checklist After Buying a Domain | secure, DNS, HTTPS, email authentication, redirects, analytics |
+| Premium Domains as Business Assets and Investments | four ways to benefit, risks, a sensible start |
+| Domain Transfers, EPP Codes and DNS Explained | roles, steps, locks, DNS, fixes |
+| Trademarks and Domain Disputes: UDRP Basics | checks, the three UDRP requirements, protection |
+| The Domain Name Marketing Playbook | email, ads, print and QR, social, vanity URLs, 30 day plan |
+
+**Blocks used (the "skyscraper" parts of the pillar):** contents list with jump links, key takeaways box, comparison tables, step lists, checklists, infographics with captions and alt text, call-out boxes, collapsible FAQ and glossary (the FAQ is also published as FAQPage structured data), calls to action with buttons, and a "keep reading" block that links each article to the pillar and its neighbours.
+
+**Links.** Internal: every article links to the pillar and to at least two other articles, and the pillar links to all twelve; articles also link to our listing, category, appraisal, brokerage, services and EPP pages. External: only sources checked to load (ICANN transfer policy and UDRP, WIPO, Verisign Domain Name Industry Brief, IANA root zone, Google Search Central, Search Console, web.dev, DMARC.org, USPTO, Escrow.com, W3C, Nielsen Norman Group, Wikipedia). No unverified statistics are used.
+
+**Images.** 13 covers and 11 infographics are drawn from the site's own brand (logo, colours; covers use the credited Unsplash photos in `assets/hero/`), uploaded to the media library with alt text.
+
+**How to use it.** Domain Brothers > Content cluster > Import as drafts (read and edit, then publish) or Import and publish. Running it again updates the same posts. Source files are in `content-cluster/src`; `python3 tools/build-cluster.py` rebuilds the block markup.
+
+**Checks** (`tests/qa/content-cluster.js`, 159/159 on staging): every article returns 200 with one h1, title, description, canonical and Article data; the pillar has FAQPage data; enough text; headings do not skip levels; every contents anchor exists; every image loads with alt text; every distinct internal link resolves and every external link responds; each article opens in the block editor with no invalid-content warning; no horizontal scroll on a 390 px phone. Site QA and wishlist flow still pass.
+
+## 33. Sales features and go-live follow-ups (v3.69.1)
+
+**What was built** (`db-custom-blocks/db-sales-block.php`, v3.69.0; fixed in v3.69.1):
+
+- **Guided domain finder** at `/find-a-domain/`: five questions (industry, audience, geography, tone, budget). Each shortlist entry lists its reasons; no unexplained scores. Budget applies to fixed prices; open-to-offers names stay in and say so.
+- **Saved searches with alerts**: signed-in visitors save a search (up to 10). A 15-minute job adds a "match" alert to the account for each new matching name (at most five per run per search). The Alerts tab labels them "Match".
+- **Broker call request**: on the finder page and on results; creates a CRM lead (source "inquiry") with the criteria and shortlist. Turnstile-checked when enabled; five requests per visitor per hour.
+- **Collections** at `/collections/` and `/collections/<slug>/`: three fixed searches, published only with three or more live matches.
+- **"Why this price?"** on every domain page: name facts, recorded sales of similar names (same extension, length within two characters, newest first), and seller guidance when set. No valuation is estimated.
+- **Transfer workspace**: admin sets each domain's transfer stage (payment received → registrar lock removed → transfer code sent → transfer approved → DNS configured → completed) and a note. Buyers see the timeline on a new **Transfers** account tab, with four service options linking to `/our-services/`. Services are not added to the purchase.
+- **Buyer-intent score** (admin: Buyer intent): views (up to 10), wishlist saves (2 each, up to 5) and offers (4 each, up to 3) in 30 days; hot is 12 or more. Next-step tasks, counts only, no buyer emails.
+- **Sales funnel** (admin: Sales funnel): six server-side counts over 30 days; no IP, cookie or email stored; staff and known bots excluded.
+- **Trust center** at `/trust-center/`: only statements the plugin enforces (Stripe card entry, signed receipt links, plan acceptance records, encrypted transfer codes behind a private link, offers answered by email, stop links). No escrow claim.
+
+**Not built in this pass** (owner decisions or follow-up work):
+
+- Abandoned checkout and unanswered-offer reminders. This needs a marketing-consent step in the Stripe checkout and owner sign-off on the wording, so it was not added to the payment flow.
+- Experiments (A/B tests of CTA copy or plan visibility). The funnel counts exist; variant assignment does not.
+- Automatic offer acknowledgements and internal response-time timers.
+- Document history and secure two-way messaging in the Transfers tab (the tab links to the contact page).
+
+**Checks**
+
+- Offline, `tests/sales/sales-features-test.php`: all checks pass. Covers filters, ranking reasons, collection rules, funnel privacy, comparables, trust center wording, and stage order. Stubs WordPress; `db_finder_candidates()` and `db_dd_facts()` are supplied in the test.
+- Live, `tests/qa/sales-features.js` on beta (v3.69.1): 14/14. Finder shows five questions and the broker form; shortlist entries show reasons; trust center; all three collections show at least three names; domain pages show "Why this price?"; no horizontal overflow at 375px; both admin reports load.
+- Axe (`tests/a11y/run-axe.js`, now scans the two new pages): the new pages have no violations at desktop or phone width. Existing pages still show color-contrast (serious) findings on the about, services, FAQ, contact, offer, sold and home pages — a site-wide theme colour issue, not changed in this pass.
+
+**Go-live follow-ups found and fixed in this pass**
+
+- The broker link from a domain page landed on a finder page with no form. The form now shows on the bare finder page.
+- The new pages were served before the SEO output buffer, so they missed the viewport fix (the theme's `user-scalable=no`). They now run after it. Axe reported `meta-viewport` (critical) on both pages before the fix; it is clear after.
+- `tests/a11y/run-axe.js` needed an output path and was not scanning the new pages. Both fixed.
+
+**Still open from the matrix run (before this build)**
+
+- Site QA: 403/405 passed; the failures were host 508 responses under load, not page defects. Needs a rerun.
+- Responsive matrix: 280 scans, one context error on the iPad plan page (navigation during evaluation). Needs a rerun.
+- Admin sweep: WordPress core 6.9.11 is not the latest, and plugin/theme updates are pending. Owner action in wp-admin.
+- Crawl: not run (needs `BETA_BASIC`).
+- Account-flow "My offers" check: passed on rerun (27/27).
+- Listing templates: passed on rerun (6/6).
+
+## 34. Payment plans: dates, terms and notices in every email (v3.69.5)
+
+**Customer sees the dates before paying.** The checkout confirmation step shows a table of every payment with its date and amount ("Payment 1 is charged today; the others on the same day of each following month").
+
+**The thank-you page shows the schedule** with each payment marked Paid, Next charge or Scheduled, followed by the plan terms. The return link carries the term length (`plan_months`), signed with the rest of the link, so the page shows the dates even before the payment webhook has written the plan record.
+
+**First email** (plan started): the same schedule table and the terms. Previously the schedule was never filled in on this path.
+
+**Every monthly email** (reminder, payment received, back on track): the instalments still to be paid, and the terms.
+
+**Terms** (`db_plan_terms_html()`, used at checkout, on the domain page, in emails and on the thank-you page): one charge per month to the card on file; a declined payment is retried automatically 3 more times, on days 3, 6 and 9 after the first decline (4 attempts in total); if still unpaid 10 days after the first decline the plan ends; the domain returns to inventory and may be sold to someone else; payments already made are non-refundable and not credited to another purchase.
+
+**Failure notices** are numbered "Failed payment notice 1 of 4" to "4 of 4" and each gives the first-decline date, the three retry dates, and the termination date.
+
+**Checks**
+- `tests/plan/plan-schedule-test.php` (offline): 20/20. Covers instalment dates and amounts (sum to the plan total), states, the remaining-only table, the retry wording, the failure notice numbering and retry dates, and that the notice sits above the email footer.
+- `tests/plan/plan-lifecycle-test.php`: 50/50 (unchanged behaviour).
+- `tests/qa/stripe-test-purchase.js` on beta with `QA_MONTHS=3`: checkout confirmation lists 3 dates; the thank-you page lists 3 schedule rows and the retry terms; the purchase completes.
+
+**Not verified live:** the wording of the monthly and failure emails was checked offline, not by reading a delivered message. The beta test buyer addresses are example.com, so no mailbox was available here.
+
+**Dependency:** the retries (days 3, 6, 9), the notices and the termination all run from the daily job. On beta no real cron is configured yet (GO_LIVE_CHECKLIST, section 1). Until it is, no retry or notice is sent, so the terms describe behaviour that will not happen on beta.
+
+**Needs owner or counsel before go-live**
+- The terms, the thank-you page and the registry emails still say the domain is "held in escrow" and the thank-you box says "Escrow-protected for the full term". The plugin has no escrow integration; this wording needs confirming or changing. Section 5 of the checklist already lists it as an owner decision.
+- The forfeiture and retry wording needs legal review (`db-plan-lifecycle-block.php` header).
+
+## 35. Escrow wording removed; payment-plan emails verified; cron status (v3.69.6)
+
+**Escrow.** The plugin has no escrow integration, so every escrow claim about Domain Brothers' own service was removed:
+- Plugin copy: trust badges, the homepage, the audience and how-it-works sections, listing side panels, the thank-you box and step, the plan terms, the plan-start and monthly email bodies, the offer page, the Organization and FAQ structured data, the AI-readable summary, and the meta descriptions and titles.
+- Content guides: the payment-plan article ("held in escrow" becomes "stays with Domain Brothers until your final payment clears") and the buying article's line "we handle ... escrow".
+- General buyer advice in the guides ("pay through escrow when buying from a stranger") is kept. It describes third-party services, not ours.
+- Regression check: `tests/copy/escrow-claims-test.php` fails if escrow is described as part of this service, in plugin copy, guides or the cluster HTML (69 files, pass).
+- Root-level `db_*.php` files in the repository (for example `db_aeo_block.php`, with "Yes... secure escrow handling") are not loaded by the plugin and were not changed. Delete them or update them before they are used anywhere.
+
+**Payment-plan emails, verified.** Rendered with `tests/plan/dump-plan-emails.php` and screenshotted:
+- Reminder: remaining payments with dates and amounts, and the terms.
+- Failure notices 1-4: each numbered, with the first-decline date, the three retry dates and the termination date. The declined instalment is labelled "Declined, retrying" (it was labelled "Next charge" before this check; corrected).
+- Back on track and terminated: the terms and the non-refund rule.
+- Not verified: delivery. No test mailbox was available, and beta buyer addresses are example.com.
+
+**Cron.** Not configured. The beta host is not on the Hostinger account reachable from this session (the domain returns no websites), and the session has no SSH or server access. Retries, notices and termination all depend on a real cron calling `wp-cron.php` every 15 minutes. Owner action on the host:
+```
+*/15 * * * * curl -s -o /dev/null https://beta.domainbrothers.com/wp-cron.php?doing_wp_cron
+```
+(add `DISABLE_WP_CRON` to `wp-config.php` once the real cron is confirmed, so visitors do not trigger it).
+
+**Checks.** `tests/plan/plan-schedule-test.php` 20/20 (with the Overdue status), `tests/copy/escrow-claims-test.php` pass, and the existing SEO, security, plan-lifecycle, offer, listing and EPP suites pass unchanged.
+
+**Addendum (v3.69.7): live site.** Six pages held escrow claims in their own content (`sell-social-media-handles`, `acquire-social-media-handles`, `sell-domains-service`, `buy-domains-service`, `privacy-policy`, `faqs`). They were rewritten through the REST API. The home page "Get started" step comes from the theme template, which is outside this repository, so the plugin corrects that string on output (`db_copy_fix_claims`) until the template changes. Escrow stays in third-party news posts, which report the industry and were not changed. After the change, the home page, buy and sell pages, handles pages, FAQ, privacy policy, all-domains, our-services, about, payment-plan-setup, trust-center and contact return no escrow text. **Owner check:** the social-handles and privacy text was rewritten to what the site can show (written confirmation of each step, Stripe for card payments). Confirm it matches how those services actually work.
+
+## 36. Sales operations, checkout reminders, transfer messages, accessibility (v3.70.0 - v3.70.2)
+
+**What was built** (`db-custom-blocks/db-sales-ops-block.php`):
+- **Broker requests:** the team gets a "Broker call request" email with the buyer as reply-to; the buyer gets "We received your call request". Previously neither was sent.
+- **Transfer stage emails:** when a domain moves to a new stage, the buyer is emailed the stage and the team note (no email when the stage is unchanged or cleared).
+- **Transfer messages:** a thread on the buyer's Transfers tab (table `db_transfer_msgs`). Buyers write only for domains recorded as bought by their signed-in email, max 10 messages an hour, 2,000 characters. The team replies from the domain's screen (the reply box is sent with Update); the buyer is emailed. Team messages are emailed to the team address.
+- **Offer response timer:** an open offer with no reply for 24 hours sends the team one "No reply yet" email (once per offer).
+- **Checkout reminder:** an unticked box on checkout step 1 ("Email me one reminder if I do not finish my purchase"). If ticked, the buyer gets one reminder about two hours after an unfinished checkout, only if the payment is still open and the domain is still for sale. The email has a signed one-click stop link. A paid, cancelled or processing payment sends nothing. Table `db_checkout_reminders`.
+- **CTA copy experiment:** a 30-day cookie assigns domain-page visitors to copy A ("Buy now") or B ("Buy this domain"). Views and clicks are recorded and shown in the Sales funnel report.
+
+**Checks**
+- Offline `tests/sales/sales-ops-test.php`: 32/32. Covers every template's variables, the emails each path sends (including reply-to and escaping of the buyer's note), stage-change rules, message validation, the stop-link signature, and the variant cookie.
+- Live `tests/qa/sales-security.js`: 13/13 on beta. Covers a broker request with an invalid email, forged and missing nonces on the broker, saved-search and message handlers (403), saved search without sign-in, the collection page ignoring `ext` and `maxlen` query parameters, the funnel endpoint refusing unknown events and accepting the experiment events, a forged stop link, and admin reports redirecting anonymous visitors.
+- Live: the consent box appears on checkout; the domain page assigns A or B; the purchase test and the sales-feature suite pass.
+- Live: axe WCAG 2.1 A/AA, 32 scans (16 pages, desktop and phone), all pass. The colour-contrast failures on older pages were all the ad placeholder text; its colour was raised (v3.70.2).
+
+**Found and fixed while testing:** the funnel endpoint lowercased experiment event names, so valid clicks were refused (v3.70.1).
+
+**Not verified live:**
+- Delivery of the broker, transfer, message and reminder emails. No buyer mailbox is available, and beta buyers are example.com addresses.
+- Sending of the checkout reminder and the offer timer. Both run from the 15-minute job, and that job needs the real cron (QA_REPORT section 35). The reminder also needs a checkout left unfinished for two hours.
+- The buyer side of transfer messages. It needs a signed-in buyer, which needs an email code. The team side is covered by the offline checks.
+- The two new database tables: the code creates them on load, but no page reads them back directly, so the creation is not confirmed in the database.
+
+**Still not built:** transfer document upload; a multi-variant experiment framework (one CTA test exists); automatic response timers beyond the 24-hour offer alert.

@@ -85,7 +85,7 @@ if ( ! function_exists( 'db_hp_sections_html' ) ) {
 			'Owners with an unused domain they would like to turn into money',
 			'Portfolio holders who want a broker to market premium names',
 			'Sellers who want negotiated offers, not a fixed auction',
-			'Anyone who wants escrow-protected, well-handled transfers',
+			'Anyone who wants step-by-step, well-handled transfers',
 			'Teams launching a new domain extension',
 		);
 		$icons = array(
@@ -96,7 +96,7 @@ if ( ! function_exists( 'db_hp_sections_html' ) ) {
 		$badge_buy  = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.500" cy="10.500" r="6.500"/><path d="M15.500 15.500L21 21"/></svg>';
 		$badge_sell = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12.500V4h8.500L21 13.500 13.500 21 3 12.500z"/><circle cx="7.500" cy="8.500" r="1.200"/></svg>';
 		$html  = '<section class="db-aud" aria-labelledby="db-aud-h">';
-		$html .= '<header class="db-aud-head"><p class="db-aud-eyebrow">Buy or sell with confidence</p><h2 id="db-aud-h">Whether you are buying or selling, we make it simple</h2><p class="db-aud-sub">Premium domains, personal service and escrow-protected transfers, from the first search to the final handover.</p></header>';
+		$html .= '<header class="db-aud-head"><p class="db-aud-eyebrow">Buy or sell with confidence</p><h2 id="db-aud-h">Whether you are buying or selling, we make it simple</h2><p class="db-aud-sub">Premium domains, personal service and step-by-step transfers, from the first search to the final handover.</p></header>';
 		$html .= '<div class="db-aud-grid">';
 		$html .= '<div class="db-aud-col db-aud-col--buy"><span class="db-aud-badge">' . $badge_buy . '</span><h3>Perfect for domain buyers</h3><p class="db-aud-lede">Find a name that makes your brand easy to remember.</p>' . $list( $buyers ) . '<a class="db-aud-btn" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains for sale</a></div>';
 		$html .= '<div class="db-aud-col db-aud-col--sell"><span class="db-aud-badge">' . $badge_sell . '</span><h3>Perfect for domain sellers</h3><p class="db-aud-lede">Turn a name you are not using into money.</p>' . $list( $sellers ) . '<a class="db-aud-btn db-aud-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Talk to us about selling</a></div>';
@@ -104,7 +104,7 @@ if ( ! function_exists( 'db_hp_sections_html' ) ) {
 		$html .= '<section class="db-how" aria-labelledby="db-how-h"><h2 id="db-how-h">How it works</h2><div class="db-how-grid">';
 		$html .= '<div class="db-how-step"><span class="db-how-icon">' . $icons[0] . '</span><h3>Find your name</h3><p>Browse premium domains or search by keyword. Every listing shows its price, a monthly payment option, or a button to make an offer.</p></div>';
 		$html .= '<div class="db-how-step"><span class="db-how-icon">' . $icons[1] . '</span><h3>Pay your way</h3><p>Pay in full, or spread the cost over 3, 6, 9 or 12 months. Prefer to negotiate? Make an offer and our team will reply personally.</p></div>';
-		$html .= '<div class="db-how-step"><span class="db-how-icon">' . $icons[2] . '</span><h3>We handle the transfer</h3><p>Your payment is protected by escrow. When the sale completes we send your transfer code securely and help move the domain to the registrar of your choice.</p></div>';
+		$html .= '<div class="db-how-step"><span class="db-how-icon">' . $icons[2] . '</span><h3>We handle the transfer</h3><p>Your payment is taken by Stripe. When the sale completes we send your transfer code securely and help move the domain to the registrar of your choice.</p></div>';
 		$html .= '</div></section>';
 		return $html;
 	}
@@ -161,7 +161,7 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		} else {
 			$h .= '<p class="db-dd-side-sub">This domain is not available right now.</p><a class="db-dd-side-btn db-dd-side-btn--ghost" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other domains</a>';
 		}
-		$h .= '<ul class="db-dd-side-list"><li>Escrow-protected payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></aside>';
+		$h .= '<ul class="db-dd-side-list"><li>Secure Stripe payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></aside>';
 		return $h;
 	}
 }

@@ -46,11 +46,13 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 		$contact = '<a href="' . esc_url( home_url( '/contact-us/' ) ) . '">contact page</a>';
 		$floor   = defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? (int) DB_DEAL_MIN_PLAN_AMOUNT : 600;
 		// Questions and answers as published on www.domainbrothers.com/faqs/,
-		// grouped into the page's six topics. Word for word, except three answers
+		// grouped into the page's six topics. Word for word, except four answers
 		// reworded to match how this site works: listing a domain for sale (the
 		// old SELL page now redirects to /contact-us/), payment methods (Stripe
-		// checkout and payment plans, not escrow-only) and transfer time (same
-		// figures as the checkout and the domain pages).
+		// checkout and payment plans), transfer time (same figures as the
+		// checkout and the domain pages) and transaction security (Stripe and the
+		// registrar transfer; the site makes no escrow claims, see
+		// tests/copy/escrow-claims-test.php).
 		$topics = array(
 			array(
 				'id'    => 'domain-basics',
@@ -132,7 +134,7 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 					),
 					array(
 						'q' => 'How secure are domain transactions?',
-						'a' => 'Transactions are made secure through the use of trusted third-party escrow services, which hold funds until the domain transfer is complete.',
+						'a' => 'Payments are processed by Stripe, a PCI-DSS compliant payment provider, so your card details never touch our website. We start the domain transfer only once your payment is confirmed, using the standard registrar transfer process.',
 					),
 				),
 			),

@@ -123,7 +123,8 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			$urls  = db_dd_checkout_urls( $name_for_url, $f['price'] );
 			$buy   = $urls['buy'];
 			$plan  = $urls['plan'];
-			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" href="' . esc_url( $buy ) . '">Buy now &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
+			$exp   = function_exists( 'db_exp_variant' ) ? db_exp_variant() : 'A';
+			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" data-exp="' . esc_attr( $exp ) . '" href="' . esc_url( $buy ) . '">' . esc_html( function_exists( 'db_exp_cta_label' ) ? db_exp_cta_label() : 'Buy now' ) . ' &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
 				. '<a class="db-dd-btn" href="' . esc_url( $plan ) . '">Pay monthly from ' . esc_html( db_dd_monthly( $f['price'] ) ) . '/mo</a></div>';
 		}
 
@@ -154,6 +155,7 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			. '.db-dd-btn--primary{background:#0a1628;color:#fff !important}.db-dd-steps{padding-left:22px;list-style:decimal !important}.db-dd-steps li{list-style:decimal !important}.db-dd-steps li{margin:6px 0}'
 			. '.db-dd-terms{font-size:13px;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;display:block !important}'
 			. '.db-dd-rec-intro{font-size:14px;color:#4b5563;margin:0 0 12px}' . db_rec_css() . '</style>';
+		$out .= function_exists( 'db_sales_value_html' ) ? db_sales_value_html( $post ) : '';
 		return $out;
 	}
 }
@@ -201,7 +203,7 @@ add_filter( 'the_content', function ( $content ) {
 	}
 	$extra  = '<section class="db-contact-extra" style="max-width:760px;margin:28px auto;line-height:1.65">';
 	$extra .= '<h2 style="font-size:22px">How we can help</h2>';
-	$extra .= '<p>Domain Brothers brokers premium domain names, with escrow-protected transfers and payment plans over 3 to 12 months. Tell us what you are looking for and a member of the team will reply personally.</p>';
+	$extra .= '<p>Domain Brothers brokers premium domain names, with step-by-step transfers and payment plans over 3 to 12 months. Tell us what you are looking for and a member of the team will reply personally.</p>';
 	$extra .= '<h3 style="font-size:18px">Include in your message</h3><ul><li>The domain you are interested in, or the kind of name you need (length, extension, industry).</li><li>Your budget, and whether you would like to pay in full or monthly.</li><li>If you are selling a domain, where it is registered and how long you have held it.</li></ul>';
 	$extra .= '<p>You can also email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>. Before you write, these may already answer your question: <a href="' . esc_url( home_url( '/faqs/' ) ) . '">FAQs</a>, <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">browse all domains</a>, <a href="' . esc_url( home_url( '/our-services/' ) ) . '">our services</a>.</p>';
 	$extra .= '</section>';

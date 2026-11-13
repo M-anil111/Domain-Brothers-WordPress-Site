@@ -1,45 +1,47 @@
 # QA report — https://beta.domainbrothers.com
 
-Ran 2026-11-04T06:01:53.605Z: 407 checks, 407 passed, 0 failed.
+Ran 2026-11-08T05:08:42.670Z: 405 checks, 403 passed, 2 failed.
 
 ## Failures
 
 | ID | Area | Check | Detail |
 |---|---|---|---|
+| UI-mobile-post-404 | Assets | /centr-tld-market-report-2024/ no same-site 4xx/5xx assets (mobile) | 508 /centr-tld-market-report-2024/ / 508 / / 508 / / 508 / |
+| UI-mobile-services-load | Layout | /our-services/ loads in browser (mobile) | page.evaluate: TypeError: Cannot read properties of null (reading 'scrollHeight')
+    at eval (eval at evaluate (:290:30 |
 
 ## Performance (browser)
 
 | Viewport | Page | TTFB ms | DOMContentLoaded ms | Load ms | Requests | DOM nodes | Height px |
 |---|---|---|---|---|---|---|---|
-| desktop | home | 1565 | 2269 | 3649 | 50 | 1208 | 5613 |
-| desktop | domain | 502 | 750 | 1371 | 44 | 683 | 5239 |
-| desktop | domain-priced | 445 | 680 | 1215 | 42 | 682 | 5306 |
-| desktop | all-domains | 587 | 921 | 1415 | 30 | 857 | 6280 |
-| desktop | category | 663 | 853 | 1442 | 30 | 471 | 3043 |
-| desktop | news | 425 | 630 | 1151 | 36 | 443 | 4909 |
-| desktop | post | 479 | 613 | 1325 | 32 | 294 | 2005 |
-| desktop | services | 500 | 652 | 1229 | 32 | 365 | 3608 |
-| desktop | service | 440 | 596 | 1136 | 30 | 277 | 3218 |
-| desktop | about | 472 | 636 | 1198 | 33 | 308 | 1859 |
-| desktop | faqs | 444 | 599 | 1146 | 30 | 409 | 3696 |
-| desktop | contact | 722 | 915 | 1450 | 46 | 358 | 2052 |
-| desktop | offer | 480 | 674 | 1256 | 41 | 347 | 2085 |
-| desktop | privacy | 476 | 627 | 1206 | 30 | 349 | 4973 |
-| desktop | sold | 459 | 615 | 1173 | 30 | 504 | 3187 |
-| desktop | epp | 512 | 668 | 1209 | 33 | 403 | 4703 |
-| mobile | home | 1248 | 1675 | 2886 | 50 | 1208 | 8686 |
-| mobile | domain | 579 | 801 | 1444 | 42 | 682 | 9677 |
-| mobile | domain-priced | 510 | 759 | 1358 | 43 | 682 | 9680 |
-| mobile | all-domains | 534 | 795 | 1323 | 30 | 857 | 12052 |
-| mobile | category | 574 | 765 | 1325 | 30 | 471 | 4650 |
-| mobile | news | 397 | 563 | 1150 | 33 | 443 | 6620 |
-| mobile | post | 417 | 580 | 1173 | 31 | 294 | 3290 |
-| mobile | services | 557 | 736 | 1313 | 32 | 365 | 6342 |
-| mobile | service | 512 | 711 | 1364 | 30 | 277 | 4284 |
-| mobile | about | 588 | 748 | 1335 | 33 | 308 | 2160 |
-| mobile | faqs | 444 | 616 | 1214 | 30 | 409 | 5366 |
-| mobile | contact | 463 | 671 | 1319 | 45 | 358 | 2680 |
-| mobile | offer | 697 | 877 | 1486 | 41 | 347 | 2705 |
-| mobile | privacy | 456 | 616 | 1193 | 30 | 349 | 7776 |
-| mobile | sold | 592 | 743 | 1339 | 30 | 504 | 3109 |
-| mobile | epp | 463 | 621 | 1195 | 32 | 403 | 8126 |
+| desktop | home | 1214 | 1603 | 2953 | 82 | 1210 | 5932 |
+| desktop | domain | 520 | 1132 | 1777 | 67 | 712 | 5423 |
+| desktop | domain-priced | 492 | 896 | 1377 | 71 | 702 | 5368 |
+| desktop | all-domains | 525 | 746 | 1342 | 58 | 884 | 6682 |
+| desktop | category | 527 | 695 | 1236 | 60 | 489 | 3386 |
+| desktop | news | 419 | 705 | 1227 | 63 | 452 | 6382 |
+| desktop | post | 402 | 542 | 1100 | 59 | 318 | 2443 |
+| desktop | services | 548 | 907 | 1432 | 60 | 389 | 4104 |
+| desktop | service | 555 | 691 | 1330 | 58 | 302 | 3664 |
+| desktop | about | 496 | 627 | 1159 | 61 | 333 | 2299 |
+| desktop | faqs | 457 | 601 | 1127 | 58 | 433 | 4163 |
+| desktop | contact | 402 | 688 | 1178 | 74 | 382 | 2320 |
+| desktop | offer | 546 | 790 | 1278 | 69 | 369 | 2369 |
+| desktop | privacy | 524 | 656 | 1146 | 30 | 349 | 4973 |
+| desktop | sold | 608 | 753 | 1269 | 58 | 528 | 3409 |
+| desktop | epp | 514 | 666 | 1225 | 61 | 427 | 5165 |
+| mobile | home | 1372 | 1697 | 3218 | 76 | 1210 | 8816 |
+| mobile | domain | 510 | 1095 | 1797 | 68 | 713 | 9742 |
+| mobile | domain-priced | 505 | 907 | 1483 | 70 | 702 | 9620 |
+| mobile | all-domains | 493 | 713 | 1250 | 58 | 884 | 12351 |
+| mobile | category | 491 | 671 | 1184 | 58 | 489 | 4805 |
+| mobile | news | 1344 | 1494 | 2023 | 60 | 452 | 6050 |
+| mobile | post | 209 | 298 | 357 | 10 | 11 | 0 |
+| mobile | service | 475 | 628 | 1293 | 58 | 301 | 4593 |
+| mobile | about | 464 | 632 | 1191 | 59 | 332 | 2463 |
+| mobile | faqs | 434 | 584 | 1146 | 58 | 433 | 5682 |
+| mobile | contact | 380 | 651 | 1105 | 73 | 382 | 3010 |
+| mobile | offer | 396 | 664 | 1117 | 69 | 369 | 2869 |
+| mobile | privacy | 452 | 603 | 1117 | 30 | 349 | 7776 |
+| mobile | sold | 508 | 660 | 1205 | 59 | 528 | 3239 |
+| mobile | epp | 522 | 673 | 1207 | 60 | 427 | 8437 |
