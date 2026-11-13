@@ -1,6 +1,6 @@
 {
  "base": "https://beta.domainbrothers.com",
- "ran": "2026-11-04T06:01:53.599Z",
+ "ran": "2026-11-08T05:08:42.526Z",
  "results": [
   {
    "id": "HT-home-status",
@@ -105,7 +105,7 @@
    "area": "Perf",
    "name": "/ response < 2.5s",
    "pass": true,
-   "detail": "853ms"
+   "detail": "619ms"
   },
   {
    "id": "HT-domain-status",
@@ -210,7 +210,7 @@
    "area": "Perf",
    "name": "/domains/fatality-ca/ response < 2.5s",
    "pass": true,
-   "detail": "618ms"
+   "detail": "726ms"
   },
   {
    "id": "HT-domain-priced-status",
@@ -315,7 +315,7 @@
    "area": "Perf",
    "name": "/domains/aethereum-ca/ response < 2.5s",
    "pass": true,
-   "detail": "466ms"
+   "detail": "565ms"
   },
   {
    "id": "HT-all-domains-status",
@@ -420,7 +420,7 @@
    "area": "Perf",
    "name": "/all-domains/ response < 2.5s",
    "pass": true,
-   "detail": "517ms"
+   "detail": "547ms"
   },
   {
    "id": "HT-category-status",
@@ -525,7 +525,7 @@
    "area": "Perf",
    "name": "/domain-category/business/ response < 2.5s",
    "pass": true,
-   "detail": "548ms"
+   "detail": "637ms"
   },
   {
    "id": "HT-news-status",
@@ -630,7 +630,7 @@
    "area": "Perf",
    "name": "/news/ response < 2.5s",
    "pass": true,
-   "detail": "610ms"
+   "detail": "496ms"
   },
   {
    "id": "HT-post-status",
@@ -735,7 +735,7 @@
    "area": "Perf",
    "name": "/centr-tld-market-report-2024/ response < 2.5s",
    "pass": true,
-   "detail": "535ms"
+   "detail": "463ms"
   },
   {
    "id": "HT-services-status",
@@ -840,7 +840,7 @@
    "area": "Perf",
    "name": "/our-services/ response < 2.5s",
    "pass": true,
-   "detail": "455ms"
+   "detail": "478ms"
   },
   {
    "id": "HT-service-status",
@@ -945,7 +945,7 @@
    "area": "Perf",
    "name": "/digital-marketing/ response < 2.5s",
    "pass": true,
-   "detail": "441ms"
+   "detail": "451ms"
   },
   {
    "id": "HT-about-status",
@@ -1050,7 +1050,7 @@
    "area": "Perf",
    "name": "/about-us/ response < 2.5s",
    "pass": true,
-   "detail": "462ms"
+   "detail": "490ms"
   },
   {
    "id": "HT-faqs-status",
@@ -1155,7 +1155,7 @@
    "area": "Perf",
    "name": "/faqs/ response < 2.5s",
    "pass": true,
-   "detail": "463ms"
+   "detail": "505ms"
   },
   {
    "id": "HT-contact-status",
@@ -1260,7 +1260,7 @@
    "area": "Perf",
    "name": "/contact-us/ response < 2.5s",
    "pass": true,
-   "detail": "505ms"
+   "detail": "541ms"
   },
   {
    "id": "HT-offer-status",
@@ -1365,7 +1365,7 @@
    "area": "Perf",
    "name": "/offer/ response < 2.5s",
    "pass": true,
-   "detail": "540ms"
+   "detail": "444ms"
   },
   {
    "id": "HT-privacy-status",
@@ -1470,7 +1470,7 @@
    "area": "Perf",
    "name": "/privacy-policy/ response < 2.5s",
    "pass": true,
-   "detail": "604ms"
+   "detail": "497ms"
   },
   {
    "id": "HT-sold-status",
@@ -1575,7 +1575,7 @@
    "area": "Perf",
    "name": "/sold/ response < 2.5s",
    "pass": true,
-   "detail": "568ms"
+   "detail": "474ms"
   },
   {
    "id": "HT-epp-status",
@@ -1680,7 +1680,7 @@
    "area": "Perf",
    "name": "/epp-guidelines/ response < 2.5s",
    "pass": true,
-   "detail": "523ms"
+   "detail": "465ms"
   },
   {
    "id": "SEC-strict-transport-security",
@@ -2428,29 +2428,15 @@
    "id": "UI-mobile-post-404",
    "area": "Assets",
    "name": "/centr-tld-market-report-2024/ no same-site 4xx/5xx assets (mobile)",
-   "pass": true,
-   "detail": ""
+   "pass": false,
+   "detail": "508 /centr-tld-market-report-2024/ | 508 / | 508 / | 508 /"
   },
   {
-   "id": "UI-mobile-services-overflow",
+   "id": "UI-mobile-services-load",
    "area": "Layout",
-   "name": "/our-services/ no horizontal scroll (mobile)",
-   "pass": true,
-   "detail": "0px"
-  },
-  {
-   "id": "UI-mobile-services-jserr",
-   "area": "JS",
-   "name": "/our-services/ no uncaught JS errors (mobile)",
-   "pass": true,
-   "detail": ""
-  },
-  {
-   "id": "UI-mobile-services-404",
-   "area": "Assets",
-   "name": "/our-services/ no same-site 4xx/5xx assets (mobile)",
-   "pass": true,
-   "detail": ""
+   "name": "/our-services/ loads in browser (mobile)",
+   "pass": false,
+   "detail": "page.evaluate: TypeError: Cannot read properties of null (reading 'scrollHeight')\n    at eval (eval at evaluate (:290:30"
   },
   {
    "id": "UI-mobile-service-overflow",
@@ -2695,7 +2681,7 @@
    "area": "Filter",
    "name": "sort by price covers every listing, low to high, offers last (desktop)",
    "pass": true,
-   "detail": "rows=130 total=130 pagerows=56"
+   "detail": "rows=129 total=129 pagerows=56"
   },
   {
    "id": "FN-25-desktop",
@@ -2723,7 +2709,7 @@
    "area": "Filter",
    "name": "sort by price covers every listing, low to high, offers last (mobile)",
    "pass": true,
-   "detail": "rows=130 total=130 pagerows=56"
+   "detail": "rows=129 total=129 pagerows=56"
   },
   {
    "id": "FN-25-mobile",
@@ -2858,182 +2844,182 @@
    "page": "home",
    "path": "/",
    "overflow": 0,
-   "domNodes": 1208,
-   "ttfb": 1565,
-   "domContentLoaded": 2269,
-   "load": 3649,
-   "height": 5613,
+   "domNodes": 1210,
+   "ttfb": 1214,
+   "domContentLoaded": 1603,
+   "load": 2953,
+   "height": 5932,
    "tapSmall": 1,
-   "requests": 50,
-   "kbHeaderSized": 583
+   "requests": 82,
+   "kbHeaderSized": 957
   },
   {
    "vp": "desktop",
    "page": "domain",
    "path": "/domains/fatality-ca/",
    "overflow": 0,
-   "domNodes": 683,
-   "ttfb": 502,
-   "domContentLoaded": 750,
-   "load": 1371,
-   "height": 5239,
+   "domNodes": 712,
+   "ttfb": 520,
+   "domContentLoaded": 1132,
+   "load": 1777,
+   "height": 5423,
    "tapSmall": 1,
-   "requests": 44,
-   "kbHeaderSized": 622
+   "requests": 67,
+   "kbHeaderSized": 931
   },
   {
    "vp": "desktop",
    "page": "domain-priced",
    "path": "/domains/aethereum-ca/",
    "overflow": 0,
-   "domNodes": 682,
-   "ttfb": 445,
-   "domContentLoaded": 680,
-   "load": 1215,
-   "height": 5306,
+   "domNodes": 702,
+   "ttfb": 492,
+   "domContentLoaded": 896,
+   "load": 1377,
+   "height": 5368,
    "tapSmall": 1,
-   "requests": 42,
-   "kbHeaderSized": 638
+   "requests": 71,
+   "kbHeaderSized": 1013
   },
   {
    "vp": "desktop",
    "page": "all-domains",
    "path": "/all-domains/",
    "overflow": 0,
-   "domNodes": 857,
-   "ttfb": 587,
-   "domContentLoaded": 921,
-   "load": 1415,
-   "height": 6280,
+   "domNodes": 884,
+   "ttfb": 525,
+   "domContentLoaded": 746,
+   "load": 1342,
+   "height": 6682,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 870
   },
   {
    "vp": "desktop",
    "page": "category",
    "path": "/domain-category/business/",
    "overflow": 0,
-   "domNodes": 471,
-   "ttfb": 663,
-   "domContentLoaded": 853,
-   "load": 1442,
-   "height": 3043,
+   "domNodes": 489,
+   "ttfb": 527,
+   "domContentLoaded": 695,
+   "load": 1236,
+   "height": 3386,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 60,
+   "kbHeaderSized": 869
   },
   {
    "vp": "desktop",
    "page": "news",
    "path": "/news/",
    "overflow": 0,
-   "domNodes": 443,
-   "ttfb": 425,
-   "domContentLoaded": 630,
-   "load": 1151,
-   "height": 4909,
+   "domNodes": 452,
+   "ttfb": 419,
+   "domContentLoaded": 705,
+   "load": 1227,
+   "height": 6382,
    "tapSmall": 1,
-   "requests": 36,
-   "kbHeaderSized": 803
+   "requests": 63,
+   "kbHeaderSized": 1140
   },
   {
    "vp": "desktop",
    "page": "post",
    "path": "/centr-tld-market-report-2024/",
    "overflow": 0,
-   "domNodes": 294,
-   "ttfb": 479,
-   "domContentLoaded": 613,
-   "load": 1325,
-   "height": 2005,
+   "domNodes": 318,
+   "ttfb": 402,
+   "domContentLoaded": 542,
+   "load": 1100,
+   "height": 2443,
    "tapSmall": 1,
-   "requests": 32,
-   "kbHeaderSized": 587
+   "requests": 59,
+   "kbHeaderSized": 913
   },
   {
    "vp": "desktop",
    "page": "services",
    "path": "/our-services/",
    "overflow": 0,
-   "domNodes": 365,
-   "ttfb": 500,
-   "domContentLoaded": 652,
-   "load": 1229,
-   "height": 3608,
+   "domNodes": 389,
+   "ttfb": 548,
+   "domContentLoaded": 907,
+   "load": 1432,
+   "height": 4104,
    "tapSmall": 1,
-   "requests": 32,
-   "kbHeaderSized": 590
+   "requests": 60,
+   "kbHeaderSized": 912
   },
   {
    "vp": "desktop",
    "page": "service",
    "path": "/digital-marketing/",
    "overflow": 0,
-   "domNodes": 277,
-   "ttfb": 440,
-   "domContentLoaded": 596,
-   "load": 1136,
-   "height": 3218,
+   "domNodes": 302,
+   "ttfb": 555,
+   "domContentLoaded": 691,
+   "load": 1330,
+   "height": 3664,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 953
   },
   {
    "vp": "desktop",
    "page": "about",
    "path": "/about-us/",
    "overflow": 0,
-   "domNodes": 308,
-   "ttfb": 472,
-   "domContentLoaded": 636,
-   "load": 1198,
-   "height": 1859,
+   "domNodes": 333,
+   "ttfb": 496,
+   "domContentLoaded": 627,
+   "load": 1159,
+   "height": 2299,
    "tapSmall": 1,
-   "requests": 33,
-   "kbHeaderSized": 613
+   "requests": 61,
+   "kbHeaderSized": 1006
   },
   {
    "vp": "desktop",
    "page": "faqs",
    "path": "/faqs/",
    "overflow": 0,
-   "domNodes": 409,
-   "ttfb": 444,
-   "domContentLoaded": 599,
-   "load": 1146,
-   "height": 3696,
+   "domNodes": 433,
+   "ttfb": 457,
+   "domContentLoaded": 601,
+   "load": 1127,
+   "height": 4163,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 870
   },
   {
    "vp": "desktop",
    "page": "contact",
    "path": "/contact-us/",
    "overflow": 0,
-   "domNodes": 358,
-   "ttfb": 722,
-   "domContentLoaded": 915,
-   "load": 1450,
-   "height": 2052,
+   "domNodes": 382,
+   "ttfb": 402,
+   "domContentLoaded": 688,
+   "load": 1178,
+   "height": 2320,
    "tapSmall": 1,
-   "requests": 46,
-   "kbHeaderSized": 577
+   "requests": 74,
+   "kbHeaderSized": 951
   },
   {
    "vp": "desktop",
    "page": "offer",
    "path": "/offer/",
    "overflow": 0,
-   "domNodes": 347,
-   "ttfb": 480,
-   "domContentLoaded": 674,
-   "load": 1256,
-   "height": 2085,
+   "domNodes": 369,
+   "ttfb": 546,
+   "domContentLoaded": 790,
+   "load": 1278,
+   "height": 2369,
    "tapSmall": 1,
-   "requests": 41,
-   "kbHeaderSized": 571
+   "requests": 69,
+   "kbHeaderSized": 881
   },
   {
    "vp": "desktop",
@@ -3041,223 +3027,209 @@
    "path": "/privacy-policy/",
    "overflow": 0,
    "domNodes": 349,
-   "ttfb": 476,
-   "domContentLoaded": 627,
-   "load": 1206,
+   "ttfb": 524,
+   "domContentLoaded": 656,
+   "load": 1146,
    "height": 4973,
    "tapSmall": 1,
    "requests": 30,
-   "kbHeaderSized": 560
+   "kbHeaderSized": 557
   },
   {
    "vp": "desktop",
    "page": "sold",
    "path": "/sold/",
    "overflow": 0,
-   "domNodes": 504,
-   "ttfb": 459,
-   "domContentLoaded": 615,
-   "load": 1173,
-   "height": 3187,
+   "domNodes": 528,
+   "ttfb": 608,
+   "domContentLoaded": 753,
+   "load": 1269,
+   "height": 3409,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 870
   },
   {
    "vp": "desktop",
    "page": "epp",
    "path": "/epp-guidelines/",
    "overflow": 0,
-   "domNodes": 403,
-   "ttfb": 512,
-   "domContentLoaded": 668,
-   "load": 1209,
-   "height": 4703,
+   "domNodes": 427,
+   "ttfb": 514,
+   "domContentLoaded": 666,
+   "load": 1225,
+   "height": 5165,
    "tapSmall": 1,
-   "requests": 33,
-   "kbHeaderSized": 571
+   "requests": 61,
+   "kbHeaderSized": 946
   },
   {
    "vp": "mobile",
    "page": "home",
    "path": "/",
    "overflow": 0,
-   "domNodes": 1208,
-   "ttfb": 1248,
-   "domContentLoaded": 1675,
-   "load": 2886,
-   "height": 8686,
+   "domNodes": 1210,
+   "ttfb": 1372,
+   "domContentLoaded": 1697,
+   "load": 3218,
+   "height": 8816,
    "tapSmall": 1,
-   "requests": 50,
-   "kbHeaderSized": 583
+   "requests": 76,
+   "kbHeaderSized": 894
   },
   {
    "vp": "mobile",
    "page": "domain",
    "path": "/domains/fatality-ca/",
    "overflow": 0,
-   "domNodes": 682,
-   "ttfb": 579,
-   "domContentLoaded": 801,
-   "load": 1444,
-   "height": 9677,
+   "domNodes": 713,
+   "ttfb": 510,
+   "domContentLoaded": 1095,
+   "load": 1797,
+   "height": 9742,
    "tapSmall": 1,
-   "requests": 42,
-   "kbHeaderSized": 622
+   "requests": 68,
+   "kbHeaderSized": 1439
   },
   {
    "vp": "mobile",
    "page": "domain-priced",
    "path": "/domains/aethereum-ca/",
    "overflow": 0,
-   "domNodes": 682,
-   "ttfb": 510,
-   "domContentLoaded": 759,
-   "load": 1358,
-   "height": 9680,
+   "domNodes": 702,
+   "ttfb": 505,
+   "domContentLoaded": 907,
+   "load": 1483,
+   "height": 9620,
    "tapSmall": 1,
-   "requests": 43,
-   "kbHeaderSized": 638
+   "requests": 70,
+   "kbHeaderSized": 950
   },
   {
    "vp": "mobile",
    "page": "all-domains",
    "path": "/all-domains/",
    "overflow": 0,
-   "domNodes": 857,
-   "ttfb": 534,
-   "domContentLoaded": 795,
-   "load": 1323,
-   "height": 12052,
+   "domNodes": 884,
+   "ttfb": 493,
+   "domContentLoaded": 713,
+   "load": 1250,
+   "height": 12351,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 871
   },
   {
    "vp": "mobile",
    "page": "category",
    "path": "/domain-category/business/",
    "overflow": 0,
-   "domNodes": 471,
-   "ttfb": 574,
-   "domContentLoaded": 765,
-   "load": 1325,
-   "height": 4650,
+   "domNodes": 489,
+   "ttfb": 491,
+   "domContentLoaded": 671,
+   "load": 1184,
+   "height": 4805,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 871
   },
   {
    "vp": "mobile",
    "page": "news",
    "path": "/news/",
    "overflow": 0,
-   "domNodes": 443,
-   "ttfb": 397,
-   "domContentLoaded": 563,
-   "load": 1150,
-   "height": 6620,
+   "domNodes": 452,
+   "ttfb": 1344,
+   "domContentLoaded": 1494,
+   "load": 2023,
+   "height": 6050,
    "tapSmall": 1,
-   "requests": 33,
-   "kbHeaderSized": 629
+   "requests": 60,
+   "kbHeaderSized": 965
   },
   {
    "vp": "mobile",
    "page": "post",
    "path": "/centr-tld-market-report-2024/",
    "overflow": 0,
-   "domNodes": 294,
-   "ttfb": 417,
-   "domContentLoaded": 580,
-   "load": 1173,
-   "height": 3290,
-   "tapSmall": 1,
-   "requests": 31,
-   "kbHeaderSized": 577
-  },
-  {
-   "vp": "mobile",
-   "page": "services",
-   "path": "/our-services/",
-   "overflow": 0,
-   "domNodes": 365,
-   "ttfb": 557,
-   "domContentLoaded": 736,
-   "load": 1313,
-   "height": 6342,
-   "tapSmall": 1,
-   "requests": 32,
-   "kbHeaderSized": 590
+   "domNodes": 11,
+   "ttfb": 209,
+   "domContentLoaded": 298,
+   "load": 357,
+   "height": 0,
+   "tapSmall": 0,
+   "requests": 10,
+   "kbHeaderSized": 0
   },
   {
    "vp": "mobile",
    "page": "service",
    "path": "/digital-marketing/",
    "overflow": 0,
-   "domNodes": 277,
-   "ttfb": 512,
-   "domContentLoaded": 711,
-   "load": 1364,
-   "height": 4284,
+   "domNodes": 301,
+   "ttfb": 475,
+   "domContentLoaded": 628,
+   "load": 1293,
+   "height": 4593,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 872
   },
   {
    "vp": "mobile",
    "page": "about",
    "path": "/about-us/",
    "overflow": 0,
-   "domNodes": 308,
-   "ttfb": 588,
-   "domContentLoaded": 748,
-   "load": 1335,
-   "height": 2160,
+   "domNodes": 332,
+   "ttfb": 464,
+   "domContentLoaded": 632,
+   "load": 1191,
+   "height": 2463,
    "tapSmall": 1,
-   "requests": 33,
-   "kbHeaderSized": 613
+   "requests": 59,
+   "kbHeaderSized": 942
   },
   {
    "vp": "mobile",
    "page": "faqs",
    "path": "/faqs/",
    "overflow": 0,
-   "domNodes": 409,
-   "ttfb": 444,
-   "domContentLoaded": 616,
-   "load": 1214,
-   "height": 5366,
+   "domNodes": 433,
+   "ttfb": 434,
+   "domContentLoaded": 584,
+   "load": 1146,
+   "height": 5682,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 58,
+   "kbHeaderSized": 936
   },
   {
    "vp": "mobile",
    "page": "contact",
    "path": "/contact-us/",
    "overflow": 0,
-   "domNodes": 358,
-   "ttfb": 463,
-   "domContentLoaded": 671,
-   "load": 1319,
-   "height": 2680,
+   "domNodes": 382,
+   "ttfb": 380,
+   "domContentLoaded": 651,
+   "load": 1105,
+   "height": 3010,
    "tapSmall": 1,
-   "requests": 45,
-   "kbHeaderSized": 566
+   "requests": 73,
+   "kbHeaderSized": 905
   },
   {
    "vp": "mobile",
    "page": "offer",
    "path": "/offer/",
    "overflow": 0,
-   "domNodes": 347,
-   "ttfb": 697,
-   "domContentLoaded": 877,
-   "load": 1486,
-   "height": 2705,
+   "domNodes": 369,
+   "ttfb": 396,
+   "domContentLoaded": 664,
+   "load": 1117,
+   "height": 2869,
    "tapSmall": 1,
-   "requests": 41,
-   "kbHeaderSized": 571
+   "requests": 69,
+   "kbHeaderSized": 910
   },
   {
    "vp": "mobile",
@@ -3265,9 +3237,9 @@
    "path": "/privacy-policy/",
    "overflow": 0,
    "domNodes": 349,
-   "ttfb": 456,
-   "domContentLoaded": 616,
-   "load": 1193,
+   "ttfb": 452,
+   "domContentLoaded": 603,
+   "load": 1117,
    "height": 7776,
    "tapSmall": 1,
    "requests": 30,
@@ -3278,28 +3250,28 @@
    "page": "sold",
    "path": "/sold/",
    "overflow": 0,
-   "domNodes": 504,
-   "ttfb": 592,
-   "domContentLoaded": 743,
-   "load": 1339,
-   "height": 3109,
+   "domNodes": 528,
+   "ttfb": 508,
+   "domContentLoaded": 660,
+   "load": 1205,
+   "height": 3239,
    "tapSmall": 1,
-   "requests": 30,
-   "kbHeaderSized": 560
+   "requests": 59,
+   "kbHeaderSized": 899
   },
   {
    "vp": "mobile",
    "page": "epp",
    "path": "/epp-guidelines/",
    "overflow": 0,
-   "domNodes": 403,
-   "ttfb": 463,
-   "domContentLoaded": 621,
-   "load": 1195,
-   "height": 8126,
+   "domNodes": 427,
+   "ttfb": 522,
+   "domContentLoaded": 673,
+   "load": 1207,
+   "height": 8437,
    "tapSmall": 1,
-   "requests": 32,
-   "kbHeaderSized": 568
+   "requests": 60,
+   "kbHeaderSized": 880
   }
  ]
 }

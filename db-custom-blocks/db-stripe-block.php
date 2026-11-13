@@ -513,7 +513,8 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 			. '&d=' . rawurlencode( $domain )
 			. '&amt=' . rawurlencode( $ty_amount )
 			// Signed, so the confirmation page can't be faked by editing the URL.
-			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount ) : '' )
+			. ( $is_plan ? '&plan_months=' . (int) $months : '' )
+			. ( function_exists( 'db_ty_sig' ) ? '&sig=' . db_ty_sig( $ty_type, $domain, $ty_amount, $is_plan ? (int) $months : 0 ) : '' )
 		);
 
 		$support_email = defined( 'DB_AEO_CONTACT_EMAIL' ) ? (string) DB_AEO_CONTACT_EMAIL : 'sales@domainbrothers.com';
@@ -760,6 +761,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 								<div class="co-input-row"><input class="co-input" type="tel" id="co-phone" name="phone" autocomplete="tel" inputmode="tel" required aria-required="true" aria-describedby="co-phone-err" maxlength="30"><span class="co-req" aria-hidden="true">*</span></div>
 								<p class="co-field-err" id="co-phone-err">Please enter a valid phone number.</p>
 							</div>
+							<div class="co-field co-remind"><label class="co-agree" for="co-remind"><input type="checkbox" id="co-remind" name="remind" value="1"> <span>Email me one reminder if I do not finish my purchase. Optional.</span></label></div>
 							<div class="co-actions"><button type="submit" class="co-btn">Next</button></div>
 						</form>
 					</div>
@@ -783,6 +785,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 							<div class="co-review-row"><dt>Due today</dt><dd><?php echo esc_html( $due_today_display ); ?></dd></div>
 						</dl>
 <?php if ( $is_plan ) : ?>
+						<?php echo function_exists( 'db_plan_preview_html' ) ? wp_kses( db_plan_preview_html( $price, $months ), array( 'p' => array( 'class' => array(), 'style' => array() ), 'strong' => array(), 'table' => array( 'border' => array(), 'cellpadding' => array(), 'cellspacing' => array(), 'width' => array(), 'style' => array() ), 'tr' => array(), 'th' => array( 'align' => array(), 'style' => array() ), 'td' => array( 'align' => array(), 'style' => array() ) ) ) : ''; // phpcs:ignore ?>
 						<p class="co-terms"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
 						<label class="co-agree" for="co-agree">
 							<input type="checkbox" id="co-agree" required aria-describedby="co-agree-err">
@@ -808,7 +811,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<div class="co-actions"><button type="button" class="co-back" data-goto="2">&larr; Back to order confirmation</button></div>
 						<div class="co-trust">
 							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg>SSL Secured</span>
-							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Escrow Protected</span>
+							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>Secure payment</span>
 							<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>24-hr Support</span>
 						</div>
 					</div>
@@ -874,6 +877,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 	var billing  = document.getElementById('co-billing');
 	var nameInp  = document.getElementById('co-name');
 	var emailInp = document.getElementById('co-email');
+	var remindInp = document.getElementById('co-remind');
 	var phoneInp = document.getElementById('co-phone');
 	var agreeInp = document.getElementById('co-agree');
 	var payForm  = document.getElementById('co-pay');
@@ -1003,7 +1007,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		fetch(window.DB_EMAIL_REST, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: buyer.email, name: buyer.name, phone: buyer.phone, terms_accepted: !!(agreeInp && agreeInp.checked) })
+			body: JSON.stringify({ client_secret: window.DB_PI_SECRET, email: buyer.email, name: buyer.name, phone: buyer.phone, terms_accepted: !!(agreeInp && agreeInp.checked), remind: !!(remindInp && remindInp.checked) })
 		}).then(function (res) {
 			// Payment plans: the terms acceptance is recorded by this call,
 			// so it must succeed before the card is charged.
@@ -1113,6 +1117,11 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 			return new WP_REST_Response( [ 'error' => 'Invalid parameters.' ], 400 );
 		}
 		$pi_id = $m[1];
+
+		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php).
+		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
+			db_ops_reminder_opt_in( $pi_id, $email );
+		}
 
 		$keys = db_stripe_keys();
 		if ( empty( $keys['sec'] ) ) {
@@ -1809,19 +1818,18 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 		if ( function_exists( 'db_mail_send' ) ) {
 			if ( $customer_email ) {
 				if ( 1 === $n ) {
-					$sched = '';
-					for ( $i = 1; $i <= $months; $i++ ) {
-						$when   = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
-						$sched .= esc_html( $i . '. ' . $when . ': $' . number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '<br>';
-					}
+					$sched = function_exists( 'db_plan_schedule_html' ) ? db_plan_schedule_html( db_plan_schedule( db_plan_get( $domain ) ) ) : '';
 					db_mail_send( 'plan_started', $customer_email, [
 						'domain' => $domain, 'amount' => $paid_fmt, 'months' => (string) $months, 'rate' => $rate_label, 'total' => '$' . number_format( $total, 2 ),
-						'schedule_html' => '<p>' . $sched . '</p>',
+						'schedule_html' => $sched,
 						'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
 						'reminder_days' => (string) ( defined( 'DB_PLAN_REMIND_DAYS' ) ? DB_PLAN_REMIND_DAYS : 3 ),
 					], 'sales@domainbrothers.com' );
 				} else {
-					db_mail_send( 'plan_installment', $customer_email, [ 'domain' => $domain, 'number' => (string) $n, 'months' => (string) $months, 'amount' => $paid_fmt, 'remaining' => (string) max( 0, $months - $n ) ], 'sales@domainbrothers.com' );
+					db_mail_send( 'plan_installment', $customer_email, [ 'domain' => $domain, 'number' => (string) $n, 'months' => (string) $months, 'amount' => $paid_fmt, 'remaining' => (string) max( 0, $months - $n ),
+						'schedule_html' => function_exists( 'db_plan_schedule_html' ) ? db_plan_schedule_html( db_plan_schedule( db_plan_get( $domain ) ), true ) : '',
+						'terms_html' => function_exists( 'db_plan_terms_html' ) ? '<p style="font-size:13px">' . db_plan_terms_html() . '</p>' : '',
+					], 'sales@domainbrothers.com' );
 				}
 			}
 			db_mail_send( 'admin_plan_payment', $admin_email, [
@@ -1843,7 +1851,7 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active</p>';
 				$body .= '<p>We received your first payment of <strong>' . esc_html( $paid_fmt ) . '</strong> for <strong>' . $d . '</strong>. Your plan: <strong>' . (int) $months . ' monthly payments</strong>, ' . esc_html( $rate_label ) . ', total <strong>$' . esc_html( number_format( $total, 2 ) ) . '</strong>.</p>';
 				$body .= '<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:16px 0;font-size:14px;"><tr><th align="left" style="padding:8px 14px;background:#f8f9fb;">#</th><th align="left" style="padding:8px 14px;background:#f8f9fb;">Date</th><th align="right" style="padding:8px 14px;background:#f8f9fb;">Amount</th></tr>' . $rows . '</table>';
-				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain is held securely in escrow.</p>';
+				$body .= '<p>Remaining payments are charged automatically to the card you used. You can use the domain during the plan &mdash; reply to this email and we will point its DNS to your hosting. Ownership transfers to you once the final payment clears; until then the domain stays with Domain Brothers.</p>';
 				if ( function_exists( 'db_plan_terms_html' ) ) {
 					$body .= '<p style="font-size:13px;color:#374151;background:#f8f9fb;padding:12px 14px;border-radius:8px;">' . db_plan_terms_html() . '</p>';
 					$body .= '<p style="font-size:13px;color:#6b7280;">We will email you a reminder ' . (int) DB_PLAN_REMIND_DAYS . ' days before each payment.</p>';

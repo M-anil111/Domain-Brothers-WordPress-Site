@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.67.0
+ * Version:     3.71.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.67.0' );
+define( 'DB_BLOCKS_LOADED', '3.71.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -398,7 +398,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			'check'    => '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
 		);
 		$trust_items = array(
-			array( 'shield', 'Escrow-Protected Transfers' ),
+			array( 'shield', 'Step-by-Step Transfers' ),
 			array( 'card', 'Flexible Payment Plans' ),
 			array( 'award', '27+ Years Combined Experience' ),
 			array( 'globe', '5,000+ Domains Sold' ),
@@ -457,7 +457,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
 		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
-		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase is escrow-protected and eligible for flexible payment plans.</p>';
+		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase includes a step-by-step transfer and is eligible for flexible payment plans.</p>';
 		// A search-first hero: one big search box, then the extensions people actually browse.
 		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
 		$html .= '<label class="screen-reader-text" for="db-hp-q">Search for a domain, keyword or brand</label>';
@@ -845,7 +845,7 @@ function db_plan_widget_html() {
 		</div>
 		<div class="db-plan-notes">
 			<p class="db-plan-terms" style="background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;"><?php echo wp_kses( db_plan_terms_html(), array( 'strong' => array(), 'em' => array() ) ); ?></p>
-			<p><strong>When do I get the domain?</strong> Ownership transfers to you once the <em>final</em> payment clears. Until then the domain is held securely in escrow on your behalf.</p>
+			<p><strong>When do I get the domain?</strong> Ownership transfers to you once the <em>final</em> payment clears. Until then the domain stays with Domain Brothers on your behalf.</p>
 			<p><strong>Can I use it in the meantime?</strong> Yes &mdash; during the plan we can point the domain to your hosting (A record / IP) and email (MX records) so you can start using it right away, while ownership transfers at the end.</p>
 		</div>
 	</div>
@@ -1569,7 +1569,7 @@ add_action( 'wp_head', function () {
 	$logo_url  = db_aeo_og_image();
 
 	$org = array( '@type' => 'Organization', 'name' => $site_name, 'url' => $site_url,
-		'description' => 'Premium domain name brokerage offering expert acquisition, flexible payment plans, and secure escrow services.',
+		'description' => 'Premium domain name brokerage offering expert acquisition, flexible payment plans, and transfer support.',
 		'contactPoint' => array( '@type' => 'ContactPoint', 'contactType' => 'sales', 'email' => DB_AEO_CONTACT_EMAIL, 'availableLanguage' => 'English' ) );
 	if ( $logo_url ) { $org['logo'] = array( '@type' => 'ImageObject', 'url' => $logo_url ); }
 	db_aeo_emit( $org );
@@ -3952,8 +3952,8 @@ add_action( 'wp_footer', function () {
 						// A dedicated lock glyph, not one of the ICON_SVGS keys above —
 						// service4.png (the only otherwise-unused entry) is a
 						// megaphone used elsewhere for "Digital Marketing", not
-						// a fit for "escrow-protected", so this defines its own.
-						{ svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', bg: 'linear-gradient(160deg, #137a3e 0%, #1e9c54 100%)', title: 'Escrow-protected transfer', text: 'If it’s accepted, the sale completes through a secure, escrow-protected transfer.' }
+						// a fit for a step-by-step transfer, so this defines its own.
+						{ svg: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', bg: 'linear-gradient(160deg, #137a3e 0%, #1e9c54 100%)', title: 'Step-by-step transfer', text: 'If it’s accepted, the sale completes through a secure, step-by-step transfer.' }
 					];
 					var grid = document.createElement('div');
 					grid.className = 'db-offer-steps';
@@ -4620,6 +4620,11 @@ require_once __DIR__ . '/db-modern-block.php';
 require_once __DIR__ . '/db-wishlist-block.php';
 require_once __DIR__ . '/db-account-block.php';
 require_once __DIR__ . '/db-ads-block.php';
+require_once __DIR__ . '/db-cluster-block.php';
+require_once __DIR__ . '/db-turnstile-block.php';
+require_once __DIR__ . '/db-launch-block.php';
+require_once __DIR__ . '/db-sales-block.php';
+require_once __DIR__ . '/db-sales-ops-block.php';
 require_once __DIR__ . '/db-sections-block.php';
 require_once __DIR__ . '/db-priced-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,

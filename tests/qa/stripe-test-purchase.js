@@ -38,6 +38,11 @@ fs.mkdirSync(OUT, { recursive: true });
 	await page.fill('#co-phone', '+1 555 010 0000');
 	await page.click('#co-billing button[type=submit]');
 	if (await page.locator('#co-agree').count()) { await page.check('#co-agree'); }
+	if (MONTHS) {
+		const review = await page.locator('#co-panel-2').innerText().catch(() => '');
+		const dated = (review.match(/\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}/g) || []).length;
+		check('checkout confirmation shows the dated payment schedule', /Your payment dates/.test(review) && dated >= Number(MONTHS), `${dated} dates for ${MONTHS} payments`);
+	}
 	await page.click('#co-confirm');
 	const frame = await page.waitForSelector('iframe[name^="__privateStripeFrame"]', { timeout: 30000 }).catch(() => null);
 	check('checkout shows the Stripe Payment Element', !!frame);
@@ -63,6 +68,11 @@ fs.mkdirSync(OUT, { recursive: true });
 	check('thank-you page returns HTTP 200', !!resp && resp.status() === 200, resp ? String(resp.status()) : 'no response');
 	const text = await page.locator('body').innerText();
 	check('confirmation names the domain' + (MONTHS ? '' : ' and amount'), /fatality\.ca/i.test(text) && (MONTHS || /2,500/.test(text)), MONTHS ? 'plan, ' + MONTHS + ' months' : '');
+	if (MONTHS) {
+		const rows = (text.match(/\b(Paid|Next charge|Scheduled)\b/g) || []).length;
+		check('plan thank-you lists every payment date', /Your payment schedule/i.test(text) && rows === Number(MONTHS), `${rows} rows for ${MONTHS} payments`);
+		check('plan thank-you states the retry terms', /3 more times/.test(text) && /non-refundable/i.test(text));
+	}
 	await page.screenshot({ path: path.join(OUT, 'thank-you.png') });
 	await browser.close();
 	fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 1));

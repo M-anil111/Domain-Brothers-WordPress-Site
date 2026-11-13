@@ -1,6 +1,6 @@
 # Domain Brothers: production go-live checklist
 
-Current as of plugin **v3.54.0** (2026-10-25). This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
+Current as of plugin **v3.71.0** (2026-11-08). Before approval, record the exact commit that is deployed: run `tools/build-release.sh` before packaging, then check Domain Brothers > Launch checks, which shows the version and commit. A test pass only counts for the commit it was run against. This replaces the older go-live notes in `HANDOFF.md`, `GOLIVE_TEST_PLAN.md` and `NEXT_STEPS.md` (July 2026, plugin v3.4.0). Those describe 0%-interest plans and features that have since changed.
 
 The detailed record of what was changed, and why, is in `QA_REPORT.md`. How to run the test suites is in `tests/README.md`.
 
@@ -92,3 +92,17 @@ Production-specific behaviour, already handled in code:
 | 8.6 | **Email delivery (SMTP2GO)** is set under Settings > DB Email delivery (SMTP): server `mail.smtp2go.com`, port 2525 (STARTTLS), the SMTP2GO username and password, From `sales@domainbrothers.com`. The password is stored encrypted; it is never shown again or kept in the code. Enter the same settings on the production site (or define `DB_SMTP_HOST`, `DB_SMTP_USER`, `DB_SMTP_PASS` in `wp-config.php`). In SMTP2GO, verify the sender domain (SPF and DKIM DNS records) so mail does not land in spam. |
 | 8.7 | **AdSense verification:** the code snippet and `/ads.txt` ship with the plugin (v3.65.0). After deploying to production, open `https://www.domainbrothers.com/ads.txt` and view the source of the home page to confirm both, then choose Verify in AdSense. Ads.txt can take Google up to a day to be picked up. |
 | 8.8 | **Live ads.txt already exists as a real file** on www.domainbrothers.com with a different publisher (`pub-7194359990997088`), and the live theme prints an older AdSense script (`ca-pub-2138271276562459`). A real file overrides the plugin's `/ads.txt`. After deploying v3.65.1 either add the line `google.com, pub-1077085934387393, DIRECT, f08c47fec0942fa0` to that file, or delete the file so the plugin serves both lines (it keeps the old publisher's line under Domain Brothers > Ads > Other ads.txt lines). Beta cannot be verified by Google: it is behind a password and tells crawlers not to index it, so verify the live domain. |
+| 8.9 | **Domain Guides (content cluster):** after deploying v3.67.0 go to Domain Brothers > Content cluster and choose **Import as drafts**. Read each article, adjust wording and the call-to-action buttons to taste, then publish. The articles are written without statistics we cannot verify; if you add numbers, add the source. Submit `/premium-domain-names-complete-guide/` in Search Console after it is live, and link to it from the home page or footer. |
+
+## Go-live report, 2026-11-08: status of each finding
+
+| Finding | Status |
+|---|---|
+| Release identity not recorded | Fixed in code: `tools/build-release.sh` writes the commit into the package and Launch checks shows it. Run it before every package. |
+| Staging robots.txt allows crawling | Not fixed in code: the file served to the internet is Cloudflare's managed robots.txt (cached, `Allow: /`), and it overrides the plugin's staging `Disallow`. Owner action in Cloudflare: give the beta host a `Disallow: /` robots.txt, or turn off managed robots for it. Staging pages still send `X-Robots-Tag: noindex, nofollow`. Launch checks reports this. |
+| Bot protection (Turnstile) | Built, off until keys are saved (Domain Brothers > Launch checks). Covers contact forms, sign-in codes and offers. Owner action: create the widget in Cloudflare and save its keys. |
+| Stale "Email is failing" warning | Fixed: the warning clears after the first successful send. |
+| Escrow statements | Removed in v3.69.6 (QA_REPORT section 35). The site makes no escrow claim; `tests/copy/escrow-claims-test.php` enforces it. Owner: if an escrow arrangement is ever offered, add it back with its terms. |
+| Credentials, backups, webhook reachability, SPF/DKIM, legal review, CDN mode, ad ids | Owner or host actions, listed in Launch checks. |
+| Real cron | Launch checks reports overdue jobs. Owner action: a real cron job every 5 minutes. |
+| Sales roadmap (10 items) | Built (QA_REPORT sections 33 and 36): finder, saved searches, collections, buyer-intent score, funnel, "Why this price?", transfer workspace with stage emails and messages, service options, offer guidance and broker emails, trust center, checkout reminders with consent, offer response timer, one CTA experiment. Not built: transfer document upload, a multi-test experiment framework. Owner: the reminders and timers need the real cron. |

@@ -671,7 +671,7 @@ if ( ! function_exists( 'db_deal_buyer_html' ) ) {
 				}
 				$h .= '</div></div>';
 			}
-			$h .= '<p class="db-of-sub" style="margin-top:16px">Your domain is held in escrow and transferred when payment is complete.</p>';
+			$h .= '<p class="db-of-sub" style="margin-top:16px">Your domain is transferred when payment is complete.</p>';
 		} elseif ( 'paid' === $state ) {
 			$h .= '<p class="db-un-lead">Paid. Thank you. Your domain transfer is under way, and we will email you the next steps.</p>';
 		} else { // declined | expired
@@ -1088,13 +1088,19 @@ add_action( 'wp_mail_failed', function ( $err ) {
 	update_option( 'db_mail_failures', array_slice( $list, -20 ), false );
 } );
 
+add_action( 'wp_mail_succeeded', function () {
+	update_option( 'db_mail_ok_ts', time(), false );
+} );
+
 add_action( 'admin_notices', function () {
 	$screen = get_current_screen();
 	if ( ! $screen || false === strpos( (string) $screen->id, 'db-' ) || ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
-	$recent = array_filter( (array) get_option( 'db_mail_failures', array() ), static function ( $f ) {
-		return ( $f['ts'] ?? 0 ) > time() - DAY_IN_SECONDS;
+	// Only failures after the last successful send count, so the warning clears once email works again.
+	$since  = (int) get_option( 'db_mail_ok_ts', 0 );
+	$recent = array_filter( (array) get_option( 'db_mail_failures', array() ), static function ( $f ) use ( $since ) {
+		return ( $f['ts'] ?? 0 ) > max( $since, time() - DAY_IN_SECONDS );
 	} );
 	if ( $recent ) {
 		$last = end( $recent );
