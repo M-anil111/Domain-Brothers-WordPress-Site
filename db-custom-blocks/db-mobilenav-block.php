@@ -229,6 +229,8 @@ add_action( 'wp_footer', function () {
 	.db-desk-acct[hidden], .db-mnav-acct[hidden] { display: none !important; }
 	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--m-ink, #0a1628); color: #fff !important; box-shadow: none; }
 	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:hover, html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:focus-visible { background: #137a3e; color: #fff !important; box-shadow: none; }
+	/* Narrow desktops (iPad Pro 1024): the extra button pushed the menu past the screen. Sign in also creates accounts. */
+	@media (max-width: 1199px) { .db-desktop-nav .db-desk-acct--cta { display: none !important; } }
 	.db-mnav li.db-mnav-acct { border-bottom: 0; }
 	.db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) { margin-top: 14px; padding-top: 8px; border-top: 1px solid rgba(157,199,251,.25); }
 	.db-mnav li.db-mnav-acct--cta a { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0; padding: 0 20px; border-radius: 999px; background: #94bf1e; color: #0a1628 !important; font-weight: 700; }
