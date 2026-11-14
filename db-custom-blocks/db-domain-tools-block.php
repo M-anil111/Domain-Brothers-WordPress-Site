@@ -520,17 +520,23 @@ add_action( 'wp_footer', function () {
 		});
 	}
 	var sticky = document.getElementById('db-sticky');
-	if (sticky && 'IntersectionObserver' in window) {
-		var anchor = ['.db-pr-pay', '.domain-detail-form.make_an_offer', '.db-dd-cta', '.db-dd'].map(function (q) { return document.querySelector(q); }).filter(function (e) { return e && e.offsetParent; })[0];
-		if (anchor) {
-			sticky.hidden = false;
-			sticky.setAttribute('inert', '');
-			new IntersectionObserver(function (es) {
-				var past = !es[0].isIntersecting && es[0].boundingClientRect.top < 0;
-				sticky.classList.toggle('is-on', past);
-				if (past) { sticky.removeAttribute('inert'); } else { sticky.setAttribute('inert', ''); }
-			}).observe(anchor);
-		}
+	if (sticky) {
+		// The buy area can be moved or revealed by other scripts after this one runs,
+		// so it is looked up on every (throttled) scroll instead of once.
+		var findAnchor = function () { return ['.db-pr-pay', '.domain-detail-form.make_an_offer', '.db-dd-cta', '.db-dd'].map(function (q) { return document.querySelector(q); }).filter(function (e) { return e && e.offsetParent; })[0]; };
+		var ticking = false;
+		var update = function () {
+			ticking = false;
+			var a = findAnchor(), past = !!a && a.getBoundingClientRect().bottom < 0;
+			sticky.classList.toggle('is-on', past);
+			if (past) { sticky.removeAttribute('inert'); } else { sticky.setAttribute('inert', ''); }
+		};
+		sticky.hidden = false;
+		sticky.setAttribute('inert', '');
+		window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+		window.addEventListener('resize', update);
+		window.addEventListener('load', update);
+		update();
 		var offer = sticky.querySelector('[data-sticky-offer]');
 		if (offer) {
 			offer.addEventListener('click', function (e) {

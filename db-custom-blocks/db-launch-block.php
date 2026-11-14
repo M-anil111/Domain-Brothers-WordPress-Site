@@ -222,3 +222,13 @@ add_action( 'admin_notices', function () {
 		echo '<div class="notice notice-success is-dismissible"><p>Saved.</p></div>';
 	}
 } );
+
+// A new plugin version changes page markup and scripts, but LiteSpeed keeps
+// pages for up to a day: purge the page cache once when the version changes.
+add_action( 'init', function () {
+	if ( ! defined( 'DB_BLOCKS_LOADED' ) || get_option( 'db_blocks_cache_version', '' ) === DB_BLOCKS_LOADED ) {
+		return;
+	}
+	update_option( 'db_blocks_cache_version', DB_BLOCKS_LOADED, false );
+	do_action( 'litespeed_purge_all' );
+}, 99 );

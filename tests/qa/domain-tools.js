@@ -52,8 +52,7 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 	}
 	check('the sticky bar is hidden at the top of the page', !(await page.$eval('#db-sticky', (e) => e.classList.contains('is-on')).catch(() => true)));
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-	await page.waitForTimeout(600);
-	const stickyOn = await page.$eval('#db-sticky', (e) => e.classList.contains('is-on') && !e.hasAttribute('inert')).catch(() => false);
+	const stickyOn = await page.waitForFunction(() => { const e = document.getElementById('db-sticky'); return e && e.classList.contains('is-on') && !e.hasAttribute('inert'); }, null, { timeout: 5000 }).then(() => true).catch(() => false);
 	check('the sticky bar appears once the buy button scrolls away', stickyOn);
 	const stickyBuy = await page.getAttribute('#db-sticky .db-sticky-btn:not(.db-sticky-btn--ghost)', 'href').catch(() => '');
 	check('the sticky Buy now goes to this domain\'s checkout', /buy-now/.test(stickyBuy) && stickyBuy.includes(encodeURIComponent(Buffer.from(nameA).toString('base64'))), stickyBuy);
