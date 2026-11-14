@@ -594,6 +594,6 @@ add_filter( 'the_content', function ( $content ) {
 // the lime on dark sections; on white the eyebrow uses a darker lime (5.8:1).
 add_action( 'wp_head', function () {
 	if ( is_page( 'about-us' ) ) {
-		echo '<style id="db-a11y-about">.dba-story-copy>.dba-eyebrow,.dba-beyond>.dba-eyebrow{color:#4f6f0f}</style>' . "\n";
+		echo '<style id="db-a11y-about">#dba-about .dba-story-copy>.dba-eyebrow,#dba-about .dba-beyond>.dba-eyebrow{color:#4f6f0f}</style>' . "\n";
 	}
 }, 99 );

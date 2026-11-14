@@ -50,14 +50,16 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 	check('comparison page lists both domains', heads.includes(nameA) && heads.includes(nameB), heads.join(', '));
 	const robots = await page.evaluate(async (u) => (await fetch(u)).headers.get('x-robots-tag') || '', page.url());
 	check('comparison page is noindex', /noindex/.test(robots), robots);
-	await Promise.all([page.waitForLoadState('domcontentloaded'), page.click(`[data-cmp-remove="${nameA}"]`)]);
+	await Promise.all([page.waitForURL((u) => !decodeURIComponent(u.toString()).includes(nameA), { waitUntil: 'domcontentloaded' }), page.click(`[data-cmp-remove="${nameA}"]`)]);
 	const after = await page.$$eval('.db-tools-compare thead th a', (as) => as.map((a) => a.textContent));
 	check('Remove drops one domain from the comparison', after.length === 1 && after[0] === nameB, after.join(', '));
 
-	await page.goto(`${BASE}/compare-domains/?d=${encodeURIComponent('<script>alert(1)</script>,../x,' + nameA + ',' + nameA + ',not-listed-zz9.com')}`, { waitUntil: 'domcontentloaded' });
+	const hostile = await page.request.get(`${BASE}/compare-domains/?d=${encodeURIComponent('<script>alert(1)</script>,../x,' + nameA)}`, { failOnStatusCode: false });
+	const hostileBody = await hostile.text();
+	check('script or path input is refused or never echoed', hostile.status() === 403 || !/<script>alert\(1\)/.test(hostileBody), String(hostile.status()));
+	await page.goto(`${BASE}/compare-domains/?d=${encodeURIComponent('a b.com,-x.com,' + nameA.toUpperCase() + ',' + nameA + ',not-listed-zz9.com')}`, { waitUntil: 'domcontentloaded' });
 	const cleaned = await page.$$eval('.db-tools-compare thead th a', (as) => as.map((a) => a.textContent));
-	const html = await page.content();
-	check('comparison ignores invalid, duplicate and unlisted names', cleaned.length === 1 && cleaned[0] === nameA && !/<script>alert\(1\)/.test(html), cleaned.join(', '));
+	check('comparison ignores invalid, duplicate and unlisted names', cleaned.length === 1 && cleaned[0] === nameA, cleaned.join(', '));
 
 	await page.evaluate(() => localStorage.setItem('dbCompare', JSON.stringify(['a1.com', 'a2.com', 'a3.com', 'a4.com'])));
 	await page.goto(`${BASE}/domains/${A}/`, { waitUntil: 'domcontentloaded' });
@@ -81,22 +83,31 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 		await admin.fill('#user_login', process.env.DB_WP_USER);
 		await admin.fill('#user_pass', process.env.DB_WP_PASS);
 		await Promise.all([admin.waitForURL(/wp-admin/, { waitUntil: 'commit' }), admin.click('#wp-submit')]);
-		await admin.goto(`${BASE}/domains/${A}/`, { waitUntil: 'domcontentloaded' });
-		const postId = await admin.evaluate(() => { const m = document.body.className.match(/postid-(\d+)/); return m ? m[1] : ''; });
-		const nonce = await admin.evaluate(async (b) => { const r = await fetch(b + '/wp-admin/admin-ajax.php?action=rest-nonce', { credentials: 'include' }); return (await r.text()).trim(); }, BASE);
-		const api = async (meta) => admin.evaluate(async ([b, id, n, m]) => { const r = await fetch(`${b}/wp-json/wp/v2/domain/${id}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': n }, body: JSON.stringify({ meta: m }) }); return r.status; }, [BASE, postId, nonce, meta]);
-		const before = money(payRows[0] ? payRows[0][3] : '0');
-		const st = postId && before > 0 ? await api({ domain_price: String(before - 100) }) : 0;
-		if (st === 200) {
-			await admin.goto(`${BASE}/domains/${A}/?nocache=${Date.now()}`, { waitUntil: 'domcontentloaded' });
-			const hist = await admin.$$eval('#db-ph-h ~ table tbody tr', (trs) => trs.map((tr) => tr.textContent.replace(/\s+/g, ' ').trim()));
-			check('a price change appears under Price history', hist.length > 0 && hist[0].includes((before - 100).toLocaleString('en-US')), hist[0] || 'no rows');
-			check('a price drop is announced with its percent', /Price reduced \d+%/.test((await admin.textContent('.db-tools-note').catch(() => '')) || ''));
-			const back = await api({ domain_price: String(before) });
-			check('the test price was restored', back === 200, String(back));
-		} else {
-			console.log(`SKIP price history (the domain price is not writable through the REST API here: status ${st})`);
-		}
+		const stamp = Date.now().toString(36);
+		const title = `qa-ph-${stamp}.com`;
+		await admin.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+		await admin.fill('#title', title);
+		await admin.fill('input[name=domain_price]', '2500');
+		await admin.selectOption('select[name=domain_status]', 'sale');
+		await Promise.all([admin.waitForURL(/post\.php\?post=\d+&action=edit/, { timeout: 90000 }), admin.click('#publish')]);
+		const id = Number(new URL(admin.url()).searchParams.get('post'));
+		await admin.fill('input[name=domain_price]', '2000');
+		await Promise.all([admin.waitForURL(/message=1/, { timeout: 90000 }), admin.click('#publish')]);
+		const link = await admin.locator('#sample-permalink a, #view-post-btn a').first().getAttribute('href').catch(() => '');
+		const viewer = await ctx.newPage();
+		await viewer.goto(`${link || `${BASE}/?p=${id}`}${(link || '').includes('?') ? '&' : '?'}x=${stamp}`, { waitUntil: 'domcontentloaded' });
+		const hist = await viewer.$$eval('#db-ph-h ~ table tbody tr', (trs) => trs.map((tr) => tr.textContent.replace(/\s+/g, ' ').trim())).catch(() => []);
+		check('a price change appears under Price history', hist.length >= 1 && /\$2,500/.test(hist[0]) && /\$2,000/.test(hist[0]), hist[0] || 'no rows');
+		const note = (await viewer.textContent('.db-tools-note').catch(() => '')) || '';
+		check('the price drop is announced with its percent', /Price reduced 20%/.test(note), note.slice(0, 80));
+		await viewer.close();
+		await admin.goto(`${BASE}/wp-admin/post.php?post=${id}&action=edit`, { waitUntil: 'domcontentloaded' });
+		const trash = await admin.locator('#delete-action a.submitdelete').getAttribute('href');
+		await admin.goto(trash.startsWith('http') ? trash : BASE + trash, { waitUntil: 'domcontentloaded' });
+		await admin.goto(`${BASE}/wp-admin/edit.php?post_status=trash&post_type=domain&s=${stamp}`, { waitUntil: 'domcontentloaded' });
+		for (const href of await admin.locator('#the-list a.submitdelete').evaluateAll((as) => as.map((a) => a.href))) { await admin.goto(href, { waitUntil: 'domcontentloaded' }); }
+		await admin.goto(`${BASE}/wp-admin/edit.php?post_status=all&post_type=domain&s=${stamp}`, { waitUntil: 'domcontentloaded' });
+		check('the test listing was deleted', (await admin.locator('#the-list tr', { hasText: stamp }).count()) === 0);
 	}
 
 	await browser.close();

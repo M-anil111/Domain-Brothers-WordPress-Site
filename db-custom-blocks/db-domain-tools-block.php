@@ -231,25 +231,41 @@ if ( ! function_exists( 'db_tools_valid_domain' ) ) {
 }
 
 if ( ! function_exists( 'db_tools_rdap_fetch' ) ) {
-	/** Background job: reads the public RDAP record of one listed domain and caches the result. */
-	function db_tools_rdap_fetch( $post_id ) {
+	/**
+	 * Reads the public RDAP record of one listed domain and stores the result.
+	 * A record is kept 30 days; a failed lookup keeps its reason and is retried
+	 * after a day. Returns the stored record.
+	 */
+	function db_tools_rdap_fetch( $post_id, $timeout = 8 ) {
 		$post = get_post( (int) $post_id );
 		$name = $post && 'domain' === $post->post_type ? db_tools_valid_domain( $post->post_title ) : '';
 		if ( '' === $name ) {
-			return;
+			return array();
 		}
 		$res  = wp_remote_get( 'https://rdap.org/domain/' . rawurlencode( $name ), array(
-			'timeout' => 8, 'redirection' => 3, 'headers' => array( 'Accept' => 'application/rdap+json' ),
+			'timeout' => (int) $timeout, 'redirection' => 3, 'headers' => array( 'Accept' => 'application/rdap+json' ),
 		) );
-		$ok   = ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res );
-		$data = $ok ? db_tools_rdap_parse( wp_remote_retrieve_body( $res ) ) : array( 'year' => 0, 'registrar' => '' );
+		$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
+		$data = 200 === $code ? db_tools_rdap_parse( wp_remote_retrieve_body( $res ) ) : array( 'year' => 0, 'registrar' => '' );
 		$data['checked'] = time();
-		// A record is kept 30 days; a failed lookup is retried after a day.
+		if ( ! $data['year'] ) {
+			$data['error'] = is_wp_error( $res ) ? mb_substr( $res->get_error_message(), 0, 160 ) : ( 200 === $code ? 'no registration date in the record' : 'registry answered HTTP ' . $code );
+		}
 		update_post_meta( $post->ID, 'db_rdap', $data );
 		update_post_meta( $post->ID, 'db_rdap_until', time() + ( $data['year'] ? 30 : 1 ) * DAY_IN_SECONDS );
+		return $data;
 	}
 }
 add_action( 'db_tools_rdap_fetch', 'db_tools_rdap_fetch' );
+
+// Saving a published listing reads its record at once, so it does not wait for cron.
+add_action( 'save_post_domain', function ( $post_id, $post ) {
+	if ( wp_is_post_revision( $post_id ) || 'publish' !== $post->post_status || (int) get_post_meta( $post_id, 'db_rdap_until', true ) > time() ) {
+		return;
+	}
+	db_tools_rdap_fetch( $post_id, 6 );
+}, 30, 2 );
+
 
 if ( ! function_exists( 'db_tools_rdap_html' ) ) {
 	function db_tools_rdap_html( $post ) {
@@ -450,3 +466,78 @@ add_action( 'wp_footer', function () {
 </script>
 	<?php
 } );
+
+/* -------------------------------------------- admin: registry record status */
+
+add_action( 'admin_menu', function () {
+	add_submenu_page( 'db-crm-leads', 'Registry records', 'Registry records', 'manage_options', 'db-rdap', 'db_tools_rdap_admin_page' );
+}, 31 );
+
+if ( ! function_exists( 'db_tools_rdap_pending' ) ) {
+	/** Published listings whose record is missing or due for a refresh. */
+	function db_tools_rdap_pending( $limit ) {
+		$q = new WP_Query( array(
+			'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => (int) $limit, 'fields' => 'ids', 'no_found_rows' => true,
+			'meta_query' => array( 'relation' => 'OR',
+				array( 'key' => 'db_rdap_until', 'compare' => 'NOT EXISTS' ),
+				array( 'key' => 'db_rdap_until', 'value' => time(), 'compare' => '<', 'type' => 'NUMERIC' ),
+			),
+		) );
+		return array_map( 'intval', $q->posts );
+	}
+}
+
+add_action( 'admin_post_db_tools_rdap_batch', function () {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Not allowed.', 403 );
+	}
+	check_admin_referer( 'db_tools_rdap_batch' );
+	$done = 0;
+	$start = time();
+	foreach ( db_tools_rdap_pending( 15 ) as $id ) {
+		if ( time() - $start > 20 ) {
+			break;
+		}
+		db_tools_rdap_fetch( $id, 6 );
+		$done++;
+	}
+	wp_safe_redirect( admin_url( 'admin.php?page=db-rdap&done=' . $done ) );
+	exit;
+} );
+
+if ( ! function_exists( 'db_tools_rdap_admin_page' ) ) {
+	function db_tools_rdap_admin_page() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'domain' AND post_status = 'publish'" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows  = (array) $wpdb->get_results( "SELECT p.post_title, m.meta_value FROM {$wpdb->postmeta} m JOIN {$wpdb->posts} p ON p.ID = m.post_id WHERE m.meta_key = 'db_rdap' AND p.post_type = 'domain' AND p.post_status = 'publish'" );
+		$ok    = 0;
+		$fails = array();
+		foreach ( $rows as $r ) {
+			$d = maybe_unserialize( $r->meta_value );
+			if ( is_array( $d ) && ! empty( $d['year'] ) ) {
+				$ok++;
+			} elseif ( is_array( $d ) ) {
+				$fails[] = array( strtolower( $r->post_title ), (string) ( $d['error'] ?? 'unknown' ) );
+			}
+		}
+		echo '<div class="wrap"><h1>Registry records</h1>';
+		if ( isset( $_GET['done'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			echo '<div class="notice notice-success"><p>Checked ' . (int) $_GET['done'] . ' listings.</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification
+		}
+		echo '<p>Domain pages show the year a name was first registered and its registrar, from the public RDAP record (looked up through rdap.org). Records refresh every 30 days in the background, and when a listing is saved.</p>';
+		echo '<p><strong>' . (int) $ok . '</strong> of ' . (int) $total . ' published listings have a record. <strong>' . count( $fails ) . '</strong> lookups failed (retried after a day).</p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+		wp_nonce_field( 'db_tools_rdap_batch' );
+		echo '<input type="hidden" name="action" value="db_tools_rdap_batch"><button class="button button-primary">Check the next 15 listings now</button></form>';
+		if ( $fails ) {
+			echo '<h2>Failed lookups</h2><table class="widefat striped" style="max-width:760px"><thead><tr><th>Domain</th><th>Reason</th></tr></thead><tbody>';
+			foreach ( array_slice( $fails, 0, 50 ) as $f ) {
+				echo '<tr><td>' . esc_html( $f[0] ) . '</td><td>' . esc_html( $f[1] ) . '</td></tr>';
+			}
+			echo '</tbody></table>';
+		}
+		echo '</div>';
+	}
+}
