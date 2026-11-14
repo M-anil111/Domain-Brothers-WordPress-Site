@@ -521,7 +521,7 @@ add_action( 'wp_footer', function () {
 	}
 	var sticky = document.getElementById('db-sticky');
 	if (sticky && 'IntersectionObserver' in window) {
-		var anchor = document.querySelector('.db-dd-cta') || document.querySelector('.domain-detail-form.make_an_offer') || document.querySelector('.db-dd');
+		var anchor = ['.db-pr-pay', '.domain-detail-form.make_an_offer', '.db-dd-cta', '.db-dd'].map(function (q) { return document.querySelector(q); }).filter(function (e) { return e && e.offsetParent; })[0];
 		if (anchor) {
 			sticky.hidden = false;
 			sticky.setAttribute('inert', '');
