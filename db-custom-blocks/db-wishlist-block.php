@@ -439,6 +439,28 @@ add_action( 'wp_footer', function () {
 	echo db_wl_script( (int) $post->ID, wp_strip_all_tags( $post->post_title ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 }, 70 );
 
+// Every other public page gets the same script without a domain, so the
+// Sign in / Create account links in the menus open the dialog anywhere.
+add_action( 'wp_footer', function () {
+	if ( is_admin() || is_singular( 'domain' ) || db_wl_is_page_request() || is_customize_preview() ) {
+		return;
+	}
+	echo db_wl_script( 0, '' ); // phpcs:ignore WordPress.Security.EscapeOutput
+}, 70 );
+
+// Friendly addresses: /sign-in/, /login/, /register/, /sign-up/, /account/ open the account page with the dialog.
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! function_exists( 'db_sales_request_path' ) ) {
+		return;
+	}
+	$map  = array( 'sign-in' => 'signin', 'signin' => 'signin', 'login' => 'signin', 'log-in' => 'signin', 'account' => 'signin', 'my-account' => 'signin', 'register' => 'register', 'sign-up' => 'register', 'signup' => 'register', 'create-account' => 'register' );
+	$path = db_sales_request_path();
+	if ( isset( $map[ $path ] ) ) {
+		wp_safe_redirect( add_query_arg( 'auth', $map[ $path ], home_url( '/my-wishlist/' ) ), 302 );
+		exit;
+	}
+}, 2 );
+
 if ( ! function_exists( 'db_wl_script' ) ) {
 	/** The shared client script: button + sign-in dialog on a domain page, or the sign-in box on the wishlist page. */
 	function db_wl_script( $post_id, $title ) {
@@ -447,6 +469,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			'post'  => (int) $post_id,
 			'title' => strtolower( $title ),
 			'page'  => esc_url_raw( home_url( '/my-wishlist/' ) ),
+			'home'  => esc_url_raw( home_url( '/' ) ),
 		);
 		ob_start();
 		?>
@@ -494,9 +517,13 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		return dlg;
 	}
 	var onSignedIn = null;
-	function openSignIn(post) {
+	function openSignIn(post, mode) {
 		pendingPost = post || 0;
 		var d = ensureDialog();
+		d.querySelector('#db-wl-title').textContent = pendingPost ? 'Save to your wishlist' : (mode === 'register' ? 'Create your account' : 'Sign in');
+		d.querySelector('.db-wl-lead').textContent = mode === 'register'
+			? 'Enter your email and we send you a 6-digit code. Your account is created when you enter it. No password needed.'
+			: 'We email you a 6-digit code. No password needed. New here? The same code creates your account.';
 		d.querySelector('[data-step=email]').hidden = false; d.querySelector('[data-step=code]').hidden = true; d.querySelector('.db-wl-msg').textContent = '';
 		if (d.showModal) { d.showModal(); } else { d.setAttribute('open', ''); }
 			if (window.dbTsRender) { window.dbTsRender(d); }
@@ -558,8 +585,41 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		});
 	}
 
+	/* ---- account links in the menus (Sign in / Create account / My account / Sign out) ---- */
+	function paintAccount() {
+		document.querySelectorAll('[data-db-acct]').forEach(function (a) {
+			var kind = a.getAttribute('data-db-acct'), li = a.closest('li') || a;
+			if (kind === 'signin') { a.textContent = state.signedIn ? 'My account' : 'Sign in'; a.href = state.signedIn ? C.page : a.getAttribute('data-href'); }
+			if (kind === 'register') { li.hidden = state.signedIn; }
+			if (kind === 'signout') { li.hidden = !state.signedIn; }
+		});
+		document.documentElement.classList.toggle('db-signed-in', state.signedIn);
+	}
+	function goAccount() { if (location.pathname.indexOf('/my-wishlist') === 0) { window.location.reload(); } else { window.location.href = C.page; } }
+	document.addEventListener('click', function (e) {
+		var a = e.target.closest && e.target.closest('[data-db-acct]');
+		if (!a) { return; }
+		var kind = a.getAttribute('data-db-acct');
+		if (kind === 'signout') {
+			e.preventDefault();
+			api('logout', 'POST', {}).then(function () { window.location.href = C.home; });
+			return;
+		}
+		if (state.signedIn) { return; }
+		e.preventDefault();
+		var toggle = document.getElementById('db-mnav-toggle');
+		if (toggle && toggle.getAttribute('aria-expanded') === 'true') { toggle.click(); }
+		onSignedIn = goAccount;
+		openSignIn(0, kind === 'register' ? 'register' : 'signin');
+	});
+	window.dbAccount = { open: function (mode) { onSignedIn = goAccount; openSignIn(0, mode === 'register' ? 'register' : 'signin'); }, signedIn: function () { return state.signedIn; } };
+
 	function start() {
-		api('state', 'GET').then(function (j) { state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); }).catch(function () {});
+		api('state', 'GET').then(function (j) {
+			state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); paintAccount();
+			var m = /[?&]auth=(signin|register)\b/.exec(location.search);
+			if (m && !state.signedIn) { onSignedIn = goAccount; openSignIn(0, m[1]); }
+		}).catch(function () {});
 		mountButton(); mountPage();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
@@ -635,7 +695,7 @@ add_action( 'template_redirect', function () {
 		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
 	}
 	if ( '' === $email ) {
-		echo '<h1 class="page-title">My account</h1><div class="db-wl-card" id="db-wl-signin"><h2>Sign in with your email</h2><p>Save the domains you like and follow them: we tell you when the price changes, a domain sells or someone makes an offer. See recently listed and hot domains, and make and track your offers. We email you a 6-digit code; there is no password to remember.</p><button type="button" class="db-wl-primary">Email me a code</button></div>';
+		echo '<h1 class="page-title">My account</h1><div class="db-wl-card" id="db-wl-signin"><h2>Sign in or create your account</h2><p>Save the domains you like and follow them: we tell you when the price changes, a domain sells or someone makes an offer. See recently listed and hot domains, and make and track your offers. We email you a 6-digit code; there is no password to remember.</p><button type="button" class="db-wl-primary">Email me a code</button></div>';
 	} else {
 		$ids  = db_wl_ids( $email );
 		$rows = '';

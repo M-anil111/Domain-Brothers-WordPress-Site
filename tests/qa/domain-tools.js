@@ -30,13 +30,34 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 
 	await page.goto(`${BASE}/domains/${A}/`, { waitUntil: 'domcontentloaded' });
 	const nameA = await page.getAttribute('[data-db-tools]', 'data-name');
-	const payRows = await page.$$eval('#db-pay-h ~ .db-tools-scroll tbody tr', (trs) => trs.map((tr) => Array.from(tr.children).map((c) => c.textContent.trim())));
+	const payRows = await page.$$eval('.db-pay-table tbody tr', (trs) => trs.map((tr) => Array.from(tr.children).map((c) => c.textContent.trim())));
 	check('Ways to pay lists pay in full and four plan terms', payRows.length === 5 && /Pay in full/.test(payRows[0][0]), `${payRows.length} rows`);
 	if (payRows.length === 5) {
 		const full = money(payRows[0][3]), twelve = money(payRows[4][3]);
 		check('the 12-month total is 10% over the price', Math.abs(twelve - full * 1.1) < 0.01, `${full} -> ${twelve}`);
 		check('the 3-month plan shows no extra cost', /None/.test(payRows[1][4]), payRows[1][4]);
 	}
+
+	const opts = await page.$$('.db-pay-opt');
+	check('the payment chooser offers five options', opts.length === 5, String(opts.length));
+	if (opts.length === 5) {
+		await opts[4].click();
+		const go = await page.getAttribute('.db-pay-go', 'href');
+		const each = await page.textContent('.db-pay-each');
+		check('choosing 12 months points checkout at the 12-month plan', /[?&]months=12\b/.test(go) && /buy-now/.test(go), go);
+		check('the chooser shows the 12-month payment', payRows[4] && each.trim() === payRows[4][1].trim(), `${each} vs ${payRows[4] && payRows[4][1]}`);
+		await opts[4].focus();
+		await page.keyboard.press('ArrowRight');
+		check('arrow keys move the choice', (await page.getAttribute('.db-pay-opt:nth-child(1)', 'aria-checked')) === 'true');
+	}
+	check('the sticky bar is hidden at the top of the page', !(await page.$eval('#db-sticky', (e) => e.classList.contains('is-on')).catch(() => true)));
+	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+	await page.waitForTimeout(600);
+	const stickyOn = await page.$eval('#db-sticky', (e) => e.classList.contains('is-on') && !e.hasAttribute('inert')).catch(() => false);
+	check('the sticky bar appears once the buy button scrolls away', stickyOn);
+	const stickyBuy = await page.getAttribute('#db-sticky .db-sticky-btn:not(.db-sticky-btn--ghost)', 'href').catch(() => '');
+	check('the sticky Buy now goes to this domain\'s checkout', /buy-now/.test(stickyBuy) && stickyBuy.includes(encodeURIComponent(Buffer.from(nameA).toString('base64'))), stickyBuy);
+	await page.evaluate(() => window.scrollTo(0, 0));
 
 	await page.click('#db-cmp-toggle');
 	check('Compare button marks the domain as added', (await page.getAttribute('#db-cmp-toggle', 'aria-pressed')) === 'true');

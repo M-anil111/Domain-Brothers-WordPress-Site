@@ -46,7 +46,6 @@ add_action( 'wp_footer', function () {
 		// /contact/ 301s to /contact-us/; link the destination directly so
 		// every menu click doesn't pay for a redirect hop.
 		'Contact'       => esc_url( home_url( '/contact-us/' ) ),
-		'Wishlist'      => esc_url( home_url( '/my-wishlist/' ) ),
 	);
 	// The 5 dedicated service pages (see db_service_page_defs() in
 	// db-custom-blocks.php — each already has its own real content and SEO
@@ -89,6 +88,7 @@ add_action( 'wp_footer', function () {
 			<?php foreach ( $links as $label => $href ) : ?>
 				<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
 			<?php endforeach; ?>
+			<?php echo db_nav_account_items( 'desktop' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
 		</ul>
 	</nav>
 	<nav id="db-mnav" class="db-mnav" aria-label="Primary" aria-hidden="true" inert>
@@ -116,6 +116,7 @@ add_action( 'wp_footer', function () {
 						<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
 					<?php endif; ?>
 				<?php endforeach; ?>
+				<?php echo db_nav_account_items( 'drawer' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
 			</ul>
 		</div>
 	</nav>
@@ -224,6 +225,14 @@ add_action( 'wp_footer', function () {
 	@media (prefers-reduced-motion: reduce) {
 		.db-mnav, .db-mnav li, .db-mnav-bar, .db-mnav-scrim { transition: none !important; }
 	}
+	/* Account links: Sign in / Create account (My account / Sign out once signed in). */
+	.db-desk-acct[hidden], .db-mnav-acct[hidden] { display: none !important; }
+	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--m-ink, #0a1628); color: #fff !important; box-shadow: none; }
+	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:hover, html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:focus-visible { background: #137a3e; color: #fff !important; box-shadow: none; }
+	.db-mnav li.db-mnav-acct { border-bottom: 0; }
+	.db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) { margin-top: 14px; padding-top: 8px; border-top: 1px solid rgba(157,199,251,.25); }
+	.db-mnav li.db-mnav-acct--cta a { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0; padding: 0 20px; border-radius: 999px; background: #94bf1e; color: #0a1628 !important; font-weight: 700; }
+	html.db-signed-in .db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) a::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #94bf1e; vertical-align: middle; }
 	</style>
 
 	<script>
@@ -304,3 +313,20 @@ add_action( 'wp_footer', function () {
 	</script>
 	<?php
 }, 100 );
+
+if ( ! function_exists( 'db_nav_account_items' ) ) {
+	/**
+	 * Sign in / Create account / Sign out for the menus. Without JavaScript the
+	 * links open the account page with the sign-in or register dialog; with it,
+	 * the site script opens the dialog in place and shows "My account" and
+	 * "Sign out" once signed in (pages are cached, so the state is read by the script).
+	 */
+	function db_nav_account_items( $where ) {
+		$signin   = esc_url( home_url( '/sign-in/' ) );
+		$register = esc_url( home_url( '/register/' ) );
+		$cls      = 'drawer' === $where ? 'db-mnav-acct' : 'db-desk-acct';
+		return '<li class="' . $cls . '"><a href="' . $signin . '" data-href="' . $signin . '" data-db-acct="signin">Sign in</a></li>'
+			. '<li class="' . $cls . ' ' . $cls . '--cta"><a href="' . $register . '" data-db-acct="register">Create account</a></li>'
+			. '<li class="' . $cls . '" hidden><a href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" data-db-acct="signout">Sign out</a></li>';
+	}
+}

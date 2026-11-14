@@ -176,13 +176,23 @@ if ( ! function_exists( 'db_tools_pay_html' ) ) {
 		}
 		$urls = db_dd_checkout_urls( get_the_title( $post ), $f['price'] );
 		$m2   = function ( $n ) { return '$' . number_format( (float) $n, 2 ); };
-		$h    = '<section class="db-tools-block" aria-labelledby="db-pay-h"><h2 id="db-pay-h">Ways to pay</h2><div class="db-tools-scroll"><table class="db-tools-table"><thead><tr><th scope="col">Option</th><th scope="col">Each payment</th><th scope="col">Interest</th><th scope="col">Total</th><th scope="col">Extra over paying in full</th></tr></thead><tbody>';
+		$h    = '<section class="db-tools-block" aria-labelledby="db-pay-h"><h2 id="db-pay-h">Ways to pay</h2>';
+		// One-tap chooser above the table: pick an option, see the numbers, go to checkout with it.
+		$h   .= '<div class="db-pay-pick" role="radiogroup" aria-label="Choose how to pay">';
+		foreach ( $rows as $i => $r ) {
+			$href  = 0 === $r['months'] ? $urls['buy'] : add_query_arg( 'months', (int) $r['months'], $urls['buy'] );
+			$label = 0 === $r['months'] ? 'Pay in full' : $r['months'] . ' months';
+			$h    .= '<button type="button" role="radio" aria-checked="' . ( 0 === $i ? 'true' : 'false' ) . '" class="db-pay-opt" data-href="' . esc_url( $href ) . '" data-each="' . esc_attr( $m2( $r['monthly'] ) ) . '" data-total="' . esc_attr( $m2( $r['total'] ) ) . '" data-extra="' . esc_attr( $r['extra'] > 0 ? $m2( $r['extra'] ) : 'None' ) . '" data-n="' . (int) $r['months'] . '">' . esc_html( $label ) . ( 0 !== $r['months'] && 0.0 === (float) $r['rate'] ? '<small>0% interest</small>' : '' ) . '</button>';
+		}
+		$first = $rows[0];
+		$h   .= '</div><div class="db-pay-sum" aria-live="polite"><p><span class="db-pay-each">' . esc_html( $m2( $first['monthly'] ) ) . '</span> <span class="db-pay-unit">today</span></p><p class="db-pay-meta">Total <strong class="db-pay-total">' . esc_html( $m2( $first['total'] ) ) . '</strong> · Extra over paying in full <strong class="db-pay-extra">None</strong></p><a class="db-sales-btn db-pay-go" href="' . esc_url( $urls['buy'] ) . '">Continue to checkout</a></div>';
+		$h   .= '<details class="db-pay-table"><summary>Compare every option</summary><div class="db-tools-scroll"><table class="db-tools-table"><thead><tr><th scope="col">Option</th><th scope="col">Each payment</th><th scope="col">Interest</th><th scope="col">Total</th><th scope="col">Extra over paying in full</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
 			$label = 0 === $r['months'] ? 'Pay in full' : $r['months'] . ' monthly payments';
 			$h    .= '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( $m2( $r['monthly'] ) ) . '</td><td>' . esc_html( 0 === $r['months'] ? 'None' : rtrim( rtrim( number_format( $r['rate'], 1 ), '0' ), '.' ) . '%' ) . '</td><td>' . esc_html( $m2( $r['total'] ) ) . '</td><td>' . esc_html( $r['extra'] > 0 ? $m2( $r['extra'] ) : 'None' ) . '</td></tr>';
 		}
 		$h .= '</tbody></table></div><p class="db-tools-links"><a href="' . esc_url( $urls['buy'] ) . '">Pay in full</a> · <a href="' . esc_url( $urls['plan'] ) . '">Choose a payment plan</a></p>';
-		return $h . '<p class="db-tools-small">The final payment of a plan can differ by a few cents so the payments add up to the total exactly.</p></section>';
+		return $h . '</details><p class="db-tools-small">The final payment of a plan can differ by a few cents so the payments add up to the total exactly.</p></section>';
 	}
 }
 
@@ -376,7 +386,41 @@ if ( ! function_exists( 'db_tools_css' ) ) {
 			. '.db-tools-btn[aria-pressed="true"]{background:#0a1628;color:#fff}'
 			. '.db-tools-rv{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}'
 			. '.db-tools-rv a{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;border:1px solid #cbd5e1;border-radius:999px;color:#0a1628;text-decoration:none;overflow-wrap:anywhere}'
+			. '.db-pay-pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}'
+			. '.db-pay-opt{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;min-width:92px;padding:6px 14px;border:1.5px solid #cbd5e1;border-radius:14px;background:#fff;color:#0a1628;font:inherit;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}'
+			. '.db-pay-opt small{font-size:11px;font-weight:600;color:#137a3e}'
+			. '.db-pay-opt[aria-checked="true"]{border-color:#0a1628;background:#0a1628;color:#fff}.db-pay-opt[aria-checked="true"] small{color:#c8e67a}'
+			. '.db-pay-opt:focus-visible,.db-sticky-btn:focus-visible{outline:3px solid #94bf1e;outline-offset:2px}'
+			. '.db-pay-sum{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#f4f8ec,#eef3f9);border:1px solid #d7dee8}'
+			. '.db-pay-sum p{margin:0}.db-pay-each{font-size:28px;font-weight:800;color:#0a1628;font-variant-numeric:tabular-nums}.db-pay-unit{color:#4b5563}'
+			. '.db-pay-meta{flex-basis:100%;order:2;font-size:14px;color:#374151}.db-pay-go{order:1}'
+			. '.db-pay-table{margin-top:12px}.db-pay-table summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:#0a1628}'
+			. '.db-sticky{position:fixed;left:0;right:0;bottom:0;z-index:9990;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(10,22,40,.97);color:#fff;box-shadow:0 -8px 24px rgba(10,22,40,.25);transform:translateY(110%);transition:transform .25s ease}'
+			. '.db-sticky:not(.is-on){visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}.db-sticky.is-on{transform:translateY(0)}.db-sticky-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}'
+			. '.db-sticky-txt{display:flex;flex-direction:column;min-width:0}.db-sticky-txt strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.db-sticky-txt span{font-size:13px;color:#c9d4e3}'
+			. '.db-sticky-act{display:flex;gap:8px;flex:0 0 auto}.db-sticky-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;background:#94bf1e;color:#0a1628;font-weight:800;text-decoration:none;white-space:nowrap}'
+			. '.db-sticky-btn--ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}'
+			. '@media (max-width:480px){.db-sticky-btn--ghost{display:none}}'
+			. '@media (prefers-reduced-motion:reduce){.db-sticky,.db-pay-opt{transition:none}}@media print{.db-sticky{display:none!important}}'
 			. '</style>';
+	}
+}
+
+if ( ! function_exists( 'db_tools_sticky_html' ) ) {
+	/** Bottom bar with the price and the main action, shown once the page's own buttons scroll away. */
+	function db_tools_sticky_html( $post, array $f ) {
+		$state = db_listing_state( $post );
+		if ( ! in_array( $state, array( 'standard', 'offer' ), true ) ) {
+			return '';
+		}
+		$h = '<div class="db-sticky" id="db-sticky" hidden><div class="db-sticky-in"><div class="db-sticky-txt"><strong>' . esc_html( $f['name'] ) . '</strong><span>';
+		if ( 'standard' === $state && $f['price'] > 0 ) {
+			$urls = db_dd_checkout_urls( get_the_title( $post ), $f['price'] );
+			$h   .= esc_html( '$' . number_format( $f['price'], 0 ) . ' or ' . db_dd_monthly( $f['price'] ) . '/mo' ) . '</span></div><div class="db-sticky-act"><a class="db-sticky-btn db-sticky-btn--ghost" href="#db-pay-h">Ways to pay</a><a class="db-sticky-btn" href="' . esc_url( $urls['buy'] ) . '">Buy now</a>';
+		} else {
+			$h .= 'Open to offers</span></div><div class="db-sticky-act"><a class="db-sticky-btn" href="#offer" data-sticky-offer>Make an offer</a>';
+		}
+		return $h . '</div></div></div>';
 	}
 }
 
@@ -391,6 +435,7 @@ if ( ! function_exists( 'db_tools_domain_html' ) ) {
 			. '<a class="db-tools-btn" id="db-cmp-open" href="' . esc_url( home_url( '/compare-domains/' ) ) . '" hidden>Open comparison</a>'
 			. '<span id="db-cmp-status" role="status" class="db-tools-small"></span></div>';
 		$h   .= db_tools_pay_html( $post, $f );
+		$h   .= db_tools_sticky_html( $post, $f );
 		$h   .= db_tools_price_history_html( $post );
 		$h   .= db_tools_rdap_html( $post );
 		$h   .= '<section class="db-tools-block" id="db-rv" aria-labelledby="db-rv-h" hidden><h2 id="db-rv-h">Recently viewed</h2><ul class="db-tools-rv" id="db-rv-list"></ul></section>';
@@ -451,6 +496,51 @@ add_action( 'wp_footer', function () {
 			sec.hidden = listEl.children.length === 0;
 		}
 		write('dbViewed', [{ n: name, u: url }].concat(others).slice(0, 8));
+	}
+	var pick = document.querySelector('.db-pay-pick'), sum = document.querySelector('.db-pay-sum');
+	if (pick && sum) {
+		var opts = Array.prototype.slice.call(pick.querySelectorAll('.db-pay-opt')), go = sum.querySelector('.db-pay-go');
+		var choose = function (b, focus) {
+			opts.forEach(function (x) { var on = x === b; x.setAttribute('aria-checked', on ? 'true' : 'false'); x.tabIndex = on ? 0 : -1; });
+			var n = parseInt(b.getAttribute('data-n'), 10) || 0;
+			sum.querySelector('.db-pay-each').textContent = b.getAttribute('data-each');
+			sum.querySelector('.db-pay-unit').textContent = n ? 'a month for ' + n + ' months' : 'today';
+			sum.querySelector('.db-pay-total').textContent = b.getAttribute('data-total');
+			sum.querySelector('.db-pay-extra').textContent = b.getAttribute('data-extra');
+			go.href = b.getAttribute('data-href');
+			go.textContent = n ? 'Continue with ' + n + ' monthly payments' : 'Continue to checkout';
+			if (focus) { b.focus(); }
+		};
+		opts.forEach(function (b, i) { b.tabIndex = i === 0 ? 0 : -1; });
+		pick.addEventListener('click', function (e) { var b = e.target.closest('.db-pay-opt'); if (b) { choose(b); } });
+		pick.addEventListener('keydown', function (e) {
+			var i = opts.indexOf(document.activeElement); if (i === -1) { return; }
+			var k = e.key, j = k === 'ArrowRight' || k === 'ArrowDown' ? (i + 1) % opts.length : k === 'ArrowLeft' || k === 'ArrowUp' ? (i - 1 + opts.length) % opts.length : -1;
+			if (j !== -1) { e.preventDefault(); choose(opts[j], true); }
+		});
+	}
+	var sticky = document.getElementById('db-sticky');
+	if (sticky && 'IntersectionObserver' in window) {
+		var anchor = document.querySelector('.db-dd-cta') || document.querySelector('.domain-detail-form.make_an_offer') || document.querySelector('.db-dd');
+		if (anchor) {
+			sticky.hidden = false;
+			sticky.setAttribute('inert', '');
+			new IntersectionObserver(function (es) {
+				var past = !es[0].isIntersecting && es[0].boundingClientRect.top < 0;
+				sticky.classList.toggle('is-on', past);
+				if (past) { sticky.removeAttribute('inert'); } else { sticky.setAttribute('inert', ''); }
+			}).observe(anchor);
+		}
+		var offer = sticky.querySelector('[data-sticky-offer]');
+		if (offer) {
+			offer.addEventListener('click', function (e) {
+				var f = document.querySelector('.domain-detail-form.make_an_offer') || document.querySelector('.wpcf7');
+				if (!f) { return; }
+				e.preventDefault();
+				f.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+				var first = f.querySelector('input:not([type=hidden]), textarea'); if (first) { setTimeout(function () { first.focus({ preventScroll: true }); }, 400); }
+			});
+		}
 	}
 	document.addEventListener('click', function (e) {
 		var a = e.target.closest && e.target.closest('[data-cmp-remove]');
