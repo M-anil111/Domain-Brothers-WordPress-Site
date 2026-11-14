@@ -596,4 +596,8 @@ add_action( 'wp_head', function () {
 	if ( is_page( 'about-us' ) ) {
 		echo '<style id="db-a11y-about">#dba-about .dba-story-copy>.dba-eyebrow,#dba-about .dba-beyond>.dba-eyebrow{color:#4f6f0f}</style>' . "\n";
 	}
+	// Breadcrumb links on the About and Contact pages were 23px tall (WCAG 2.2 target size is 24px).
+	if ( is_page( array( 'about-us', 'contact-us' ) ) ) {
+		echo '<style id="db-a11y-crumbs">.dba-crumbs a,.dbc-crumbs a{display:inline-flex;align-items:center;min-height:24px}</style>' . "\n";
+	}
 }, 99 );

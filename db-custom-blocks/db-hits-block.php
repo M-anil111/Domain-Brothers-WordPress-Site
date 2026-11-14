@@ -208,7 +208,9 @@ add_action( 'wp_footer', function () {
 		if (document.visibilityState === 'visible') { setTimeout(send, 1200); return; }
 		document.addEventListener('visibilitychange', function once(){ if (document.visibilityState === 'visible') { document.removeEventListener('visibilitychange', once); setTimeout(send, 1200); } });
 	}
-	if (document.readyState === 'complete') { when(); } else { window.addEventListener('load', when); }
+	// Start once the page is readable, not after every image and ad has loaded: on a
+	// slow page that came too late, and visitors who left early were never counted.
+	if (document.readyState !== 'loading') { when(); } else { document.addEventListener('DOMContentLoaded', when); }
 })();
 </script>
 	<?php

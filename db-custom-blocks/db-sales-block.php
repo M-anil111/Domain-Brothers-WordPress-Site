@@ -322,7 +322,7 @@ if ( ! function_exists( 'db_sales_css' ) ) {
 			. '.db-sales-choices{display:flex;flex-wrap:wrap;gap:8px}'
 			. '.db-sales-choices label{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border:1px solid #cbd5e1;border-radius:999px;cursor:pointer}'
 			. '.db-sales-choices label:has(input:checked){border-color:#0a1628;background:#eef3f9}'
-			. '.db-sales-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 20px;border-radius:10px;background:#0a1628;color:#fff;border:0;font-weight:700;cursor:pointer;text-decoration:none}'
+			. '.db-sales-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 20px;border-radius:10px;background:#0a1628;color:#fff;border:0;font-weight:700;cursor:pointer;text-decoration:none}a.db-sales-btn,a.db-sales-btn:visited,a.db-sales-btn:hover{color:#fff!important}'
 			. '.db-sales-card{background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:16px 18px;margin:14px 0}'
 			. '.db-sales-results{list-style:none;padding:0;margin:0;display:grid;gap:10px}'
 			. '.db-sales-result{border:1px solid #d7dee8;border-radius:12px;padding:14px 16px;background:#fff}'
