@@ -166,7 +166,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'offer' => array(
 				'title' => 'Make an Offer on a Premium Domain | Domain Brothers',
-				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Step-by-step support and flexible payment plans apply. Submit your offer now.',
+				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Flexible payment plans apply. Submit your offer now.',
 				'kw'    => 'make an offer',
 			),
 			'domain-transfer' => array(

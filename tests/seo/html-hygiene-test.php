@@ -106,5 +106,10 @@ ok( false === strpos( $out, 'iframe' ) && false === strpos( $out, 'fallback' ), 
 ok( false !== strpos( $out, 'id="page"' ), 'id kept when the post links to it' );
 ok( 1 === substr_count( $out, 'rel=' ) - substr_count( $out, 'amzn' ) && false !== strpos( $out, 'rel="nofollow sponsored"' ), 'unquoted rel on affiliate link merged, not duplicated' );
 
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">About Us</h1><section><h1 id="dba-title"><span>Great</span> names</h1></section></main></body>' );
+ok( 1 === substr_count( $out, '<h1' ) && false !== strpos( $out, '<div class="entry-title">About Us</div>' ) && false !== strpos( $out, 'id="dba-title"' ), 'theme title steps down when the page content has its own <h1>' );
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">FAQs</h1><p>x</p></main></body>' );
+ok( false !== strpos( $out, '<h1 class="entry-title">FAQs</h1>' ), 'a lone theme title stays the <h1>' );
+
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );

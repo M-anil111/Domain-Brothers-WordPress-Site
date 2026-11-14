@@ -367,7 +367,8 @@ const PAGES = [
 			await trigger(pg);
 			await pg.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
 			await pg.waitForTimeout(500); // let the entrance animation finish before measuring
-			const g = await pg.evaluate(() => { const r = document.querySelector('.db-exit-card').getBoundingClientRect(); const go = document.querySelector('.db-exit-go').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight, goH: go.height, scrollW: document.documentElement.scrollWidth }; });
+			const g = await pg.evaluate(() => { if (!document.querySelector('.db-exit-card') || !document.querySelector('.db-exit-go')) { return null; } const r = document.querySelector('.db-exit-card').getBoundingClientRect(); const go = document.querySelector('.db-exit-go').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight, goH: go.height, scrollW: document.documentElement.scrollWidth }; });
+			if (!g) { record(`FN-42-${dev[0]}`, 'Exit offer', `fits the screen with 44px+ buttons (${dev[0]} ${dev[1].width}x${dev[1].height})`, false, 'the exit offer did not render (page error or host 5xx)'); await c.close(); continue; }
 			record(`FN-42-${dev[0]}`, 'Exit offer', `fits the screen with 44px+ buttons (${dev[0]} ${dev[1].width}x${dev[1].height})`, g.l >= -1 && g.r <= g.w + 1 && g.t >= -1 && g.b <= g.h + 1 && g.goH >= 44 && g.scrollW <= g.w + 1, JSON.stringify(g));
 			await pg.screenshot({ path: path.join(OUT, `exit-${dev[0]}.png`) });
 			await c.close();

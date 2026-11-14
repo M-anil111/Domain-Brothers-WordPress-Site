@@ -457,6 +457,13 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		$ctx = isset( $GLOBALS['db_onpage_ctx'] ) ? $GLOBALS['db_onpage_ctx'] : array( 'singular' => false, 'title' => '' );
 		// Heading/comment checks run on a copy with script bodies blanked,
 		// so "<!--" or "<h1" inside a JS string is not read as markup.
+		// A page whose content brings its own <h1> (the About and Contact heroes)
+		// also gets the theme's <h1 class="entry-title">: two <h1>s. The page's
+		// own heading stays the <h1>; the theme title keeps its class and look.
+		$mask = db_onpage_mask_scripts( $html );
+		if ( substr_count( strtolower( $mask ), '<h1' ) > 1 && preg_match( '#<h1(\s+class="entry-title")>([^<]*)</h1>#i', $mask, $m, PREG_OFFSET_CAPTURE ) && ! db_onpage_in_comment( $mask, $m[0][1] ) ) {
+			$html = substr_replace( $html, '<div' . $m[1][0] . '>' . $m[2][0] . '</div>', $m[0][1], strlen( $m[0][0] ) );
+		}
 		$mask = db_onpage_mask_scripts( $html );
 		if ( $ctx['singular'] && ! db_onpage_has_live_h1( $mask ) ) {
 			$done = false;
@@ -581,3 +588,12 @@ add_filter( 'the_content', function ( $content ) {
 	}
 	return db_onpage_clean_imported_content( $content );
 }, 30 );
+
+// Accessibility (axe colour-contrast, 2026-11-14): the About page's eyebrows on
+// white sections use the brand lime (#94bf1e, 2.2:1 on white). The page keeps
+// the lime on dark sections; on white the eyebrow uses a darker lime (5.8:1).
+add_action( 'wp_head', function () {
+	if ( is_page( 'about-us' ) ) {
+		echo '<style id="db-a11y-about">.dba-story-copy>.dba-eyebrow,.dba-beyond>.dba-eyebrow{color:#4f6f0f}</style>' . "\n";
+	}
+}, 99 );
