@@ -58,7 +58,7 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 	 * Pure function: tested offline in tests/speed/delay-test.php.
 	 */
 	function db_delay_rewrite( $html, array $hosts ) {
-		if ( ! is_string( $html ) || false === stripos( $html, '<script' ) || false === stripos( $html, '</body>' ) ) {
+		if ( ! is_string( $html ) || ( false === stripos( $html, '<script' ) && false === stripos( $html, '<iframe' ) ) || false === stripos( $html, '</body>' ) ) {
 			return $html;
 		}
 		$hosts_re = implode( '|', array_map( function ( $h ) {
@@ -92,8 +92,18 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 			}
 			return $m[0];
 		}, $html );
-		if ( ! is_string( $out ) || 0 === $count ) {
+		if ( ! is_string( $out ) ) {
 			return $html;
+		}
+		// Third-party iframes (Facebook like box, YouTube, Maps) load only when scrolled near.
+		$out = preg_replace_callback( '#<iframe\b([^>]*)>#i', function ( $m ) {
+			if ( preg_match( '#\bloading\s*=#i', $m[1] ) || ! preg_match( '#\bsrc\s*=\s*["\'](https?:)?//([a-z0-9-]+\.)*(facebook\.com|youtube\.com|youtube-nocookie\.com|google\.com|vimeo\.com)[/:?]#i', $m[1] ) ) {
+				return $m[0];
+			}
+			return '<iframe loading="lazy"' . $m[1] . '>';
+		}, $out );
+		if ( 0 === $count ) {
+			return $out;
 		}
 		$loader = '<script data-no-delay>(function(){var done=false,ev=["pointerdown","keydown","touchstart","scroll","mousemove","wheel"];'
 			. 'function go(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,go,{passive:true});});'
