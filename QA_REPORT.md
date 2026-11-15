@@ -702,3 +702,56 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 - The two new database tables: the code creates them on load, but no page reads them back directly, so the creation is not confirmed in the database.
 
 **Still not built:** transfer document upload; a multi-variant experiment framework (one CTA test exists); automatic response timers beyond the 24-hour offer alert.
+
+## 37. Domain tools, sign-in everywhere, cron fallback, registry records, Site Health (v3.72.0 - v3.75.0)
+
+**What was built**
+- **Domain tools** (`db-domain-tools-block.php`):
+  - compare up to 3 names (`/compare-domains/`, noindex);
+  - price history with a drop badge;
+  - a payment-plan chooser with the full schedule;
+  - registry record (first registered year and registrar, from public RDAP);
+  - a sticky buy bar and recently viewed listings.
+- **Sign in / Create account across the site:** in the desktop nav and the phone drawer, on every public page. Routes `/login`, `/sign-in`, `/register`, `/sign-up`, `/account` and their variants open the right dialog.
+- **Cron fallback (v3.74.0):** when a scheduled job is more than 10 minutes late, due jobs run after the page has been sent (25 s budget, 5-minute lock). Launch checks now reports "WordPress cron runs on time".
+- **Registry lookups (v3.75.0):**
+  - A registry HTTP 429 pauses every lookup for its Retry-After (60 s to 1 h; 15 min when absent). Earlier records are kept, and the listing is retried after the pause.
+  - The admin batch spaces lookups 0.7 s apart and stops at the first 429.
+  - A 404 is recorded as "not registered at the registry" and retried weekly.
+  - A new hourly job checks 10 listings per run, so all listings fill without anyone pressing the batch button.
+
+**Staging changes (wp-admin)**
+- Deleted WPForms Lite (inactive; 0 forms, 0 uses; audited in section 13).
+- Installed Twenty Twenty-Five as the fallback theme. It is not active; DomainFolio stays active.
+- Site Health now passes "Scheduled events are running" (the Wordfence failed-event warning cleared once cron ran on time).
+
+**Checks (all on beta, v3.75.0, 2026-11-15)**
+
+| Suite | Result |
+|---|---|
+| site-qa | 407/407 |
+| content-cluster | 159/159 |
+| account-flow | 27/27 |
+| domain-tools | 23/23 |
+| wishlist-flow | 20/20 |
+| offer-flow | 17/17 |
+| sold-epp | 17/17 |
+| account-entry | 16/16 |
+| sales-features | 14/14 |
+| email-templates | 14/14 |
+| sales-security | 13/13 |
+| turnstile | 12/12 |
+| hits-offers | 11/11 |
+| listing-templates | 6/6 |
+| axe WCAG 2.1 A/AA | 32/32 scans |
+| Responsive | 280 scans, 0 issues |
+| Stripe test purchase | Full and 3-month plan: pass |
+| Offline PHP suites | 12/12 pass |
+| admin-sweep | 19/20 (see below) |
+
+**Open, owner or host action**
+- **WordPress core:** beta runs 6.9.11, while WordPress.org's current release is 7.1.4 (checked against `api.wordpress.org/core/version-check`). On beta, update-core.php offers no upgrade, and Site Health says it is "Unable to check" for new versions. The host is blocking or hiding core offers, so the upgrade has to be done in the hosting panel. Take a backup first, because this is a jump across two major versions. Then re-run this suite matrix.
+- **mississaugacontractors.ca:** the .ca registry (CIRA) answers "Domain not found". The name is listed for sale but appears to be unregistered. Confirm ownership, or unpublish the listing.
+- **Registry records:** 102 of 207 listings have a record. The registry rate-limited the backfill, and the hourly job fills the remaining ~105 over about 10 hours.
+- **Persistent object cache:** a host setting. The server supports Redis, Memcached and APCu.
+- **"Page cache not detected":** on beta this comes from Basic Auth, which bypasses the cache.
