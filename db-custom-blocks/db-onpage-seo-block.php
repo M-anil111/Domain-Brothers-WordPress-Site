@@ -368,7 +368,10 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 
 		// The domain-page banner is a CSS background (and on another host),
 		// so the browser found it late: LCP 8.3 s on mobile. Preload it.
-		if ( false !== strpos( $html, 'banner_bg' ) && preg_match( '#class="banner_bg[^"]*"[^>]*style="background-image:\s*url\([\'"]?(https?://[^\'")\s]+)#', $html, $bg ) ) {
+		// Not with the redesign: it hides that banner image (modern.css) and the
+		// domain page preloads its own hero (db-modern-block.php), so this
+		// preload only fetched an unused image from the production host.
+		if ( ! preg_match( '#<body[^>]*class="[^"]*\bdb-ui-active\b#', $html ) && false !== strpos( $html, 'banner_bg' ) && preg_match( '#class="banner_bg[^"]*"[^>]*style="background-image:\s*url\([\'"]?(https?://[^\'")\s]+)#', $html, $bg ) ) {
 			$pre = '<link rel="preload" as="image" href="' . esc_url( $bg[1] ) . '" fetchpriority="high">';
 			$pos = stripos( $html, '</head>' );
 			if ( false !== $pos ) {
@@ -511,11 +514,76 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 				return substr_replace( $tag, ' alt="' . esc_attr( $alt ) . '"', 4, 0 );
 			}, $html );
 		}
+		// The theme's footer logo is marked 200x70; the file is 200x54 (Lighthouse image-aspect-ratio).
+		if ( is_string( $html ) && false !== strpos( $html, 'logo1.png' ) ) {
+			$html = preg_replace( '#(<img\b[^>]*?\bwidth="200"\s+height=")70("[^>]*?/uploads/2016/11/logo1\.png)#i', '${1}54$2', $html );
+		}
+		if ( is_string( $html ) ) {
+			$html = db_onpage_heading_levels( $html );
+		}
 		// Never send an empty page: if a rewrite failed (PCRE errors return
 		// null), fall back to the original markup.
 		return ( is_string( $html ) && '' !== $html ) ? $html : $orig;
 	}
 }
+
+if ( ! function_exists( 'db_onpage_heading_levels' ) ) {
+	/**
+	 * Headings that skip a level (an <h4> straight under an <h2>, as in page
+	 * content and accordion titles) get an aria-level that follows the outline,
+	 * so screen readers (and Lighthouse heading-order) see a proper hierarchy.
+	 * The tag, and so its look, stays the same. Siblings keep one level: the
+	 * outline is tracked with a stack of (original level, announced level).
+	 * Pure function: tested offline in tests/seo/html-hygiene-test.php.
+	 */
+	function db_onpage_heading_levels( $html ) {
+		$body = stripos( $html, '<body' );
+		if ( false === $body || false === stripos( $html, '<h', $body ) ) {
+			return $html;
+		}
+		$stack = array();
+		// Comments and scripts are passed through untouched.
+		$out   = preg_replace_callback( '#<!--.*?-->|<script\b.*?</script>|<h([1-6])\b([^>]*)>#is', function ( $m ) use ( &$stack ) {
+			if ( empty( $m[1] ) ) {
+				return $m[0];
+			}
+			$lvl = (int) $m[1];
+			if ( preg_match( '#\baria-level\s*=\s*["\']?(\d)#i', $m[2], $al ) ) {
+				$lvl = (int) $al[1];
+				while ( $stack && $stack[ count( $stack ) - 1 ][0] >= $lvl ) {
+					array_pop( $stack );
+				}
+				$stack[] = array( $lvl, $lvl );
+				return $m[0];
+			}
+			while ( $stack && $stack[ count( $stack ) - 1 ][0] >= $lvl ) {
+				array_pop( $stack );
+			}
+			// The first heading of an outline may be any level; later ones step down by one at most.
+			$said    = $stack ? min( $lvl, $stack[ count( $stack ) - 1 ][1] + 1 ) : $lvl;
+			$stack[] = array( $lvl, $said );
+			return $said === $lvl ? $m[0] : '<h' . $m[1] . $m[2] . ' aria-level="' . $said . '">';
+		}, substr( $html, $body ) );
+		return is_string( $out ) ? substr( $html, 0, $body ) . $out : $html;
+	}
+}
+
+// Contact Form 7 fields whose visible text is not tied to them (Domain transfer form).
+add_filter( 'wpcf7_form_elements', function ( $form ) {
+	$names = array(
+		'EPPDomainName' => 'Domain name',
+		'OrderNumber'   => 'Order number',
+		'EPPCode'       => 'EPP code',
+	);
+	foreach ( $names as $name => $label ) {
+		$form = preg_replace( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="' . preg_quote( $name, '#' ) . '")#', '<input aria-label="' . esc_attr( $label ) . '"$1', $form );
+	}
+	// Unlock the domain? Yes / No radios.
+	$form = preg_replace_callback( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="unlock_domain"[^>]*\bvalue="(Yes|No)")#', function ( $m ) {
+		return '<input aria-label="Unlock the domain: ' . $m[2] . '"' . $m[1];
+	}, $form );
+	return $form;
+} );
 
 add_action( 'template_redirect', function () {
 	if ( is_admin() || is_feed() || is_robots() ) {

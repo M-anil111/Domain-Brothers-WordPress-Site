@@ -111,5 +111,17 @@ ok( 1 === substr_count( $out, '<h1' ) && false !== strpos( $out, '<div class="en
 $out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">FAQs</h1><p>x</p></main></body>' );
 ok( false !== strpos( $out, '<h1 class="entry-title">FAQs</h1>' ), 'a lone theme title stays the <h1>' );
 
+// Heading levels and the footer logo.
+$out = db_onpage_heading_levels( '<html><head><title>x</title></head><body><h1>T</h1><h2>A</h2><h4 class="wp-block-heading">a1</h4><h4>a2</h4><h5>a2x</h5><h2>B</h2><h3>b1</h3><h4 aria-level="3">c</h4></body></html>' );
+ok( false !== strpos( $out, '<h4 class="wp-block-heading" aria-level="3">a1</h4>' ) && false !== strpos( $out, '<h4 aria-level="3">a2</h4>' ), 'skipped level announced one below its section; siblings share it' );
+ok( false !== strpos( $out, '<h5 aria-level="4">a2x</h5>' ), 'a child of a corrected heading follows it' );
+ok( false !== strpos( $out, '<h2>B</h2><h3>b1</h3>' ), 'a correct outline is untouched' );
+ok( 1 === substr_count( $out, 'aria-level="3">c' ), 'an existing aria-level is kept' );
+ok( '<p>no body</p>' === db_onpage_heading_levels( '<p>no body</p>' ), 'fragments without <body> are untouched' );
+$out = db_onpage_heading_levels( '<body><h2>A</h2><!--<h5>old</h5>--><script>var t="<h6>x</h6>";</script><h3>B</h3></body>' );
+ok( false !== strpos( $out, '<!--<h5>old</h5>-->' ) && false !== strpos( $out, '"<h6>x</h6>"' ) && false !== strpos( $out, '<h3>B</h3>' ), 'headings in comments and scripts are ignored' );
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1>X</h1></main><footer><img loading="lazy" width="200" height="70" src="https://ex.test/wp-content/uploads/2016/11/logo1.png" alt="Domain Brothers"></footer></body>' );
+ok( false !== strpos( $out, 'width="200" height="54" src="https://ex.test/wp-content/uploads/2016/11/logo1.png"' ), 'footer logo gets its real height' );
+
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );
