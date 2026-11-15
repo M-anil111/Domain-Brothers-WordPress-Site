@@ -111,6 +111,15 @@ ok( 1 === substr_count( $out, '<h1' ) && false !== strpos( $out, '<div class="en
 $out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">FAQs</h1><p>x</p></main></body>' );
 ok( false !== strpos( $out, '<h1 class="entry-title">FAQs</h1>' ), 'a lone theme title stays the <h1>' );
 
+// Lazy loading skips the first image of the main content.
+$out = db_onpage_lazy_load_images( '<header><img src="logo.png" loading="eager"></header><div id="primary"><img class="lazy-loaded" src="team.jpg"><img src="two.jpg"></div>' );
+ok( false !== strpos( $out, '<img class="lazy-loaded" src="team.jpg">' ) && false !== strpos( $out, '<img loading="lazy" src="two.jpg">' ), 'first main image loads at once; later images are lazy' );
+
+// target=_blank links inside scripts are not touched.
+$js  = '<body><script>jQuery(".page-list").append("<li><a href=\'https://ex.test/\' target=\'_blank\'>Blog</a></li>");</script><a href="https://ex.test/x" target="_blank">x</a></body>';
+$out = db_onpage_html_hygiene( $js );
+ok( false !== strpos( $out, "<a href='https://ex.test/' target='_blank'>Blog</a>" ) && 1 === substr_count( $out, 'noopener' ), 'links inside scripts keep their markup; real links get noopener' );
+
 // Heading levels and the footer logo.
 $out = db_onpage_heading_levels( '<html><head><title>x</title></head><body><h1>T</h1><h2>A</h2><h4 class="wp-block-heading">a1</h4><h4>a2</h4><h5>a2x</h5><h2>B</h2><h3>b1</h3><h4 aria-level="3">c</h4></body></html>' );
 ok( false !== strpos( $out, '<h4 class="wp-block-heading" aria-level="3">a1</h4>' ) && false !== strpos( $out, '<h4 aria-level="3">a2</h4>' ), 'skipped level announced one below its section; siblings share it' );

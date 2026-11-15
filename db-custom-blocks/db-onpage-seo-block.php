@@ -78,8 +78,18 @@ if ( ! function_exists( 'db_onpage_lazy_load_images' ) ) {
 		if ( ! is_string( $html ) || false === stripos( $html, '<img' ) ) {
 			return $html;
 		}
-		return preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) {
-			$tag = $m[0];
+		// The first image in the main content area is usually the largest thing on
+		// screen (a team photo, a post's lead image): it must not wait for lazy loading.
+		$main  = preg_match( '/<main\b|\bid=["\'](?:primary|content|main)["\']/i', $html, $mm, PREG_OFFSET_CAPTURE ) ? (int) $mm[0][1] : -1;
+		$first = true;
+		return preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) use ( $main, &$first ) {
+			$tag = $m[0][0];
+			if ( $main >= 0 && $first && $m[0][1] > $main ) {
+				$first = false;
+				if ( false === stripos( $tag, 'loading=' ) ) {
+					return $tag;
+				}
+			}
 			if ( false !== stripos( $tag, 'loading=' ) ) {
 				return $tag;
 			}
@@ -89,7 +99,7 @@ if ( ! function_exists( 'db_onpage_lazy_load_images' ) ) {
 				return $tag;
 			}
 			return substr_replace( $tag, ' loading="lazy"', 4, 0 );
-		}, $html );
+		}, $html, -1, $count, PREG_OFFSET_CAPTURE );
 	}
 }
 
@@ -250,8 +260,10 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 			$html = preg_replace( '/(<a\b[^>]*\s(?:rel|target))=”([^"<>]*?)”/', '$1="$2"', $html );
 		}
 		if ( false !== stripos( $html, 'target=' ) ) {
-			$html = preg_replace_callback( '/<a\b[^>]*\btarget\s*=\s*["\']?_blank\b[^>]*>/i', function ( $m ) {
-				return db_onpage_set_rel( $m[0], array( 'noopener' ) );
+			// Links written inside scripts (the theme's site-map appends <a> tags from a
+			// JavaScript string) are left alone: adding rel="..." there broke the string.
+			$html = preg_replace_callback( '/<script\b.*?<\/script>|<a\b[^>]*\btarget\s*=\s*["\']?_blank\b[^>]*>/is', function ( $m ) {
+				return 0 === stripos( $m[0], '<script' ) ? $m[0] : db_onpage_set_rel( $m[0], array( 'noopener' ) );
 			}, $html );
 		}
 
@@ -672,5 +684,10 @@ add_action( 'wp_head', function () {
 	// Breadcrumb links on the About and Contact pages were 23px tall (WCAG 2.2 target size is 24px).
 	if ( is_page( array( 'about-us', 'contact-us' ) ) ) {
 		echo '<style id="db-a11y-crumbs">.dba-crumbs a,.dbc-crumbs a{display:inline-flex;align-items:center;min-height:24px}</style>' . "\n";
+	}
+	// Older news posts colour words with inline color:red (#f00 is 3.5:1 on the light quote
+	// background); a deeper red keeps the emphasis and reads at 6:1 or better.
+	if ( is_singular( 'post' ) ) {
+		echo '<style id="db-a11y-red">.entry-content [style*="color:red"],.entry-content [style*="color: red"],.entry-content [style*="#ff0000"],.entry-content [style*="#FF0000"]{color:#b00000!important}</style>' . "\n";
 	}
 }, 99 );
