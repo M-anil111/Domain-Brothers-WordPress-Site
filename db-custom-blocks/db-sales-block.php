@@ -119,7 +119,8 @@ if ( ! function_exists( 'db_funnel_track' ) ) {
 }
 
 add_action( 'template_redirect', function () {
-	if ( ! is_admin() && is_singular( 'domain' ) ) {
+	// With the page cache on, a beacon counts the view (db-pagecache-block.php).
+	if ( ! is_admin() && is_singular( 'domain' ) && ! ( function_exists( 'db_pc_beacon_mode' ) && db_pc_beacon_mode() ) ) {
 		db_funnel_track( 'listing_view', get_queried_object_id() );
 	}
 }, 4 );

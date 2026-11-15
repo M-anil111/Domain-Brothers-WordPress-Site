@@ -231,6 +231,7 @@ add_action( 'init', function () {
 	}
 	update_option( 'db_blocks_cache_version', DB_BLOCKS_LOADED, false );
 	do_action( 'litespeed_purge_all' );
+	do_action( 'db_page_cache_purge_all' );
 }, 99 );
 
 /* --------------------------------------------------------- cron fallback */
