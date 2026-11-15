@@ -83,6 +83,11 @@ if ( ! function_exists( 'db_onpage_lazy_load_images' ) ) {
 			if ( false !== stripos( $tag, 'loading=' ) ) {
 				return $tag;
 			}
+			// The main image of a page (marked high priority) must load at once: lazy loading
+			// it delays the largest paint the page is judged on.
+			if ( preg_match( '/\bfetchpriority\s*=\s*["\']?high/i', $tag ) ) {
+				return $tag;
+			}
 			return substr_replace( $tag, ' loading="lazy"', 4, 0 );
 		}, $html );
 	}
