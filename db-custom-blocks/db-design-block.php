@@ -150,13 +150,13 @@ body.single-domain.db-ui-active #masthead .site-branding { display: flex; align-
 body.single-domain.db-ui-active #masthead .site-branding .custom-logo-link { margin: 0 !important; line-height: 0; }
 body.single-domain.db-ui-active #content.site-content { padding: 0 !important; min-height: 0 !important; background: none !important; }
 body.single-domain.db-ui-active .db-desktop-logo { display: none !important; }
-body.single-domain.db-ui-active #masthead .site-branding .custom-logo-link img { height: 40px; width: auto; }
+body.single-domain.db-ui-active #masthead .site-branding .custom-logo-link img { height: auto; max-height: 40px; width: auto; }
 @media (min-width: 992px) {
 	body.single-domain.db-ui-active #masthead.site-header { padding: 0 max(var(--r-gutter), calc((100vw - var(--r-max)) / 2 + var(--r-gutter))); }
 	body.single-domain.db-ui-active #masthead .site-branding .db-desktop-nav { margin-left: auto; flex: 0 1 auto; justify-content: flex-end; }
 }
 body.admin-bar.single-domain.db-ui-active #masthead.site-header { top: 32px; }
-body.db-ui-active .site-header .domain-search .custom-logo-link img { height: 40px; }
+body.db-ui-active .site-header .domain-search .custom-logo-link img { height: auto; max-height: 40px; }
 body.db-ui-active .db-desktop-nav ul { gap: 4px; }
 body.db-ui-active .db-desktop-nav a {
 	display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: var(--r-r-ctl);

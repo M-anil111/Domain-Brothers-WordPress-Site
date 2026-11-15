@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.78.8
+ * Version:     3.78.9
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.78.8' );
+define( 'DB_BLOCKS_LOADED', '3.78.9' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
@@ -2426,7 +2426,7 @@ body.db-ui-active { padding-top: 70px !important; }
 @media (min-width: 992px) {
 	.db-ui-active .site-header .domain-search { padding-right: var(--db-sp-5); justify-content: flex-start; }
 	.db-ui-active .site-header .domain-search .custom-logo-link { display: flex; }
-	.db-ui-active .site-header .domain-search .custom-logo-link img { height: 38px; width: auto; }
+	.db-ui-active .site-header .domain-search .custom-logo-link img { height: auto; max-height: 38px; width: auto; }
 	.db-ui-active .site-header .domain-search .widget { flex: 0 1 320px; max-width: 320px; margin-left: auto; }
 	.db-ui-active .db-desktop-nav {
 		display: flex; flex: 1 1 auto; justify-content: center;

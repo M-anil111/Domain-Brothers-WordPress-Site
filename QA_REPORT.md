@@ -847,3 +847,61 @@ Site Health: 0 critical, 1 recommendation (the WordPress version).
   - cache HTML at Cloudflare's edge (needs Cloudflare access);
   - ask Hostinger for `opcache.revalidate_freq=60`;
   - review whether Wordfence is needed behind Cloudflare.
+
+## 39. Lighthouse on every page (v3.78.0 - v3.78.9)
+
+**How it was run**
+- **Tool:** Lighthouse 12.6.1 (Chromium 141), mobile (the default slow-4G phone profile) and desktop.
+- **Coverage:**
+  - mobile: all 1,831 URLs in the WordPress sitemap (1,525 news posts, 206 domain pages, 41 pages, 58 archives, and the home page);
+  - desktop: the 306 non-news URLs.
+- **Staging password:** answered for the beta host only (Puppeteer `page.authenticate`), never sent to third parties.
+- **Cache:** each page was warmed in the page cache before its run, so the numbers are what a visitor gets on a cache hit.
+- **Blocked request:** one, Cloudflare Zaraz's `google.com/ads/ga-audiences` ping. It never finishes in a browser, so Lighthouse would always wait its full 45 s.
+- **Results:** every URL in `docs/lighthouse/lighthouse-2026-11-15.csv`.
+
+**What Lighthouse found, and what was fixed**
+
+| Finding | Fix | Version |
+|---|---|---|
+| Tag Manager, ads, Funding Choices and Clarity ran inside the load window (about 1 s of blocking on a phone). Zaraz keeps a request open, so any timer fired while Lighthouse was still recording. | Delayed scripts start on first interaction only (filter `db_delay_fallback_ms`). Zaraz still sends the GA page view. | 3.78.3 |
+| The view beacons never read their response, so the page never "finished loading" | Responses are read | 3.78.3 |
+| 7 render-blocking stylesheets on the home page | Adjacent plugin stylesheets served as one file, same order; LiteSpeed's empty dummy CSS dropped | 3.78.0 |
+| Manifest declared a 100x100 icon as 512 and 192 (console error) | Real sizes declared | 3.78.0 |
+| Domain-page hero: full 1700px photos on phones (up to 321 KB), plus a preload of the production banner image | 900px phone versions with media-matched preloads; obsolete preload removed | 3.78.4 |
+| Theme font lato-bold.woff2 is 227 KB | 31 KB Latin subset with unicode-range (OFL notices kept) | 3.78.5 |
+| Heading order (service pages, accordions), unlabelled transfer-form fields, contrast of domain-page headings and the staging ad placeholder | aria-level outline, aria-labels, colours | 3.78.4 - 3.78.8 |
+| JavaScript syntax error on /site-map/: the noopener filter edited a link inside a theme script | Scripts skipped | 3.78.6 |
+| Main image lazy-loaded (team page, About hero) | First main image and high-priority images load at once | 3.77.5, 3.78.6 |
+| Footer logo forced to 200:70 and header logo squeezed into a narrow column (image-aspect-ratio on most pages) | Real 200:54 ratio; height scales with width | 3.78.8 - 3.78.9 |
+| Inline color:red and Bootstrap label colours in old posts, unnamed selects and YouTube iframes | Readable colours, names and titles | 3.78.6 - 3.78.7 |
+
+**Results**
+
+Mobile, all 1,831 URLs:
+
+| Group | Pages | Performance (median / lowest) | Accessibility (median / lowest) | Best practices (median) | LCP median |
+|---|---|---|---|---|---|
+| News posts | 1,525 | 97 / 72 | 100 / 89 | 96 | 1.9 s |
+| Domain pages | 206 | 93 / 90 | 100 / 100 | 100 | 2.9 s |
+| Pages | 41 | 98 / 77 | 100 / 97 | 100 | 1.9 s |
+| Archives | 58 | 98 / 91 | 100 / 100 | 100 | 1.9 s |
+| Home | 1 | 94 | 100 | 79 | 2.7 s |
+
+- **Performance spread:** 1,767 pages (96.5%) score 90-100 and 64 score 50-89. None scores below 50.
+- **Spot-checks:** before these fixes, the home and domain pages scored 65-71.
+
+Desktop, 306 URLs: every page scores 90-100. Median Performance is 99-100 and Accessibility is 100 for every page.
+
+**Final version (3.78.9), 24-page sample across all types, both modes**
+- Accessibility 100 with no failures.
+- Best practices median 100; the logo-ratio warnings are gone.
+- Mobile performance median 95.5. Pages measured earlier scored 97.5 median, which is within run-to-run noise.
+
+**SEO is 61 on every page by design.** Staging sends `noindex` and its robots.txt disallows crawling. These are the only SEO failures apart from 3 pages with link-text items in old post content. Production will not have them.
+
+**Remaining items: content, owner or Cloudflare**
+- **News posts with slow lead images (the 64 pages under 90).** They use large original uploads (JPEG or PNG, up to 2638 px). Mobile LCP is 5-10 s on those posts. Fix: bulk-convert the media library to WebP at sensible sizes, for example with LiteSpeed Cache's image optimisation (QUIC.cloud, works on this server) or another image optimiser. This is the largest remaining opportunity (modern-image-formats on 601 pages).
+- **Malformed HTML in imported ICANN articles.** Empty links and list items wrapped in links (link-name on 72 pages, list/listitem on 7) need editing in those posts. The same goes for hot-linked images from other sites that no longer load (console errors on 273 posts).
+- **Cloudflare.** Its bot-detection script (`/cdn-cgi/challenge-platform/`, from Bot Fight Mode or JavaScript Detections) uses a deprecated browser API, which costs about 4 Best-practices points on pages where it runs. Zaraz also loads GA alongside Tag Manager, which itself loads the same GA property, so GA is loaded twice. Settings for both are in the Cloudflare dashboard.
+- **Logo.** The only logo is 200x54 px. On phones Lighthouse asks for about 2x (image-size-responsive on 651 pages). Upload a 400 px or SVG logo.
