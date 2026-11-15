@@ -603,6 +603,28 @@ add_filter( 'wpcf7_form_elements', function ( $form ) {
 	$form = preg_replace_callback( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="unlock_domain"[^>]*\bvalue="(Yes|No)")#', function ( $m ) {
 		return '<input aria-label="Unlock the domain: ' . $m[2] . '"' . $m[1];
 	}, $form );
+	// Any other visible field with no label at all gets a name made from its field name
+	// (EPPDomainPrice -> "EPP domain price"), so it is never announced as just "edit text".
+	$labelled = array();
+	if ( preg_match_all( '#<label\b[^>]*\bfor="([^"]+)"#i', $form, $lm ) ) {
+		$labelled = array_flip( $lm[1] );
+	}
+	$form = preg_replace_callback( '#<(input|select|textarea)\b(?![^>]*\b(?:aria-label|aria-labelledby|placeholder)=)(?![^>]*\btype="(?:hidden|submit|button|radio|checkbox)")([^>]*)>#i', function ( $m ) use ( $labelled ) {
+		if ( preg_match( '#\bid="([^"]+)"#', $m[2], $id ) && isset( $labelled[ $id[1] ] ) ) {
+			return $m[0];
+		}
+		// Only the theme's own fields (capitalised names such as EPPDomainPrice); standard
+		// CF7 fields (your-name, ...) are usually wrapped in a visible <label>, which wins.
+		if ( ! preg_match( '#\bname="([A-Z][^"\[]*)#', $m[2], $n ) ) {
+			return $m[0];
+		}
+		$words = trim( preg_replace( '/\s+/', ' ', preg_replace( '/([a-z])([A-Z])|([A-Z])([A-Z][a-z])|[_-]+/', '$1$3 $2$4', $n[1] ) ) );
+		$words = preg_replace_callback( '/\b([A-Z][a-z]+)\b/', function ( $w ) {
+			return strtolower( $w[1] );
+		}, $words );
+		$words = ucfirst( $words );
+		return '' === $words ? $m[0] : '<' . $m[1] . ' aria-label="' . esc_attr( $words ) . '"' . $m[2] . '>';
+	}, $form );
 	return $form;
 } );
 
@@ -696,8 +718,6 @@ add_action( 'wp_head', function () {
 	}
 	// Older news posts colour words with inline color:red (#f00 is 3.5:1 on the light quote
 	// background); a deeper red keeps the emphasis and reads at 6:1 or better.
-	// The footer logo is drawn 180px wide with a fixed height, which squashed it (Lighthouse image-aspect-ratio).
-	echo '<style id="db-logo-ratio">.footer-payment a>img{height:auto!important}</style>' . "\n";
 	if ( is_singular( 'post' ) ) {
 		// Bootstrap's label colours in older market reports are 2.5-3.9:1 with white text.
 		echo '<style id="db-a11y-labels">.entry-content .label-success{background:#2e7d32!important}.entry-content .label-danger{background:#c62828!important}.entry-content .label-warning{background:#8a5a00!important}.entry-content .label-info{background:#0b6e8a!important}</style>' . "\n";

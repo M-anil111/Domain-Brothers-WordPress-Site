@@ -302,7 +302,7 @@ body.db-ui-active .site-footer .site-info, body.db-ui-active .site-footer .site-
 body.db-ui-active .site-footer .footer-logo img { filter: none !important; opacity: 1 !important; visibility: visible !important; max-width: 180px; height: auto; }
 body.db-ui-active .banner_bg .db-breadcrumbs { opacity: 1 !important; }
 html.db-view-list body.db-ui-active.home .db-domain-grid .db-domain-card:nth-child(n+11) { display: none !important; }
-body.db-ui-active .site-footer .footer-logo img { width: 180px !important; height: auto !important; aspect-ratio: 200 / 70; display: block; }
+body.db-ui-active .site-footer .footer-logo img { width: 180px !important; height: auto !important; aspect-ratio: 200 / 54; display: block; }
 body.db-ui-active .site-footer .footer-logo a { display: inline-block !important; }
 body.db-ui-active .site-footer .footer-logo { padding: 8px 0; }
 body.db-ui-active .site-footer .db-icon-badge svg circle, body.db-ui-active .site-footer .db-icon-badge svg rect { fill: none !important; }

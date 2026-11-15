@@ -83,7 +83,7 @@ add_action( 'wp_footer', function () {
 	 */
 	?>
 	<nav id="db-desktop-nav" class="db-desktop-nav" aria-label="Primary">
-		<a class="db-desktop-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="148" height="40" decoding="async"></a>
+		<a class="db-desktop-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="148" height="40" decoding="async" loading="eager" fetchpriority="high"></a>
 		<ul>
 			<?php foreach ( $links as $label => $href ) : ?>
 				<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
@@ -94,7 +94,7 @@ add_action( 'wp_footer', function () {
 	<nav id="db-mnav" class="db-mnav" aria-label="Primary" aria-hidden="true" inert>
 		<div class="db-mnav-inner">
 			<a class="db-mnav-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home">
-				<img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="200" height="64" decoding="async">
+				<img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="200" height="54" decoding="async">
 			</a>
 			<ul>
 				<?php foreach ( $links as $label => $href ) : ?>

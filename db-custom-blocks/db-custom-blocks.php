@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.78.7
+ * Version:     3.78.8
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.78.7' );
+define( 'DB_BLOCKS_LOADED', '3.78.8' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
@@ -444,7 +444,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Brand bar at the top of the hero: logo left, burger right.
 		$html .= '<div class="db-hp-nav">';
 		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
-		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
+		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="54" decoding="async">';
 		$html .= '</a>';
 		if ( $show_burger ) {
 			$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
