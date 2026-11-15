@@ -50,8 +50,10 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 		await page.keyboard.press('ArrowRight');
 		check('arrow keys move the choice', (await page.getAttribute('.db-pay-opt:nth-child(1)', 'aria-checked')) === 'true');
 	}
-	await page.evaluate(() => window.scrollTo(0, 0));
-	await page.waitForTimeout(400);
+	// The theme scrolls smoothly; jump instead, and wait until the page is really at the top.
+	await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+	await page.waitForFunction(() => window.scrollY === 0, null, { timeout: 5000 }).catch(() => {});
+	await page.waitForTimeout(300);
 	check('the sticky bar is hidden at the top of the page', !(await page.$eval('#db-sticky', (e) => e.classList.contains('is-on')).catch(() => true)));
 	await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 	const stickyOn = await page.waitForFunction(() => { const e = document.getElementById('db-sticky'); return e && e.classList.contains('is-on') && !e.hasAttribute('inert'); }, null, { timeout: 5000 }).then(() => true).catch(() => false);
