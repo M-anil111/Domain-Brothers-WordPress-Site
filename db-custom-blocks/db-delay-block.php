@@ -104,10 +104,15 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 		}
 		// Third-party iframes (Facebook like box, YouTube, Maps) load only when scrolled near.
 		$out = preg_replace_callback( '#<iframe\b([^>]*)>#i', function ( $m ) {
+			if ( preg_match( '#\bloading\s*=#i', $m[1] ) && ! preg_match( '#\btitle\s*=#i', $m[1] ) && preg_match( '#youtube|vimeo#i', $m[1] ) ) {
+				return '<iframe title="Embedded video"' . $m[1] . '>';
+			}
 			if ( preg_match( '#\bloading\s*=#i', $m[1] ) || ! preg_match( '#\bsrc\s*=\s*["\'](https?:)?//([a-z0-9-]+\.)*(facebook\.com|youtube\.com|youtube-nocookie\.com|google\.com|vimeo\.com)[/:?]#i', $m[1] ) ) {
 				return $m[0];
 			}
-			return '<iframe loading="lazy"' . $m[1] . '>';
+			// An embed without a title is announced as just "frame" (Lighthouse frame-title).
+			$title = preg_match( '#\btitle\s*=#i', $m[1] ) ? '' : ' title="' . ( preg_match( '#youtube|vimeo#i', $m[1] ) ? 'Embedded video' : 'Embedded content' ) . '"';
+			return '<iframe loading="lazy"' . $title . $m[1] . '>';
 		}, $out );
 		if ( 0 === $count ) {
 			return $out;

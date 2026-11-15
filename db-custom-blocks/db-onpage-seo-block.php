@@ -530,6 +530,11 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		if ( is_string( $html ) && false !== strpos( $html, 'logo1.png' ) ) {
 			$html = preg_replace( '#(<img\b[^>]*?\bwidth="200"\s+height=")70("[^>]*?/uploads/2016/11/logo1\.png)#i', '${1}54$2', $html );
 		}
+		// Premium domain deals: the theme's two filter selects have no label (Lighthouse select-name).
+		if ( is_string( $html ) && false !== strpos( $html, 'tld_info' ) ) {
+			$html = preg_replace( '#<select(?![^>]*\baria-label=)([^>]*\bid="charlen")#', '<select aria-label="Name length"$1', $html );
+			$html = preg_replace( '#<select(?![^>]*\baria-label=)([^>]*\bid="tld")#', '<select aria-label="Extension"$1', $html );
+		}
 		if ( is_string( $html ) ) {
 			$html = db_onpage_heading_levels( $html );
 		}
@@ -583,9 +588,13 @@ if ( ! function_exists( 'db_onpage_heading_levels' ) ) {
 // Contact Form 7 fields whose visible text is not tied to them (Domain transfer form).
 add_filter( 'wpcf7_form_elements', function ( $form ) {
 	$names = array(
-		'EPPDomainName' => 'Domain name',
-		'OrderNumber'   => 'Order number',
-		'EPPCode'       => 'EPP code',
+		'EPPDomainName'  => 'Domain name',
+		'OrderNumber'    => 'Order number',
+		'EPPCode'        => 'EPP code',
+		'DomainEPPCode'  => 'EPP code',
+		'BuyerName'      => 'Buyer name',
+		'Buyer_EmailID'  => 'Buyer email',
+		'BuyerReceiptNo' => 'Receipt number',
 	);
 	foreach ( $names as $name => $label ) {
 		$form = preg_replace( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="' . preg_quote( $name, '#' ) . '")#', '<input aria-label="' . esc_attr( $label ) . '"$1', $form );
@@ -687,7 +696,11 @@ add_action( 'wp_head', function () {
 	}
 	// Older news posts colour words with inline color:red (#f00 is 3.5:1 on the light quote
 	// background); a deeper red keeps the emphasis and reads at 6:1 or better.
+	// The footer logo is drawn 180px wide with a fixed height, which squashed it (Lighthouse image-aspect-ratio).
+	echo '<style id="db-logo-ratio">.footer-payment a>img{height:auto!important}</style>' . "\n";
 	if ( is_singular( 'post' ) ) {
+		// Bootstrap's label colours in older market reports are 2.5-3.9:1 with white text.
+		echo '<style id="db-a11y-labels">.entry-content .label-success{background:#2e7d32!important}.entry-content .label-danger{background:#c62828!important}.entry-content .label-warning{background:#8a5a00!important}.entry-content .label-info{background:#0b6e8a!important}</style>' . "\n";
 		echo '<style id="db-a11y-red">.entry-content [style*="color:red"],.entry-content [style*="color: red"],.entry-content [style*="#ff0000"],.entry-content [style*="#FF0000"]{color:#b00000!important}</style>' . "\n";
 	}
 }, 99 );

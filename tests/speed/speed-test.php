@@ -43,8 +43,8 @@ check( 'page without third-party scripts unchanged', '<html><body><script>var a=
 check( 'fragment without </body> unchanged', '<script async src="https://www.googletagmanager.com/gtm.js"></script>' === db_delay_rewrite( '<script async src="https://www.googletagmanager.com/gtm.js"></script>', $h ) );
 
 $if = db_delay_rewrite( '<html><body><iframe src="https://www.facebook.com/plugins/like.php?x=1" width="1"></iframe><iframe src="https://example.org/embed"></iframe><iframe loading="eager" src="https://www.youtube.com/embed/x"></iframe></body></html>', $h );
-check( 'Facebook iframe lazy-loaded', false !== strpos( $if, '<iframe loading="lazy" src="https://www.facebook.com/plugins/like.php' ) );
-check( 'first-party iframe and explicit loading untouched', false !== strpos( $if, '<iframe src="https://example.org/embed">' ) && false !== strpos( $if, '<iframe loading="eager" src="https://www.youtube.com' ) );
+check( 'Facebook iframe lazy-loaded and titled', false !== strpos( $if, '<iframe loading="lazy" title="Embedded content" src="https://www.facebook.com/plugins/like.php' ) );
+check( 'first-party iframe untouched; explicit loading kept, video titled', false !== strpos( $if, '<iframe src="https://example.org/embed">' ) && false !== strpos( $if, '<iframe title="Embedded video" loading="eager" src="https://www.youtube.com' ) );
 
 // CSS combining.
 function esc_url( $u ) { return $u; }
