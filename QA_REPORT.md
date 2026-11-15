@@ -755,3 +755,95 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 - **Registry records:** 102 of 207 listings have a record. The registry rate-limited the backfill, and the hourly job fills the remaining ~105 over about 10 hours.
 - **Persistent object cache:** a host setting. The server supports Redis, Memcached and APCu.
 - **"Page cache not detected":** on beta this comes from Basic Auth, which bypasses the cache.
+
+## 38. Speed, object cache, unregistered listing, WordPress core (v3.76.0 - v3.77.5)
+
+**What the server is.** Domain Brothers > Platform (new) reads it from inside PHP:
+- **Server:** nginx with PHP-FPM, PHP 8.5.12, OPcache on.
+- **Page cache:** LiteSpeed Cache's page cache needs a LiteSpeed server, so no page was ever served from cache. Every visit built the page in PHP: 0.55-1.75 s before the first byte, about 3 s to the load event, about 1.25 MB per page.
+- **Object cache:** no Redis or Memcached daemon is running; APCu is available (32 MB).
+- **OPcache:** checks every file on every request (`revalidate_freq=0`), and this plan disables `.user.ini`.
+- **WordPress core:** runs from a host-managed shared copy (`/opt/h5g/flavors/wp-6.9.11`). WordPress.org offers 7.1.4, but WordPress cannot update itself here.
+
+**What was built**
+- **Page cache** (`db-pagecache-block.php`, `pagecache/serve.php`, drop-in `advanced-cache.php`).
+  - **Serving:** saved pages go to signed-out visitors before plugins load.
+  - **Key:** host, path, buy-button experiment variant, and a hash of the Authorization header. A staging password can never be bypassed; without credentials beta still answers 401.
+  - **Skipped:** sign-in and account cookies, query strings other than tracking parameters, and checkout, thank-you, account, compare, finder, trust-center and sign-in paths.
+  - **Never saved:** pages that set a cookie (other than the experiment cookie), pages that are not 200 text/html, previews, searches and 404s.
+  - **Headers:** security headers and `X-Robots-Tag` are saved and replayed.
+  - **Lifetime:** 10 hours, inside the life of the form nonces a page carries.
+  - **Purge:**
+    - any published content change, menu, widget, theme or plugin change, or a settings form saved in wp-admin clears everything;
+    - a registry-record refresh clears only that listing's page;
+    - a new plugin version clears everything.
+  - **Warming:** pages are rebuilt after a purge and each hour, both experiment variants for domain pages. It pauses while the site asks for a password, as staging does.
+  - **Tracking:** listing views and experiment views are counted by a beacon while the cache is on, so each view counts once.
+- **Object cache** (drop-in `object-cache.php`, APCu).
+  - Keys are per site, with generation-based flush and per-group flush.
+  - Requests without APCu (WP-CLI) touch a flag file, so the next web request flushes; a change made outside the web server never leaves stale data.
+  - Queries per page dropped from 55-96 to 14-36.
+- **Drop-in safety.** Each drop-in is written, then checked with a loopback request, and removed again if the site stops answering. Both are removed when the plugin is deactivated. A drop-in owned by another plugin is never overwritten (LiteSpeed Cache's own page-cache drop-in is replaced only on a non-LiteSpeed server, where it does nothing).
+- **Third-party scripts** (`db-delay-block.php`). Tag Manager (and the tags it loads), AdSense, Funding Choices, HubSpot, AddToAny and Clarity start on the first scroll, tap or key press, or 2.5 s after the load event. Facebook, YouTube, Maps and Vimeo iframes are lazy-loaded. Ad slots and `dataLayer` events queue until the scripts start. A visitor who leaves within 2.5 s without touching the page is not counted by analytics.
+- **Main image.** It is no longer lazy-loaded when it is marked high priority (About hero).
+- **Platform page.** Shows the server, OPcache, reachable cache back ends, WordPress.org's offer, host-managed core, the Speed switches, and per-phase timing (`?db_timing=1` when signed in).
+
+**Found and fixed while building**
+- The purge hook called `current_user_can()` while LiteSpeed Cache saved an option before WordPress had loaded its user functions. The fatal broke the plugin overwrite during deploys. It is guarded now; the plugin's fatal log (Tools > DB Fatal Log) showed the trace.
+- Deactivating LiteSpeed Cache removes `WP_CACHE` from wp-config, which turns any page cache off. LiteSpeed Cache stays active for that reason.
+
+**Measured on beta (desktop Chromium from the test runner, through Cloudflare)**
+
+| Page | Before (load event) | After (load event) |
+|---|---|---|
+| Home | 3.15 s | 0.45-0.71 s |
+| Domain page | 2.86 s | 0.75-0.94 s |
+| All domains | n/a | 0.66-0.77 s |
+| About | n/a | 0.88 s |
+| Contact | n/a | 0.71 s |
+| News | n/a | 0.65 s |
+| FAQs | n/a | 0.81 s |
+| My wishlist (personal page, never cached) | n/a | 1.05 s |
+
+- **Page weight:** fell from about 1.25 MB to 190-535 KB.
+- **Server response on a cache hit:** about 0.2-0.45 s from the runner. A static file from the same server takes 0.36 s (median), and Cloudflare's edge alone 0.13 s. The rest is the network path between Cloudflare and the host.
+- **Cache miss:** 0.3-0.5 s of PHP. Wordfence takes 110-170 ms of that, LiteSpeed Cache 33-47 ms, and this plugin 20-30 ms.
+- **Caveat:** beta's password adds one uncached round trip on a browser's first visit. Production has no password.
+
+**Staging changes**
+- mississaugacontractors.ca is unpublished (draft). The .ca registry answers "Domain not found", so the name is not registered. QA check FN-32 now uses mississaugahomefinder.ca.
+- LiteSpeed Cache was deactivated and reactivated once to deploy the fix above. It is active.
+
+**Checks (v3.77.4 matrix, 2026-11-15)**
+
+| Suite | Result |
+|---|---|
+| site-qa | 406/407 (FN-32 used the unpublished listing; fixed) |
+| content-cluster | 159/159 |
+| account-flow | 27/27 |
+| domain-tools | 23/23 (22/23 in the matrix: smooth-scroll race in the test, fixed) |
+| wishlist-flow | 20/20 |
+| offer-flow | 17/17 |
+| sold-epp | 17/17 |
+| account-entry | 16/16 |
+| sales-features | 14/14 |
+| email-templates | 14/14 |
+| sales-security | 13/13 |
+| turnstile | 12/12 |
+| hits-offers | 11/11 (re-run; the matrix run timed out loading an admin page after all checks passed) |
+| listing-templates | 6/6 (re-run; one slow response in the matrix) |
+| axe | Clean |
+| Responsive | 280 scans, 0 issues |
+| Stripe full and plan purchase | Pass |
+| Offline | All pass, including `tests/speed/speed-test.php` 31/31 and `tests/speed/object-cache-test.php` 22/22 (both now in CI) |
+| admin-sweep | 19/20 (WordPress core version, host-managed) |
+
+Site Health: 0 critical, 1 recommendation (the WordPress version).
+
+**Open, owner or host action**
+- **WordPress core:** take a backup, then set 7.1.4 in hPanel.
+- **Production:** domainbrothers.com answers HTTP 500 on every page (a different server from staging).
+- **Further speed options:**
+  - cache HTML at Cloudflare's edge (needs Cloudflare access);
+  - ask Hostinger for `opcache.revalidate_freq=60`;
+  - review whether Wordfence is needed behind Cloudflare.
