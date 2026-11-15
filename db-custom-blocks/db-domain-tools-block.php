@@ -252,17 +252,42 @@ if ( ! function_exists( 'db_tools_rdap_fetch' ) ) {
 		if ( '' === $name ) {
 			return array();
 		}
+		// A registry that rate-limited us recently is left alone until its pause ends.
+		$pause = (int) get_option( 'db_rdap_pause_until', 0 );
+		if ( $pause > time() ) {
+			return array( 'year' => 0, 'registrar' => '', 'paused' => $pause );
+		}
 		$res  = wp_remote_get( 'https://rdap.org/domain/' . rawurlencode( $name ), array(
 			'timeout' => (int) $timeout, 'redirection' => 3, 'headers' => array( 'Accept' => 'application/rdap+json' ),
 		) );
 		$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
+		if ( 429 === $code ) {
+			// Rate limited: keep any earlier record, honour Retry-After (60 s to 1 h,
+			// 15 min when absent) for every lookup, and retry this listing after it.
+			$after = (int) wp_remote_retrieve_header( $res, 'retry-after' );
+			$after = $after > 0 ? min( HOUR_IN_SECONDS, max( MINUTE_IN_SECONDS, $after ) ) : 15 * MINUTE_IN_SECONDS;
+			update_option( 'db_rdap_pause_until', time() + $after, false );
+			update_post_meta( $post->ID, 'db_rdap_until', time() + $after + MINUTE_IN_SECONDS );
+			$old = get_post_meta( $post->ID, 'db_rdap', true );
+			if ( ! is_array( $old ) || empty( $old['year'] ) ) {
+				update_post_meta( $post->ID, 'db_rdap', array( 'year' => 0, 'registrar' => '', 'checked' => time(), 'error' => 'registry is rate limiting lookups; retried automatically' ) );
+			}
+			return array( 'year' => 0, 'registrar' => '', 'paused' => time() + $after );
+		}
 		$data = 200 === $code ? db_tools_rdap_parse( wp_remote_retrieve_body( $res ) ) : array( 'year' => 0, 'registrar' => '' );
 		$data['checked'] = time();
+		$retry = DAY_IN_SECONDS;
 		if ( ! $data['year'] ) {
-			$data['error'] = is_wp_error( $res ) ? mb_substr( $res->get_error_message(), 0, 160 ) : ( 200 === $code ? 'no registration date in the record' : 'registry answered HTTP ' . $code );
+			if ( 404 === $code ) {
+				// The registry holds no record: the name is not currently registered.
+				$data['error'] = 'not registered at the registry (HTTP 404); check that the name is still held';
+				$retry         = 7 * DAY_IN_SECONDS;
+			} else {
+				$data['error'] = is_wp_error( $res ) ? mb_substr( $res->get_error_message(), 0, 160 ) : ( 200 === $code ? 'no registration date in the record' : 'registry answered HTTP ' . $code );
+			}
 		}
 		update_post_meta( $post->ID, 'db_rdap', $data );
-		update_post_meta( $post->ID, 'db_rdap_until', time() + ( $data['year'] ? 30 : 1 ) * DAY_IN_SECONDS );
+		update_post_meta( $post->ID, 'db_rdap_until', time() + ( $data['year'] ? 30 * DAY_IN_SECONDS : $retry ) );
 		return $data;
 	}
 }
@@ -583,6 +608,29 @@ if ( ! function_exists( 'db_tools_rdap_pending' ) ) {
 	}
 }
 
+// Hourly sweep: ten listings per run, spaced out, so every listing gets a record
+// without anyone pressing the batch button. Stops when the registry rate-limits.
+add_action( 'init', function () {
+	if ( ! wp_next_scheduled( 'db_tools_rdap_sweep' ) ) {
+		wp_schedule_event( time() + 5 * MINUTE_IN_SECONDS, 'hourly', 'db_tools_rdap_sweep' );
+	}
+} );
+add_action( 'db_tools_rdap_sweep', function () {
+	$start = time();
+	foreach ( db_tools_rdap_pending( 10 ) as $i => $id ) {
+		if ( time() - $start > 20 ) {
+			break;
+		}
+		if ( $i ) {
+			usleep( 1000000 );
+		}
+		$r = db_tools_rdap_fetch( $id, 6 );
+		if ( ! empty( $r['paused'] ) ) {
+			break;
+		}
+	}
+} );
+
 add_action( 'admin_post_db_tools_rdap_batch', function () {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( 'Not allowed.', 403 );
@@ -594,7 +642,13 @@ add_action( 'admin_post_db_tools_rdap_batch', function () {
 		if ( time() - $start > 20 ) {
 			break;
 		}
-		db_tools_rdap_fetch( $id, 6 );
+		if ( $done ) {
+			usleep( 700000 ); // Spaced out so the registry does not rate-limit the batch.
+		}
+		$r = db_tools_rdap_fetch( $id, 6 );
+		if ( ! empty( $r['paused'] ) ) {
+			break;
+		}
 		$done++;
 	}
 	wp_safe_redirect( admin_url( 'admin.php?page=db-rdap&done=' . $done ) );
@@ -623,7 +677,11 @@ if ( ! function_exists( 'db_tools_rdap_admin_page' ) ) {
 			echo '<div class="notice notice-success"><p>Checked ' . (int) $_GET['done'] . ' listings.</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification
 		}
 		echo '<p>Domain pages show the year a name was first registered and its registrar, from the public RDAP record (looked up through rdap.org). Records refresh every 30 days in the background, and when a listing is saved.</p>';
-		echo '<p><strong>' . (int) $ok . '</strong> of ' . (int) $total . ' published listings have a record. <strong>' . count( $fails ) . '</strong> lookups failed (retried after a day).</p>';
+		echo '<p><strong>' . (int) $ok . '</strong> of ' . (int) $total . ' published listings have a record. <strong>' . count( $fails ) . '</strong> lookups failed (retried automatically).</p>';
+		$pause = (int) get_option( 'db_rdap_pause_until', 0 );
+		if ( $pause > time() ) {
+			echo '<div class="notice notice-warning inline"><p>The registry asked us to slow down. Lookups resume in about ' . (int) ceil( ( $pause - time() ) / 60 ) . ' minutes.</p></div>';
+		}
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 		wp_nonce_field( 'db_tools_rdap_batch' );
 		echo '<input type="hidden" name="action" value="db_tools_rdap_batch"><button class="button button-primary">Check the next 15 listings now</button></form>';
