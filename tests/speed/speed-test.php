@@ -8,7 +8,6 @@ define( 'WP_CONTENT_DIR', sys_get_temp_dir() . '/db-speed-test-' . getmypid() );
 function apply_filters( $t, $v ) { return $v; }
 function get_option( $k, $d = false ) { return $d; }
 function add_action() {}
-function esc_url( $u ) { return $u; }
 require __DIR__ . '/../../db-custom-blocks/db-delay-block.php';
 require __DIR__ . '/../../db-custom-blocks/pagecache/serve.php';
 
@@ -46,6 +45,28 @@ check( 'fragment without </body> unchanged', '<script async src="https://www.goo
 $if = db_delay_rewrite( '<html><body><iframe src="https://www.facebook.com/plugins/like.php?x=1" width="1"></iframe><iframe src="https://example.org/embed"></iframe><iframe loading="eager" src="https://www.youtube.com/embed/x"></iframe></body></html>', $h );
 check( 'Facebook iframe lazy-loaded', false !== strpos( $if, '<iframe loading="lazy" src="https://www.facebook.com/plugins/like.php' ) );
 check( 'first-party iframe and explicit loading untouched', false !== strpos( $if, '<iframe src="https://example.org/embed">' ) && false !== strpos( $if, '<iframe loading="eager" src="https://www.youtube.com' ) );
+
+// CSS combining.
+function esc_url( $u ) { return $u; }
+$B = 'https://ex.test/wp-content/uploads/db-blocks';
+$files = array( 'hero-aaaaaaaaaa.css' => '.h{}', 'ui-bbbbbbbbbb.css' => '.u{}', 'modern-cccccccccc.css' => '.m{}', 'design-dddddddddd.css' => '.d{}' );
+$written = array();
+$read  = function ( $n ) use ( $files ) { return $files[ $n ] ?? null; };
+$write = function ( $n, $css ) use ( &$written ) { $written[ $n ] = $css; return 'https://ex.test/wp-content/uploads/db-blocks/' . $n; };
+$head = "<link rel='stylesheet' id='ls' href='https://ex.test/wp-content/plugins/litespeed-cache/assets/css/litespeed-dummy.css?ver=1' media='all' />\n"
+	. "<link rel='stylesheet' id='bs' href='https://ex.test/theme/bootstrap.min.css' media='all' />\n"
+	. "<link rel='stylesheet' id='db-hero-css' href='$B/hero-aaaaaaaaaa.css' media='all' />\n<link rel='stylesheet' id='db-ui-css' href='$B/ui-bbbbbbbbbb.css' media='all' />\n"
+	. "<link rel='stylesheet' id='theme' href='https://ex.test/theme/style.css' media='all' />\n"
+	. "<link rel='stylesheet' id='db-design-css' href='$B/design-dddddddddd.css' media='all' />\n<link rel='stylesheet' id='db-modern-css' href='$B/modern-cccccccccc.css' media='all' />\n";
+$o = db_css_combine( $head, $B, $read, $write );
+check( 'dummy LiteSpeed stylesheet dropped', false === strpos( $o, 'litespeed-dummy' ) );
+check( 'adjacent run combined into one link, order kept', 2 === substr_count( $o, 'db-combo-css' ) && 2 === count( $written ) && in_array( "/* hero-aaaaaaaaaa.css */\n.h{}\n/* ui-bbbbbbbbbb.css */\n.u{}\n", $written, true ) );
+check( 'theme stylesheet stays between the two runs', (bool) preg_match( "#db-combo-css.*theme/style\.css.*db-combo-css#s", $o ) );
+check( 'second run keeps design before modern', in_array( "/* design-dddddddddd.css */\n.d{}\n/* modern-cccccccccc.css */\n.m{}\n", $written, true ) );
+$single = "<link rel='stylesheet' id='db-ui-css' href='$B/ui-bbbbbbbbbb.css' media='all' />\n<link rel='stylesheet' href='https://ex.test/theme/style.css' />";
+check( 'a single plugin stylesheet is left alone', $single === db_css_combine( $single, $B, $read, $write ) );
+$missing = "<link rel='stylesheet' href='$B/ui-bbbbbbbbbb.css' /><link rel='stylesheet' href='$B/gone-eeeeeeeeee.css' />";
+check( 'a missing member leaves the run untouched', $missing === db_css_combine( $missing, $B, $read, $write ) );
 
 // Page-cache request rules. db_pc_request() memoises, so each case runs in a child process.
 function req_case( array $server, array $cookie = array() ) {

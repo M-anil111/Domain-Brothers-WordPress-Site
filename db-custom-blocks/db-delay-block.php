@@ -10,11 +10,18 @@
  *
  * These scripts are now marked type="text/db-delay" in the page and started
  * by a small loader when the visitor first interacts (scroll, tap, key,
- * mouse move) or 2.5 s after the page has loaded, whichever comes first.
+ * mouse move), the way WP Rocket's "delay JavaScript" works. There is no
+ * timer by default (filter db_delay_fallback_ms sets one, in ms). Cloudflare
+ * Zaraz already sends the Google Analytics page view on load, so page views
+ * are still counted for visitors who never interact. Measured with
+ * Lighthouse, any timer (2.5 s, 5 s, 15 s) put Tag Manager, ads and Clarity
+ * inside the page-load window: Zaraz leaves a request open, so Lighthouse
+ * keeps recording for 45 s, and the tags added about 1 s of main-thread
+ * blocking on a mid-range phone.
  * Ad slots already queue their requests in window.adsbygoogle, and tags
  * already queue events in window.dataLayer, so nothing is lost; analytics and
- * ads simply start a moment later. A visitor who leaves within 2.5 s without
- * touching the page is not counted by analytics.
+ * ads simply start a moment later. Tag Manager tags, ads, HubSpot and Clarity
+ * run only for visitors who interact with the page.
  *
  * Scripts can opt out with data-no-delay. JSON-LD and the site's own scripts
  * are never touched. Turn the whole feature off on Domain Brothers > Platform.
@@ -111,11 +118,98 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 			. 'for(var i=0;i<o.attributes.length;i++){var a=o.attributes[i];if(a.name==="type"||a.name==="data-src")continue;n.setAttribute(a.name,a.value);}'
 			. 'var s=o.getAttribute("data-src");if(s){n.src=s;if(!o.hasAttribute("defer"))n.async=true;}else{n.text=o.text;}o.parentNode.replaceChild(n,o);});}'
 			. 'ev.forEach(function(e){addEventListener(e,go,{passive:true});});'
-			. 'function later(){setTimeout(go,2500);}if(document.readyState==="complete"){later();}else{addEventListener("load",later);}})();</script>';
+			. 'function later(){var ms=' . (int) apply_filters( 'db_delay_fallback_ms', 0 ) . ';if(ms>0)setTimeout(go,ms);}if(document.readyState==="complete"){later();}else{addEventListener("load",later);}})();</script>';
 		$pos = strripos( $out, '</body>' );
 		return substr( $out, 0, $pos ) . $loader . substr( $out, $pos );
 	}
 }
+
+if ( ! function_exists( 'db_css_combine' ) ) {
+	/**
+	 * Fewer render-blocking requests, same cascade.
+	 *
+	 * - Runs of this plugin's stylesheets (uploads/db-blocks/*.css) that are
+	 *   already next to each other in the page are served as one file, in the
+	 *   same order. A run broken by another stylesheet is left split, so no rule
+	 *   moves relative to the theme's CSS.
+	 * - LiteSpeed Cache's empty litespeed-dummy.css link is dropped.
+	 *
+	 * $read( $basename ) returns a member file's CSS or null; $write( $basename,
+	 * $css ) stores the combined file and returns its URL or ''. Pure apart from
+	 * those callbacks: tested offline in tests/speed/speed-test.php.
+	 */
+	function db_css_combine( $html, $base_url, callable $read, callable $write ) {
+		if ( ! is_string( $html ) || false === stripos( $html, '<link' ) ) {
+			return $html;
+		}
+		$html = preg_replace( '#<link\b[^>]*litespeed-dummy\.css[^>]*>\s*#i', '', $html );
+		$q    = preg_quote( rtrim( $base_url, '/' ), '#' );
+		$one  = '<link\b[^>]*rel=[\'"]stylesheet[\'"][^>]*href=[\'"]' . $q . '/([a-z0-9-]+-[0-9a-f]{10}\.css)[\'"][^>]*>';
+		return preg_replace_callback( '#(?:' . $one . '\s*){2,}#i', function ( $m ) use ( $one, $read, $write ) {
+			preg_match_all( '#' . $one . '#i', $m[0], $parts );
+			$names = $parts[1];
+			$css   = '';
+			foreach ( $names as $n ) {
+				$c = $read( $n );
+				if ( null === $c ) {
+					return $m[0];
+				}
+				$css .= '/* ' . $n . " */\n" . $c . "\n";
+			}
+			$url = $write( 'combo-' . substr( md5( implode( '|', $names ) . '|' . md5( $css ) ), 0, 10 ) . '.css', $css );
+			if ( '' === $url ) {
+				return $m[0];
+			}
+			preg_match( '#\s*$#', $m[0], $tail );
+			return "<link rel='stylesheet' id='db-combo-css' href='" . esc_url( $url ) . "' media='all' />" . $tail[0];
+		}, $html );
+	}
+}
+
+if ( ! function_exists( 'db_css_combine_page' ) ) {
+	/** db_css_combine() wired to the uploads/db-blocks directory. */
+	function db_css_combine_page( $html ) {
+		$up = wp_upload_dir();
+		if ( ! empty( $up['error'] ) ) {
+			return $html;
+		}
+		$dir = $up['basedir'] . '/db-blocks';
+		$url = $up['baseurl'] . '/db-blocks';
+		return db_css_combine(
+			$html,
+			$url,
+			function ( $name ) use ( $dir ) {
+				$f = $dir . '/' . basename( $name );
+				$c = is_readable( $f ) ? @file_get_contents( $f ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+				return false === $c ? null : $c;
+			},
+			function ( $name, $css ) use ( $dir, $url ) {
+				$f = $dir . '/' . basename( $name );
+				if ( ! file_exists( $f ) ) {
+					$tmp = $f . '.' . wp_generate_password( 6, false ) . '.tmp';
+					if ( false === @file_put_contents( $tmp, $css ) || ! @rename( $tmp, $f ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+						@unlink( $tmp ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+						return '';
+					}
+					// Combined files from older versions: removed after 30 days (cached pages may still link them until then).
+					foreach ( (array) glob( $dir . '/combo-*.css' ) as $old ) {
+						if ( $old !== $f && filemtime( $old ) < time() - 30 * DAY_IN_SECONDS ) {
+							@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+						}
+					}
+				}
+				return $url . '/' . basename( $name );
+			}
+		);
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() || is_embed() || is_customize_preview() ) {
+		return;
+	}
+	ob_start( 'db_css_combine_page' );
+}, -998 );
 
 add_action( 'template_redirect', function () {
 	if ( is_admin() || is_feed() || is_robots() || is_embed() || is_customize_preview() || ! db_delay_enabled() ) {
@@ -131,7 +225,7 @@ add_action( 'template_redirect', function () {
 
 // Platform page switch.
 add_action( 'db_platform_sections', function () {
-	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="max-width:980px"><table class="widefat striped"><tbody><tr><th scope="row" style="width:260px">Third-party scripts</th><td><label><input type="checkbox" name="delay" value="1"' . checked( db_delay_enabled(), true, false ) . '> Start Tag Manager, AdSense, HubSpot, AddToAny and Clarity after the page loads</label><br><small>They start on the first scroll, tap or key press, or 2.5 s after load. Add <code>?db_nodelay=1</code> to a URL to compare.</small></td></tr></tbody></table>';
+	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="max-width:980px"><table class="widefat striped"><tbody><tr><th scope="row" style="width:260px">Third-party scripts</th><td><label><input type="checkbox" name="delay" value="1"' . checked( db_delay_enabled(), true, false ) . '> Start Tag Manager, AdSense, HubSpot, AddToAny and Clarity after the page loads</label><br><small>They start on the visitor&rsquo;s first scroll, tap, key press or mouse move. Cloudflare Zaraz still records the Google Analytics page view on load. Add <code>?db_nodelay=1</code> to a URL to compare.</small></td></tr></tbody></table>';
 	wp_nonce_field( 'db_delay_settings' );
 	echo '<input type="hidden" name="action" value="db_delay_settings"><p><button class="button">Save</button></p></form>';
 }, 20 );

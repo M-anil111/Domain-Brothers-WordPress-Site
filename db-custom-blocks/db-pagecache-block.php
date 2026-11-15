@@ -516,7 +516,7 @@ add_action( 'wp_footer', function () {
 	}
 	$id = (int) get_queried_object_id();
 	echo '<script>(function(){try{var c=document.cookie.match(/(?:^|; )db_exp_cta=([AB])/),v=c?c[1]:"A",u=' . wp_json_encode( rest_url( 'db/v1/funnel' ) ) . ';'
-		. 'function s(e,p){fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ev:e,post:p||0}),keepalive:true}).catch(function(){});}'
+		. 'function s(e,p){fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ev:e,post:p||0})}).then(function(r){return r.text();}).catch(function(){});}'
 		. 's("listing_view",' . $id . ');s("exp_view_"+v);document.querySelectorAll("a[data-exp]").forEach(function(a){a.setAttribute("data-exp",v);});}catch(e){}})();</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 }, 20 );
 
