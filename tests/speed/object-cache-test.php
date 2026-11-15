@@ -3,6 +3,11 @@
  * Offline test of the APCu object-cache drop-in, with an in-memory APCu stand-in.
  * Run: php tests/speed/object-cache-test.php
  */
+// With the real APCu extension loaded (CI), run again without extensions so the stand-in below is used.
+if ( extension_loaded( 'apcu' ) ) {
+	passthru( escapeshellarg( PHP_BINARY ) . ' -n ' . escapeshellarg( __FILE__ ), $code );
+	exit( $code );
+}
 define( 'ABSPATH', '/srv/site/' );
 define( 'DB_NAME', 'testdb' );
 define( 'WP_CONTENT_DIR', sys_get_temp_dir() . '/db-oc-test-' . getmypid() );
@@ -11,16 +16,18 @@ $blog_id      = 1;
 $GLOBALS['apcu_on'] = true;
 $GLOBALS['apcu']    = array();
 function is_multisite() { return false; }
-function apcu_enabled() { return $GLOBALS['apcu_on']; }
-function apcu_fetch( $k, &$ok = null ) {
-	if ( is_array( $k ) ) { $o = array(); foreach ( $k as $x ) { if ( array_key_exists( $x, $GLOBALS['apcu'] ) ) { $o[ $x ] = unserialize( $GLOBALS['apcu'][ $x ] ); } } return $o; }
-	$ok = array_key_exists( $k, $GLOBALS['apcu'] );
-	return $ok ? unserialize( $GLOBALS['apcu'][ $k ] ) : false;
+if ( ! function_exists( 'apcu_enabled' ) ) {
+	function apcu_enabled() { return $GLOBALS['apcu_on']; }
+	function apcu_fetch( $k, &$ok = null ) {
+		if ( is_array( $k ) ) { $o = array(); foreach ( $k as $x ) { if ( array_key_exists( $x, $GLOBALS['apcu'] ) ) { $o[ $x ] = unserialize( $GLOBALS['apcu'][ $x ] ); } } return $o; }
+		$ok = array_key_exists( $k, $GLOBALS['apcu'] );
+		return $ok ? unserialize( $GLOBALS['apcu'][ $k ] ) : false;
+	}
+	function apcu_store( $k, $v, $ttl = 0 ) { $GLOBALS['apcu'][ $k ] = serialize( $v ); return true; }
+	function apcu_add( $k, $v, $ttl = 0 ) { if ( array_key_exists( $k, $GLOBALS['apcu'] ) ) { return false; } return apcu_store( $k, $v ); }
+	function apcu_delete( $k ) { $had = array_key_exists( $k, $GLOBALS['apcu'] ); unset( $GLOBALS['apcu'][ $k ] ); return $had; }
+	function apcu_inc( $k, $step = 1 ) { if ( ! array_key_exists( $k, $GLOBALS['apcu'] ) ) { return false; } $v = (int) unserialize( $GLOBALS['apcu'][ $k ] ) + $step; apcu_store( $k, $v ); return $v; }
 }
-function apcu_store( $k, $v, $ttl = 0 ) { $GLOBALS['apcu'][ $k ] = serialize( $v ); return true; }
-function apcu_add( $k, $v, $ttl = 0 ) { if ( array_key_exists( $k, $GLOBALS['apcu'] ) ) { return false; } return apcu_store( $k, $v ); }
-function apcu_delete( $k ) { $had = array_key_exists( $k, $GLOBALS['apcu'] ); unset( $GLOBALS['apcu'][ $k ] ); return $had; }
-function apcu_inc( $k, $step = 1 ) { if ( ! array_key_exists( $k, $GLOBALS['apcu'] ) ) { return false; } $v = (int) unserialize( $GLOBALS['apcu'][ $k ] ) + $step; apcu_store( $k, $v ); return $v; }
 function wp_suspend_cache_addition() { return false; }
 require __DIR__ . '/../../db-custom-blocks/pagecache/object-cache.php';
 

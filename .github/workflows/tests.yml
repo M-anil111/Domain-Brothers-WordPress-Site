@@ -44,6 +44,10 @@ jobs:
         run: php tests/offers/deal-transition-test.php
       - name: EPP code handling (offline)
         run: php tests/sold/epp-test.php
+      - name: Page cache rules and script delay (offline)
+        run: php tests/speed/speed-test.php
+      - name: APCu object cache (offline)
+        run: php tests/speed/object-cache-test.php
 
   js:
     runs-on: ubuntu-latest
