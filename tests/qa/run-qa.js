@@ -317,7 +317,7 @@ const PAGES = [
 		record('FN-30', 'Exit offer', 'does not appear within the first 6 seconds', await page.$eval('#db-exit', (e) => e.hidden));
 		const recs = await page.$$eval('.db-dd .db-rec-card .db-rec-name', (n) => n.map((x) => x.textContent));
 		record('FN-31', 'Recommendations', 'domain page lists 6 recommended names, not itself', recs.length === 6 && !recs.includes('fatality.ca'), recs.join(','));
-		await page.goto(`${BASE}/domains/mississaugacontractors-ca/`, { waitUntil: 'load' });
+		await page.goto(`${BASE}/domains/mississaugahomefinder-ca/`, { waitUntil: 'load' }); // mississaugacontractors.ca was unpublished (not registered)
 		const sim = await page.$$eval('.db-dd .db-rec-card', (c) => c.map((x) => x.querySelector('.db-rec-name').textContent + ' ' + x.querySelector('.db-rec-why').textContent));
 		record('FN-32', 'Recommendations', 'a similar name outranks a same-category-only name', /mississauga.*Similar name/.test(sim.slice(0, 3).join('|')), sim.slice(0, 3).join(' | '));
 
