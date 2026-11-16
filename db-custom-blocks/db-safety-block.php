@@ -364,7 +364,10 @@ add_action( 'template_redirect', function () {
 	if ( ! $canonical ) {
 		return;
 	}
-	wp_safe_redirect( $canonical, 301 );
+	// #db-landing tells the hit counter (db-hits-block.php) this visit came in
+	// through the landing-page address. A fragment never reaches the server,
+	// so the cached domain page is unaffected; the beacon removes it again.
+	wp_safe_redirect( $canonical . '#db-landing', 301 );
 	exit;
 }, -100 );
 
