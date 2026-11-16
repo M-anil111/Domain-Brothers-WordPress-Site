@@ -4,7 +4,7 @@
  *   1. add a temporary domain (price $2,500) in the admin;
  *   2. two different visitors open it, one of them twice (after the
  *      10-second repeat window); a bot and a logged-in editor are not counted;
- *   3. Domain hits shows total 3, unique 2 for it (and the domain list column);
+ *   3. Domain hits shows total 3 (landing 0, details 3), unique 2 for it (and the domain list column);
  *   4. the same buyer submits the offer form twice: both offers are in
  *      "All offers received", and the negotiation holds both in one history;
  *   5. everything is removed.
@@ -70,13 +70,18 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 	};
 	const cells = await hitsRow();
 	const hu = (c) => (c || '').replace(/\s+/g, ' ').split(' / ').map(Number);
-	check('Domain hits: today, 7 days, month, year and all time each show 3 hits and 2-3 unique (bot and editor not counted)', ['1', '2', '3', '4', '5'].every((i) => { const [h, u] = hu(cells[i]); return h === 3 && u >= 2 && u <= 3; }), cells.join(' | '));
+	// Columns: Domain | Total hits | Landing page hits | Details page hits | Today | Last 7 days | This month | This year | [Selected range] | Last visit | Offers
+	const total = parseInt((cells[1] || '').replace(/,/g, ''), 10);
+	const unique = parseInt(((cells[1] || '').match(/(\d+) unique/) || [])[1], 10);
+	check('Domain hits: total 3 hits, 2-3 unique (bot and editor not counted)', total === 3 && unique >= 2 && unique <= 3, cells.join(' | '));
+	check('Domain hits: the visits above are details page hits (landing 0, details 3)', cells[2] === '0' && cells[3] === '3', cells.join(' | '));
+	check('Domain hits: today, 7 days, month and year each show 3 hits and 2-3 unique', ['4', '5', '6', '7'].every((i) => { const [h, u] = hu(cells[i]); return h === 3 && u >= 2 && u <= 3; }), cells.join(' | '));
 	await admin.goto(`${BASE}/wp-admin/admin.php?page=db-hits&q=${STAMP}&from=2000-01-01&to=2000-01-31`, { waitUntil: 'domcontentloaded' });
 	let rt = (await admin.locator('tr', { hasText: DOMAIN }).first().innerText()).replace(/\s+/g, ' ');
 	check('a date range with no visits shows 0 / 0 in the range column', /Selected range/.test(await admin.locator('thead').innerText()) && /\b0 \/ 0\b/.test(rt), rt.slice(0, 120));
 	await admin.goto(`${BASE}/wp-admin/admin.php?page=db-hits&q=${STAMP}&from=2026-01-01&to=2099-12-31`, { waitUntil: 'domcontentloaded' });
 	rt = (await admin.locator('tr', { hasText: DOMAIN }).first().locator('td').allInnerTexts()).map((x) => x.trim());
-	check('a range covering today shows the 3 hits', hu(rt[6])[0] === 3, rt.join(' | '));
+	check('a range covering today shows the 3 hits', hu(rt[8])[0] === 3, rt.join(' | '));
 	await admin.goto(`${BASE}/wp-admin/edit.php?post_type=domain&s=${STAMP}`, { waitUntil: 'domcontentloaded' });
 	check('domain list shows "3 / n" in the Hits column', /3 \/ [23]/.test(await admin.locator('#the-list').innerText()));
 
