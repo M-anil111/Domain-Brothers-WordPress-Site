@@ -422,7 +422,7 @@ if ( ! function_exists( 'db_safety_strip_dead_cf7_tags' ) ) {
 	 * site key and secret only the site owner can create at
 	 * google.com/recaptcha/admin, entered under CF7 → Integration. It only
 	 * stops broken markup from being shown; the honeypot fields already
-	 * present in these forms (EPPSupport/EPPSupportCode, db_hp_website) are
+	 * present in these forms (EPPSupport/EPPSupportCode, db_hp_k7q) are
 	 * the actual spam defense in the meantime.
 	 */
 	function db_safety_strip_dead_cf7_tags( $html ) {

@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.72.0
+ * Version:     3.73.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.72.0' );
+define( 'DB_BLOCKS_LOADED', '3.73.0' );
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -4046,14 +4046,17 @@ add_action( 'wp_footer', function () {
  */
 
 if ( ! defined( 'DB_HONEYPOT_FIELD' ) ) {
-	define( 'DB_HONEYPOT_FIELD', 'db_hp_website' ); // field name bots love
+	// A name no browser or password manager recognises. It used to be
+	// "db_hp_website": autofill can put a saved website address into a field
+	// with "website" in its name, which silently blocked real visitors.
+	define( 'DB_HONEYPOT_FIELD', 'db_hp_k7q' );
 }
 
 /* Inject the honeypot field into every CF7 form output. */
 add_filter( 'wpcf7_form_elements', function ( $html ) {
 	$hp = '<div class="db-hp-trap" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">'
 	      . '<label for="' . DB_HONEYPOT_FIELD . '">Leave this field empty</label>'
-	      . '<input type="text" name="' . DB_HONEYPOT_FIELD . '" id="' . DB_HONEYPOT_FIELD . '" tabindex="-1" autocomplete="off" value="">'
+	      . '<input type="text" name="' . DB_HONEYPOT_FIELD . '" id="' . DB_HONEYPOT_FIELD . '" tabindex="-1" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" value="">'
 	      . '</div>';
 	// Inject just before the closing </form> equivalent (after last submit button area).
 	return $html . $hp;
@@ -4065,6 +4068,11 @@ add_filter( 'wpcf7_spam', function ( $is_spam ) {
 		return true; // already flagged by another check
 	}
 	if ( ! empty( $_POST[ DB_HONEYPOT_FIELD ] ) ) {
+		// Recorded in Contact Form 7's spam log, shown under Domain Brothers > Form log.
+		$sub = class_exists( 'WPCF7_Submission' ) ? WPCF7_Submission::get_instance() : null;
+		if ( $sub && method_exists( $sub, 'add_spam_log' ) ) {
+			$sub->add_spam_log( array( 'agent' => 'db_honeypot', 'reason' => 'the hidden honeypot field was filled in' ) );
+		}
 		return true; // bot filled the trap
 	}
 	return false;
@@ -4634,4 +4642,7 @@ if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {
 }
 if ( is_readable( __DIR__ . '/db-team-block.php' ) ) {
 	require_once __DIR__ . '/db-team-block.php';
+}
+if ( is_readable( __DIR__ . '/db-forms-block.php' ) ) {
+	require_once __DIR__ . '/db-forms-block.php';
 }
