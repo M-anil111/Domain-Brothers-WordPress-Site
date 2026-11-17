@@ -56,27 +56,35 @@ get_header();
 			   (jQuery("#number-99").val('$2625')) and writes it back on keyup when the
 			   box is emptied. This page already shows a fixed "$" in front of the box,
 			   so the visitor saw "$ $2750". Keep the number, drop the symbol: only in
-			   this box, and only while it sits next to that fixed "$". */
+			   this box, and only while it sits next to that fixed "$".
+
+			   The box's own value setter does the cleaning, so it works whatever order
+			   the scripts run in. Cloudflare Rocket Loader delays every inline script
+			   (this one included) until after the page's load event, so timing-based
+			   clean-ups can run before the theme's script and miss it. */
 			(function () {
-				function clean() {
-					var f = document.getElementById('number-99');
-					if (!f || !f.closest || !f.closest('.db-pr-amount')) { return; }
-					var v = f.value || '', c = v.replace(/[$\s,]/g, '');
-					if (c !== v) { f.value = c; }
-				}
-				function bind() {
-					var f = document.getElementById('number-99');
-					if (!f || f.getAttribute('data-db-clean')) { clean(); return; }
+				var STRIP = /[$\s,]/g;
+				function guard(f) {
+					if (!f || f.getAttribute('data-db-clean') || !f.closest || !f.closest('.db-pr-amount')) { return; }
 					f.setAttribute('data-db-clean', '1');
-					// Registered after the theme's own keyup handler, so this runs last.
-					['input', 'keyup', 'change', 'focus', 'blur', 'paste'].forEach(function (e) {
-						f.addEventListener(e, function () { setTimeout(clean, 0); });
+					var d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+					if (d && d.get && d.set) {
+						try {
+							Object.defineProperty(f, 'value', {
+								configurable: true,
+								get: function () { return d.get.call(this); },
+								set: function (v) { d.set.call(this, String(v == null ? '' : v).replace(STRIP, '')); }
+							});
+						} catch (e) {}
+					}
+					// Pasted or typed text, and anything already in the box.
+					['input', 'keyup', 'change', 'blur', 'paste'].forEach(function (e) {
+						f.addEventListener(e, function () { setTimeout(function () { var v = f.value; if (/[$\s,]/.test(v)) { f.value = v; } }, 0); });
 					});
-					clean();
+					f.value = f.value;
 				}
-				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
-				// The theme's script can run late (deferred by Cloudflare Rocket Loader).
-				window.addEventListener('load', function () { bind(); setTimeout(clean, 300); setTimeout(clean, 1500); });
+				guard(document.getElementById('number-99'));
+				document.addEventListener('DOMContentLoaded', function () { guard(document.getElementById('number-99')); });
 			})();
 			</script>
 			<script>
