@@ -311,6 +311,8 @@ if ( ! function_exists( 'db_ads_auto_place' ) ) {
 				$at = null;
 				if ( $front ) {
 					$at = null; // the home page has its own sections: it gets its three from home_mid, the list and the end
+				} elseif ( false !== ( $hero = strpos( $main, '<section class="dbp-hero' ) ) && false !== ( $hend = strpos( $main, '</section>', $hero ) ) ) {
+					$at = $hend + 10; // redesigned pages: under the hero, never inside it
 				} elseif ( preg_match( '#</h1>\s*(</header>)?#i', $main, $m, PREG_OFFSET_CAPTURE ) ) {
 					$at = $m[0][1] + strlen( $m[0][0] );
 				} elseif ( preg_match( '#</nav>#i', $main, $m, PREG_OFFSET_CAPTURE ) && $m[0][1] < 1500 ) {

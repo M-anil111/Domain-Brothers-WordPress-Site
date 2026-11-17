@@ -1,0 +1,93 @@
+/* =========================================================================
+   Domain Brothers: page redesign (v3.80). Loaded only on .dbp pages.
+   Uses the tokens of modern.css (--m-*).
+   ========================================================================= */
+
+/* ---- shared ------------------------------------------------------------- */
+body.dbp #primary, body.dbp .content-area { width: 100% !important; max-width: var(--m-max); margin: 0 auto; float: none; }
+body.dbp #secondary { display: none !important; }
+body.dbp article > .entry-title { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+body.dbp .entry-content { max-width: none; }
+
+.dbp-eyebrow { margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--m-accent-dk); }
+.dbp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0 0; }
+.dbp-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border: 1px solid var(--m-line-2); border-radius: var(--m-pill); background: #fff; color: var(--m-ink) !important; font-weight: 700; font-size: 15px; text-decoration: none !important; transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+.dbp-btn:hover { transform: translateY(-1px); box-shadow: var(--m-shadow-hover); }
+.dbp-btn:focus-visible { outline: none; box-shadow: var(--m-ring); }
+.dbp-btn--primary { background: var(--m-btn); border-color: var(--m-btn); color: #fff !important; }
+.dbp-btn--primary:hover { background: var(--m-btn-hover); }
+.dbp-btn--light { background: #fff; border-color: #fff; color: var(--m-ink) !important; }
+.dbp-btn--ghost { background: transparent; border-color: rgba(255,255,255,.45); color: #fff !important; }
+@media (prefers-reduced-motion: reduce) { .dbp-btn { transition: none; } .dbp-btn:hover { transform: none; } }
+
+/* ---- service pages: hero ------------------------------------------------- */
+.dbp-hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center; margin: 8px 0 clamp(36px, 5vw, 64px); padding: clamp(28px, 5vw, 64px); border-radius: 28px; background: radial-gradient(1200px 500px at 100% 0%, #d9f0ee 0%, rgba(217,240,238,0) 60%), linear-gradient(180deg, #f3faf9 0%, #fff 100%); border: 1px solid var(--m-line); }
+body.dbp .dbp-hero .dbp-title { margin: 0; font-size: clamp(32px, 5vw, 56px) !important; line-height: 1.05; letter-spacing: -.025em; font-weight: 800; color: var(--m-ink); text-wrap: balance; }
+body.dbp .dbp-tagline { margin: 16px 0 0; font-size: clamp(18px, 2.2vw, 24px) !important; line-height: 1.3; font-weight: 600; color: var(--m-accent-dk); text-wrap: balance; }
+.dbp-lead { margin-top: 16px; max-width: 62ch; }
+.dbp-lead p { margin: 0 0 12px; font-size: 17px; line-height: 1.65; color: var(--m-text); }
+.dbp-lead p:last-child { margin-bottom: 0; }
+.dbp-glance { padding: 26px 26px 22px; border-radius: 20px; background: #fff; border: 1px solid var(--m-line); box-shadow: var(--m-shadow); }
+.dbp-glance-h { margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--m-muted); }
+.dbp-glance ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.dbp-glance li { position: relative; margin: 0; padding-left: 34px; font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--m-ink); }
+.dbp-glance li::before { content: ""; position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--m-accent-lt) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23095f5b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 13px no-repeat; }
+
+/* ---- service pages: body -------------------------------------------------- */
+.dbp-body { max-width: 980px; margin: 0 auto; }
+.dbp-body > h2, .dbp-body .faqPage > h2 { margin: clamp(36px, 5vw, 60px) 0 16px; font-size: clamp(24px, 3vw, 34px); line-height: 1.15; letter-spacing: -.02em; font-weight: 800; color: var(--m-ink); text-wrap: balance; }
+.dbp-body > h2 strong, .dbp-body h3 strong, .dbp-body h4 strong { font-weight: inherit; }
+.dbp-body > h3, .dbp-body > h4 { margin: 28px 0 8px; font-size: 19px; line-height: 1.3; font-weight: 700; color: var(--m-ink); }
+.dbp-body > p, .dbp-body .shadowBox > p { margin: 0 0 14px; font-size: 16.5px; line-height: 1.7; color: var(--m-text); max-width: 72ch; }
+body.dbp .dbp-body .shadowBox { margin: 22px 0; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; }
+body.dbp .dbp-body .wp-block-columns { gap: 24px; align-items: start; }
+.dbp-body .shadowBox > h3 { margin: 0 0 16px; font-size: 20px; font-weight: 700; color: var(--m-ink); }
+/* a bullet list in a box becomes a grid of cards */
+.dbp-body .shadowBox > ul:only-of-type, .dbp-body .shadowBox > ol:only-of-type { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; counter-reset: dbp; }
+.dbp-body .shadowBox > ul:only-of-type > li, .dbp-body .shadowBox > ol:only-of-type > li { margin: 0; padding: 22px; border: 1px solid var(--m-line); border-radius: 18px; background: #fff; box-shadow: var(--m-shadow); font-size: 15.5px; line-height: 1.6; color: var(--m-text); transition: transform .15s ease, box-shadow .15s ease; }
+.dbp-body .shadowBox > ul:only-of-type > li:hover, .dbp-body .shadowBox > ol:only-of-type > li:hover { transform: translateY(-2px); box-shadow: var(--m-shadow-hover); }
+.dbp-body .shadowBox > ul:only-of-type > li:not(:has(strong))::first-line { font-weight: 700; color: var(--m-ink); }
+.dbp-body .shadowBox > ul:only-of-type > li strong { display: block; margin-bottom: 6px; font-size: 17px; color: var(--m-ink); }
+.dbp-body .shadowBox > ol:only-of-type > li { counter-increment: dbp; }
+.dbp-body .shadowBox > ol:only-of-type > li::before { content: counter(dbp); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-bottom: 12px; border-radius: 50%; background: var(--m-ink); color: #fff; font-weight: 700; font-size: 14px; }
+/* a box that mixes lists and paragraphs stays a calm panel */
+body.dbp .dbp-body .shadowBox:has(> ul ~ ul), body.dbp .dbp-body .shadowBox:has(> ul ~ p) { padding: clamp(20px, 3vw, 32px) !important; border: 1px solid var(--m-line) !important; border-radius: 20px; background: var(--m-soft) !important; }
+.dbp-body .shadowBox:has(> ul ~ ul) > ul, .dbp-body .shadowBox:has(> ul ~ p) > ul { margin: 18px 0 4px; padding: 0; list-style: none; }
+.dbp-body .shadowBox:has(> ul ~ ul) > ul > li strong, .dbp-body .shadowBox:has(> ul ~ p) > ul > li strong { font-size: 17px; color: var(--m-ink); }
+.dbp-body img { border-radius: 16px; }
+@media (prefers-reduced-motion: reduce) { .dbp-body .shadowBox li { transition: none !important; transform: none !important; } }
+
+/* ---- FAQ ------------------------------------------------------------------ */
+.dbp-body .faqPage { margin-top: 0; }
+.dbp-faq { border-bottom: 1px solid var(--m-line); }
+.dbp-faq:first-of-type { border-top: 1px solid var(--m-line); }
+.dbp-faq > summary { position: relative; display: block; padding: 20px 48px 20px 0; font-size: 17px; font-weight: 700; line-height: 1.4; color: var(--m-ink); cursor: pointer; list-style: none; }
+.dbp-faq > summary::-webkit-details-marker { display: none; }
+.dbp-faq > summary::after { content: ""; position: absolute; right: 6px; top: 50%; width: 28px; height: 28px; margin-top: -14px; border-radius: 50%; background: var(--m-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111827' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M12 6v12M6 12h12'/%3E%3C/svg%3E") center / 14px no-repeat; transition: transform .2s ease; }
+.dbp-faq[open] > summary::after { transform: rotate(45deg); }
+.dbp-faq > summary:hover { color: var(--m-accent-dk); }
+.dbp-faq > summary:focus-visible { outline: none; box-shadow: var(--m-ring); border-radius: 8px; }
+.dbp-faq-a { padding: 0 48px 20px 0; }
+.dbp-faq-a p { margin: 0 0 10px; font-size: 16px; line-height: 1.7; color: var(--m-text); }
+
+/* ---- closing band ---------------------------------------------------------- */
+.dbp-cta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 40px; margin: clamp(44px, 6vw, 80px) 0 12px; padding: clamp(28px, 4vw, 48px); border-radius: 28px; background: radial-gradient(900px 400px at 0% 0%, #17405a 0%, rgba(23,64,90,0) 60%), #0f172a; color: #fff; }
+body.dbp .dbp-cta h2 { color: #fff !important; margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); line-height: 1.15; letter-spacing: -.02em; font-weight: 800; color: #fff; }
+body.dbp .dbp-cta p { margin: 0; font-size: 16.5px; line-height: 1.6; color: rgba(255,255,255,.82) !important; max-width: 52ch; }
+.dbp-cta .dbp-actions { margin: 0; }
+
+/* ---- small screens --------------------------------------------------------- */
+@media (max-width: 860px) {
+	.dbp-hero { grid-template-columns: 1fr; border-radius: 22px; }
+	.dbp-actions .dbp-btn { flex: 1 1 auto; }
+	.dbp-cta { border-radius: 22px; }
+}
+
+/* ---- sizes that older layers set with !important ---------------------------- */
+body.dbp .dbp-body > h2, body.dbp .dbp-body .faqPage > h2 { font-size: clamp(24px, 3vw, 34px) !important; }
+body.dbp .dbp-lead p { font-size: 17px !important; }
+body.dbp .dbp-glance li { font-size: 16px !important; }
+body.dbp .dbp-body > p, body.dbp .dbp-body li, body.dbp .dbp-faq-a p { font-size: 16px !important; }
+body.dbp .dbp-faq > summary { font-size: 17px !important; }
+body.dbp .dbp-btn { font-size: 15px !important; }
+body.dbp .dbp-eyebrow, body.dbp .dbp-glance-h { font-size: 12px !important; }
