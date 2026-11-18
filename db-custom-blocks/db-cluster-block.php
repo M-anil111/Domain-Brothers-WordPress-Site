@@ -236,7 +236,10 @@ add_filter( 'body_class', function ( $c ) {
  * published post, send a permanent redirect to the post's current address.
  */
 add_action( 'wp', function ( $wp ) {
-	if ( is_admin() || ! is_404() || ! $wp instanceof WP ) {
+	// A cover image can carry the same name as the old slug, in which case the
+	// address resolves to that image's attachment page (which Rank Math also
+	// sends to the home page), so attachment pages are checked as well.
+	if ( is_admin() || ! ( is_404() || is_attachment() ) || ! $wp instanceof WP ) {
 		return;
 	}
 	$path = trim( (string) $wp->request, '/' );
