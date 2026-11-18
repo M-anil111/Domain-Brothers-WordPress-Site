@@ -204,7 +204,7 @@ if ( ! function_exists( 'db_header_html' ) ) {
 		$logo    = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
 		$chevron = '<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4.200l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 		$h       = '<header id="db-hd" class="db-hd"><div class="db-hd-in">'
-			. '<a class="db-hd-logo" href="' . $home . '" aria-label="Domain Brothers home"><img src="' . esc_url( $logo ) . '" alt="Domain Brothers" width="148" height="40" decoding="async" fetchpriority="high"></a>'
+			. '<a class="db-hd-logo" href="' . $home . '" aria-label="Domain Brothers home"><img src="' . esc_url( $logo ) . '" alt="Domain Brothers" width="200" height="54" decoding="async" fetchpriority="high"></a>'
 			. '<nav class="db-hd-nav" aria-label="Primary"><ul>';
 		foreach ( db_header_panels() as $i => $panel ) {
 			$id = 'db-hd-p' . ( $i + 1 );
@@ -292,9 +292,9 @@ add_action( 'wp_enqueue_scripts', function () {
 	.db-hd { display: block; position: fixed; top: 0; left: 0; right: 0; z-index: 100000; height: 72px; background: rgba(255,255,255,.82); -webkit-backdrop-filter: saturate(180%) blur(18px); backdrop-filter: saturate(180%) blur(18px); border-bottom: 1px solid transparent; transition: border-color .2s ease, background .2s ease; }
 	.db-hd.is-stuck, .db-hd:has(.is-open) { background: rgba(255,255,255,.96); border-bottom-color: rgba(17,24,39,.1); }
 	body.admin-bar .db-hd { top: 32px; }
-	.db-hd-in { display: grid; grid-template-columns: minmax(170px, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px; height: 100%; max-width: 1360px; margin: 0 auto; padding: 0 clamp(20px, 3vw, 40px); }
+	.db-hd-in { display: grid; grid-template-columns: minmax(210px, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px; height: 100%; max-width: 1360px; margin: 0 auto; padding: 0 clamp(20px, 3vw, 40px); }
 	html body .db-hd .db-hd-logo { display: inline-flex !important; align-items: center; justify-self: start; line-height: 0; border-radius: 8px; visibility: visible !important; opacity: 1 !important; }
-	html body .db-hd .db-hd-logo img { display: block !important; width: 148px !important; min-width: 148px; height: 40px !important; max-width: none !important; object-fit: contain; }
+	html body .db-hd .db-hd-logo img { display: block !important; width: 200px !important; min-width: 200px; height: 54px !important; max-width: none !important; object-fit: contain; }
 	.db-hd-nav > ul { display: flex; align-items: center; gap: 4px; margin: 0; padding: 0; list-style: none; }
 	.db-hd-item { position: static; margin: 0; }
 	html body .db-hd .db-hd-top { display: inline-flex; align-items: center; gap: 7px; height: 72px; padding: 0 18px; color: #111827 !important; font-size: 15px; font-weight: 600; letter-spacing: -.005em; text-decoration: none !important; box-shadow: none !important; background: transparent !important; border-radius: 0; opacity: .82; transition: opacity .15s ease; }
@@ -349,6 +349,12 @@ add_action( 'wp_enqueue_scripts', function () {
 	html body .db-hd .db-hd-link { padding: 0 10px; }
 	.db-hd-card { flex-basis: 230px; }
 }
+/* Breadcrumb bar: one place on every page, directly under the header, aligned with the logo. */
+.db-bc-bar { background: #f6f7f9; border-bottom: 1px solid #e5e7eb; }
+.db-bc-in { max-width: 1360px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 40px); }
+html body.db-ui-active .db-bc-bar nav.db-breadcrumbs { margin: 0 !important; padding: 10px 0 !important; max-width: none !important; width: auto !important; background: none !important; border: 0 !important; font-size: 13.5px; }
+html body.db-ui-active .db-bc-bar nav.db-breadcrumbs ol { margin: 0 !important; padding: 0 !important; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; }
+html body.db-ui-active .db-bc-bar nav.db-breadcrumbs a { display: inline-block; padding: 4px 0; }
 @media (prefers-reduced-motion: reduce) { .db-hd, .db-hd-mega, .db-hd-top svg, .db-hd-search input { transition: none !important; } }
 CSS;
 	if ( function_exists( 'db_external_style' ) && db_external_style( 'header', $css ) ) {
@@ -401,3 +407,28 @@ add_filter( 'wpcf7_form_tag', function ( $tag ) {
 	}
 	return $tag;
 }, 20 );
+
+
+/*
+ * Breadcrumbs sit in one bar under the header on every page, instead of
+ * wherever a template happened to print them (above a hero on one page, inside
+ * the content column on another).
+ */
+if ( ! function_exists( 'db_header_breadcrumb_bar' ) ) {
+	function db_header_breadcrumb_bar( $html ) {
+		if ( false !== strpos( $html, 'class="db-bc-bar"' ) || ! preg_match( '#<nav\b[^>]*class="[^"]*\bdb-breadcrumbs\b[^"]*"[^>]*>.*?</nav>#s', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$page = strpos( $html, '<div id="content"' );
+		if ( false === $page || $m[0][1] < $page ) {
+			return $html;
+		}
+		$html = substr_replace( $html, '', $m[0][1], strlen( $m[0][0] ) );
+		return substr_replace( $html, '<div class="db-bc-bar"><div class="db-bc-in">' . $m[0][0] . '</div></div>', $page, 0 );
+	}
+}
+add_action( 'template_redirect', function () {
+	if ( ! is_admin() && ! is_feed() && ! is_customize_preview() ) {
+		ob_start( 'db_header_breadcrumb_bar' );
+	}
+}, 1 );

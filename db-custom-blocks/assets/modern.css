@@ -1067,3 +1067,13 @@ html body.db-ui-active .db-tc-h2 + .db-sales-links a:hover { border-color: var(-
 @media (max-width: 560px) { html body.db-ui-active .db-tc-grid { grid-template-columns: minmax(0, 1fr); } }
 html body.db-ui-active p.db-tc-actions { margin: 26px 0 0 !important; }
 html body.blog.db-ui-active .news-cnt .entry-wrapper, html body.blog.db-ui-active .news-cnt .entry-header, html body.blog.db-ui-active .news-cnt .entry-content { border: 0 !important; box-shadow: none !important; background: none !important; padding-left: 0 !important; padding-right: 0 !important; margin-left: 0 !important; }
+/* News: one card design; the grid holds the feed stories and the site's own posts alike. */
+.db-an-own { margin: 0 0 28px; }
+html body.db-ui-active a.db-an-hit { text-decoration: none !important; }
+.db-an-tile .db-an-ex { display: none; }
+/* Trust center hero: copy and artwork share one compact block. */
+.db-tc-hero { align-items: center; padding: clamp(24px, 3.4vw, 44px) clamp(24px, 4vw, 52px); }
+.db-tc-art { max-width: 300px; }
+/* With the breadcrumb bar in place, pages start close under it. */
+html body.dbp #primary #main.site-main, html body.db-ui-active #primary #main.db-wl-page { padding-top: 22px !important; }
+html body.db-ui-active #content.site-content { padding-top: 0 !important; }

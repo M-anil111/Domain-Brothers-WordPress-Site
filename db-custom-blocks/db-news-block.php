@@ -164,12 +164,10 @@ if ( ! function_exists( 'db_render_news' ) ) {
 
 		$html  = '<div class="db-news-live db-an">';
 		$html .= '<header class="db-an-head"><p class="db-an-day">' . esc_html( date_i18n( 'l, F j' ) ) . '</p><h1 class="db-an-h1">Domain News</h1><p class="db-an-sub">The stories moving the domain industry today, from the publications that cover it.</p></header>';
-		$html .= '<h2 class="db-an-sec db-news-live-heading">Top stories</h2><div class="db-an-top">';
+		// One card design for every story on the page.
+		$html .= '<h2 class="db-an-sec db-news-live-heading">Latest from the industry</h2><div class="db-an-grid">';
 		foreach ( $items as $n => $it ) {
-			if ( 3 === $n ) {
-				$html .= '</div><h2 class="db-an-sec">More from the industry</h2><div class="db-an-grid">';
-			}
-			$html .= $card( $it, 0 === $n ? 'db-an-lead' : ( $n < 3 ? 'db-an-side' : 'db-an-tile' ), $n < 3 ? $n + 1 : 0 );
+			$html .= $card( $it, 'db-an-tile', $n < 4 ? $n + 1 : 0 );
 		}
 		$html .= '</div><h2 class="db-an-sec db-an-sec--own">From Domain Brothers</h2></div>';
 
@@ -188,7 +186,7 @@ add_action( 'template_redirect', function () {
 		if ( false !== strpos( $html, 'db-news-live' ) ) {
 			return $html; // already inserted (defensive, shouldn't recurse)
 		}
-		$news_html = db_render_news( 7 );
+		$news_html = db_render_news( 8 );
 		if ( '' === $news_html ) {
 			return $html; // all feeds unreachable this request — leave the archive as-is
 		}
@@ -197,9 +195,56 @@ add_action( 'template_redirect', function () {
 		if ( false === $pos ) {
 			return $html;
 		}
-		return substr_replace( $html, $news_html, $pos, 0 );
+		return db_news_own_cards( substr_replace( $html, $news_html, $pos, 0 ) );
 	} );
 }, 20 );
+
+if ( ! function_exists( 'db_news_own_cards' ) ) {
+	/**
+	 * The theme prints the site's own posts as a plain list. Each entry becomes
+	 * the same card the feed stories use, in the same grid. Private posts (only
+	 * ever visible to a signed-in administrator) are left out.
+	 *
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	function db_news_own_cards( $html ) {
+		$n   = 0;
+		$out = preg_replace_callback( '#<div class="news-cnt">\s*(<article\b[^>]*>.*?</article>)\s*</div>#s', function ( $m ) use ( &$n ) {
+			$a = $m[1];
+			if ( preg_match( '#^<article\b[^>]*\bstatus-private\b#', $a ) ) {
+				return '';
+			}
+			if ( ! preg_match( '#<h[1-6][^>]*class="[^"]*entry-title[^"]*"[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>#s', $a, $t ) ) {
+				return $m[0];
+			}
+			$title = trim( wp_strip_all_tags( $t[2] ) );
+			$title = (string) preg_replace( '/^Private:\s*/', '', $title );
+			$img   = preg_match( '#<img[^>]*\bsrc="([^"]+)"#', $a, $i ) ? $i[1] : '';
+			$date  = preg_match( '#<time[^>]*>(.*?)</time>#s', $a, $d ) ? trim( wp_strip_all_tags( $d[1] ) ) : '';
+			if ( '' === $date && preg_match( '#((?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4})#', wp_strip_all_tags( $a ), $d ) ) {
+				$date = $d[1];
+			}
+			$cat = preg_match( '#rel="category tag"[^>]*>(.*?)</a>#s', $a, $c ) ? trim( wp_strip_all_tags( $c[1] ) ) : 'Domain Brothers';
+			++$n;
+			return '<article class="db-an-card db-an-tile"><a class="db-an-hit" href="' . esc_url( $t[1] ) . '">'
+				. '<span class="db-an-img">' . ( '' !== $img ? '<img src="' . esc_url( $img ) . '" alt="" loading="lazy" decoding="async">' : '' ) . '</span>'
+				. '<span class="db-an-txt"><span class="db-an-src">' . esc_html( $cat ) . '</span><span class="db-an-title">' . esc_html( $title ) . '</span>'
+				. ( '' !== $date ? '<span class="db-an-date">' . esc_html( $date ) . '</span>' : '' ) . '</span></a></article>';
+		}, $html );
+		if ( null === $out || 0 === $n ) {
+			return $html;
+		}
+		// Wrap the run of cards in the shared grid.
+		$first = strpos( $out, '<article class="db-an-card db-an-tile"><a class="db-an-hit"' );
+		$last  = strrpos( $out, '</a></article>' );
+		if ( false === $first || false === $last ) {
+			return $html;
+		}
+		$last += strlen( '</a></article>' );
+		return substr( $out, 0, $first ) . '<div class="db-an-grid db-an-own">' . substr( $out, $first, $last - $first ) . '</div>' . substr( $out, $last );
+	}
+}
 
 /* Individual news post pages duplicate the featured image: the theme
    already renders it above the content (<figure class="feature-image">),
