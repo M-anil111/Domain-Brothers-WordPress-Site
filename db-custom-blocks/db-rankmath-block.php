@@ -111,6 +111,10 @@ if ( ! db_rankmath_analysis_only() ) {
 
 	// Same rule for Rank Math's XML sitemap.
 	add_filter( 'rank_math/sitemap/entry', function ( $entry, $type, $object ) {
+		// Rank Math builds post sitemaps from raw database rows (stdClass), not WP_Post.
+		if ( 'post' === $type && is_object( $object ) && isset( $object->ID ) && ! $object instanceof WP_Post ) {
+			$object = get_post( (int) $object->ID );
+		}
 		if ( 'post' === $type && $object instanceof WP_Post ) {
 			if ( function_exists( 'db_index_is_thin_news' ) && db_index_is_thin_news( $object ) ) {
 				return false;
@@ -122,6 +126,53 @@ if ( ! db_rankmath_analysis_only() ) {
 		return $entry;
 	}, 20, 3 );
 }
+
+/*
+ * The same rule inside Rank Math's sitemap queries, so the page count in
+ * sitemap_index.xml matches the URLs that remain (the entry filter alone
+ * leaves empty, 404 sitemap pages listed in the index).
+ */
+if ( ! function_exists( 'db_rankmath_sitemap_news_where' ) ) {
+	/**
+	 * @param string       $where      SQL from earlier filters.
+	 * @param string|array $post_types Post type(s) being queried.
+	 * @return string
+	 */
+	function db_rankmath_sitemap_news_where( $where, $post_types ) {
+		if ( ! in_array( 'post', (array) $post_types, true ) || ! function_exists( 'db_index_news_days' ) ) {
+			return $where;
+		}
+		$news   = get_category_by_slug( 'domain-news' );
+		$guides = get_category_by_slug( 'domain-guides' );
+		if ( ! $news ) {
+			return $where;
+		}
+		global $wpdb;
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - (int) db_index_news_days() * DAY_IN_SECONDS );
+		$in_cat = "SELECT tr.object_id FROM {$wpdb->term_relationships} tr JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tt.taxonomy = 'category' AND tt.term_id = %d";
+		$sql    = ' AND NOT ( p.post_type = \'post\' AND p.post_date_gmt < %s AND p.ID IN ( ' . $in_cat . ' )';
+		$args   = array( $cutoff, (int) $news->term_id );
+		if ( $guides ) {
+			$sql   .= ' AND p.ID NOT IN ( ' . $in_cat . ' )';
+			$args[] = (int) $guides->term_id;
+		}
+		return $where . $wpdb->prepare( $sql . ' )', $args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+}
+if ( ! db_rankmath_analysis_only() ) {
+	add_filter( 'rank_math/sitemap/get_posts/where', 'db_rankmath_sitemap_news_where', 10, 2 );
+	add_filter( 'rank_math/sitemap/post_count/where', 'db_rankmath_sitemap_news_where', 10, 2 );
+}
+
+// Rank Math caches sitemap files. When this plugin's version changes, the
+// sitemap rules above may have changed too, so the cache is emptied once.
+add_action( 'init', function () {
+	if ( get_option( 'db_rm_sitemap_flushed', '' ) === DB_BLOCKS_LOADED || ! class_exists( '\RankMath\Sitemap\Cache' ) ) {
+		return;
+	}
+	update_option( 'db_rm_sitemap_flushed', DB_BLOCKS_LOADED, false );
+	\RankMath\Sitemap\Cache::invalidate_storage();
+}, 99 );
 
 // Administrators switch the mode here; the page cache is emptied so every URL
 // is rebuilt with the new owner's tags.
