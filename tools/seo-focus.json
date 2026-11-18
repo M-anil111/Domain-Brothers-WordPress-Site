@@ -1,45 +1,212 @@
 {
- "home": ["premium domain names for sale", "Premium Domain Names for Sale: Best Picks, 0% Plans", "Premium domain names for sale from brokers with 27+ years of experience. Buy in full, pay over 3 to 12 months or make an offer. Transfer support included."],
- "all-domains": ["buy premium domains", "Buy Premium Domains: Best Names, 3 to 12 Month Plans", "Buy premium domains with clear prices, monthly payment plans and offers answered in one business day. Browse every name Domain Brothers has for sale."],
- "3-character-domains": ["3 letter domains", "3 Letter Domains for Sale: Best Short Names to Buy", "3 letter domains are the shortest names you can own. See the three-character names we have for sale, with prices, payment plans and transfer support."],
- "4-character-domains": ["4 letter domains", "4 Letter Domains for Sale: Best Short Brand Names", "4 letter domains are short, easy to type and easy to remember. Browse four-character names for sale with prices, payment plans and transfer support."],
- "5-character-domains": ["5 letter domains", "5 Letter Domains for Sale: Best Brandable Names", "5 letter domains give a brand room for a real word while staying short. Browse five-character names for sale with prices and monthly payment plans."],
- "6-character-domains": ["6 letter domains", "6 Letter Domains for Sale: Best Brandable Names", "6 letter domains read as real words and still feel premium. Browse six-character names for sale with prices, payment plans and transfer support."],
- "numeric-domains-for-sale": ["numeric domains", "Numeric Domains for Sale: Best Number Names in 2026", "Numeric domains are made only of digits, so they work in every language. See the number domains we have for sale, with prices and payment plans."],
- "premium-domain-deals": ["domain deals", "Domain Deals: Best Premium Names Reduced, 0% Plans", "Domain deals from Domain Brothers: premium names reduced for a limited time. Buy in full or over 3 to 12 months, with transfer support included."],
- "sold": ["recent domain sales", "Recent Domain Sales: 5,000+ Names Sold, Proven Results", "Recent domain sales brokered by Domain Brothers. See the premium names that found a new owner, and what similar names are available today."],
- "news": ["domain industry news", "Domain Industry News: Best Daily Stories in 1 Place", "Domain industry news in one place: new extensions, ICANN decisions, big sales and registrar changes, collected daily from the publications that cover them."],
- "domain-brokerage-services": ["domain brokerage", "Domain Brokerage: 4 Proven Steps to Win Your Name", "Domain brokerage from a team with 27+ years of deals. We find the owner, negotiate in confidence and manage payment and transfer. Tell us the name you want."],
- "domain-appraisal-services": ["domain appraisal services", "Domain Appraisal Services: 4 Proven Steps to a Fair Price", "Domain appraisal services based on comparable sales, not guesswork. Get a written price range for your name from brokers with 27+ years of experience."],
- "domain-management-services": ["domain management", "Domain Management: 4 Easy Steps to Protect Your Names", "Domain management for portfolios of any size: renewals, DNS, locks and transfers handled for you, so a valuable name never lapses or gets hijacked."],
- "sell-domains-service": ["sell domains", "Sell Domains: 4 Proven Steps to the Best Price", "Sell domains with brokers who have closed 5,000+ sales. We value your name, find qualified buyers, negotiate and manage payment and transfer."],
- "buy-domains-service": ["buy domains", "Buy Domains: 4 Easy Steps to Secure a Taken Name", "Buy domains that are already taken. Our brokers find the owner, negotiate the price in confidence and manage payment and transfer to your registrar."],
- "acquire-premium-domain": ["premium domain", "Premium Domain Acquisition: 4 Proven Steps to Own It", "Want a premium domain that is not listed for sale? Tell us the name. A broker finds the owner, negotiates in confidence and manages the transfer."],
- "acquire-social-media-handles": ["social media handles", "Social Media Handles: 4 Safe Steps to Acquire Yours", "Acquire social media handles that match your brand. We locate the holder, negotiate and manage a safe handover on Instagram, X, TikTok and more."],
- "sell-social-media-handles": ["sell social media handles", "Sell Social Media Handles: 4 Safe, Proven Steps", "Sell social media handles through a broker. We value the username, find a serious buyer and manage a safe handover and payment. Start with a free review."],
- "acquire-a-handle-now": ["acquire a handle", "Acquire a Handle: Free Review in 1 Business Day", "Acquire a handle for your brand. Tell us the username and platform, and a broker replies within one business day with what it takes to secure it."],
- "digital-marketing-services": ["digital marketing services", "Digital Marketing Services: 4 Proven Steps to Growth", "Digital marketing services that start with the numbers: search, paid ads, content and email, planned around the customers you want. Fixed scope, clear reporting."],
- "digital-marketing": ["digital marketing", "Digital Marketing: 4 Proven Steps to Win Customers", "Digital marketing built around your domain: search, ads, content and email that send the right visitors to a site ready to convert. Get a fixed quote."],
- "custom-software-development-services": ["custom software development", "Custom Software Development: 4 Proven Delivery Steps", "Custom software development for teams that have outgrown spreadsheets. Fixed scope, weekly demos and code you own. Tell us what the tool must do."],
- "software-development": ["software development", "Software Development: 4 Proven Steps From Idea to Launch", "Software development with a written scope, weekly progress and code you own. Web apps, integrations and internal tools built by an experienced team."],
- "mobile-app-development-services": ["mobile app development services", "Mobile App Development Services: 4 Proven Steps", "Mobile app development services for iOS and Android: discovery, design, build and launch with one team. Fixed quote before any work begins."],
- "mobile-app-development": ["mobile app development", "Mobile App Development: 4 Proven Steps to Launch Day", "Mobile app development for iOS and Android, from first sketch to the app stores. One team, a fixed quote and weekly builds you can test."],
- "web-hosting-maintenance-services": ["web hosting maintenance", "Web Hosting Maintenance: 4 Easy Steps to a Safe Site", "Web hosting maintenance that keeps your site fast, patched and backed up. Updates, monitoring and fixes handled monthly for a fixed fee."],
- "website-design-development": ["website design", "Website Design: 4 Proven Steps to a Site That Sells", "Website design and development for businesses that need leads, not just a pretty page. Fast, accessible sites built on a domain worth remembering."],
- "comprehensive-digital-solutions": ["digital solutions", "Digital Solutions: 4 Proven Steps Under One Roof", "Digital solutions from one team: domains, websites, software, mobile apps and marketing, planned together so each part supports the next."],
- "other-services": ["other services", "Other Services: 4 Easy Steps to the Help You Need", "Other services from Domain Brothers: hosting, maintenance, software and marketing support for businesses that bought a name and now need to build on it."],
- "our-services": ["domain name services", "Domain Name Services: Trusted Help in 4 Easy Steps", "Domain name services from one team: brokerage, appraisal, management and transfers, plus the websites, software and marketing that put a name to work."],
- "domain-transfer": ["domain transfer", "Domain Transfer: 4 Easy Steps to Move a Name Safely", "Start a domain transfer with Domain Brothers. Enter the name and its authorization code, and we manage the move to the new registrar step by step."],
- "epp-guidelines": ["epp code", "EPP Code: Easy Guides for 5 Popular Registrars", "An EPP code is the authorization code that lets a domain move to a new registrar. Follow the exact steps for GoDaddy, Uniregistry, Rebel, Bluehost and 1&1."],
- "faqs": ["domain faq", "Domain FAQ: Honest Answers in 1 Place | Domain Brothers", "Domain FAQ from Domain Brothers: how buying, selling, payment plans over 3 to 12 months, transfers and refunds work, answered in plain language."],
- "about-us": ["domain name company", "Domain Name Company With 27+ Years of Proven Deals", "Domain Brothers is a domain name company run by brokers with 27+ years of combined experience and 5,000+ names sold. Meet the people behind every deal."],
- "about-domain-brothers": ["domain brothers", "Domain Brothers: 27+ Years of Trusted Domain Deals", "Domain Brothers buys, sells and brokers premium domain names, with payment plans and transfer support on every deal. Learn how we work and why."],
- "our-team": ["domain experts", "Domain Experts With 27+ Years of Proven Results", "Meet the domain experts at Domain Brothers: the brokers who value, negotiate and transfer every name, with 27+ years of combined experience."],
- "jay-mehta": ["jay mehta", "Jay Mehta: Trusted Domain Expert at Domain Brothers", "Jay Mehta leads Domain Brothers. Read about his background in domain names, the deals he works on and how to reach him directly."],
- "contact-us": ["contact domain brothers", "Contact Domain Brothers: Free Reply in 1 Business Day", "Contact Domain Brothers about buying, selling or valuing a domain, or any of our services. A member of the team replies personally within one business day."],
- "privacy-policy": ["privacy policy", "Privacy Policy: 11 Clear Sections | Domain Brothers", "The Domain Brothers privacy policy: what we collect, why, how it is protected, the cookies and analytics we use and how to contact us about your data."],
- "refund-policy": ["refund policy", "Refund Policy: Clear, Fair Terms in 1 Page | Domain Brothers", "The Domain Brothers refund policy: when a domain purchase or payment plan can be refunded, how to ask and how long it takes."],
- "terms-of-use": ["terms of use", "Terms of Use: Clear Rules in 1 Place | Domain Brothers", "The terms of use for domainbrothers.com: the rules for buying, selling, payment plans, transfers and using this website."],
- "site-map": ["site map", "Site Map: Find Every Page Fast in 1 Place | Domain Brothers", "The Domain Brothers site map: every page, service, guide and domain listing on the site, in one list."],
- "offer": ["domain offer", "Domain Offer: Free Reply in 1 Business Day", "Make a domain offer on any name we list. Tell us the domain and your price, and a broker replies within one business day."]
+ "home": [
+  "premium domain names for sale",
+  "Premium Domain Names for Sale: Best Picks, 0% Plans",
+  "Premium domain names for sale from brokers with 27+ years of experience. Buy in full, pay over 3 to 12 months or make an offer. Transfer support included."
+ ],
+ "all-domains": [
+  "buy premium domains",
+  "Buy Premium Domains: Best Names, 3 to 12 Month Plans",
+  "Buy premium domains with clear prices, monthly payment plans and offers answered in one business day. Browse every name Domain Brothers has for sale."
+ ],
+ "3-character-domains": [
+  "3 letter domains",
+  "3 Letter Domains for Sale: Best Short Names to Buy",
+  "3 letter domains are the shortest names you can own. See the three-character names we have for sale, with prices, payment plans and transfer support."
+ ],
+ "4-character-domains": [
+  "4 letter domains for sale",
+  "4 Letter Domains for Sale: Best Short Brand Names",
+  "4 letter domains for sale: short, easy to type and easy to remember. Browse four-character names with prices, payment plans and transfer support."
+ ],
+ "5-character-domains": [
+  "5 letter domains",
+  "5 Letter Domains for Sale: Best Brandable Names",
+  "5 letter domains give a brand room for a real word while staying short. Browse five-character names for sale with prices and monthly payment plans."
+ ],
+ "6-character-domains": [
+  "6 letter domain names",
+  "6 Letter Domain Names for Sale: Best Brandable Picks",
+  "6 letter domain names read as real words and still feel premium. Browse six-character domains for sale with prices, payment plans and transfer support."
+ ],
+ "numeric-domains-for-sale": [
+  "numeric domains",
+  "Numeric Domains for Sale: Best Number Names in 2026",
+  "Numeric domains are made only of digits, so they work in every language. See the number domains we have for sale, with prices and payment plans."
+ ],
+ "premium-domain-deals": [
+  "domain deals",
+  "Domain Deals: Best Premium Names Reduced, 0% Plans",
+  "Domain deals from Domain Brothers: premium names reduced for a limited time. Buy in full or over 3 to 12 months, with transfer support included."
+ ],
+ "sold": [
+  "recent domain sales",
+  "Recent Domain Sales: 5,000+ Names Sold, Proven Results",
+  "Recent domain sales brokered by Domain Brothers. See the premium names that found a new owner, and what similar names are available today."
+ ],
+ "news": [
+  "domain industry news",
+  "Domain Industry News: Best Daily Stories in 1 Place",
+  "Domain industry news in one place: new extensions, ICANN decisions, big sales and registrar changes, collected daily from the publications that cover them."
+ ],
+ "domain-brokerage-services": [
+  "domain broker",
+  "Domain Broker: 4 Proven Steps to Win the Name You Want",
+  "Hire a domain broker with 27+ years of deals behind them. We find the owner, negotiate in confidence and manage payment and transfer. Tell us the name you want."
+ ],
+ "domain-appraisal-services": [
+  "domain appraisal services",
+  "Domain Appraisal Services: 4 Proven Steps to a Fair Price",
+  "Domain appraisal services based on comparable sales, not guesswork. Get a written price range for your name from brokers with 27+ years of experience."
+ ],
+ "domain-management-services": [
+  "domain management",
+  "Domain Management: 4 Easy Steps to Protect Your Names",
+  "Domain management for portfolios of any size: renewals, DNS, locks and transfers handled for you, so a valuable name never lapses or gets hijacked."
+ ],
+ "buy-domains-service": [
+  "domain buy service",
+  "Domain Buy Service: 4 Easy Steps to Secure a Taken Name",
+  "A domain buy service for names that are already taken. Our brokers find the owner, negotiate the price in confidence and manage payment and transfer."
+ ],
+ "acquire-premium-domain": [
+  "premium domain acquisition",
+  "Premium Domain Acquisition: 4 Proven Steps to Own It",
+  "Premium domain acquisition for names that are not listed for sale. Tell us the domain. A broker finds the owner, negotiates in confidence and manages the transfer."
+ ],
+ "acquire-social-media-handles": [
+  "social media handles",
+  "Social Media Handles: 4 Safe Steps to Acquire Yours",
+  "Acquire social media handles that match your brand. We locate the holder, negotiate and manage a safe handover on Instagram, X, TikTok and more."
+ ],
+ "sell-social-media-handles": [
+  "sell social media handles",
+  "Sell Social Media Handles: 4 Safe, Proven Steps",
+  "Sell social media handles through a broker. We value the username, find a serious buyer and manage a safe handover and payment. Start with a free review."
+ ],
+ "acquire-a-handle-now": [
+  "acquire a handle",
+  "Acquire a Handle: Free Review in 1 Business Day",
+  "Acquire a handle for your brand. Tell us the username and platform, and a broker replies within one business day with what it takes to secure it."
+ ],
+ "digital-marketing-services": [
+  "digital marketing services",
+  "Digital Marketing Services: 4 Proven Steps to Growth",
+  "Digital marketing services that start with the numbers: search, paid ads, content and email, planned around the customers you want. Fixed scope, clear reporting."
+ ],
+ "digital-marketing": [
+  "digital marketing",
+  "Digital Marketing: 4 Proven Steps to Win Customers",
+  "Digital marketing built around your domain: search, ads, content and email that send the right visitors to a site ready to convert. Get a fixed quote."
+ ],
+ "custom-software-development-services": [
+  "custom software development",
+  "Custom Software Development: 4 Proven Delivery Steps",
+  "Custom software development for teams that have outgrown spreadsheets. Fixed scope, weekly demos and code you own. Tell us what the tool must do."
+ ],
+ "software-development": [
+  "software development",
+  "Software Development: 4 Proven Steps From Idea to Launch",
+  "Software development with a written scope, weekly progress and code you own. Web apps, integrations and internal tools built by an experienced team."
+ ],
+ "mobile-app-development-services": [
+  "mobile app development services",
+  "Mobile App Development Services: 4 Proven Steps",
+  "Mobile app development services for iOS and Android: discovery, design, build and launch with one team. Fixed quote before any work begins."
+ ],
+ "mobile-app-development": [
+  "mobile app development",
+  "Mobile App Development: 4 Proven Steps to Launch Day",
+  "Mobile app development for iOS and Android, from first sketch to the app stores. One team, a fixed quote and weekly builds you can test."
+ ],
+ "web-hosting-maintenance-services": [
+  "web hosting maintenance",
+  "Web Hosting Maintenance: 4 Easy Steps to a Safe Site",
+  "Web hosting maintenance that keeps your site fast, patched and backed up. Updates, monitoring and fixes handled monthly for a fixed fee."
+ ],
+ "website-design-development": [
+  "website design",
+  "Website Design: 4 Proven Steps to a Site That Sells",
+  "Website design and development for businesses that need leads, not just a pretty page. Fast, accessible sites built on a domain worth remembering."
+ ],
+ "comprehensive-digital-solutions": [
+  "digital solutions",
+  "Digital Solutions: 4 Proven Steps Under One Roof",
+  "Digital solutions from one team: domains, websites, software, mobile apps and marketing, planned together so each part supports the next."
+ ],
+ "other-services": [
+  "other services",
+  "Other Services: 4 Easy Steps to the Help You Need",
+  "Other services from Domain Brothers: hosting, maintenance, software and marketing support for businesses that bought a name and now need to build on it."
+ ],
+ "our-services": [
+  "domain name services",
+  "Domain Name Services: Trusted Help in 4 Easy Steps",
+  "Domain name services from one team: brokerage, appraisal, management and transfers, plus the websites, software and marketing that put a name to work."
+ ],
+ "domain-transfer": [
+  "domain transfer",
+  "Domain Transfer: 4 Easy Steps to Move a Name Safely",
+  "Start a domain transfer with Domain Brothers. Enter the name and its authorization code, and we manage the move to the new registrar step by step."
+ ],
+ "epp-guidelines": [
+  "epp code",
+  "EPP Code: Easy Guides for 5 Popular Registrars",
+  "An EPP code is the authorization code that lets a domain move to a new registrar. Follow the exact steps for GoDaddy, Uniregistry, Rebel, Bluehost and 1&1."
+ ],
+ "faqs": [
+  "domain faq",
+  "Domain FAQ: Honest Answers in 1 Place | Domain Brothers",
+  "Domain FAQ from Domain Brothers: how buying, selling, payment plans over 3 to 12 months, transfers and refunds work, answered in plain language."
+ ],
+ "about-us": [
+  "domain name company",
+  "Domain Name Company With 27+ Years of Proven Deals",
+  "Domain Brothers is a domain name company run by brokers with 27+ years of combined experience and 5,000+ names sold. Meet the people behind every deal."
+ ],
+ "about-domain-brothers": [
+  "domain brothers",
+  "Domain Brothers: 27+ Years of Trusted Domain Deals",
+  "Domain Brothers buys, sells and brokers premium domain names, with payment plans and transfer support on every deal. Learn how we work and why."
+ ],
+ "our-team": [
+  "domain experts",
+  "Domain Experts With 27+ Years of Proven Results",
+  "Meet the domain experts at Domain Brothers: the brokers who value, negotiate and transfer every name, with 27+ years of combined experience."
+ ],
+ "jay-mehta": [
+  "jay mehta",
+  "Jay Mehta: Trusted Domain Expert at Domain Brothers",
+  "Jay Mehta leads Domain Brothers. Read about his background in domain names, the deals he works on and how to reach him directly."
+ ],
+ "contact-us": [
+  "contact domain brothers",
+  "Contact Domain Brothers: Free Reply in 1 Business Day",
+  "Contact Domain Brothers about buying, selling or valuing a domain, or any of our services. A member of the team replies personally within one business day."
+ ],
+ "privacy-policy": [
+  "privacy policy",
+  "Privacy Policy: 11 Clear Sections | Domain Brothers",
+  "The Domain Brothers privacy policy: what we collect, why, how it is protected, the cookies and analytics we use and how to contact us about your data."
+ ],
+ "refund-policy": [
+  "refund policy",
+  "Refund Policy: Clear, Fair Terms in 1 Page | Domain Brothers",
+  "The Domain Brothers refund policy: when a domain purchase or payment plan can be refunded, how to ask and how long it takes."
+ ],
+ "terms-of-use": [
+  "terms of use",
+  "Terms of Use: Clear Rules in 1 Place | Domain Brothers",
+  "The terms of use for domainbrothers.com: the rules for buying, selling, payment plans, transfers and using this website."
+ ],
+ "site-map": [
+  "site map",
+  "Site Map: Find Every Page Fast in 1 Place | Domain Brothers",
+  "The Domain Brothers site map: every page, service, guide and domain listing on the site, in one list."
+ ],
+ "offer": [
+  "domain offer",
+  "Domain Offer: Free Reply in 1 Business Day",
+  "Make a domain offer on any name we list. Tell us the domain and your price, and a broker replies within one business day."
+ ]
 }

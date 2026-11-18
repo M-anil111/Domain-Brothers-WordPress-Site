@@ -55,6 +55,111 @@ if ( ! function_exists( 'db_rankmath_analysis_only' ) ) {
 	}
 }
 
+/* ------------------------------------------------------------------------
+ * Mode B: Rank Math owns the <head>. This plugin's copy becomes the fallback.
+ * --------------------------------------------------------------------- */
+
+if ( ! function_exists( 'db_rankmath_has_field' ) ) {
+	/**
+	 * True when the current singular page has its own Rank Math value for a field.
+	 *
+	 * @param string $key rank_math_title or rank_math_description.
+	 * @return bool
+	 */
+	function db_rankmath_has_field( $key ) {
+		if ( ! ( is_singular() || is_front_page() ) ) {
+			return false;
+		}
+		$post = get_queried_object();
+		return $post instanceof WP_Post && '' !== trim( (string) get_post_meta( $post->ID, $key, true ) );
+	}
+}
+
+if ( ! db_rankmath_analysis_only() ) {
+	add_filter( 'rank_math/frontend/title', function ( $title ) {
+		if ( db_rankmath_has_field( 'rank_math_title' ) || ! function_exists( 'db_seo_resolve' ) ) {
+			return $title;
+		}
+		$def = db_seo_resolve();
+		return ( is_array( $def ) && ! empty( $def['title'] ) ) ? $def['title'] : $title;
+	}, 20 );
+
+	add_filter( 'rank_math/frontend/description', function ( $description ) {
+		if ( db_rankmath_has_field( 'rank_math_description' ) || ! function_exists( 'db_seo_resolve' ) ) {
+			return $description;
+		}
+		$def = db_seo_resolve();
+		return ( is_array( $def ) && ! empty( $def['desc'] ) ) ? $def['desc'] : $description;
+	}, 20 );
+
+	// Utility and checkout pages, search results, tag archives and old
+	// syndicated news stay out of the index, as they do in mode A.
+	add_filter( 'rank_math/frontend/robots', function ( $robots ) {
+		$utility = ( function_exists( 'db_seo_is_utility' ) && db_seo_is_utility() ) || is_search();
+		$thin    = is_tag() || ( is_singular( 'post' ) && function_exists( 'db_index_is_thin_news' ) && db_index_is_thin_news( get_queried_object() ) );
+		if ( $utility || $thin ) {
+			$robots['index']  = 'noindex';
+			$robots['follow'] = 'follow';
+		}
+		// A staging copy (beta host, or "Discourage search engines" ticked) is never indexed.
+		if ( '0' === (string) get_option( 'blog_public', '1' ) || ( function_exists( 'db_is_staging_host' ) && db_is_staging_host() ) ) {
+			$robots['index']  = 'noindex';
+			$robots['follow'] = 'nofollow';
+		}
+		return $robots;
+	}, 30 );
+
+	// Same rule for Rank Math's XML sitemap.
+	add_filter( 'rank_math/sitemap/entry', function ( $entry, $type, $object ) {
+		if ( 'post' === $type && $object instanceof WP_Post ) {
+			if ( function_exists( 'db_index_is_thin_news' ) && db_index_is_thin_news( $object ) ) {
+				return false;
+			}
+			if ( 'page' === $object->post_type && function_exists( 'db_seo_utility_slugs' ) && isset( db_seo_utility_slugs()[ $object->post_name ] ) ) {
+				return false;
+			}
+		}
+		return $entry;
+	}, 20, 3 );
+}
+
+// Administrators switch the mode here; the page cache is emptied so every URL
+// is rebuilt with the new owner's tags.
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'db/v1', '/seo-mode', array(
+		array(
+			'methods'             => 'GET',
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+			'callback'            => function () {
+				return rest_ensure_response( array( 'owner' => db_rankmath_analysis_only() ? 'plugin' : 'rankmath', 'rank_math_active' => db_rankmath_present() ) );
+			},
+		),
+		array(
+			'methods'             => 'POST',
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+			'args'                => array(
+				'owner' => array(
+					'required'          => true,
+					'validate_callback' => function ( $value ) {
+						return in_array( $value, array( 'plugin', 'rankmath' ), true );
+					},
+				),
+			),
+			'callback'            => function ( WP_REST_Request $request ) {
+				update_option( 'db_rankmath_owns_head', 'rankmath' === $request['owner'] ? '1' : '0', true );
+				if ( function_exists( 'db_pc_purge_all' ) ) {
+					db_pc_purge_all();
+				}
+				return rest_ensure_response( array( 'owner' => $request['owner'], 'applies' => 'from the next request' ) );
+			},
+		),
+	) );
+} );
+
 // 1. No Rank Math tags on the front end while this plugin owns the <head>.
 add_filter( 'rank_math/frontend/disable_integration', function ( $disabled ) {
 	return db_rankmath_analysis_only() ? true : $disabled;

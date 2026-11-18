@@ -67,12 +67,6 @@ if ( ! function_exists( 'db_team_members' ) ) {
 				'bio'   => 'Anil works across many programming languages and frameworks, turning designs into functional, user-friendly websites.',
 				'photo' => $up . '2021/12/Anil_Chaudhary_NC0058_white_bg.png',
 			),
-			array(
-				'name'  => 'Sujit Shukla',
-				'role'  => 'Marketing Manager',
-				'bio'   => 'Sujit shapes our marketing strategy, from SEO to social media, keeping Domain Brothers ahead in the digital marketplace.',
-				'photo' => $up . '2024/04/sujitshukla.jpg',
-			),
 		);
 		return (array) apply_filters( 'db_team_members', $members );
 	}

@@ -1077,3 +1077,11 @@ html body.db-ui-active a.db-an-hit { text-decoration: none !important; }
 /* With the breadcrumb bar in place, pages start close under it. */
 html body.dbp #primary #main.site-main, html body.db-ui-active #primary #main.db-wl-page { padding-top: 22px !important; }
 html body.db-ui-active #content.site-content { padding-top: 0 !important; }
+
+/* ---- One vertical rhythm for every inner page: same start under the breadcrumb bar, same end above the footer ---- */
+html body.db-ui-active:not(.home) #primary #main.site-main, html body.db-ui-active:not(.home) #primary > main { margin-top: 0 !important; margin-bottom: 0 !important; padding-top: 26px !important; padding-bottom: 16px !important; }
+html body.db-ui-active:not(.home) #content.site-content { padding-top: 0 !important; padding-bottom: 28px !important; }
+html body.dbp .dbp-title + .dbp-tagline, html body.dbp .dbf-wrap h1 + .dbf-lead, html body.dbp h1 + p { margin-top: 12px !important; }
+html body.db-ui-active .db-an-head .db-an-day { margin-bottom: 10px; }
+html body.db-ui-active h3 + .db-legacy-offer-box { margin-top: 12px; }
+html body.db-ui-active .dbs h3 + .dbs-tech { margin-top: 6px; }

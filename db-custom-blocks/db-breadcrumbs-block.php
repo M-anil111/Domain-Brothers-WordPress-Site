@@ -81,12 +81,25 @@ if ( ! function_exists( 'db_breadcrumbs_trail' ) ) {
 			return $trail;
 		}
 
+		if ( is_category() || is_tag() ) {
+			$term    = get_queried_object();
+			$trail[] = array( 'label' => 'News', 'href' => home_url( '/news/' ) );
+			$trail[] = array( 'label' => $term instanceof WP_Term ? $term->name : '', 'href' => '' );
+			return $trail;
+		}
+
 		if ( is_page( 'all-domains' ) ) {
 			$trail[] = array( 'label' => 'All Domains', 'href' => '' );
 			return $trail;
 		}
 
 		if ( is_page() ) {
+			$page = get_queried_object();
+			if ( $page instanceof WP_Post && $page->post_parent ) {
+				foreach ( array_reverse( get_post_ancestors( $page ) ) as $ancestor ) {
+					$trail[] = array( 'label' => get_the_title( $ancestor ), 'href' => get_permalink( $ancestor ) );
+				}
+			}
 			$trail[] = array( 'label' => get_the_title(), 'href' => '' );
 			return $trail;
 		}
@@ -113,6 +126,38 @@ if ( ! function_exists( 'db_breadcrumbs_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_breadcrumbs_from_rankmath' ) ) {
+	/**
+	 * When Rank Math breadcrumbs are switched on, the trail comes from Rank Math
+	 * (its settings: home label, separator, primary category) for real WordPress
+	 * objects; this plugin's own trail stays for its virtual routes and as the
+	 * fallback. The markup and the bar stay the same either way.
+	 *
+	 * @param array $trail This plugin's trail.
+	 * @return array
+	 */
+	function db_breadcrumbs_from_rankmath( array $trail ) {
+		if ( ! class_exists( '\\RankMath\\Frontend\\Breadcrumbs' ) || ! class_exists( '\\RankMath\\Helper' ) || ! \RankMath\Helper::get_settings( 'general.breadcrumbs' ) ) {
+			return $trail;
+		}
+		if ( ! ( is_singular() || is_category() || is_tax() || is_home() ) || is_singular( 'domain' ) ) {
+			return $trail; // domain listings keep the category-aware trail built here
+		}
+		$bc = \RankMath\Frontend\Breadcrumbs::get();
+		if ( ! $bc || ! is_callable( array( $bc, 'get_crumbs' ) ) ) {
+			return $trail;
+		}
+		$out = array();
+		foreach ( (array) $bc->get_crumbs() as $crumb ) {
+			if ( ! is_array( $crumb ) || ! isset( $crumb[0] ) || '' === trim( wp_strip_all_tags( (string) $crumb[0] ) ) ) {
+				continue;
+			}
+			$out[] = array( 'label' => wp_strip_all_tags( (string) $crumb[0] ), 'href' => isset( $crumb[1] ) ? (string) $crumb[1] : '' );
+		}
+		return count( $out ) >= 2 ? $out : $trail;
+	}
+}
+
 add_action( 'template_redirect', function () {
 	if ( is_admin() ) {
 		return;
@@ -121,6 +166,7 @@ add_action( 'template_redirect', function () {
 	if ( null === $trail ) {
 		return;
 	}
+	$trail = db_breadcrumbs_from_rankmath( $trail );
 	ob_start( function ( $html ) use ( $trail ) {
 		if ( false === strpos( $html, '<main id="main"' ) || false !== strpos( $html, 'db-breadcrumbs' ) ) {
 			return $html;

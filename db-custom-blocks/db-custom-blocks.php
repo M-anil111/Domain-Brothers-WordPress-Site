@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.84.1
+ * Version:     3.87.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,8 +26,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.84.1' );
+define( 'DB_BLOCKS_LOADED', '3.87.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
+
+/*
+ * Who writes the SEO tags in <head>. When Rank Math is active and the site is
+ * switched to it (option db_rankmath_owns_head = 1, set from the bridge in
+ * db-rankmath-block.php), Rank Math emits title, description, robots,
+ * canonical, Open Graph and schema, and this plugin supplies its built-in copy
+ * as the fallback for URLs with no Rank Math fields. Otherwise this plugin
+ * emits the tags itself. Read from the options here because Rank Math loads
+ * after this file.
+ */
+if ( ! defined( 'DB_RANKMATH_OWNS_HEAD' ) ) {
+	define( 'DB_RANKMATH_OWNS_HEAD', in_array( 'seo-by-rank-math/rank-math.php', (array) get_option( 'active_plugins', array() ), true ) && '1' === (string) get_option( 'db_rankmath_owns_head', '0' ) );
+}
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -70,9 +83,7 @@ if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 		// Rank Math runs here as an editor-side analysis tool only (see
 		// db-rankmath-block.php): its front-end output is switched off and this
 		// plugin keeps emitting the tags, unless DB_RANKMATH_OWNS_HEAD is true.
-		$rank_math = ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) )
-			&& defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD;
-		return $rank_math
+		return ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD )
 			|| defined( 'WPSEO_VERSION' )
 			|| class_exists( 'WPSEO_Options' );
 	}
@@ -1499,7 +1510,7 @@ add_action( 'init', function () {
    BLOCK 9 — DB AEO & structured data
    ============================================================ */
 
-if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       get_bloginfo( 'name' ) );
+if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       'Domain Brothers' );
 if ( ! defined( 'DB_AEO_CONTACT_EMAIL' ) )   define( 'DB_AEO_CONTACT_EMAIL',  'sales@domainbrothers.com' );
 if ( ! defined( 'DB_AEO_TWITTER_HANDLE' ) )  define( 'DB_AEO_TWITTER_HANDLE', '' );
 if ( ! defined( 'DB_AEO_PRICE_META' ) )      define( 'DB_AEO_PRICE_META',     'domain_price' );
@@ -4641,6 +4652,7 @@ require_once __DIR__ . '/db-seo-audit-block.php';
 require_once __DIR__ . '/db-rankmath-block.php';
 require_once __DIR__ . '/db-focus-block.php';
 require_once __DIR__ . '/db-header-block.php';
+require_once __DIR__ . '/db-index-policy-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {

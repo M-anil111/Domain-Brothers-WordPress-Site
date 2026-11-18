@@ -1096,3 +1096,54 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_copy_fix_claims' );
 }, 1000 );
+
+/*
+ * Titles and descriptions for the routes this file renders itself (they are not
+ * WordPress pages, so neither this plugin's SEO table nor Rank Math knew them).
+ */
+if ( ! function_exists( 'db_sales_route_meta' ) ) {
+	/**
+	 * @return array{0:string,1:string}|null Title and description for the current route.
+	 */
+	function db_sales_route_meta() {
+		$path = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : '';
+		$map  = array(
+			'find-a-domain' => array( 'Domain Finder: Find the Right Name in 3 Easy Steps | Domain Brothers', 'Describe your business and budget, and the domain finder lists premium names that fit, with prices and monthly payment plans. Free to use.' ),
+			'trust-center'  => array( 'Trust Center: How Payments and Transfers Are Protected | Domain Brothers', 'How Domain Brothers protects a domain purchase: Stripe card payments, encrypted transfer codes, recorded offers and tracked transfer stages.' ),
+			'collections'   => array( 'Domain Collections: Curated Premium Names by Industry | Domain Brothers', 'Curated collections of premium domains for sale, grouped by industry and use. Each list shows names available today, with prices and payment plans.' ),
+		);
+		if ( isset( $map[ $path ] ) ) {
+			return $map[ $path ];
+		}
+		if ( preg_match( '#^collections/([a-z0-9-]+)$#', $path, $m ) && function_exists( 'db_sales_collections' ) ) {
+			$cols = db_sales_collections();
+			if ( isset( $cols[ $m[1] ] ) ) {
+				$t = $cols[ $m[1] ]['title'];
+				return array( $t . ': Premium Domains for Sale | Domain Brothers', wp_trim_words( (string) $cols[ $m[1] ]['intro'], 26, '' ) . '. Prices and payment plans on every name.' );
+			}
+		}
+		return null;
+	}
+}
+add_filter( 'pre_get_document_title', function ( $title ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[0] : $title;
+}, 30 );
+add_filter( 'rank_math/frontend/title', function ( $title ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[0] : $title;
+}, 30 );
+add_filter( 'rank_math/frontend/description', function ( $desc ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[1] : $desc;
+}, 30 );
+add_filter( 'db_aeo_description', function ( $desc ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[1] : $desc;
+}, 30 );
+add_action( 'wp_head', function () {
+	$m = db_sales_route_meta();
+	if ( $m && ! ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) ) {
+		echo '<meta name="description" content="' . esc_attr( $m[1] ) . '">' . "\n";
+	}
+}, 2 );

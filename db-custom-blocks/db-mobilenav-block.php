@@ -381,6 +381,11 @@ add_action( 'template_redirect', function () {
 	if ( '' !== $home && 0 === strpos( $path, $home ) ) {
 		$path = trim( substr( $path, strlen( $home ) ), '/' );
 	}
+	// The sell-a-domain page is withdrawn until the seller marketplace exists.
+	if ( 'sell-domains-service' === $path && ! is_admin() && ! is_user_logged_in() ) {
+		wp_safe_redirect( home_url( '/contact-us/' ), 302 );
+		exit;
+	}
 	if ( 'blog' === $path && ! is_admin() ) {
 		wp_safe_redirect( db_nav_blog_url(), 301 );
 		exit;

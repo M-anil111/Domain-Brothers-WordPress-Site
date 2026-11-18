@@ -704,7 +704,7 @@ if ( ! function_exists( 'db_wl_auth_html' ) ) {
 			. '<div class="db-au-card"><h1 id="db-au-h" class="db-au-title">Create account</h1><p class="db-au-sub">Get started with a free account.</p><p class="db-au-req"><span aria-hidden="true">*</span> indicates a required field.</p>'
 			. $forms . '<p class="db-au-alt">Already have an account? <a href="' . $signin . '">Sign in</a>.</p></div>'
 			. '<div class="db-au-side"><h2>Never lose track of a name you want.</h2><p>An account keeps every domain you are watching, and every offer you have made, in one place.</p><ul class="db-au-props">' . $props . '</ul>'
-			. '<div class="db-au-box"><h2>Selling a domain?</h2><p>You do not need an account to sell. Tell us about the name and a broker replies within one business day.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/sell-domains-service/' ) ) . '">Sell a domain</a></div></div>'
+			. '<div class="db-au-box"><h2>Want a name that is not listed?</h2><p>You do not need an account to ask. Tell us the domain and a broker replies within one business day.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/acquire-premium-domain/' ) ) . '">Acquire a domain</a></div></div>'
 			. '</div></section>';
 	}
 }

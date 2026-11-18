@@ -78,7 +78,6 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 							array( 'Domain brokerage', $u( '/domain-brokerage-services/' ), 'We negotiate the name you want' ),
 							array( 'Domain appraisal', $u( '/domain-appraisal-services/' ), 'A price range backed by real sales' ),
 							array( 'Domain management', $u( '/domain-management-services/' ), 'Renewals, DNS and security handled' ),
-							array( 'Sell a domain', $u( '/sell-domains-service/' ), 'List your name with our brokers' ),
 							array( 'Domain transfer', $u( '/domain-transfer/' ), 'Move a name between registrars' ),
 						),
 					),
@@ -416,8 +415,20 @@ add_filter( 'wpcf7_form_tag', function ( $tag ) {
  */
 if ( ! function_exists( 'db_header_breadcrumb_bar' ) ) {
 	function db_header_breadcrumb_bar( $html ) {
-		if ( false !== strpos( $html, 'class="db-bc-bar"' ) || ! preg_match( '#<nav\b[^>]*class="[^"]*\bdb-breadcrumbs\b[^"]*"[^>]*>.*?</nav>#s', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+		if ( false !== strpos( $html, 'class="db-bc-bar"' ) ) {
 			return $html;
+		}
+		$main = strpos( $html, '<main' );
+		if ( ! preg_match( '#<nav\b[^>]*class="[^"]*\bdb-breadcrumbs\b[^"]*"[^>]*>.*?</nav>#s', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			// Hand-built pages print their own trail (any <nav aria-label="Breadcrumb">).
+			if ( false === $main || ! preg_match( '#<nav\b([^>]*)aria-label="Breadcrumb"([^>]*)>.*?</nav>#s', $html, $m, PREG_OFFSET_CAPTURE, $main ) ) {
+				return $html;
+			}
+			$fixed   = preg_replace( '#^<nav\b(?![^>]*\bclass=)#', '<nav class="db-breadcrumbs"', $m[0][0], 1 );
+			$fixed   = preg_replace( '#^(<nav\b[^>]*\bclass=")#', '$1db-breadcrumbs ', $fixed, 1 );
+			$m[0][0] = $m[0][0];
+			$html    = substr_replace( $html, $fixed, $m[0][1], strlen( $m[0][0] ) );
+			$m[0][0] = $fixed;
 		}
 		$page = strpos( $html, '<div id="content"' );
 		if ( false === $page || $m[0][1] < $page ) {

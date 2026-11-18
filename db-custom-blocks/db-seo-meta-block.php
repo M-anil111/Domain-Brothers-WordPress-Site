@@ -30,7 +30,7 @@ if ( ! defined( 'DB_SEO_ACTIVE' ) ) {
 	// Stand down only when Rank Math is present AND has been given the <head>
 	// (DB_RANKMATH_OWNS_HEAD). By default Rank Math is used for its editor
 	// analysis only and this block stays the single owner of the tags.
-	define( 'DB_SEO_ACTIVE', ! ( ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) ) && defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) );
+	define( 'DB_SEO_ACTIVE', ! ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) );
 }
 
 if ( ! defined( 'DB_SEO_SUFFIX' ) ) {
@@ -685,6 +685,13 @@ if ( ! function_exists( 'db_seo_resolve' ) ) {
 	}
 }
 
+// The theme declares no title-tag support, so WordPress prints no <title>
+// unless it is switched on here. Needed whoever writes the title (this plugin
+// or Rank Math).
+add_action( 'after_setup_theme', function () {
+	add_theme_support( 'title-tag' );
+}, 99 );
+
 /* ─── Output ───────────────────────────────────────────────────────────────── */
 
 if ( DB_SEO_ACTIVE ) {
@@ -714,9 +721,6 @@ if ( DB_SEO_ACTIVE ) {
 	// one <title>, and the filters above optimize it. A handful of the
 	// theme's payment templates DO hardcode their own <title>; the head
 	// deduper below strips those so the optimized one is the only survivor.
-	add_action( 'after_setup_theme', function () {
-		add_theme_support( 'title-tag' );
-	}, 99 );
 
 	add_action( 'wp_head', function () {
 		if ( is_admin() || is_feed() || is_robots() ) {
@@ -755,7 +759,7 @@ if ( DB_SEO_ACTIVE ) {
 
 /* ─── <head> deduper ───────────────────────────────────────────────────────── */
 
-if ( DB_SEO_ACTIVE ) {
+if ( true ) { // both modes: the theme hardcodes a second <title> and canonical whoever writes the real ones
 	/**
 	 * The theme hardcodes a <title> into some payment templates and a
 	 * <link rel="canonical"> into the domain-listing template, on top of the
