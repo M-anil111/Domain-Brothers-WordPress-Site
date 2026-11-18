@@ -5,6 +5,16 @@
   "description": "Guides to premium domain names, websites and marketing from the Domain Brothers team."
  },
  "images": {
+  "brandable-domain-names": {
+   "file": "brandable-domain-names.jpg",
+   "alt": "Cover image for: Brandable Domain Names: How to Choose, Test and Check One",
+   "title": "Brandable Domain Names: How to Choose, Test and Check One"
+  },
+  "change-domain-name-without-losing-seo": {
+   "file": "change-domain-name-without-losing-seo.jpg",
+   "alt": "Cover image for: Change Domain Name SEO: How to Move Without Losing Rankings",
+   "title": "Change Domain Name SEO: How to Move Without Losing Rankings"
+  },
   "choosing-a-domain-extension-com-ca-io-and-more": {
    "file": "choosing-a-domain-extension-com-ca-io-and-more.jpg",
    "alt": "Cover image for: Choosing a Domain Extension: .com, .ca, .io and More",
@@ -15,15 +25,55 @@
    "alt": "Cover image for: Do Premium Domains Help SEO? What Google Says",
    "title": "Do Premium Domains Help SEO? What Google Says"
   },
+  "domain-backorder-and-expired-domains": {
+   "file": "domain-backorder-and-expired-domains.jpg",
+   "alt": "Cover image for: Domain Backorder Guide: How to Buy Expired Domains Safely",
+   "title": "Domain Backorder Guide: How to Buy Expired Domains Safely"
+  },
+  "domain-escrow-explained": {
+   "file": "domain-escrow-explained.jpg",
+   "alt": "Cover image for: Domain Escrow Explained: How It Works, Fees and Scams to Avoid",
+   "title": "Domain Escrow Explained: How It Works, Fees and Scams to Avoid"
+  },
+  "domain-flipping": {
+   "file": "domain-flipping.jpg",
+   "alt": "Cover image for: Domain Flipping: An Honest Guide to Buying and Reselling Names",
+   "title": "Domain Flipping: An Honest Guide to Buying and Reselling Names"
+  },
+  "domain-leasing-and-lease-to-own": {
+   "file": "domain-leasing-and-lease-to-own.jpg",
+   "alt": "Cover image for: Domain Leasing and Lease to Own: How They Work and What to Check",
+   "title": "Domain Leasing and Lease to Own: How They Work and What to Check"
+  },
   "domain-name-marketing-playbook": {
    "file": "domain-name-marketing-playbook.jpg",
    "alt": "Cover image for: The Domain Name Marketing Playbook",
    "title": "The Domain Name Marketing Playbook"
   },
+  "domain-names-for-business": {
+   "file": "domain-names-for-business.jpg",
+   "alt": "Cover image for: Domain Names for Business: How to Choose the Right One",
+   "title": "Domain Names for Business: How to Choose the Right One"
+  },
+  "domain-parking": {
+   "file": "domain-parking.jpg",
+   "alt": "Cover image for: Domain Parking: What It Is, How It Pays and When to Build",
+   "title": "Domain Parking: What It Is, How It Pays and When to Build"
+  },
   "domain-transfers-epp-codes-and-dns-explained": {
    "file": "domain-transfers-epp-codes-and-dns-explained.jpg",
    "alt": "Cover image for: Domain Transfers, EPP Codes and DNS Explained",
    "title": "Domain Transfers, EPP Codes and DNS Explained"
+  },
+  "how-to-buy-a-domain-name-for-a-website": {
+   "file": "how-to-buy-a-domain-name-for-a-website.jpg",
+   "alt": "Cover image for: How to Buy a Domain Name for a Website: A Complete Guide",
+   "title": "How to Buy a Domain Name for a Website: A Complete Guide"
+  },
+  "how-to-buy-a-domain-name-from-someone": {
+   "file": "how-to-buy-a-domain-name-from-someone.jpg",
+   "alt": "Cover image for: How to Buy a Domain Name from Someone: A Step-by-Step Guide",
+   "title": "How to Buy a Domain Name from Someone: A Step-by-Step Guide"
   },
   "how-to-buy-a-premium-domain-safely": {
    "file": "how-to-buy-a-premium-domain-safely.jpg",
@@ -34,6 +84,11 @@
    "file": "how-to-pick-a-brand-name-and-domain-that-lasts.jpg",
    "alt": "Cover image for: How to Pick a Brand Name and Domain That Lasts",
    "title": "How to Pick a Brand Name and Domain That Lasts"
+  },
+  "how-to-sell-a-domain-name": {
+   "file": "how-to-sell-a-domain-name.jpg",
+   "alt": "Cover image for: How to Sell a Domain Name: A Step-by-Step Guide for Owners",
+   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners"
   },
   "how-to-value-a-premium-domain-name": {
    "file": "how-to-value-a-premium-domain-name.jpg",
@@ -110,6 +165,11 @@
    "alt": "Cover image for: Premium Domains as Business Assets and Investments",
    "title": "Premium Domains as Business Assets and Investments"
   },
+  "short-domain-names": {
+   "file": "short-domain-names.jpg",
+   "alt": "Cover image for: Short Domain Names: Two, Three and Four Letter Domains",
+   "title": "Short Domain Names: Two, Three and Four Letter Domains"
+  },
   "trademarks-and-domain-disputes-udrp-basics": {
    "file": "trademarks-and-domain-disputes-udrp-basics.jpg",
    "alt": "Cover image for: Trademarks and Domain Disputes: UDRP Basics",
@@ -127,6 +187,22 @@
   }
  },
  "articles": [
+  {
+   "slug": "how-to-buy-a-domain-name-for-a-website",
+   "title": "How to Buy a Domain Name for a Website: A Complete Guide",
+   "role": "pillar",
+   "excerpt": "How to buy a domain name for a website, step by step: choose the name, check who owns it, register or buy it, agree a price, pay, transfer it and launch.",
+   "tags": [
+    "buying domains",
+    "domain names",
+    "premium domains",
+    "domain transfer"
+   ],
+   "file": "how-to-buy-a-domain-name-for-a-website.html",
+   "featured": "how-to-buy-a-domain-name-for-a-website",
+   "images": [],
+   "words": 1968
+  },
   {
    "slug": "premium-domain-names-complete-guide",
    "title": "The Complete Guide to Premium Domain Names",
@@ -147,6 +223,39 @@
     "infographic-i5"
    ],
    "words": 2950
+  },
+  {
+   "slug": "brandable-domain-names",
+   "title": "Brandable Domain Names: How to Choose, Test and Check One",
+   "role": "spoke",
+   "excerpt": "What makes brandable domain names work, the patterns behind strong brand name domains, how to test a shortlist on real people, and the trademark checks to run.",
+   "tags": [
+    "brandable domain names",
+    "brandable domains",
+    "brand name domain",
+    "naming"
+   ],
+   "file": "brandable-domain-names.html",
+   "featured": "brandable-domain-names",
+   "images": [],
+   "words": 1642
+  },
+  {
+   "slug": "change-domain-name-without-losing-seo",
+   "title": "Change Domain Name SEO: How to Move Without Losing Rankings",
+   "role": "spoke",
+   "excerpt": "A practical change domain name SEO checklist: map 301 redirects page to page, use the Change of Address tool, update sitemaps and links, and monitor recovery.",
+   "tags": [
+    "domain migration",
+    "SEO",
+    "301 redirects",
+    "rebrand",
+    "change domain name"
+   ],
+   "file": "change-domain-name-without-losing-seo.html",
+   "featured": "change-domain-name-without-losing-seo",
+   "images": [],
+   "words": 1685
   },
   {
    "slug": "choosing-a-domain-extension-com-ca-io-and-more",
@@ -186,6 +295,72 @@
    "words": 714
   },
   {
+   "slug": "domain-backorder-and-expired-domains",
+   "title": "Domain Backorder Guide: How to Buy Expired Domains Safely",
+   "role": "spoke",
+   "excerpt": "How a domain backorder works, how names expire and drop, how drop catching and auctions work, the risks to check, and when buying a listed name is simpler.",
+   "tags": [
+    "domain backorder",
+    "expired domains",
+    "drop catching",
+    "domain auctions"
+   ],
+   "file": "domain-backorder-and-expired-domains.html",
+   "featured": "domain-backorder-and-expired-domains",
+   "images": [],
+   "words": 1707
+  },
+  {
+   "slug": "domain-escrow-explained",
+   "title": "Domain Escrow Explained: How It Works, Fees and Scams to Avoid",
+   "role": "spoke",
+   "excerpt": "Domain escrow explained: how a domain escrow service holds payment until the transfer, what fees to expect, how to spot fake escrow sites, and the alternatives.",
+   "tags": [
+    "domain escrow",
+    "buying domains",
+    "selling domains",
+    "domain transfer",
+    "online safety"
+   ],
+   "file": "domain-escrow-explained.html",
+   "featured": "domain-escrow-explained",
+   "images": [],
+   "words": 1659
+  },
+  {
+   "slug": "domain-flipping",
+   "title": "Domain Flipping: An Honest Guide to Buying and Reselling Names",
+   "role": "spoke",
+   "excerpt": "Domain flipping explained honestly: how investors pick, price, list and resell domains, what renewals cost, trademark risks and why most names never sell.",
+   "tags": [
+    "domain flipping",
+    "domain investing",
+    "domain name investing",
+    "resell domains"
+   ],
+   "file": "domain-flipping.html",
+   "featured": "domain-flipping",
+   "images": [],
+   "words": 1632
+  },
+  {
+   "slug": "domain-leasing-and-lease-to-own",
+   "title": "Domain Leasing and Lease to Own: How They Work and What to Check",
+   "role": "spoke",
+   "excerpt": "Domain leasing explained: who holds the name, how lease to own works, what happens if you miss a payment, the contract points to check, and the alternatives.",
+   "tags": [
+    "domain leasing",
+    "lease to own",
+    "domain rental",
+    "domain buying",
+    "payment plans"
+   ],
+   "file": "domain-leasing-and-lease-to-own.html",
+   "featured": "domain-leasing-and-lease-to-own",
+   "images": [],
+   "words": 1722
+  },
+  {
    "slug": "domain-name-marketing-playbook",
    "title": "The Domain Name Marketing Playbook",
    "role": "spoke",
@@ -202,6 +377,38 @@
     "infographic-i5"
    ],
    "words": 712
+  },
+  {
+   "slug": "domain-names-for-business",
+   "title": "Domain Names for Business: How to Choose the Right One",
+   "role": "spoke",
+   "excerpt": "How to judge domain names for business: what makes a name strong, descriptive vs brandable, choosing an extension, trademark checks and what to do if taken.",
+   "tags": [
+    "business domains",
+    "domain names",
+    "branding",
+    "company domain"
+   ],
+   "file": "domain-names-for-business.html",
+   "featured": "domain-names-for-business",
+   "images": [],
+   "words": 1637
+  },
+  {
+   "slug": "domain-parking",
+   "title": "Domain Parking: What It Is, How It Pays and When to Build",
+   "role": "spoke",
+   "excerpt": "Domain parking explained: ad parking versus for-sale pages, what a parked domain really earns, how parking affects SEO, and when to park a name or build on it.",
+   "tags": [
+    "domain parking",
+    "parked domain",
+    "domain investing",
+    "selling domains"
+   ],
+   "file": "domain-parking.html",
+   "featured": "domain-parking",
+   "images": [],
+   "words": 1638
   },
   {
    "slug": "domain-transfers-epp-codes-and-dns-explained",
@@ -222,6 +429,22 @@
    "words": 797
   },
   {
+   "slug": "how-to-buy-a-domain-name-from-someone",
+   "title": "How to Buy a Domain Name from Someone: A Step-by-Step Guide",
+   "role": "spoke",
+   "excerpt": "How to buy a domain name from someone who already owns it: find the owner, value the name, make contact, negotiate, use a broker, then pay and transfer safely.",
+   "tags": [
+    "buying domains",
+    "domain brokerage",
+    "domain negotiation",
+    "domain transfer"
+   ],
+   "file": "how-to-buy-a-domain-name-from-someone.html",
+   "featured": "how-to-buy-a-domain-name-from-someone",
+   "images": [],
+   "words": 1757
+  },
+  {
    "slug": "how-to-buy-a-premium-domain-safely",
    "title": "How to Buy a Premium Domain Safely, Step by Step",
    "role": "spoke",
@@ -237,7 +460,7 @@
    "images": [
     "infographic-i2"
    ],
-   "words": 717
+   "words": 747
   },
   {
    "slug": "how-to-pick-a-brand-name-and-domain-that-lasts",
@@ -256,6 +479,22 @@
     "infographic-i8"
    ],
    "words": 802
+  },
+  {
+   "slug": "how-to-sell-a-domain-name",
+   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners",
+   "role": "spoke",
+   "excerpt": "Thinking \"how do I sell my domain?\" Learn to value the name, set a price, choose where to sell domain names, avoid scams and get paid before you transfer.",
+   "tags": [
+    "sell domain name",
+    "domain selling",
+    "domain valuation",
+    "domain transfer"
+   ],
+   "file": "how-to-sell-a-domain-name.html",
+   "featured": "how-to-sell-a-domain-name",
+   "images": [],
+   "words": 1713
   },
   {
    "slug": "how-to-value-a-premium-domain-name",
@@ -307,6 +546,22 @@
     "infographic-i10"
    ],
    "words": 781
+  },
+  {
+   "slug": "short-domain-names",
+   "title": "Short Domain Names: Two, Three and Four Letter Domains",
+   "role": "spoke",
+   "excerpt": "Short domain names explained: how many two, three and four letter combinations exist, LLL vs pronounceable names, what sets the price and how to buy one safely.",
+   "tags": [
+    "short domains",
+    "premium domains",
+    "3 letter domains",
+    "4 letter domains"
+   ],
+   "file": "short-domain-names.html",
+   "featured": "short-domain-names",
+   "images": [],
+   "words": 1604
   },
   {
    "slug": "trademarks-and-domain-disputes-udrp-basics",
