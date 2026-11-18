@@ -9,7 +9,7 @@ Premium domains are valuable and easy to move, which makes them attractive to fr
 
 !takeaways In short
 - Check the name and the seller before you talk price.
-- Pay through escrow, never straight to an individual.
+- When you buy from an individual you do not know, pay through escrow, never straight to them.
 - Put the agreement in writing, including what is transferred and when.
 - When the name arrives, lock it, secure the account and keep your records.
 
@@ -53,9 +53,9 @@ Agree these points in writing before money moves.
 
 Escrow means a neutral third party holds your money until the seller delivers the name. The seller is told that the money is safe, so they start the transfer. When you confirm that the name is yours, the escrow agent releases the funds. [Escrow.com](https://www.escrow.com/) is the best known service, and its [introduction to escrow](https://www.escrow.com/what-is-escrow) is a good place to see the steps.
 
-!callout Never do this|Do not send a wire, crypto or gift card payment straight to a stranger. Do not move the name first on a promise to pay. Do not accept a "transfer" that is only a login to an account. If the seller refuses escrow, treat it as a red flag and walk away.
+!callout Never do this|Do not send a wire, crypto or gift card payment straight to a stranger. Do not move the name first on a promise to pay. Do not accept a "transfer" that is only a login to an account. If a private seller you do not know refuses escrow, treat it as a red flag and walk away.
 
-If you buy from us, we set out how payment and transfer work in writing before you pay, and you can ask any question first.
+Buying from an established marketplace or broker is different: Domain Brothers, for example, does not use escrow, but sets out in writing how payment and transfer work before you pay, confirms your payment before the transfer starts, and answers any question first.
 
 ## Stage 5: Transfer, lock and secure
 
@@ -75,7 +75,7 @@ For most names, the seller unlocks the domain at their registrar and gives you a
 - Pressure to pay today or lose the name.
 - A new email address that does not match the company.
 - A price far below similar names with no reason.
-- No escrow, or a fake escrow link on a site you do not recognise.
+- A private seller who refuses escrow, or a fake escrow link on a site you do not recognise.
 - A seller who cannot show control of the domain.
 - A name that matches a famous brand.
 
