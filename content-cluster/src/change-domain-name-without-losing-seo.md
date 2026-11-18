@@ -16,6 +16,9 @@ Change domain name SEO work decides whether a rebrand keeps its search traffic o
 
 ## Why change domain name SEO planning matters
 
+!img:ib-seo-a|Change domain name seo. Moving to a new domain without losing rankings: Map, Redirect, Notify, Update, Monitor|Moving to a new domain without losing rankings.
+
+
 Your rankings are tied to URLs. Each page has earned links, history and trust at its current address. When you move to a new domain, that value only follows if search engines can see that the old page and the new page are the same thing.
 
 A **rebrand domain change** done in a hurry often breaks this link. Common results are pages that return errors, redirects that all land on the home page, and a new site that blocks crawlers by mistake. Each of these can cost traffic that takes months to recover.
@@ -56,6 +59,8 @@ A [301 redirect](https://en.wikipedia.org/wiki/HTTP_301) tells browsers and sear
 - Test a sample of old URLs, plus your top 100 pages, before you announce the move.
 - Keep the redirects in place for at least a year, and longer if you can. Google's guidance recommends at least one year.
 
+!img:ib-seo-b|Common domain move mistakes: Home page only, Temporary redirects, Old sitemap, Lost tracking, Expired old domain, Changing everything|Common domain move mistakes.
+
 ## Launch day: Search Console and sitemaps
 
 Once the new site is live and the redirects work, tell search engines about the move. Launch day is where the change domain name SEO plan meets real crawlers, so keep the team available to fix problems quickly.
@@ -81,6 +86,8 @@ Redirects catch old links, but your own site should not rely on them. Internal l
 - Update your Google Business Profile, social profiles, app store listings and email signatures.
 
 If you are building a new site for the new name at the same time, our [website launch checklist after buying a domain](/website-launch-checklist-after-buying-a-domain/) covers the setup steps. The DNS side, including email records, is in [domain transfers, EPP codes and DNS explained](/domain-transfers-epp-codes-and-dns-explained/).
+
+!img:infographic-i6|Two column infographic: what moves search rankings (content, speed, structure, links, technical health) and what a strong domain adds (clicks, brand searches, links, trust, fewer mistypes)|What moves rankings, and what a strong domain adds.
 
 ## Backlinks outreach after a domain migration
 

@@ -16,6 +16,9 @@ Brandable domain names work as a brand on their own: short, easy to say, easy to
 
 ## What makes brandable domain names work?
 
+!img:ib-brandable-a|Common patterns in brandable domain names: Real word, Compound, Blend, Invented, Suffix, Metaphor|Common patterns in brandable domain names.
+
+
 A brand name does a different job from a descriptive name. A descriptive name says what you sell. A brand name gives customers something distinct to remember and to search for later. The best brandable domain names share a handful of traits.
 
 - **Short.** Fewer syllables are easier to remember and to type. Most strong brandable domains have two or three syllables.
@@ -67,6 +70,8 @@ Good brandable domain names rarely arrive fully formed. Start with words, not do
 
 Expect many favourites to be registered already. That is normal. A registered name may still be for sale, either listed on a marketplace or through its owner.
 
+!img:ib-brandable-b|Testing a brandable name: Say it, Spell it, Search it, Check it|Testing a brandable name.
+
 ## How to test brandable domains before you buy
 
 A name that looks good on a shortlist can fail in conversation. Testing takes an afternoon and saves you from an expensive mistake. Ask people outside your team, ideally people who resemble your customers.
@@ -91,6 +96,8 @@ A brand is only valuable if you can keep it. Before you buy a brand name domain,
 A trademark lawyer can give you a clearance opinion for a serious launch. Our guide to [trademarks and domain disputes](/trademarks-and-domain-disputes-udrp-basics/) explains what happens when names conflict.
 
 !cta Find a brandable name that is ready to use|Browse listed premium names with clear prices, or explore themed collections to spark ideas.|Browse all domains|/all-domains/|Explore collections|/collections/
+
+!img:infographic-i8|Four tests for a brand name: the phone test, the radio test, the search test and the picture test|Four tests for a brand name.
 
 ## Mistakes to avoid with a brand name domain
 

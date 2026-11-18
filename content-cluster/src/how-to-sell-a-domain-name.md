@@ -16,6 +16,9 @@ If you have ever typed "how do I sell my domain" into a search bar, you have met
 
 ## "Sell my domain": decide what you want from the sale first
 
+!img:ib-sell-a|Sell my domain. Selling a domain name, step by step: Value, Price, List, Agree, Transfer|Selling a domain name, step by step.
+
+
 Owners usually reach the "sell my domain" decision for one of three reasons. The business has rebranded, the project never launched, or someone has made an offer. Each reason sets a different deadline and a different floor price, so write yours down first.
 
 Ask yourself two questions. How soon do you need the money? What is the lowest price you would accept without regret? A seller with no deadline can wait for the right buyer. A seller who needs cash this month should price for a faster sale and accept that it may be lower.
@@ -52,6 +55,8 @@ A visible price saves time for both sides. Buyers who can see a number can make 
 
 Holding a name costs renewal fees every year, and demand for a given word can rise or fall. If the current offer sits inside your value range and the buyer looks genuine, accepting it is often the better decision. If the offer is far below your range, a polite counter-offer with a reason (comparable sales, length, extension) keeps the door open.
 
+!img:ib-sell-b|Warning signs when selling a domain: Upfront fees, Fake appraisal, Move first, Odd payment, Urgency, Look-alike sites|Warning signs when selling a domain.
+
 ## Step 3: Where to sell domain names
 
 The most common "sell my domain" question after price is where to list. There is no single best place to sell a domain name. The right route depends on the name's value, your timeline and how much work you want to do yourself.
@@ -86,6 +91,8 @@ Owners of good names attract scammers, and a public "sell my domain" post on a f
 - **The phishing login.** An email that looks like it is from your registrar asks you to "confirm the sale" by logging in through a link. It steals your account.
 
 Use only payment methods and escrow services you have checked independently. Type your registrar's address into the browser yourself. If a buyer pushes hard for speed, slow down.
+
+!img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors buyers use to judge value.
 
 ## Step 5: Get paid before you transfer
 

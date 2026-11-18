@@ -16,6 +16,9 @@ Domain escrow is a way to buy or sell a domain name between two parties who do n
 
 ## What is domain escrow?
 
+!img:ib-escrow-a|How domain escrow works: Agree, Pay, Transfer, Confirm, Release|How domain escrow works.
+
+
 [Escrow](https://en.wikipedia.org/wiki/Escrow) is an old arrangement in which a neutral party holds money or property until agreed conditions are met. Domain escrow applies that idea to domain names. The escrow agent does not own the name or set the price. It holds the buyer's funds and releases them when both sides have done what they agreed.
 
 A **domain escrow service** is useful when the buyer and seller are strangers, when the price is high enough that losing it would hurt, or when one side is in another country. It replaces trust in the other party with trust in a regulated intermediary.
@@ -49,6 +52,8 @@ Check these points before you use any provider:
 - **Contact details.** A real company publishes how to reach it and answers questions before you commit.
 
 If a provider cannot show a licence you can verify, do not use it, however professional the site looks.
+
+!img:ib-escrow-b|Signs of a fake escrow site: New website, Seller's choice, Odd payment, Spelling, Pressure, No licence|Signs of a fake escrow site.
 
 ## What does domain escrow cost?
 
@@ -86,6 +91,8 @@ Because escrow is trusted, criminals copy it. The most common trick is a fake es
 - Keep every message and agreement in writing.
 
 Our guide on [how to buy a premium domain safely](/how-to-buy-a-premium-domain-safely/) covers more checks, including how to confirm a seller really controls the name.
+
+!img:infographic-i7|Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain|The transfer steps that follow payment.
 
 ## Domain escrow from the seller's side
 

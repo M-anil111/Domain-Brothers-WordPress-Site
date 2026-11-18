@@ -443,3 +443,38 @@ add_action( 'template_redirect', function () {
 		ob_start( 'db_header_breadcrumb_bar' );
 	}
 }, 1 );
+
+/*
+ * The theme's sidebar ends with a hard-coded 2017 badge image showing Visa,
+ * Mastercard, Escrow.com and PayPal with an ICANN logo over it. The site takes
+ * card payments through Stripe and uses neither escrow nor PayPal, so the badge
+ * is replaced with an accurate one.
+ */
+if ( ! function_exists( 'db_header_pay_badge' ) ) {
+	/**
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	function db_header_pay_badge( $html ) {
+		if ( false === strpos( $html, 'security-logo.png' ) ) {
+			return $html;
+		}
+		$lock  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+		$badge = '<section class="widget dbpay" aria-label="Secure checkout"><p class="dbpay-h">' . $lock . 'Secure checkout</p>'
+			. '<p class="dbpay-t">Card payments are processed by Stripe, in full or on a monthly plan.</p>'
+			. '<ul class="dbpay-cards"><li>Visa</li><li>Mastercard</li><li>Other major cards</li></ul></section>'
+			. '<style>.dbpay{margin:18px 0 8px;padding:16px 18px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;text-align:left}'
+			. '.dbpay-h{display:flex;align-items:center;gap:8px;margin:0 0 6px!important;font-size:15px!important;font-weight:800;color:#111827!important}.dbpay-h svg{color:#0b7a75}'
+			. '.dbpay-t{margin:0 0 10px!important;font-size:13.5px!important;line-height:1.5;color:#4b5563!important}'
+			. '.dbpay-cards{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.dbpay-cards li{margin:0;padding:4px 10px;border-radius:999px;background:#f1f4f6;font-size:12.5px;font-weight:700;color:#374151;background-image:none!important}</style>';
+		$out = preg_replace( '#<section id="text-3" class="widget widget_text[^"]*"[^>]*>.*?security-logo\.png.*?</section>#s', str_replace( '$', '\\$', $badge ), $html, 1 );
+		return null === $out ? $html : $out;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || is_feed() ) {
+		return;
+	}
+	ob_start( 'db_header_pay_badge' );
+}, 2 );

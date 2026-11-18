@@ -16,6 +16,9 @@ A domain backorder is a request to register a name the moment its current owner 
 
 ## How a domain expires: the lifecycle
 
+!img:ib-backorder-a|Domain backorder. What typically happens after a domain expires: Expiry, Grace period, Redemption, Pending delete, Released|What typically happens after a domain expires.
+
+
 Every registration has an expiry date. If the owner does not renew, the name does not become free the next day. It moves through a series of stages, and exact timings vary by registrar and by extension. For a typical generic top-level domain such as .com, the sequence looks like this.
 
 | Stage | Typical length | What happens |
@@ -61,6 +64,8 @@ Some auctions settle the name at the auction house's own registrar first, so you
 
 Keep emotion out of the bidding. Auctions reward patience and a fixed budget. If the price passes your ceiling, let the name go and move on to your backup list.
 
+!img:ib-backorder-b|Checks before you buy an expired domain: History, Spam, Trademarks, Backlinks, Penalties, Price|Checks before you buy an expired domain.
+
 ## Risks of buying expired domains
 
 An expired domain has a past. Sometimes that past is useful, such as existing links or type-in visitors. Sometimes it is a liability. Check these points before you place a domain backorder or a bid.
@@ -91,6 +96,8 @@ A domain backorder is a bet on a name that may never drop. Buying a name that is
 | Timeline | Weeks to months, and may never happen | Usually days, depending on the transfer |
 | Price | Low fee if uncontested, auction if not | Known upfront, or agreed by offer |
 | Choice | Limited to names that happen to expire | Whatever is listed for sale |
+
+!img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|Judge an expired name on the same six factors as any other.
 
 ## How to stop your own domains from expiring
 

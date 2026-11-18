@@ -16,6 +16,9 @@ Domain leasing lets you use a domain name that someone else owns, in return for 
 
 ## What is domain leasing?
 
+!img:ib-leasing-a|Domain leasing. Leasing, lease to own and payment plans: Lease, Lease to own, Payment plan|Leasing, lease to own and payment plans.
+
+
 Domain leasing is a rental agreement for a domain name. The owner, often called the lessor, keeps the name registered in their own account. You, the lessee, pay a fee each month or year and in return the name points at your website or email.
 
 People also call it **domain rental**, or say they **rent a domain**. The idea is close to renting an office: you get the use, the landlord keeps the title. A lease to own deal works much like a [rent-to-own](https://en.wikipedia.org/wiki/Rent-to-own) agreement for goods. When the lease ends, the name goes back to the owner unless you renew or buy it.
@@ -52,6 +55,8 @@ Most arrangements give the lessee control of the DNS records, or a way to reques
 - Whether the owner can sell the name to someone else during the term.
 
 Registrar transfers follow ICANN's [transfer policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en), which allows a registrar to lock a name against a move to another registrar for a period after certain events, such as a recent transfer. Ask the owner's registrar which locks apply, and plan the final handover with that in mind.
+
+!img:ib-leasing-b|Check these before you sign: Ownership, Missed payment, Total cost, Early payoff, Use rights, End of term|Check these before you sign.
 
 ## What happens if you miss a payment
 
@@ -97,6 +102,8 @@ Treat a domain leasing contract the way you would treat a property lease. Read i
 - Any limits on how you can use the name.
 
 Read [trademarks and domain disputes](/trademarks-and-domain-disputes-udrp-basics/) before committing to any name, leased or bought. A dispute can take the name away regardless of the contract.
+
+!img:infographic-i9|Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, use the domain while it stays with the seller until the final payment, own it after the final payment|How a Domain Brothers payment plan works.
 
 ## When domain leasing makes sense
 

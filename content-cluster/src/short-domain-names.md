@@ -16,6 +16,9 @@ Short domain names are the scarcest names on the internet, because the number of
 
 ## Why short domain names are scarce
 
+!img:ib-shortnames-a|Short domain names. How many short letter combinations exist: 2 letters, 3 letters, 4 letters|How many short letter combinations exist.
+
+
 The supply of short domain names is a simple calculation. With 26 letters, each position in the name has 26 options, so the number of combinations is 26 raised to the length of the name. Add the ten digits and each position has 36 options.
 
 | Length | Letters only | Letters and digits |
@@ -49,6 +52,8 @@ Within the 17,576 combinations, value varies widely:
 
 Our [three character domains](/3-character-domains/) page lists LLL and mixed names we currently offer, with clear prices.
 
+!img:ib-shortnames-b|What moves the price of a short domain: Length, Extension, Pattern, Letters, Meaning, History|What moves the price of a short domain.
+
 ## 4 letter domains: pronounceable vs random
 
 With 456,976 combinations, 4 letter domains are far more plentiful than three letter names, so the gap between strong and weak names is wider. Two names of the same length can differ in price by a large margin purely because of how they sound.
@@ -72,6 +77,8 @@ Short domain names attract three main groups of buyers, and each values them for
 Short domain names also suit practical uses beyond the main website: link shorteners, email addresses that staff must type often, QR codes on packaging, and campaign addresses printed on small surfaces. If your use is one of these, a short name in a less common extension may serve you well at a lower price.
 
 Before you buy, ask what the short name must do. If people will mostly click links, length matters less. If they will hear the name and type it, every character counts.
+
+!img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors that set a short name's value.
 
 ## What sets the price of short domain names
 

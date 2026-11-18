@@ -55,6 +55,9 @@ if ( ! function_exists( 'db_focus_defs' ) ) {
 				}
 				$defs += (array) ( $more['defs'] ?? array() );
 			}
+			foreach ( $defs as $slug => $def ) {
+				$defs[ $slug ]['_slug'] = $slug;
+			}
 			$defs = (array) apply_filters( 'db_focus_defs', $defs );
 		}
 		return $defs;
@@ -143,7 +146,7 @@ if ( ! function_exists( 'db_focus_section_html' ) ) {
 	function db_focus_section_html( array $def, $base_url ) {
 		$kw   = isset( $def['kw'] ) ? (string) $def['kw'] : '';
 		$html = '<section class="dbx" aria-labelledby="dbx-h"><div class="dbx-wrap">';
-		$html .= '<h2 id="dbx-h">' . esc_html( $def['h2'] ) . '</h2>';
+		$html .= '<p class="dbx-eb">Guide</p><h2 id="dbx-h">' . esc_html( $def['h2'] ) . '</h2>';
 		foreach ( (array) $def['body'] as $block ) {
 			if ( is_array( $block ) ) {
 				// array( 'h3' => heading ) or a plain list of bullet strings.
@@ -172,7 +175,38 @@ if ( ! function_exists( 'db_focus_section_html' ) ) {
 		if ( ! empty( $def['link'] ) && 3 === count( $def['link'] ) ) {
 			$html .= '<p class="dbx-more">' . esc_html( $def['link'][2] ) . ' <a href="' . esc_url( $def['link'][0] ) . '" target="_blank" rel="noopener">' . esc_html( $def['link'][1] ) . '</a>.</p>';
 		}
-		return $html . '</div></section>';
+		return $html . db_focus_read_next( isset( $def['_slug'] ) ? (string) $def['_slug'] : '' ) . '</div></section>';
+	}
+}
+
+if ( ! function_exists( 'db_focus_read_next' ) ) {
+	/**
+	 * Cards linking to the blog guides chosen for a page in focus/read-next.php.
+	 *
+	 * @param string $slug Page slug ('_front' for the home page).
+	 * @return string Empty when nothing is mapped or published.
+	 */
+	function db_focus_read_next( $slug ) {
+		static $map = null;
+		if ( null === $map ) {
+			$file = __DIR__ . '/focus/read-next.php';
+			$map  = is_readable( $file ) ? (array) include $file : array();
+		}
+		if ( '' === $slug || empty( $map[ $slug ] ) ) {
+			return '';
+		}
+		$cards = '';
+		foreach ( (array) $map[ $slug ] as $post_slug ) {
+			$post = get_page_by_path( (string) $post_slug, OBJECT, 'post' );
+			if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status ) {
+				continue;
+			}
+			$img   = get_the_post_thumbnail( $post, 'medium', array( 'loading' => 'lazy', 'decoding' => 'async', 'alt' => '' ) );
+			$title = wp_strip_all_tags( get_the_title( $post ) );
+			$cards .= '<li><a href="' . esc_url( get_permalink( $post ) ) . '">' . ( $img ? '<span class="dbx-rn-img">' . $img . '</span>' : '' )
+				. '<span class="dbx-rn-t">' . esc_html( $title ) . '</span><span class="dbx-rn-more">Read the guide &rarr;</span></a></li>';
+		}
+		return '' === $cards ? '' : '<div class="dbx-rn"><h3 class="dbx-rn-h">Read next</h3><ul>' . $cards . '</ul></div>';
 	}
 }
 
@@ -235,11 +269,27 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( null === db_focus_current() ) {
 		return;
 	}
-	$css = '.dbx{padding:clamp(36px,6vw,72px) 0;clear:both}.dbx-wrap{max-width:980px;margin:0 auto;padding:0 var(--m-gutter,20px)}'
-		. 'body.db-ui-active .dbx h2{margin:0 0 18px;font-size:clamp(24px,3vw,34px);line-height:1.15;letter-spacing:-.02em;font-weight:800;color:var(--m-ink,#111827);text-wrap:balance;text-align:left}'
-		. 'body.db-ui-active .dbx h3{margin:28px 0 10px;font-size:clamp(19px,2.2vw,22px);line-height:1.25;font-weight:700;color:var(--m-ink,#111827);text-align:left}'
+	$css = '.dbx{padding:clamp(28px,5vw,64px) var(--m-gutter,20px);clear:both}'
+		. '.dbx-wrap{max-width:1040px;margin:0 auto;padding:clamp(26px,5vw,60px);border:1px solid #e6ebee;border-radius:28px;background:linear-gradient(180deg,#f6f9fa 0%,#fff 420px)}'
+		. 'body.db-ui-active .dbx-eb{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px!important;padding:5px 12px;border-radius:999px;background:#e3f4f2;color:#0b6f6a!important;font-size:12.5px!important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;line-height:1.4!important}'
+		. 'body.db-ui-active .dbx h2{margin:0 0 18px;font-size:clamp(26px,3.3vw,38px);line-height:1.12;letter-spacing:-.025em;font-weight:800;color:var(--m-ink,#111827);text-wrap:balance;text-align:left;max-width:26ch}'
+		. 'body.db-ui-active .dbx h3{margin:34px 0 12px;padding-left:14px;border-left:3px solid var(--m-accent,#0b7a75);font-size:clamp(19px,2.2vw,22px);line-height:1.25;font-weight:700;color:var(--m-ink,#111827);text-align:left}'
 		. 'body.db-ui-active .dbx p,body.db-ui-active .dbx li{font-size:17px;line-height:1.7;color:var(--m-text,#374151);text-align:left}'
-		. 'body.db-ui-active .dbx p{margin:0 0 16px;max-width:72ch}.dbx-list{margin:0 0 18px;padding:0 0 0 22px;max-width:72ch}.dbx-list li{margin:0 0 8px;list-style:disc}'
+		. 'body.db-ui-active .dbx p{margin:0 0 16px;max-width:72ch}'
+		. '.dbx-list{margin:4px 0 20px;padding:0;max-width:72ch;list-style:none}'
+		. 'body.db-ui-active .dbx-list li{position:relative;margin:0 0 10px;padding:0 0 0 32px;list-style:none;background:none}'
+		. '.dbx-list li::before{content:"";position:absolute;left:0;top:.32em;width:20px;height:20px;border-radius:50%;background:#e3f4f2 url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%230b7a75%27 stroke-width=%273%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M5 12.5l4.5 4.5L19 7.5%27/%3E%3C/svg%3E") center/12px no-repeat}'
+		. '.dbx-rn{margin:30px 0 0;padding-top:26px;border-top:1px solid var(--m-line,#e5e7eb)}'
+		. 'body.db-ui-active .dbx .dbx-rn-h{margin:0 0 16px;padding:0;border:0;font-size:20px}'
+		. '.dbx-rn ul{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0;padding:0;list-style:none}'
+		. 'body.db-ui-active .dbx-rn li{margin:0;padding:0}.dbx-rn li::before{display:none}'
+		. 'body.db-ui-active .dbx .dbx-rn a{display:flex;flex-direction:column;height:100%;border:1px solid var(--m-line,#e5e7eb);border-radius:18px;background:#fff;overflow:hidden;text-decoration:none!important;transition:box-shadow .2s,transform .2s}'
+		. 'body.db-ui-active .dbx .dbx-rn a:hover{box-shadow:0 14px 30px -18px rgba(12,20,36,.45);transform:translateY(-2px)}'
+		. '.dbx-rn-img{display:block;aspect-ratio:1200/630;background:#0b1424;overflow:hidden}.dbx-rn-img img{display:block;width:100%;height:100%;object-fit:cover}'
+		. 'body.db-ui-active .dbx-rn-t{display:block;padding:14px 16px 6px;font-size:16px;line-height:1.35;font-weight:700;color:var(--m-ink,#111827)}'
+		. 'body.db-ui-active .dbx-rn-more{display:block;margin-top:auto;padding:0 16px 16px;font-size:14px;font-weight:700;color:var(--m-accent,#0b7a75)}'
+		. '@media (prefers-reduced-motion:reduce){body.db-ui-active .dbx .dbx-rn a{transition:none}}'
+		. '@media (max-width:900px){.dbx-rn ul{grid-template-columns:minmax(0,1fr)}.dbx-rn a{flex-direction:row}.dbx-rn-img{width:38%;flex:none;aspect-ratio:auto}}'
 		. '.dbx-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:16px 0 26px;padding:0;list-style:none;counter-reset:dbx}'
 		. '.dbx-steps li{counter-increment:dbx;display:flex;flex-direction:column;gap:6px;padding:20px;border:1px solid var(--m-line,#e5e7eb);border-radius:18px;background:#fff}'
 		. '.dbx-steps img{width:56px;height:56px;margin:0 0 8px;border-radius:14px}'

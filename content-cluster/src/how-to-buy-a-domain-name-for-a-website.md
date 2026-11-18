@@ -16,6 +16,9 @@ Knowing how to buy a domain name for a website saves you money and weeks of dela
 
 ## Step 1: Decide what the name must do
 
+!img:ib-pillar-a|How to buy a domain name for a website. Two ways to get a domain name: Register a new name, Buy a taken name|Two ways to get a domain name.
+
+
 Every guide on how to buy a domain name for a website should start here, because the search is easier when you know what you are judging. Write down who the site is for, where those people live, and how they will hear the name: in an ad, a podcast, a referral or a search result.
 
 Then set a few rules for the name itself:
@@ -49,6 +52,8 @@ Follow these steps:
 
 Registration takes minutes, which makes this the quickest answer to how to buy a domain name for a website. The name is yours for as long as you keep renewing it, so a lapsed card or an old email address is the main risk at this stage.
 
+!img:ib-pillar-b|Buying a domain name for a website: Decide, Check, Agree, Pay, Launch|Buying a domain name for a website.
+
 ## How to buy a domain name for a website that is already taken
 
 Most short, clear names in .com have been registered for years. If your first choice is taken, you have three options: buy it, choose another name, or wait in case it expires. Buying is often the cheapest of the three once you count the cost of a weaker brand. This section covers that route.
@@ -78,6 +83,8 @@ Registration fees are set by registrars and are broadly similar for the same ext
 Price is where most questions about how to buy a domain name for a website end up. Before you make an offer, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/) and check recorded sales on our [sold domains](/sold/) page. If you want a written opinion, our [appraisal service](/domain-appraisal-services/) values the name for you.
 
 Remember who is on the other side. Some owners are businesses that once used the name. Others are investors who buy names to resell; our guide to [domain flipping](/domain-flipping/) explains how they think about price. A name showing a parked page with ads is usually held by an investor, and our [domain parking](/domain-parking/) guide explains what that page tells you.
+
+!img:infographic-i7|Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain|The five stages of a domain transfer.
 
 ## Step 4: Pay safely
 

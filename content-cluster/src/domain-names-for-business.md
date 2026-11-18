@@ -16,6 +16,9 @@ Domain names for business do more work than most founders expect: the name sits 
 
 ## Why domain names for business matter
 
+!img:ib-business-a|Domain names for business. What a good business domain does: Easy to say, Easy to spell, Fits the brand, Right extension, Clear legally, Room to grow|What a good business domain does.
+
+
 A business domain is the address customers type, the sender name on every email and the first thing many people see in a search result. When the name is clear, people find you without help. When it is awkward, they mistype it, send email to the wrong address or click a competitor whose name they remember better.
 
 The cost of a weak name is quiet and ongoing. It shows up as lost referrals, extra ad spend to repeat the name, and support time spent spelling it out on the phone. That is why domain names for business deserve the same care as the company name itself, and why many companies choose the name and the domain together.
@@ -48,6 +51,8 @@ There are three broad styles of domain names for business, and each suits a diff
 
 Descriptive names work well for local services and focused online shops. Brandable names suit companies that expect to add products or enter new markets; our guide to [brandable domain names](/brandable-domain-names/) shows how to judge them. If your company name is long, a short brandable domain can serve as the trading name while the legal name stays on contracts.
 
+!img:ib-business-b|Choosing a domain name for a business: List, Test, Check, Decide|Choosing a domain name for a business.
+
 ## Choosing the extension for a company domain
 
 The extension is part of the name people remember. For a company domain aimed at an international audience, .com is still the safest choice because many people type it by habit. If your customers are mostly in one country, the local country code can signal that you are based there and serve them directly.
@@ -61,6 +66,8 @@ A practical rule: if you choose a non-.com extension, check who owns the .com ve
 A name that conflicts with an existing trademark can cost you the domain and the brand built on it. Search the official trademark register in each market you sell to. In the United States, the [USPTO trademark search](https://www.uspto.gov/trademarks/search) is free and covers registered and pending marks. Our guide to [trademarks and domain disputes](/trademarks-and-domain-disputes-udrp-basics/) explains how disputes over domain names for business usually arise.
 
 Then check the domain's past. A name that once hosted spam or unrelated content may carry a poor reputation with email providers and search engines. Look at archived copies of the site, search for the name in quotes, and ask the seller what the name was used for.
+
+!img:infographic-i8|Four tests for a brand name: the phone test, the radio test, the search test and the picture test|Four quick tests for any business name.
 
 ## Protecting domain names for business after you buy
 

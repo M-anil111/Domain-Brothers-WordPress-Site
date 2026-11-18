@@ -16,6 +16,9 @@ Domain parking means pointing a registered domain name at a simple holding page 
 
 ## What is domain parking?
 
+!img:ib-parking-a|Domain parking. Three ways to use an unused domain: Ad parking, For-sale page, Build a site|Three ways to use an unused domain.
+
+
 Domain parking is the practice of registering a name and pointing it at a placeholder instead of a full website. The page a visitor sees is called a **parking page** or lander. The [Wikipedia article on domain parking](https://en.wikipedia.org/wiki/Domain_parking) gives a short history of the practice.
 
 People park names for different reasons:
@@ -65,6 +68,8 @@ Several things drive the result:
 
 Parking income has also become harder to earn over time, as more people reach sites through search engines and apps rather than by typing a name. Treat any estimate a parking company gives you with care, and measure the real result over several months.
 
+!img:ib-parking-b|When to park and when to build: Park it, Build on it|When to park and when to build.
+
 ## Domain parking risks to know about
 
 Parking a name is simple, but it is not risk free. A few problems come up again and again.
@@ -84,6 +89,8 @@ This matters in two situations:
 - **When you park a name that used to run a site.** The old site's links may still point at the name. Parking it throws away the value of those links. If you moved to a new domain, redirect each old page to its new address instead, as described in our guide to [changing a domain name without losing SEO](/change-domain-name-without-losing-seo/).
 
 For more on how names affect search, read [do premium domains help SEO](/do-premium-domains-help-seo/).
+
+!img:infographic-i10|Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it|Parking is one of four ways to use a domain.
 
 ## What a good domain for sale page includes
 

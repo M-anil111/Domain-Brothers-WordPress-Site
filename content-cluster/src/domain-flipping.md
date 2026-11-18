@@ -16,6 +16,9 @@ Domain flipping is the practice of buying domain names at a low price and resell
 
 ## What is domain flipping?
 
+!img:ib-flipping-a|The domain flipping cycle: Research, Buy, Hold, List, Sell|The domain flipping cycle.
+
+
 Domain flipping is a short-cycle form of domain investing. An investor registers or buys a name, holds it, and sells it to someone who values it more, usually a business that wants it for a website. The "flip" is the resale.
 
 Some investors aim for a quick sale to other investors at a small margin. Others hold names for years waiting for the right end user. The [Wikipedia article on domain name speculation](https://en.wikipedia.org/wiki/Domain_name_speculation) traces how this market developed since the early days of the commercial web.
@@ -65,6 +68,8 @@ Avoid typos of famous brands, names built around a company's trademark and names
 
 Common sources include new registrations of unclaimed names, expired domain auctions and drop catching services, and private purchases from other owners. Our guide to [domain backorders and expired domains](/domain-backorder-and-expired-domains/) explains how expiring names reach the market, and what to check before bidding.
 
+!img:ib-flipping-b|Domain flipping: costs and risks: Renewals, Slow sales, Fees, Trademarks, Price swings, Your time|Domain flipping: costs and risks.
+
 ## Trademark risk in domain flipping
 
 This is the risk that can turn a cheap name into an expensive mistake. If a name matches or imitates a trademark, the brand owner can file a complaint under the Uniform Domain-Name Dispute-Resolution Policy (UDRP) and may win the name. In some countries, they can also sue.
@@ -97,6 +102,8 @@ Many enquiries open with a low offer. Reply politely, give a counter-offer, and 
 Decide your floor price before the conversation starts, and do not reveal it. If a buyer cannot reach your floor, a courteous "not at this price" keeps the door open. Some buyers return months later with a better offer, especially once their business has grown.
 
 !cta Want a second opinion before you buy or sell?|Our appraisal looks at the name, its comparables and its risks, and gives you a written view of its value.|Request an appraisal|/domain-appraisal-services/|Browse listed domains|/all-domains/
+
+!img:infographic-i10|Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it|The four ways a premium domain earns its keep.
 
 ## How to list and sell your names
 

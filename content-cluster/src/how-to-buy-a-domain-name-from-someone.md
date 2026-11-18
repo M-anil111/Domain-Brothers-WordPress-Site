@@ -16,6 +16,9 @@ Learning how to buy a domain name from someone is the answer when the name you w
 
 ## Step 1: Find out who owns the name
 
+!img:ib-someone-a|How to buy a domain name from someone. Buying a domain name from its owner: Look up, Research, Approach, Agree, Transfer|Buying a domain name from its owner.
+
+
 The first step in how to buy a domain name from someone is finding out who that someone is. Every registered name has a registration record held by its registrar. The [ICANN Lookup tool](https://lookup.icann.org/en) queries that record through RDAP, the modern replacement for WHOIS, and shows the registrar, the creation date, the expiry date and the name servers.
 
 Since data protection rules tightened, most records hide personal details. You will usually see the registrar's name and either a privacy service, a relay email address or a web form for contacting the registrant. That relay is the legitimate route to the owner, and messages sent through it do reach them.
@@ -53,6 +56,8 @@ Score the name on length, extension, meaning, brandability and clean history, th
 
 Write down two numbers: the price you would be glad to pay and the price at which you walk away. Knowing how to buy a domain name from someone is largely knowing when to stop.
 
+!img:ib-someone-b|Do it yourself or use a broker: Contact the owner yourself, Use a domain broker|Do it yourself or use a broker.
+
 ## Step 4: Approach the owner and negotiate
 
 When you contact domain owner addresses or relay forms, your first message sets the tone. Keep it brief, polite and neutral; in how to buy a domain name from someone, a calm opening gets more replies than an eager one. Say you are interested in buying the name, ask whether the owner would consider selling, and ask what price they have in mind.
@@ -83,6 +88,8 @@ Our [domain brokerage service](/domain-brokerage-services/) takes the work of ho
 A broker also helps when the price matters more than speed. Owners tend to respond differently to an experienced buyer who cites comparable sales than to a first-time buyer who seems keen.
 
 !cta Want us to approach the owner for you?|Tell us the name you want. We research ownership and comparable sales, agree a price range with you, and contact the owner confidentially.|Start a brokerage request|/domain-brokerage-services/|Browse listed names|/all-domains/
+
+!img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors that set a domain name's value.
 
 ## Paying and transferring: how to buy a domain name from someone safely
 
