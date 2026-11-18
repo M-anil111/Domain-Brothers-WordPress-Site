@@ -315,7 +315,36 @@ if ( ! function_exists( 'db_finder_match' ) ) {
 if ( ! function_exists( 'db_sales_css' ) ) {
 	/** Styles for the sales pages. Printed once per page that uses them. */
 	function db_sales_css() {
-		return '<style>.db-sales-page{max-width:880px;margin:0 auto;padding:0 16px}'
+		return '<style>.db-sales-page{max-width:1120px;margin:0 auto;padding:0 16px}'
+			. '.dbs2-hero{margin:0 0 26px;padding:clamp(28px,4.4vw,52px);border-radius:28px;color:#fff;background:radial-gradient(900px 420px at 100% 0%,rgba(25,179,166,.45) 0%,rgba(25,179,166,0) 62%),#0c1424}'
+			. 'html body.db-ui-active .dbs2-eyebrow{margin:0 0 14px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#b6f0ea}'
+			. 'html body.db-ui-active .dbs2-title{margin:0 0 12px;font-size:clamp(32px,5vw,54px)!important;line-height:1.05;letter-spacing:-.03em;font-weight:800;color:#fff!important;text-align:left}'
+			. 'html body.db-ui-active .dbs2-lead{margin:0;max-width:62ch;font-size:clamp(16.5px,1.5vw,18.5px);line-height:1.6;color:rgba(255,255,255,.84)}'
+			. '.dbs2-cols{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin:0;padding:0;list-style:none}'
+			. '.dbs2-col{margin:0}html body.db-ui-active .dbs2-col a{display:flex;flex-direction:column;gap:10px;height:100%;padding:24px;border:1px solid #e5e7eb;border-radius:22px;background:#fff;color:#111827!important;text-decoration:none!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}'
+			. 'html body.db-ui-active .dbs2-col a:hover{transform:translateY(-2px);border-color:#b9dcd8;box-shadow:0 18px 36px -22px rgba(17,24,39,.4)}'
+			. '.dbs2-col-n{align-self:flex-start;padding:5px 11px;border-radius:999px;background:#e8f4f3;color:#0b7a75;font-size:13px;font-weight:800}'
+			. '.dbs2-col strong{font-size:20px;line-height:1.25;letter-spacing:-.015em}.dbs2-col-i{font-size:15px;line-height:1.55;color:#4b5563}'
+			. '.dbs2-col-s{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}.dbs2-col-s span{padding:5px 10px;border-radius:8px;background:#f6f7f9;font-size:14px;font-weight:700;color:#111827}'
+			. '.dbs2-col-go{font-size:15px;font-weight:800;color:#0b7a75}'
+			. '.db-sales-quiz{display:grid;gap:14px}'
+			. 'html body.db-ui-active .db-sales-form fieldset{margin:0!important;padding:20px 22px 22px!important;border:1px solid #e5e7eb!important;border-radius:20px!important;background:#fff}'
+			. 'html body.db-ui-active .db-sales-form legend{float:left;width:100%;margin:0 0 14px;padding:0!important;font-size:19px;font-weight:800;color:#111827}'
+			. 'html body.db-ui-active .db-sales-form legend+*{clear:both}'
+			. 'html body.db-ui-active .db-sales-step{display:block;margin:0 0 4px;font-size:12px;font-weight:800;color:#0b7a75}'
+			. 'html body.db-ui-active .db-sales-choices label{position:relative;min-height:46px;padding:10px 18px!important;border:1.5px solid #d1d5db!important;border-radius:999px!important;background:#fff;font-size:15px;font-weight:600;color:#111827;transition:border-color .15s ease,background .15s ease}'
+			. 'html body.db-ui-active .db-sales-choices label input{position:absolute;opacity:0;width:1px;height:1px;margin:0}'
+			. 'html body.db-ui-active .db-sales-choices label:hover{border-color:#111827!important}'
+			. 'html body.db-ui-active .db-sales-choices label:has(input:checked){border-color:#111827!important;background:#111827;color:#fff}'
+			. 'html body.db-ui-active .db-sales-choices label:has(input:focus-visible){outline:3px solid #0b7a75;outline-offset:2px}'
+			. 'html body.db-ui-active .db-sales-quiz>.db-sales-btn{justify-self:start;min-height:52px;padding:0 28px;border-radius:999px;font-size:16px}'
+			. 'html body.db-ui-active #db-broker{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px 40px;align-items:start;margin:28px 0 8px;padding:clamp(22px,3.4vw,40px);border:0;border-radius:26px;background:#f6f7f9}'
+			. 'html body.db-ui-active #db-broker>h2{grid-column:1;margin:0;font-size:clamp(24px,3vw,32px);line-height:1.15;letter-spacing:-.02em;font-weight:800;color:#111827}'
+			. 'html body.db-ui-active #db-broker>p{grid-column:1;margin:0;font-size:16px;line-height:1.6;color:#4b5563}'
+			. 'html body.db-ui-active #db-broker>form{grid-column:2;grid-row:1 / span 3;margin:0;padding:22px;border-radius:20px;background:#fff}'
+			. 'html body.db-ui-active #db-broker input,html body.db-ui-active #db-broker textarea{width:100%;min-height:48px;border:1.5px solid #c3c9d2;border-radius:12px;font-size:16px}'
+			. 'html body.db-ui-active #db-broker .db-sales-btn{min-height:50px;padding:0 26px;border-radius:999px}'
+			. '@media (max-width:860px){html body.db-ui-active #db-broker{grid-template-columns:minmax(0,1fr)}html body.db-ui-active #db-broker>form{grid-column:1;grid-row:auto}}'
 			. '.db-sales-lead{font-size:17px;line-height:1.6;color:#334155;max-width:65ch}'
 			. '.db-sales-form fieldset{border:1px solid #d7dee8;border-radius:12px;padding:14px 16px;margin:14px 0;min-width:0}'
 			. '.db-sales-form legend{font-weight:700;padding:0 6px;color:#0a1628}'
@@ -678,7 +707,16 @@ if ( ! function_exists( 'db_sales_render' ) ) {
 		get_header();
 		echo '<div id="primary" class="content-area"><main id="main" class="site-main db-sales-page">';
 		echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">' . esc_html( $crumb ) . '</span></li></ol></nav>';
-		echo '<h1 class="page-title">' . esc_html( $title ) . '</h1>';
+		// The first lead paragraph moves into a hero header with the title.
+		$lead = '';
+		if ( preg_match( '#^(.*?)<p class="db-sales-lead">(.*?)</p>#s', $body, $lm ) && strlen( $lm[1] ) < 2000 && false === strpos( $lm[1], '<form' ) ) {
+			$lead = $lm[2];
+			$body = $lm[1] . substr( $body, strlen( $lm[0] ) );
+		}
+		$eyebrow = array( 'Find a domain' => 'Domain finder', 'Collections' => 'Curated lists', 'Trust center' => 'Security and payments' );
+		if ( 'Trust center' === $crumb ) { // has its own illustrated header
+			echo '<h1 class="page-title">' . esc_html( $title ) . '</h1>';
+		} else echo '<header class="dbs2-hero"><p class="dbs2-eyebrow">' . esc_html( isset( $eyebrow[ $crumb ] ) ? $eyebrow[ $crumb ] : 'Domain Brothers' ) . '</p><h1 class="dbs2-title">' . esc_html( $title ) . '</h1>' . ( '' !== $lead ? '<p class="dbs2-lead">' . wp_kses( $lead, array( 'a' => array( 'href' => array() ), 'strong' => array() ) ) . '</p>' : '' ) . '</header>';
 		echo db_sales_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
 		echo '</main></div>';
@@ -700,15 +738,19 @@ add_action( 'template_redirect', function () {
 		db_sales_render( 'Trust center', 'Trust center', db_trust_center_body() );
 	}
 	if ( 'collections' === $path ) {
-		$links = '<ul class="db-sales-collections">';
+		$links = '<ul class="db-sales-collections dbs2-cols">';
 		$any   = false;
 		foreach ( db_sales_collections() as $slug => $col ) {
 			$hit = db_sales_collection_rows( $slug );
 			if ( null === $hit ) {
 				continue;
 			}
-			$any    = true;
-			$links .= '<li><a href="' . esc_url( home_url( '/collections/' . $slug . '/' ) ) . '">' . esc_html( $col['title'] ) . '</a> <span>' . count( $hit[1] ) . ' names</span></li>';
+			$any     = true;
+			$samples = array();
+			foreach ( array_slice( $hit[1], 0, 4 ) as $r ) {
+				$samples[] = '<span>' . esc_html( $r['facts']['name'] ) . '</span>';
+			}
+			$links .= '<li class="dbs2-col"><a href="' . esc_url( home_url( '/collections/' . $slug . '/' ) ) . '"><span class="dbs2-col-n">' . count( $hit[1] ) . ' names</span><strong>' . esc_html( $col['title'] ) . '</strong><span class="dbs2-col-i">' . esc_html( $col['intro'] ) . '</span><span class="dbs2-col-s">' . implode( '', $samples ) . '</span><span class="dbs2-col-go">View collection &rarr;</span></a></li>';
 		}
 		$links .= '</ul>';
 		$body   = $any ? '<p class="db-sales-lead">Curated searches. Each one lists names we have for sale right now.</p>' . $links
