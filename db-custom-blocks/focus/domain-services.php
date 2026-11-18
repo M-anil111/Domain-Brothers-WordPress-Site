@@ -163,7 +163,8 @@ return array(
 
 	'acquire-social-media-handles' => array(
 		'kw'          => 'social media handles',
-		'lede'        => 'Getting the social media handles that match your brand takes research and patience, and only the routes each platform permits are worth using.',
+		'lede'        => 'Your brand has the audience, but the name is taken: we help you secure the social media handles your customers expect.',
+		'lede_replace' => 'Your brand has the audience, but the name is taken.',
 		'h2'          => 'How to acquire social media handles that match your brand',
 		'body'        => array(
 			'Matching social media handles make a brand easier to find and harder to impersonate. When the username you want is taken, the options depend on the platform, on who holds the name and on whether the account is in active use.',
@@ -192,7 +193,8 @@ return array(
 
 	'sell-social-media-handles'    => array(
 		'kw'          => 'sell social media handles',
-		'lede'        => 'Before you try to sell social media handles, check the platform\'s terms: several platforms prohibit selling accounts or usernames outright.',
+		'lede'        => 'Short, memorable usernames are scarce, and we help owners sell social media handles to verified buyers.',
+		'lede_replace' => 'Short, memorable usernames are scarce.',
 		'h2'          => 'Can you sell social media handles? What the rules allow',
 		'body'        => array(
 			'Short, memorable usernames attract offers, and many holders ask whether they can <strong>sell social media handles</strong> the way they sell domain names. The answer depends on the platform, and it is often no.',

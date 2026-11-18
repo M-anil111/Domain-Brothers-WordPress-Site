@@ -205,7 +205,11 @@ if ( ! function_exists( 'db_focus_inject' ) ) {
 		$at  = ( false !== $cta && $cta > $main ) ? $cta : $end;
 		$html = substr( $html, 0, $at ) . $section . substr( $html, $at );
 
-		if ( ! empty( $def['lede'] ) ) {
+		if ( ! empty( $def['lede'] ) && ! empty( $def['lede_replace'] ) && false !== strpos( $html, $def['lede_replace'], $main ) ) {
+			// The page already has an introduction line: the keyword sentence takes its place.
+			$pos  = strpos( $html, $def['lede_replace'], $main );
+			$html = substr_replace( $html, esc_html( $def['lede'] ), $pos, strlen( $def['lede_replace'] ) );
+		} elseif ( ! empty( $def['lede'] ) ) {
 			$h1 = stripos( $html, '</h1>', $main );
 			if ( false !== $h1 && $h1 < strripos( $html, '</main>' ) ) {
 				$h1  += 5;
@@ -244,6 +248,8 @@ add_action( 'wp_enqueue_scripts', function () {
 		. 'body.db-ui-active .dbx-more{margin:0;padding-top:18px;border-top:1px solid var(--m-line,#e5e7eb);font-size:16px}'
 		. 'body.db-ui-active .dbx a{color:var(--m-accent,#0b7a75);text-decoration:underline;text-underline-offset:3px}'
 		. '.dbx-lede{margin:10px 0 0;max-width:62ch;font-size:clamp(16px,1.6vw,18px);line-height:1.6;color:inherit;opacity:.9}'
+		// On the dark page headers the introduction line must be light.
+		. 'html body .dbl-head .dbx-lede,html body .dbx-tr-hero .dbx-lede,html body .dbs2-hero .dbx-lede,html body .dbh-dark .dbx-lede{color:rgba(255,255,255,.8)!important;opacity:1}'
 		. '@media (max-width:900px){.dbx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:480px){.dbx-steps{grid-template-columns:minmax(0,1fr)}}';
 	if ( function_exists( 'db_external_style' ) ) {
 		db_external_style( 'focus', $css );

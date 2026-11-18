@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 return array(
 	'faqs'                  => array(
+		// The FAQ hero already has a subtitle; the introduction line replaces it rather than sitting under the heading.
+		'lede_replace' => 'Everything you need to know about buying, selling and managing domains.',
 		'kw'          => 'domain faq',
 		'lede'        => 'This domain FAQ answers the questions buyers ask most often about premium names, prices, payment plans and transfers.',
 		'h2'          => 'Domain FAQ: buying a premium name, step by step',

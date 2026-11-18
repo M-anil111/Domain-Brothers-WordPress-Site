@@ -318,6 +318,9 @@ add_action( 'wp_enqueue_scripts', function () {
 		return;
 	}
 	$css = 'html body.dbp-form .billing_cnt.epp_page{max-width:1120px!important}'
+		// The theme's two-step bar repeats the four steps in the hero; hidden, and the gap it left closed.
+		. '.billing_cnt.epp_page #order-standard_cart,.billing_cnt.epp_page>.container>.row:first-child{display:none!important}.billing_cnt.epp_page .epp_primary_info{margin-top:0!important;padding-top:0!important}html body.db-ui-active.page:not(.home) .billing_cnt.epp_page #main.site-main:not(:has(.entry-wrapper)){margin-top:0!important;padding-top:0!important}'
+		. 'html body .dbx-tr-hero .dbx-lede{color:rgba(255,255,255,.8)!important;opacity:1}'
 		. '.dbx-tr{max-width:1120px;margin:0 auto;padding:0}'
 		. 'html body.db-ui-active .dbx-tr-form .wpcf7{padding:0!important;border:0!important;box-shadow:none!important;background:none!important}'
 		. 'html body.db-ui-active .dbx-tr-form .hide-domain-div{display:none!important}'
