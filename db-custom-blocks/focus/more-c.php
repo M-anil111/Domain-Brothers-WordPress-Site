@@ -12,6 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 return array(
 	'append' => array(
 		'6-character-domains'    => array(
+			'Think about email as well as the website. A six-letter name gives short, professional addresses that are easy to read out over the phone, which matters for sales teams and support desks that share an address with customers every day.',
+			'Renewal costs stay the same as for any other name in the extension, so the purchase price is the main cost. Budget for the name once, then for the ordinary yearly renewal with your registrar.',
+			'If two names tie on your scoring sheet, pick the one that still makes sense if the business adds new products. A name tied to one product type can feel narrow five years later, while a broader word grows with you.',
 			'Check social media usernames at the same time as the domain. A six-letter name is often free as a handle on some platforms and taken on others, and a matching set is easier for customers to find.',
 			array( 'h3' => 'Where 6 letter domain names fit in a naming plan' ),
 			'Most naming projects start with a long list and end with a short one. 6 letter domain names often survive to the end because they balance meaning and length: long enough for a real word, short enough to say in one breath.',
