@@ -134,13 +134,19 @@ Each phase ships behind a switch, with offline tests for the rules (pricing, ver
 
 ---
 
-## 8. Decisions needed from the owner before building
+## 8. Owner decisions (agreed 2026-11-18)
 
-1. **Commission.** Percentage and minimum fee per sale (Sedo and Afternic charge roughly 15% to 25% depending on channel).
-2. **Who negotiates.** Sellers directly with buyers (phase 3), or Domain Brothers brokers on every deal.
-3. **Payouts.** Provider and method (Stripe Connect is the natural fit with the existing Stripe account), payout delay, supported seller countries.
-4. **Payment protection wording.** Whether a licensed escrow partner is added. Until then the site must not describe the flow as escrow.
-5. **Review policy.** Manual review for every listing, for new sellers only, or none.
-6. **Currencies.** USD only at launch, or USD and CAD.
-7. **Legal documents.** Seller agreement, listing rules and data terms need to be drafted or supplied.
-8. **Exclusivity.** Whether sellers may list the same name elsewhere at a different price.
+Development is on hold until the owner asks to start.
+
+| # | Decision | Agreed |
+|---|---|---|
+| 1 | Commission | 15% of the sale price, minimum $100 per sale. |
+| 2 | Who negotiates | Domain Brothers brokers on every deal at launch. Seller-to-buyer negotiation (phase 3) comes later. |
+| 3 | Payouts | Stripe Connect. Paid 7 days after the buyer confirms control of the name, or 14 days after transfer with no dispute. US and Canada sellers at launch. |
+| 4 | Payment protection | No escrow at launch; the site says "payment confirmed before transfer" and never "escrow". Escrow.com offered later for sales over $10,000. |
+| 5 | Review policy | Manual review of a new seller's first listings; trusted sellers publish instantly. |
+| 6 | Currencies | USD only at launch; CAD in a later phase. |
+| 7 | Legal documents | Domain Brothers drafts the seller agreement, listing rules and data terms; the owner's lawyer approves them before launch. |
+| 8 | Exclusivity | Sellers may list elsewhere. Optional exclusive listing with a badge and a 10% commission. |
+| 9 | Sales pages for pointed domains | Yes, in phase 5, with no ads. |
+| 10 | Price guidance | Based on Domain Brothers' own sold list only. |
