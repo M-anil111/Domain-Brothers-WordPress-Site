@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 return array(
 	'append' => array(
 		'6-character-domains'    => array(
+			'Check social media usernames at the same time as the domain. A six-letter name is often free as a handle on some platforms and taken on others, and a matching set is easier for customers to find.',
 			array( 'h3' => 'Where 6 letter domain names fit in a naming plan' ),
 			'Most naming projects start with a long list and end with a short one. 6 letter domain names often survive to the end because they balance meaning and length: long enough for a real word, short enough to say in one breath.',
 			'Use a simple scoring sheet when you compare names. Give each name a mark for meaning, spelling, sound and extension, then test the top three on people outside the team.',
@@ -22,6 +23,7 @@ return array(
 			'Once you have a shortlist, compare each name with recent results on the <a href="/sold/">sold list</a>, then decide whether to buy at the listed price or send an offer.',
 		),
 		'3-character-domains'    => array(
+			'Before you buy, check the letters in other languages and markets you plan to enter. Three letters can form an abbreviation with a meaning you did not intend, and it is far cheaper to find that out on the shortlist than after launch.',
 			array( 'h3' => 'Using 3 letter domains for an existing brand' ),
 			'Many companies that buy 3 letter domains already have a longer name. The short name becomes the address for email, links in print and campaigns, and redirects to the main site. That keeps the brand intact while making it easier to type.',
 			'Check that the letters match an abbreviation people already use for you. 3 letter domains work best when customers would guess them without being told.',
@@ -32,6 +34,8 @@ return array(
 			'A pronounceable four-letter name usually works harder in marketing than a random combination, even at a higher price.',
 		),
 		'offer'                  => array(
+			'A strong domain offer explains how you plan to use the name, gives a realistic first number and leaves room to move. Owners answer faster when the buyer looks serious, so reply to a counter-offer within a day or two.',
+			'If the owner declines, ask whether a payment plan would change the answer. Spreading the cost over 3 to 12 months sometimes closes the gap between the two sides.',
 			array( 'h3' => 'After you send a domain offer' ),
 			'Each domain offer is read by a person, and a broker replies within one business day. The reply accepts the offer, proposes a counter-offer or explains why the owner will not sell at that level.',
 			'If you agree a price, you receive the payment details and the transfer steps in writing. You can pay by card through Stripe, in full or on a monthly plan, and the name moves to your registrar account once payment is confirmed.',
