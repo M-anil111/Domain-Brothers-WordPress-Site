@@ -48,6 +48,8 @@ jobs:
         run: php tests/speed/speed-test.php
       - name: APCu object cache (offline)
         run: php tests/speed/object-cache-test.php
+      - name: Page redesign transforms (offline)
+        run: php tests/pages/pages-test.php
 
   js:
     runs-on: ubuntu-latest
