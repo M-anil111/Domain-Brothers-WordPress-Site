@@ -72,6 +72,43 @@ add_action( 'wp_enqueue_scripts', function () {
 	);
 }, 5 );
 
+if ( ! function_exists( 'db_domain_page_trimmed_css_url' ) ) {
+	/**
+	 * URL of the trimmed theme stylesheet for domain pages, or '' to use the
+	 * full one: when the file is missing, switched off (constant
+	 * DB_DOMAIN_FULL_CSS or filter db_domain_full_css), the uploads folder is
+	 * not writable, or the theme's style.css is not the file it was built from.
+	 */
+	function db_domain_page_trimmed_css_url() {
+		if ( ( defined( 'DB_DOMAIN_FULL_CSS' ) && DB_DOMAIN_FULL_CSS ) || apply_filters( 'db_domain_full_css', false ) || isset( $_GET['db_fullcss'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			return '';
+		}
+		$src   = __DIR__ . '/assets/domain-theme.css';
+		$theme = get_template_directory() . '/assets/css/style.css';
+		if ( ! is_readable( $src ) || ! is_readable( $theme ) ) {
+			return '';
+		}
+		$css = (string) file_get_contents( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		if ( ! preg_match( '#^/\* db-domain-theme source-bytes=(\d+) source-md5=([0-9a-f]{32}) #', $css, $m ) || (int) $m[1] !== (int) filesize( $theme ) ) {
+			return '';
+		}
+		$upload = wp_upload_dir();
+		if ( ! empty( $upload['error'] ) ) {
+			return '';
+		}
+		$css  = str_replace( '{THEME}', get_template_directory_uri(), $css );
+		$name = 'domain-theme-' . substr( md5( $css ), 0, 10 ) . '.css';
+		$dir  = $upload['basedir'] . '/db-blocks';
+		if ( ! file_exists( $dir . '/' . $name ) ) {
+			// The size matched; confirm the content once, when the file is first written.
+			if ( md5_file( $theme ) !== $m[2] || ! wp_mkdir_p( $dir ) || false === file_put_contents( $dir . '/' . $name, $css ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+				return '';
+			}
+		}
+		return $upload['baseurl'] . '/db-blocks/' . $name;
+	}
+}
+
 add_action( 'wp_enqueue_scripts', function () {
 	// /our-services/ is built from Gutenberg blocks using .shadowBox card
 	// styling and a .cta_box closing panel — both defined in this same
@@ -93,7 +130,12 @@ add_action( 'wp_enqueue_scripts', function () {
 	// registered by the site-wide hook above or (if that hook is ever
 	// removed) freshly by this one.
 	wp_enqueue_style( 'db-domainfolio-bootstrap', $theme_uri . '/assets/css/bootstrap.min.css', array(), null );
-	wp_enqueue_style( 'db-domainfolio-style', $theme_uri . '/assets/css/style.css', array( 'db-domainfolio-bootstrap' ), null );
+	// Domain pages use a small part of the theme's 51 KB style.css. When the
+	// trimmed copy (assets/domain-theme.css, built by tools/build-domain-css.js)
+	// matches the theme's current file, it is served under the same handle, at
+	// the same place in the cascade; otherwise the full stylesheet is used.
+	$trimmed = is_singular( 'domain' ) ? db_domain_page_trimmed_css_url() : '';
+	wp_enqueue_style( 'db-domainfolio-style', '' !== $trimmed ? $trimmed : $theme_uri . '/assets/css/style.css', array( 'db-domainfolio-bootstrap' ), null );
 
 	if ( ! is_singular( 'domain' ) ) {
 		return;
