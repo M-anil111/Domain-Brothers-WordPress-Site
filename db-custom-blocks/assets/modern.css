@@ -458,7 +458,7 @@ html body.db-ui-active .db-wl-name { font-size: 20px; font-weight: 800; color: v
 html body.db-ui-active a.db-wl-view { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 20px; border-radius: 999px; background: #111827; color: #fff !important; font-weight: 700; text-decoration: none !important; }
 html body.db-ui-active a.db-wl-view.is-offer { background: #d9f6e4; border: 1.5px solid #2f9e5e; color: #0b2f73 !important; }
 .db-wl-remove { border: 0; background: none; color: var(--m-muted); text-decoration: underline; cursor: pointer; font: inherit; padding: 8px; }
-@media (max-width: 640px) { .db-wl-row { grid-template-columns: 1fr auto; } .db-wl-name { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .db-wl-row { grid-template-columns: 1fr auto; } .db-wl-name { grid-column: 1 / -1; } .db-wl-remove { grid-column: 1 / -1; justify-self: start; padding: 4px 0; } }
 html body.db-ui-active .db-wl-btn, html body.db-ui-active .db-wl-primary, html body.db-ui-active .db-wl-link, html body.db-ui-active .db-wl-remove, html body.db-ui-active a.db-wl-view, html body.db-ui-active .db-wl-dialog button { text-transform: none !important; letter-spacing: 0 !important; }
 html body.db-ui-active .db-stats h2, html body.db-ui-active .db-how h2, html body.db-ui-active .db-aud h3, html body.db-ui-active .db-how-step h3 { color: var(--m-ink) !important; }
 html body.db-ui-active .db-stats { padding: 22px 28px 28px; }
@@ -801,7 +801,8 @@ html body.db-ui-active.single-domain .banner_contant .text_normal h2 .domain_nam
 	.db-ac-note { grid-template-columns: 1fr; gap: 6px; }
 	.db-ac-deal { grid-template-columns: 1fr auto; }
 	.db-ac-deal .db-ac-name { grid-column: 1 / -1; }
-	.db-ac-tabs { border-radius: 18px; }
+	.db-ac-tabs { border-radius: 18px; flex-wrap: wrap; width: 100%; overflow: visible; }
+	.db-ac-tab { flex: 1 1 auto; justify-content: center; padding: 0 14px; }
 }
 
 /* ===== 28. Priced page: aligned buttons, wishlist row; details grid with status panel; full-width terms; ad slots ===== */
