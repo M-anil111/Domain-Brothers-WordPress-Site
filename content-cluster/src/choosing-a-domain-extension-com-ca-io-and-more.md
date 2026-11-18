@@ -31,7 +31,7 @@ Every domain ends in a top-level domain, or TLD. The [IANA root zone database](h
 
 ## .com: the default, and why
 
-People type .com without thinking. If your address ends in anything else, some of your visitors will land on a different site. It is also what most people assume when they hear a name spoken. For that reason, a good .com is the most valuable type of premium domain, and names on it cost more than the same word on any other extension. If your budget allows, and your business may grow, start here.
+People type .com without thinking. If your address ends in anything else, some of your visitors will land on a different site. It is also what most people assume when they hear a name spoken. For that reason, a good .com is the most valuable type of premium domain, and names on it cost more than the same word on any other extension. If your budget allows, and your business may grow, start here. For a business that sells in more than one country, .com is still the safest domain extension to start from.
 
 ## Country codes: the local advantage
 
@@ -51,7 +51,7 @@ Names such as `bakery.shop` or `lawfirm.agency` use the extension as part of the
 
 ## Renewal costs and registry rules
 
-The purchase price is paid once; the renewal is paid every year for as long as you keep the name. Over ten years the renewals on some domain extensions add up to more than the first-year price, so look at both before you choose.
+The purchase price is paid once; the renewal is paid every year for as long as you keep the name. Over ten years the renewals on some domain extensions add up to more than the first-year price, so look at both before you choose. Compare the renewal fee of each domain extension over at least five years, not only the first-year price.
 
 ### Why renewal prices differ between domain extensions
 
@@ -87,7 +87,7 @@ Many businesses own several domain extensions and use only one as the main addre
 
 ## Protect your name
 
-Once you have chosen, think about the cheap protections.
+Once you have chosen, think about the cheap protections. If a second domain extension matters to your brand, register it at the same time and redirect it to the main site.
 
 - Register the other extensions you care about and redirect them to your main address.
 - Register obvious misspellings if they are a real risk.

@@ -30,7 +30,7 @@ A name with high scores on most factors is premium. A name that scores five on l
 
 ## Step 2: Check comparable sales
 
-Comparable sales are the closest thing the market has to a price list. Public sales databases, auction results and broker reports show what names of similar length, extension and meaning have actually sold for.
+Comparable sales are the closest thing the market has to a price list. Public sales databases, auction results and broker reports show what names of similar length, extension and meaning have actually sold for. Comparable sales are the most reliable evidence in any domain valuation.
 
 - Compare like with like: same extension, similar length, similar type of word.
 - Look at **recent** sales. Markets move.
@@ -43,7 +43,7 @@ The [overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_r
 
 ## Step 3: Estimate what the name is worth to you
 
-A name is worth what it earns or saves your business. Try this arithmetic.
+A name is worth what it earns or saves your business. Try this arithmetic. This step turns a market domain valuation into a personal one.
 
 - **Cost per customer today.** What do you spend on marketing for each new customer?
 - **Improvement from a better name.** Even a small gain in click-through, direct visits or referral is valuable when repeated across thousands of visitors.
@@ -68,7 +68,7 @@ Move the price up or down for these things.
 
 ## Step 5: Set your range and make an offer
 
-Decide two numbers before you speak to the seller: the price you would be glad to pay and the price at which you walk away. Start below the first number, leave room to move, and do not tell the seller your top figure.
+Decide two numbers before you speak to the seller: the price you would be glad to pay and the price at which you walk away. Start below the first number, leave room to move, and do not tell the seller your top figure. Write your domain valuation range down before you contact the seller.
 
 Many of the names on our site have a clear price. Others are open to offers, and we reply to each offer personally. If you would like help setting a number, our [domain brokerage](/domain-brokerage-services/) and [appraisal](/domain-appraisal-services/) teams do this every day.
 
@@ -97,7 +97,7 @@ Our guide on [how to sell a domain name](/how-to-sell-a-domain-name/) covers lis
 
 ## A worked example
 
-Imagine two names for a new accounting firm.
+Imagine two names for a new accounting firm. The same domain valuation steps give very different answers for these two names.
 
 - **Name A:** a short, real-word .com, no hyphens, with several similar names sold in the last two years.
 - **Name B:** a long phrase on a rarely used extension, no sales history.

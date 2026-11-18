@@ -17,7 +17,7 @@ Domain name SEO is one of the most misunderstood reasons people buy a premium do
 
 ## What Google's guidance says about domain name SEO
 
-Google's [SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) and its [Search Essentials](https://developers.google.com/search/docs/essentials) focus on helpful, people-first content, a clear site structure, good page experience and technical health. They do not tell site owners to buy keyword-rich domains. Exact-match domains used to be easier to rank years ago, and Google has since reduced the advantage of low-quality exact-match sites.
+Google's [SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) and its [Search Essentials](https://developers.google.com/search/docs/essentials) focus on helpful, people-first content, a clear site structure, good page experience and technical health. They do not tell site owners to buy keyword-rich domains. Exact-match domains used to be easier to rank years ago, and Google has since reduced the advantage of low-quality exact-match sites. In short, domain name SEO is about the indirect effects of a good name, not a ranking bonus for the words in it.
 
 That is the answer to the narrow question of domain name SEO. A domain that only contains your keyword will not make a poor site rank.
 
@@ -49,6 +49,8 @@ Short, real words are typed correctly more often. Fewer mistypes mean fewer visi
 
 ## What matters more than the domain
 
+Get these right first: domain name SEO only adds to a site that is already useful.
+
 - **Helpful content** that answers what people search for.
 - **Site speed and experience.** [Core Web Vitals](https://web.dev/articles/vitals) explains how Google measures loading, interactivity and visual stability.
 - **Clear structure and internal links**, so search engines and visitors find your pages.
@@ -66,6 +68,8 @@ Some domain name SEO decisions are made once and are expensive to change later, 
 - **.com** still has the advantage that people assume it first, which reduces lost visitors and mistyped emails.
 
 ### Subdomains, folders and hyphens
+
+From a domain name SEO point of view, Google can rank subdomains and folders alike, so choose the structure that is easiest to manage.
 
 - Google can rank content in a subdomain (`blog.example.com`) or a folder (`example.com/blog`). A folder keeps everything in one place and is easier to manage.
 - Hyphens do not hurt rankings, but they are easy to forget when people type or say the name.
@@ -117,6 +121,8 @@ You cannot see a ranking score for the domain itself, but you can measure the si
 Review these monthly. If they rise while your content stays the same, the name is doing its part of the domain name SEO work. Our [digital marketing](/digital-marketing/) team can set up this reporting for you.
 
 ## Myths we hear
+
+Most domain name SEO myths date from the years before Google's 2012 exact-match domain update, when keyword names were rewarded on their own.
 
 !details:A keyword in the domain guarantees a top ranking.|No. It can help people understand the site at a glance, but ranking depends on the quality of the content and the site.
 !details:A new extension hurts rankings.|Generally no. Google treats new generic extensions like any other. Country codes are used as a local signal.

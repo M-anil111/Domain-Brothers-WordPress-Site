@@ -46,7 +46,7 @@ If you bought through us on a payment plan, remember that ownership transfers af
 
 ## Day 1 to 2: Connect DNS
 
-DNS is the system that turns your name into the address of your server. The [Wikipedia article on the Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System) gives the background; in practice you do a few things.
+DNS is the system that turns your name into the address of your server. The [Wikipedia article on the Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System) gives the background; in practice you do a few things. DNS comes early in any website launch checklist because changes can take hours to reach every network.
 
 - Add an **A record** (or CNAME) that points the name to your host.
 - Add a record for the **www** version, or redirect it.
@@ -58,6 +58,8 @@ See [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-
 
 ## Day 2: Turn on HTTPS
 
+No website launch checklist is complete without HTTPS on every page.
+
 - Install an SSL/TLS certificate. Most hosts offer free ones.
 - Redirect every http address to its https version.
 - Fix mixed-content warnings, where a secure page loads an insecure image or script.
@@ -65,7 +67,7 @@ See [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-
 
 ## Day 2 to 3: Set up email properly
 
-A premium domain deserves a professional email address, and email needs three records to be trusted.
+A premium domain deserves a professional email address, and email needs three records to be trusted. Email is the step on a website launch checklist that people skip most often, and it is the one that sends invoices to spam.
 
 - **SPF** lists the servers allowed to send for your domain.
 - **DKIM** signs your messages so they cannot be forged.
@@ -81,6 +83,8 @@ Start DMARC in monitoring mode, read the reports for a few weeks, then tighten t
 
 ## Day 4: Measure
 
+Measuring from day one shows what each step of the website launch checklist changed.
+
 - Install analytics and set up conversions for your main goals: a contact form, a purchase, a booking.
 - Add the domain to [Google Search Console](https://search.google.com/search-console/about) and verify it, then submit your sitemap.
 - Check the [Search Console help](https://support.google.com/webmasters/answer/9008080) if you are new to it.
@@ -89,7 +93,7 @@ Start DMARC in monitoring mode, read the reports for a few weeks, then tighten t
 
 ## Day 5: Publish the basics
 
-At least:
+At least: These pages are the minimum a website launch checklist should require before you announce the site.
 
 1. A clear **home page** that says who you help and how.
 2. An **about page** with real names and photos.
@@ -138,6 +142,8 @@ Our guide to [changing a domain name without losing SEO](/change-domain-name-wit
 
 ## After the first week
 
+Keep this website launch checklist and run it again whenever you change hosts or add a domain.
+
 - Keep a **changelog** of DNS and site changes.
 - Review email reports and search data monthly.
 - Put the renewal date in your calendar.
@@ -145,7 +151,7 @@ Our guide to [changing a domain name without losing SEO](/change-domain-name-wit
 
 ## Need a hand?
 
-If you would rather not do it yourself, we build and run sites. See our [website design and development](/website-design-development/), [hosting and maintenance](/web-hosting-maintenance-services/) and [comprehensive digital solutions](/comprehensive-digital-solutions/). For mobile, see [app development](/mobile-app-development-services/).
+If you would rather not do it yourself, we build and run sites. See our [website design and development](/website-design-development/), [hosting and maintenance](/web-hosting-maintenance-services/) and [comprehensive digital solutions](/comprehensive-digital-solutions/). For mobile, see [app development](/mobile-app-development-services/). We can work through the website launch checklist with you.
 
 ## Frequently asked questions
 

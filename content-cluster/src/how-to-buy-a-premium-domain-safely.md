@@ -19,7 +19,7 @@ Buying premium domains carries one real risk: the names are valuable and easy to
 
 ## Stage 1: Find the right name
 
-Buying premium domains starts with what you need the name to do. Write down three to five candidates, then search by keyword, length or category. Our [domain list](/all-domains/) is searchable, and you can browse by theme: [business](/domain-category/business/), [technology](/domain-category/technology/), [finance and legal](/domain-category/finance-legal/), [health and fitness](/domain-category/health-fitness/), [shopping](/domain-category/shopping/) and [more](/domain-category/international/). Use our [domain checker](/check-domain/) to see whether a name is available at the registry or already owned.
+Buying premium domains starts with what you need the name to do. Write down three to five candidates, then search by keyword, length or category. Our [domain list](/all-domains/) is searchable, and you can browse by theme: [business](/domain-category/business/), [technology](/domain-category/technology/), [finance and legal](/domain-category/finance-legal/), [health and fitness](/domain-category/health-fitness/), [shopping](/domain-category/shopping/) and [more](/domain-category/international/). Use our [domain checker](/check-domain/) to see whether a name is available at the registry or already owned. When buying premium domains, start with a shortlist of three to five names so you can walk away from any single one.
 
 ## Stage 2: Check the name and the seller
 
@@ -41,7 +41,7 @@ Buying premium domains starts with what you need the name to do. Write down thre
 
 ## Stage 3: Agree the price and the terms
 
-You will meet two kinds of listing. Some have a **fixed price** you can pay at once. Others are **open to offers**, where you propose a price and the seller replies. On our site, every offer is read by a person and answered, and each conversation stays on a private page so nothing is lost.
+You will meet two kinds of listing. Some have a **fixed price** you can pay at once. Others are **open to offers**, where you propose a price and the seller replies. On our site, every offer is read by a person and answered, and each conversation stays on a private page so nothing is lost. Put every term in writing: buying premium domains on a verbal promise is how most disputes start.
 
 Agree these points in writing before money moves.
 
@@ -61,6 +61,8 @@ Escrow means a neutral third party holds your money until the seller delivers th
 Buying from an established marketplace or broker is different: Domain Brothers, for example, does not use escrow, but sets out in writing how payment and transfer work before you pay, confirms your payment before the transfer starts, and answers any question first.
 
 ## Stage 5: Transfer, lock and secure
+
+The last stage of buying premium domains is the one most often rushed, so lock the name and turn on two-factor sign-in the day it arrives.
 
 ### How the transfer works
 
@@ -107,6 +109,8 @@ Set your launch date with that margin in mind, and do not print the new address 
 
 ## Red flags when buying premium domains
 
+Most fraud in buying premium domains starts with pressure to pay quickly or away from a protected payment route.
+
 - Pressure to pay today or lose the name.
 - A new email address that does not match the company.
 - A price far below similar names with no reason.
@@ -116,7 +120,7 @@ Set your launch date with that margin in mind, and do not print the new address 
 
 ## If you would rather have help
 
-If buying premium domains on your own feels like too much, we handle every step for buyers: checks, price negotiation and transfer. Read about our [buy domains service](/buy-domains-service/) or ask our [brokers](/domain-brokerage-services/) to find a name for you.
+If buying premium domains on your own feels like too much, we handle every step for buyers: checks, price negotiation and transfer. Read about our [buy domains service](/buy-domains-service/) or ask our [brokers](/domain-brokerage-services/) to find a name for you. A broker can handle buying premium domains for you, from the first contact to the transfer.
 
 ## Where to go next
 

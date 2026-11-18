@@ -17,7 +17,7 @@ Domain financing exists because a strong domain can cost more than a small busin
 
 ## Why people pay over time
 
-Most buyers who use a plan are not short of money. They are keeping cash for the things that make the name useful: the website, the marketing, the first hires. A plan lets the domain start working for the business while the cost is spread across the months it earns. Domain financing also lets a young company buy the name it intends to keep, instead of a weaker name it will have to replace later, when switching costs far more.
+Most buyers who use a plan are not short of money. They are keeping cash for the things that make the name useful: the website, the marketing, the first hires. A plan lets the domain start working for the business while the cost is spread across the months it earns. Domain financing also lets a young company buy the name it intends to keep, instead of a weaker name it will have to replace later, when switching costs far more. Domain financing lets a business use a strong name now and spread the cost over the months in which it starts to earn.
 
 ## How domain financing works on our plans
 
@@ -57,6 +57,8 @@ If the price is within your budget and you want the name outright, paying in ful
 
 ## Making a plan work for you
 
+Treat domain financing like any other monthly bill and plan for it.
+
 1. **Pick the shortest term you can comfortably afford.** It costs less overall.
 2. **Use a card you will keep.** Payments are charged automatically. If your card expires, update it before the next payment.
 3. **Put a reminder in your calendar** for the first payment of each month.
@@ -65,7 +67,7 @@ If the price is within your budget and you want the name outright, paying in ful
 
 ## Is domain financing worth it?
 
-If the name will help you win customers within the plan, it usually is. A strong domain can improve how many people click, remember and trust you. The way to test it is to compare the monthly payment with what one extra customer a month would bring. If one customer repays the payment, the plan is easy to justify. Our method in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/) shows how to run that comparison.
+If the name will help you win customers within the plan, it usually is. A strong domain can improve how many people click, remember and trust you. The way to test it is to compare the monthly payment with what one extra customer a month would bring. If one customer repays the payment, the plan is easy to justify. Our method in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/) shows how to run that comparison. Domain financing is worth it when the name will earn or save more than any interest costs.
 
 ## What domain financing costs on each term
 
@@ -94,7 +96,7 @@ If a payment fails and is not made up within the retry period, the plan ends ins
 
 ## Alternatives to a seller plan
 
-Seller payment plans are one form of domain financing and one of several ways the aftermarket handles price; the [Wikipedia overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale) describes the others, including auctions, brokered sales and lease-to-own deals.
+Seller payment plans are one form of domain financing and one of several ways the aftermarket handles price; the [Wikipedia overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale) describes the others, including auctions, brokered sales and lease-to-own deals. Compare each of these with domain financing from the seller on total cost, not on the monthly figure.
 
 - **Business credit card or line of credit.** Check the rate against a plan with no interest.
 - **Lease to own.** Some brokers let you lease a domain with the right to buy; make sure the contract says what happens to the payments. Domain Brothers does not offer leasing; [Domain Leasing and Lease-to-Own](/domain-leasing-and-lease-to-own/) explains how those deals work elsewhere.
