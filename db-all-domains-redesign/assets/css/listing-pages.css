@@ -1,0 +1,57 @@
+/*!
+ * Domain Brothers – shared fixes for the domain listing pages:
+ * /all-domains/, /4-character-domains/, /5-character-domains/,
+ * /6-character-domains/ and /sold/.
+ *
+ * The "What to check before you buy" content block (.dbx) was capped at
+ * 980px with paragraphs limited to 72ch; widen it to the 1140px content
+ * width and let paragraphs use the full column.
+ */
+
+html body.dbp .dbx .dbx-wrap {
+	padding: 0 var(--m-gutter, 0px);
+	max-width: 1140px;
+}
+
+html body.db-ui-active .dbx p {
+	max-width: 100%;
+}
+
+/* -------------------------------------------------------------------------
+ * Content width = header width.
+ * The header container (.db-hd-in) is max-width 1360px with
+ * clamp(20px, 3vw, 40px) side padding. On these five pages the content area
+ * gets the same box, so the banner, filters and cards line up with the logo
+ * and the header buttons. #content and #main lose their own side padding
+ * (otherwise it would be added on top); top/bottom spacing is unchanged.
+ * IDs are used because the theme sets these paddings with !important at
+ * high specificity.
+ * ---------------------------------------------------------------------- */
+
+html body.dbp.dbp {
+	--dbr-hd-pad: clamp(20px, 3vw, 40px);
+}
+
+html body.dbp.dbp #page #content.site-content {
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
+html body.dbp.dbp #page #content.site-content > #primary.content-area {
+	box-sizing: border-box !important;
+	float: none !important;
+	width: 100% !important;
+	max-width: 1360px !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+	padding-left: var(--dbr-hd-pad) !important;
+	padding-right: var(--dbr-hd-pad) !important;
+}
+
+html body.dbp.dbp #page #content.site-content > #primary.content-area > #main.site-main {
+	max-width: 100% !important;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}

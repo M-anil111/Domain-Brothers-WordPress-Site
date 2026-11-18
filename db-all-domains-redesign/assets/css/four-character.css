@@ -1,0 +1,9 @@
+/*!
+ * Domain Brothers – /4-character-domains/ page values for length-pages.css.
+ */
+
+html body.dbp-listing.dbp-listing {
+	--dbl-hero-img: url("../img/hero-4-character.webp");
+	--dbl-hero-ratio: 760 / 383;
+	--dbl-tools-title: "Available 4-character domains";
+}
