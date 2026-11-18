@@ -66,7 +66,7 @@ The last stage of buying premium domains is the one most often rushed, so lock t
 
 ### How the transfer works
 
-For most names, the seller unlocks the domain at their registrar and gives you an **authorisation code** (often called an EPP code). You start a transfer at your registrar with the code, and the old registrar releases the domain. The name then sits in your account. The details are in [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-and-dns-explained/) and our [EPP guidelines](/epp-guidelines/). The [ICANN transfer policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en) sets the rules registrars follow.
+For most names, the seller unlocks the domain at their registrar and gives you an **authorisation code** (often called an EPP code). You start a transfer at your registrar with the code, and the old registrar releases the domain. The name then sits in your account. The details are in [Domain Transfers, EPP Codes and DNS Explained](/how-to-transfer-a-domain/) and our [EPP guidelines](/epp-guidelines/). The [ICANN transfer policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en) sets the rules registrars follow.
 
 ### Secure it the same day
 

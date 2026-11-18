@@ -118,8 +118,12 @@ def build():
     arts.sort(key=lambda a: (a['role'] != 'pillar', a['slug']))
     # Several clusters can share the folder: front matter "cluster:" (default
     # "premium"). Each cluster has one pillar; "keep reading" stays inside it.
+    # "key:" is the article's permanent identity (post lookup, HTML file and
+    # cover image). It defaults to the slug, so a slug can change later and the
+    # importer updates the same post; WordPress then redirects the old URL.
     for a in arts:
         a.setdefault('cluster', 'premium')
+        a.setdefault('key', a['slug'])
     pillars = {a['cluster']: a for a in arts if a['role'] == 'pillar'}
     spokes_of = {c: [a for a in arts if a['cluster'] == c and a['role'] != 'pillar'] for c in set(x['cluster'] for x in arts)}
     alts_all = {}
@@ -214,19 +218,19 @@ def build():
             rel_items = head + ['[%s](/%s/)' % (s2['title'].split(':')[0], s2['slug']) for s2 in sib if s2 is not a]
         related = group('db-related', heading(2, 'Keep reading', 'keep-reading-' + a['slug'][:6]) + '\n' + lst(rel_items))
         content = '\n\n'.join(out).replace('@@TOC@@', toc).replace('@@RELATED@@', related)
-        fn_out = a['slug'] + '.html'
+        fn_out = a['key'] + '.html'
         open(os.path.join(OUT, fn_out), 'w', encoding='utf-8').write(content + '\n')
         for k in used_imgs:
             manifest['images'].setdefault(k, None)
         alts_all.update(alts_this)
         manifest['articles'].append({
-            'slug': a['slug'], 'title': a['title'], 'role': a['role'], 'excerpt': a['excerpt'],
-            'tags': [t.strip() for t in a['tags'].split(',')], 'file': fn_out, 'featured': a['slug'],
+            'key': a['key'], 'slug': a['slug'], 'title': a['title'], 'role': a['role'], 'excerpt': a['excerpt'],
+            'tags': [t.strip() for t in a['tags'].split(',')], 'file': fn_out, 'featured': a['key'],
             'images': sorted(set(used_imgs)), 'words': words,
         })
         stats[a['slug']] = words
     # images: everything in the assets folder
-    titles = {a['slug']: a['title'] for a in arts}
+    titles = {a['key']: a['title'] for a in arts}
     imgs = {}
     for fnm in sorted(os.listdir(IMG)):
         key, ext = os.path.splitext(fnm)

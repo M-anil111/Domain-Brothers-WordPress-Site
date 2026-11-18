@@ -103,7 +103,7 @@ If your main aim is to sell a name, the lander matters more than any ad income. 
 5. A short explanation of how payment and transfer work.
 6. No ads competing for the visitor's attention.
 
-Before you set a price, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/), and see our guide on [how to sell a domain name](/how-to-sell-a-domain-name/) for the wider process.
+Before you set a price, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/), and see our guide on [how to sell a domain name](/sell-my-domain/) for the wider process.
 
 !cta Thinking about selling a parked name?|Domain Brothers does not offer parking, but we can appraise a name you own so you know what to ask, and you can contact us to discuss selling it.|Request an appraisal|/domain-appraisal-services/|Contact us|/contact-us/
 

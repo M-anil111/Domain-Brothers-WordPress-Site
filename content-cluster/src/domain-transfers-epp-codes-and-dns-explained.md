@@ -1,6 +1,7 @@
 ---
 title: How to Transfer a Domain: EPP Codes, Locks and DNS Explained
-slug: domain-transfers-epp-codes-and-dns-explained
+slug: how-to-transfer-a-domain
+key: domain-transfers-epp-codes-and-dns-explained
 role: spoke
 excerpt: How to transfer a domain from start to finish: who does what, the EPP code, transfer locks, waiting periods, DNS records and the checks that stop problems.
 tags: domain transfer, EPP code, DNS, registrar

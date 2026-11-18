@@ -133,7 +133,7 @@ Gather evidence of your rights and of the domain's use, send a polite notice if 
 
 ## How this affects premium domains
 
-Premium domains are valuable because they are clear, common words and phrases, and that is also why they are less likely to be risky: they belong to everyone and to no one. Our team screens listings for obvious conflicts, but you are responsible for checking the name against your own markets and plans. Read [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/) for the full process, and see [How to Pick a Brand Name and Domain That Lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/) for choosing a name that is both available and defensible.
+Premium domains are valuable because they are clear, common words and phrases, and that is also why they are less likely to be risky: they belong to everyone and to no one. Our team screens listings for obvious conflicts, but you are responsible for checking the name against your own markets and plans. Read [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/) for the full process, and see [How to Pick a Brand Name and Domain That Lasts](/how-to-choose-a-domain-name/) for choosing a name that is both available and defensible.
 
 ## Frequently asked questions
 

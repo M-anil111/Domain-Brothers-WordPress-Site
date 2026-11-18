@@ -93,7 +93,7 @@ The same method works in reverse. If you own a name and want to sell it, score i
 - Decide in advance whether you will take offers or sell only at a fixed price.
 - Keep the name renewed and its records clean while it is on sale, because a lapse or a spam history lowers every estimate.
 
-Our guide on [how to sell a domain name](/how-to-sell-a-domain-name/) covers listing, negotiation and transfer, and our [sold domains](/sold/) page shows the kind of names that find buyers.
+Our guide on [how to sell a domain name](/sell-my-domain/) covers listing, negotiation and transfer, and our [sold domains](/sold/) page shows the kind of names that find buyers.
 
 ## A worked example
 
@@ -117,7 +117,7 @@ Name A scores high on length, extension, keyword fit, brandability and evidence.
 
 - Compare prices on [short names](/4-character-domains/) and [numeric names](/numeric-domains-for-sale/).
 - Understand the buying steps in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/).
-- See how value connects to returns in [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/).
+- See how value connects to returns in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 
 ## Frequently asked questions
 

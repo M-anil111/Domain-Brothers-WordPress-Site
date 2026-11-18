@@ -147,8 +147,8 @@ Review the numbers every month, keep what works and stop what does not.
 
 ## Where to go next
 
-- Choose a name with [How to Pick a Brand Name and Domain That Lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/).
-- Understand the asset side in [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/).
+- Choose a name with [How to Pick a Brand Name and Domain That Lasts](/how-to-choose-a-domain-name/).
+- Understand the asset side in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 - Browse names you can own today in our [domain list](/all-domains/).
 
 !cta Put your name to work|We design, build and market sites for premium domain owners, from the first page to the first campaign.|Digital marketing services|/digital-marketing-services/|Comprehensive digital solutions|/comprehensive-digital-solutions/

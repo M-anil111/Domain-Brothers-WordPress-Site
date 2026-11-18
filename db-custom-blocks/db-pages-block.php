@@ -538,7 +538,7 @@ add_filter( 'the_content', function ( $html ) {
 		return $html;
 	}
 	if ( 'epp' === $kind ) {
-		return db_pages_epp_layout( $html, get_the_title(), home_url( '/domain-transfers-epp-codes-and-dns-explained/' ) );
+		return db_pages_epp_layout( $html, get_the_title(), home_url( '/how-to-transfer-a-domain/' ) );
 	}
 	if ( is_page( 'acquire-a-handle-now' ) ) {
 		return db_pages_form_layout( $html, get_the_title(), 'Tell us the handle you want and your budget. We check who holds it and what it would take to get it.', array(

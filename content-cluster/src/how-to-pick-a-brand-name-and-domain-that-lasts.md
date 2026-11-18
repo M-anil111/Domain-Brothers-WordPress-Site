@@ -1,6 +1,7 @@
 ---
 title: How to Choose a Domain Name and Brand Name That Lasts
-slug: how-to-pick-a-brand-name-and-domain-that-lasts
+slug: how-to-choose-a-domain-name
+key: how-to-pick-a-brand-name-and-domain-that-lasts
 role: spoke
 excerpt: How to choose a domain name and brand name that last: what makes a name memorable, four tests to run, the mistakes that force a rename and how to secure it.
 tags: branding, naming, domain names, premium domains

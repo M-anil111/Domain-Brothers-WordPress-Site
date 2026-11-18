@@ -1,6 +1,7 @@
 ---
 title: Premium Domain Investment: Domains as Business Assets
-slug: premium-domains-as-business-assets-and-investments
+slug: premium-domain-investment
+key: premium-domains-as-business-assets-and-investments
 role: spoke
 excerpt: Premium domain investment explained: where a name's value comes from, how owners benefit, the risks and costs, how to judge a name and how to start sensibly.
 tags: domain investing, business assets, premium domains
@@ -120,7 +121,7 @@ Set a date once a year to look at every name you hold and decide what happens ne
 !img:ib-invest-b|Reviewing a premium domain investment each year: keep, sell, build or let go|Four outcomes when reviewing a premium domain investment.
 
 - **Keep it** if demand in its field is growing, renewal costs are reasonable and you still believe in the end users you listed.
-- **Sell it** if you have received serious offers, if the field has cooled, or if the money would work harder elsewhere. Our [brokerage team](/domain-brokerage-services/) can market it, and our guide to [selling a domain name](/how-to-sell-a-domain-name/) explains the process.
+- **Sell it** if you have received serious offers, if the field has cooled, or if the money would work harder elsewhere. Our [brokerage team](/domain-brokerage-services/) can market it, and our guide to [selling a domain name](/sell-my-domain/) explains the process.
 - **Build on it** if your own business could use it. A name in use often returns more than a name waiting for a buyer.
 - **Let it go** if it no longer passes the checklist above. Renewing a weak name for years is a common way to lose money slowly.
 

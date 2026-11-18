@@ -54,7 +54,7 @@ DNS is the system that turns your name into the address of your server. The [Wik
 - Add **MX records** for email.
 - Note every record in a document so you can restore it.
 
-See [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-and-dns-explained/) for more on DNS.
+See [Domain Transfers, EPP Codes and DNS Explained](/how-to-transfer-a-domain/) for more on DNS.
 
 ## Day 2: Turn on HTTPS
 

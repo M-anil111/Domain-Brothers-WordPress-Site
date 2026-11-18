@@ -37,7 +37,7 @@ Most providers follow the same basic sequence, although the screens and names va
 
 ### Domain escrow and the transfer itself
 
-The transfer step is where most delays happen. Registrar transfers can take several days, and some names cannot move to a new registrar for a period after certain events, such as a recent transfer. Agree in advance how long the seller has to start the transfer, and how long the buyer has to confirm. Our guide to [domain transfers, EPP codes and DNS](/domain-transfers-epp-codes-and-dns-explained/) explains the technical side.
+The transfer step is where most delays happen. Registrar transfers can take several days, and some names cannot move to a new registrar for a period after certain events, such as a recent transfer. Agree in advance how long the seller has to start the transfer, and how long the buyer has to confirm. Our guide to [domain transfers, EPP codes and DNS](/how-to-transfer-a-domain/) explains the technical side.
 
 ## Choosing a licensed domain escrow service
 
@@ -116,7 +116,7 @@ Domain escrow is not the only safe route. The right one depends on who you are b
 - **Registrar push between known parties.** When both sides use the same registrar and trust each other, a direct push can be simple, but someone still has to go first.
 - **Paying a stranger directly.** This is the riskiest choice and is best avoided for any meaningful amount.
 
-If you are buying a name from a private owner, read [how to buy a domain name from someone](/how-to-buy-a-domain-name-from-someone/). Sellers should read [how to sell a domain name](/how-to-sell-a-domain-name/).
+If you are buying a name from a private owner, read [how to buy a domain name from someone](/how-to-buy-a-domain-name-from-someone/). Sellers should read [how to sell a domain name](/sell-my-domain/).
 
 ## How buying from Domain Brothers works
 

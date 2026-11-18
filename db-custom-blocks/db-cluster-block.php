@@ -108,7 +108,10 @@ if ( ! function_exists( 'db_cluster_import' ) ) {
 				$id = $ids[ $mm[2] ] ?? 0;
 				return 'ID' === $mm[1] ? (string) (int) $id : ( $id ? (string) wp_get_attachment_image_url( $id, 'large' ) : '' );
 			}, $content );
-			$existing = db_cluster_post_for( $a['slug'] );
+			// The key stays fixed when a slug changes, so the same post is updated
+			// and WordPress keeps the old address as a redirect (_wp_old_slug).
+			$key      = (string) ( $a['key'] ?? $a['slug'] );
+			$existing = db_cluster_post_for( $key );
 			$args     = array(
 				'post_type'    => 'post',
 				'post_title'   => $a['title'],
@@ -135,7 +138,7 @@ if ( ! function_exists( 'db_cluster_import' ) ) {
 				$res['errors'][] = $a['slug'] . ': ' . $pid->get_error_message();
 				continue;
 			}
-			update_post_meta( $pid, '_db_cluster_key', $a['slug'] );
+			update_post_meta( $pid, '_db_cluster_key', $key );
 			update_post_meta( $pid, '_db_cluster_role', $a['role'] );
 			if ( ! empty( $ids[ $a['featured'] ] ) ) {
 				set_post_thumbnail( $pid, $ids[ $a['featured'] ] );

@@ -90,7 +90,7 @@ The six-month plan is often the sweet spot: no interest, and each payment is a s
 
 ## What happens when the plan ends
 
-When the final payment clears, the plan is complete and the transfer starts. We send the transfer details, you accept the domain at your own registrar, and the name sits in your account. Turn on the registrar lock and two-factor sign-in the same day, set auto-renew, and keep the payment receipts with the transfer confirmation. Our [domain transfer](/domain-transfer/) page and [EPP guidelines](/epp-guidelines/) explain the technical steps, and [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-and-dns-explained/) covers the background.
+When the final payment clears, the plan is complete and the transfer starts. We send the transfer details, you accept the domain at your own registrar, and the name sits in your account. Turn on the registrar lock and two-factor sign-in the same day, set auto-renew, and keep the payment receipts with the transfer confirmation. Our [domain transfer](/domain-transfer/) page and [EPP guidelines](/epp-guidelines/) explain the technical steps, and [Domain Transfers, EPP Codes and DNS Explained](/how-to-transfer-a-domain/) covers the background.
 
 If a payment fails and is not made up within the retry period, the plan ends instead. The domain returns to our inventory and the payments made are lost, which is why the missed-payment terms deserve a careful read before you start.
 
@@ -115,7 +115,7 @@ Seller payment plans are one form of domain financing and one of several ways th
 
 - Look at the [domain list](/all-domains/) and choose a name.
 - Read the [FAQs](/faqs/) for our process.
-- See [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/) for the return side.
+- See [Premium Domains as Business Assets and Investments](/premium-domain-investment/) for the return side.
 
 !cta Spread the cost, keep the name|Pick a domain, choose three, six, nine or twelve months, and start using it today.|Browse premium domains|/all-domains/|Ask a question|/contact-us/
 

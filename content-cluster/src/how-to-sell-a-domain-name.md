@@ -1,6 +1,7 @@
 ---
 title: How to Sell a Domain Name: A Step-by-Step Guide for Owners
-slug: how-to-sell-a-domain-name
+slug: sell-my-domain
+key: how-to-sell-a-domain-name
 role: spoke
 cluster: buying
 excerpt: Thinking "how do I sell my domain?" Learn to value the name, set a price, choose where to sell domain names, avoid scams and get paid before you transfer.
@@ -118,7 +119,7 @@ The transfer is the final step of the "sell my domain" process, and it is routin
 
 Some registrars also allow a "push", where the name moves to another account at the same registrar without a code.
 
-Check the rules in ICANN's [Transfer Policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en): a change of registrant can trigger a 60-day lock on moving the name to a new registrar, unless the registrant opted out beforehand. Tell the buyer about it so it does not surprise them. Our guide to [domain transfers, EPP codes and DNS](/domain-transfers-epp-codes-and-dns-explained/) covers each step in detail.
+Check the rules in ICANN's [Transfer Policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en): a change of registrant can trigger a 60-day lock on moving the name to a new registrar, unless the registrant opted out beforehand. Tell the buyer about it so it does not surprise them. Our guide to [domain transfers, EPP codes and DNS](/how-to-transfer-a-domain/) covers each step in detail.
 
 ## A quick "sell my domain" checklist
 

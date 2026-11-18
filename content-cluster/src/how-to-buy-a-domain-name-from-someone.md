@@ -97,7 +97,7 @@ The last stage of how to buy a domain name from someone is the one where mistake
 
 In a private sale between strangers, an escrow company can hold the payment until the name arrives in your account. Our guide to [domain escrow](/domain-escrow-explained/) explains how that works and what it costs. Never pay by wire, crypto or gift card to someone you cannot verify.
 
-The transfer itself happens in one of two ways: a push to your account at the same registrar, or a transfer (EPP) code that lets you move the name to your own registrar. Under ICANN's [Transfer Policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en), a change of registrant can typically trigger a 60-day lock on moving to another registrar, unless the owner opts out where the registrar allows it. Our guide to [transfers, EPP codes and DNS](/domain-transfers-epp-codes-and-dns-explained/) covers each step. Once the name is in your account, change the contact details and turn on auto-renew.
+The transfer itself happens in one of two ways: a push to your account at the same registrar, or a transfer (EPP) code that lets you move the name to your own registrar. Under ICANN's [Transfer Policy](https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en), a change of registrant can typically trigger a 60-day lock on moving to another registrar, unless the owner opts out where the registrar allows it. Our guide to [transfers, EPP codes and DNS](/how-to-transfer-a-domain/) covers each step. Once the name is in your account, change the contact details and turn on auto-renew.
 
 ## A checklist for how to buy a domain name from someone
 

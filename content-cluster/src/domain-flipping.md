@@ -114,7 +114,7 @@ Once a name is priced, it needs exposure. Investors who resell domains usually c
 - **Brokers** for higher-value names.
 - **Direct outreach** to businesses using similar names, kept short and factual.
 
-When a buyer agrees, protect yourself. Use escrow or a trusted marketplace checkout, and release the transfer code only after payment has cleared. Our guide on [how to sell a domain name](/how-to-sell-a-domain-name/) walks through payment and transfer step by step.
+When a buyer agrees, protect yourself. Use escrow or a trusted marketplace checkout, and release the transfer code only after payment has cleared. Our guide on [how to sell a domain name](/sell-my-domain/) walks through payment and transfer step by step.
 
 ## Common beginner mistakes
 

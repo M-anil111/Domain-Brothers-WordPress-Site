@@ -102,7 +102,7 @@ Google has said that the extension is not a ranking factor on its own in most ca
 
 - See how price and length interact in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/).
 - Learn [What Is a Premium Domain Name?](/what-is-a-premium-domain-name/)
-- Plan your naming with [How to Pick a Brand Name and Domain That Lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/).
+- Plan your naming with [How to Pick a Brand Name and Domain That Lasts](/how-to-choose-a-domain-name/).
 
 ## Frequently asked questions
 

@@ -42,7 +42,7 @@ Neither type is better in every case. A keyword domain tells people what you do 
 | Memorability | High if short and pleasant | High if short and common |
 | Price on the aftermarket | Varies widely | Short generic words are often costly |
 
-Our guide on [how to pick a brand name and domain that lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/) covers the wider naming decision.
+Our guide on [how to pick a brand name and domain that lasts](/how-to-choose-a-domain-name/) covers the wider naming decision.
 
 ## Common patterns behind brandable domain names
 

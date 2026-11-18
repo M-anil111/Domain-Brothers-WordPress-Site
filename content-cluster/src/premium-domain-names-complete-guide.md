@@ -95,7 +95,7 @@ It is easy to look at a four-figure price and compare it with a ten-dollar regis
 - **Trust.** A clean, professional address makes a new company look established. People judge a business by its web address before they read a single word.
 - **Lower cost of attention.** A clear name raises the share of people who click your ad or your listing, and the share who return directly, which lowers what each customer costs you over time.
 - **Ownership of a scarce thing.** There is only one of each name. If your rival owns the obvious one, you fight them every day for the same customers.
-- **A resale asset.** A strong name that fits your brand can hold or gain value. We cover this side in [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/).
+- **A resale asset.** A strong name that fits your brand can hold or gain value. We cover this side in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 
 None of this guarantees success. A great name on a poor business is still a poor business. But a great name removes a handicap that most small companies never realise they carry.
 
@@ -129,7 +129,7 @@ Buying a valuable name from a stranger on the internet is a classic risk. The ru
 4. **Pay safely.** With an unknown private seller, use an escrow service, which holds your money until the transfer is complete, so neither side can run away with the other's property. A marketplace that confirms payment before it starts the transfer, as we do, removes the need for escrow. The [Escrow.com guide](https://www.escrow.com/what-is-escrow) explains the idea in plain language.
 5. **Transfer and secure.** The seller releases the name with an authorisation code, you accept it at your registrar, and you turn on a registrar lock and two-factor sign-in at once.
 
-The long version, with checklists for each stage, is in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/). The technical side of the final step is covered in [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-and-dns-explained/), and we describe our own process on the [EPP guidelines](/epp-guidelines/) page.
+The long version, with checklists for each stage, is in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/). The technical side of the final step is covered in [Domain Transfers, EPP Codes and DNS Explained](/how-to-transfer-a-domain/), and we describe our own process on the [EPP guidelines](/epp-guidelines/) page.
 
 ## Paying for premium domains
 
@@ -164,7 +164,7 @@ If you are moving an existing site to a new name, follow Google's [site move gui
 
 A domain is part of a brand, not a substitute for one. The names that last are easy to say, easy to spell, specific enough to mean something and open enough to grow into. Say the name out loud, spell it to a friend over the phone, and imagine it on a van. If any of those goes wrong, keep looking.
 
-The [Nielsen Norman Group](https://www.nngroup.com/articles/url-as-ui/) has long argued that a web address is part of the user interface, and the [W3C's guide to URIs](https://www.w3.org/Provider/Style/URI) makes the same point from the engineering side: good addresses are simple, stable and readable. Our naming method is in [How to Pick a Brand Name and Domain That Lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/).
+The [Nielsen Norman Group](https://www.nngroup.com/articles/url-as-ui/) has long argued that a web address is part of the user interface, and the [W3C's guide to URIs](https://www.w3.org/Provider/Style/URI) makes the same point from the engineering side: good addresses are simple, stable and readable. Our naming method is in [How to Pick a Brand Name and Domain That Lasts](/how-to-choose-a-domain-name/).
 
 ## After you buy: launch the website properly
 

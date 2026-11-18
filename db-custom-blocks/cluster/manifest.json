@@ -418,6 +418,7 @@
  },
  "articles": [
   {
+   "key": "how-to-buy-a-domain-name-for-a-website",
    "slug": "how-to-buy-a-domain-name-for-a-website",
    "title": "How to Buy a Domain Name for a Website: A Complete Guide",
    "role": "pillar",
@@ -438,6 +439,7 @@
    "words": 1968
   },
   {
+   "key": "premium-domain-names-complete-guide",
    "slug": "premium-domain-names-complete-guide",
    "title": "Premium Domains: The Complete Guide to Value, Buying and Use",
    "role": "pillar",
@@ -459,6 +461,7 @@
    "words": 3027
   },
   {
+   "key": "brandable-domain-names",
    "slug": "brandable-domain-names",
    "title": "Brandable Domain Names: How to Choose, Test and Check One",
    "role": "spoke",
@@ -479,6 +482,7 @@
    "words": 1642
   },
   {
+   "key": "change-domain-name-without-losing-seo",
    "slug": "change-domain-name-without-losing-seo",
    "title": "Change Domain Name SEO: How to Move Without Losing Rankings",
    "role": "spoke",
@@ -500,6 +504,7 @@
    "words": 1685
   },
   {
+   "key": "choosing-a-domain-extension-com-ca-io-and-more",
    "slug": "choosing-a-domain-extension-com-ca-io-and-more",
    "title": "Domain Extensions: Choosing .com, .ca, .io and More",
    "role": "spoke",
@@ -521,6 +526,7 @@
    "words": 1470
   },
   {
+   "key": "do-premium-domains-help-seo",
    "slug": "do-premium-domains-help-seo",
    "title": "Domain Name SEO: Do Premium Domains Help Your Rankings?",
    "role": "spoke",
@@ -541,6 +547,7 @@
    "words": 1496
   },
   {
+   "key": "domain-backorder-and-expired-domains",
    "slug": "domain-backorder-and-expired-domains",
    "title": "Domain Backorder Guide: How to Buy Expired Domains Safely",
    "role": "spoke",
@@ -561,6 +568,7 @@
    "words": 1707
   },
   {
+   "key": "domain-escrow-explained",
    "slug": "domain-escrow-explained",
    "title": "Domain Escrow Explained: How It Works, Fees and Scams to Avoid",
    "role": "spoke",
@@ -582,6 +590,7 @@
    "words": 1659
   },
   {
+   "key": "domain-flipping",
    "slug": "domain-flipping",
    "title": "Domain Flipping: An Honest Guide to Buying and Reselling Names",
    "role": "spoke",
@@ -602,6 +611,7 @@
    "words": 1632
   },
   {
+   "key": "domain-leasing-and-lease-to-own",
    "slug": "domain-leasing-and-lease-to-own",
    "title": "Domain Leasing and Lease to Own: How They Work and What to Check",
    "role": "spoke",
@@ -623,6 +633,7 @@
    "words": 1722
   },
   {
+   "key": "domain-name-marketing-playbook",
    "slug": "domain-name-marketing-playbook",
    "title": "Domain Name Marketing: A Playbook for Premium Domains",
    "role": "spoke",
@@ -643,6 +654,7 @@
    "words": 1412
   },
   {
+   "key": "domain-names-for-business",
    "slug": "domain-names-for-business",
    "title": "Domain Names for Business: How to Choose the Right One",
    "role": "spoke",
@@ -663,6 +675,7 @@
    "words": 1637
   },
   {
+   "key": "domain-parking",
    "slug": "domain-parking",
    "title": "Domain Parking: What It Is, How It Pays and When to Build",
    "role": "spoke",
@@ -683,26 +696,7 @@
    "words": 1638
   },
   {
-   "slug": "domain-transfers-epp-codes-and-dns-explained",
-   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
-   "role": "spoke",
-   "excerpt": "How to transfer a domain from start to finish: who does what, the EPP code, transfer locks, waiting periods, DNS records and the checks that stop problems.",
-   "tags": [
-    "domain transfer",
-    "EPP code",
-    "DNS",
-    "registrar"
-   ],
-   "file": "domain-transfers-epp-codes-and-dns-explained.html",
-   "featured": "domain-transfers-epp-codes-and-dns-explained",
-   "images": [
-    "ib-transfer-a",
-    "ib-transfer-b",
-    "infographic-i7"
-   ],
-   "words": 1555
-  },
-  {
+   "key": "how-to-buy-a-domain-name-from-someone",
    "slug": "how-to-buy-a-domain-name-from-someone",
    "title": "How to Buy a Domain Name from Someone: A Step-by-Step Guide",
    "role": "spoke",
@@ -723,6 +717,7 @@
    "words": 1757
   },
   {
+   "key": "how-to-buy-a-premium-domain-safely",
    "slug": "how-to-buy-a-premium-domain-safely",
    "title": "Buying Premium Domains Safely: A Step-by-Step Guide",
    "role": "spoke",
@@ -743,7 +738,8 @@
    "words": 1561
   },
   {
-   "slug": "how-to-pick-a-brand-name-and-domain-that-lasts",
+   "key": "how-to-pick-a-brand-name-and-domain-that-lasts",
+   "slug": "how-to-choose-a-domain-name",
    "title": "How to Choose a Domain Name and Brand Name That Lasts",
    "role": "spoke",
    "excerpt": "How to choose a domain name and brand name that last: what makes a name memorable, four tests to run, the mistakes that force a rename and how to secure it.",
@@ -763,26 +759,28 @@
    "words": 1402
   },
   {
-   "slug": "how-to-sell-a-domain-name",
-   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners",
+   "key": "domain-transfers-epp-codes-and-dns-explained",
+   "slug": "how-to-transfer-a-domain",
+   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
    "role": "spoke",
-   "excerpt": "Thinking \"how do I sell my domain?\" Learn to value the name, set a price, choose where to sell domain names, avoid scams and get paid before you transfer.",
+   "excerpt": "How to transfer a domain from start to finish: who does what, the EPP code, transfer locks, waiting periods, DNS records and the checks that stop problems.",
    "tags": [
-    "sell domain name",
-    "domain selling",
-    "domain valuation",
-    "domain transfer"
+    "domain transfer",
+    "EPP code",
+    "DNS",
+    "registrar"
    ],
-   "file": "how-to-sell-a-domain-name.html",
-   "featured": "how-to-sell-a-domain-name",
+   "file": "domain-transfers-epp-codes-and-dns-explained.html",
+   "featured": "domain-transfers-epp-codes-and-dns-explained",
    "images": [
-    "ib-sell-a",
-    "ib-sell-b",
-    "infographic-i1"
+    "ib-transfer-a",
+    "ib-transfer-b",
+    "infographic-i7"
    ],
-   "words": 1713
+   "words": 1555
   },
   {
+   "key": "how-to-value-a-premium-domain-name",
    "slug": "how-to-value-a-premium-domain-name",
    "title": "How to Value a Premium Domain: A Domain Valuation Method",
    "role": "spoke",
@@ -802,6 +800,27 @@
    "words": 1512
   },
   {
+   "key": "premium-domains-as-business-assets-and-investments",
+   "slug": "premium-domain-investment",
+   "title": "Premium Domain Investment: Domains as Business Assets",
+   "role": "spoke",
+   "excerpt": "Premium domain investment explained: where a name's value comes from, how owners benefit, the risks and costs, how to judge a name and how to start sensibly.",
+   "tags": [
+    "domain investing",
+    "business assets",
+    "premium domains"
+   ],
+   "file": "premium-domains-as-business-assets-and-investments.html",
+   "featured": "premium-domains-as-business-assets-and-investments",
+   "images": [
+    "ib-invest-a",
+    "ib-invest-b",
+    "infographic-i10"
+   ],
+   "words": 1456
+  },
+  {
+   "key": "premium-domain-payment-plans-and-financing",
    "slug": "premium-domain-payment-plans-and-financing",
    "title": "Domain Financing: Premium Domain Payment Plans Explained",
    "role": "spoke",
@@ -821,25 +840,28 @@
    "words": 1481
   },
   {
-   "slug": "premium-domains-as-business-assets-and-investments",
-   "title": "Premium Domain Investment: Domains as Business Assets",
+   "key": "how-to-sell-a-domain-name",
+   "slug": "sell-my-domain",
+   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners",
    "role": "spoke",
-   "excerpt": "Premium domain investment explained: where a name's value comes from, how owners benefit, the risks and costs, how to judge a name and how to start sensibly.",
+   "excerpt": "Thinking \"how do I sell my domain?\" Learn to value the name, set a price, choose where to sell domain names, avoid scams and get paid before you transfer.",
    "tags": [
-    "domain investing",
-    "business assets",
-    "premium domains"
+    "sell domain name",
+    "domain selling",
+    "domain valuation",
+    "domain transfer"
    ],
-   "file": "premium-domains-as-business-assets-and-investments.html",
-   "featured": "premium-domains-as-business-assets-and-investments",
+   "file": "how-to-sell-a-domain-name.html",
+   "featured": "how-to-sell-a-domain-name",
    "images": [
-    "ib-invest-a",
-    "ib-invest-b",
-    "infographic-i10"
+    "ib-sell-a",
+    "ib-sell-b",
+    "infographic-i1"
    ],
-   "words": 1456
+   "words": 1713
   },
   {
+   "key": "short-domain-names",
    "slug": "short-domain-names",
    "title": "Short Domain Names: Two, Three and Four Letter Domains",
    "role": "spoke",
@@ -860,6 +882,7 @@
    "words": 1604
   },
   {
+   "key": "trademarks-and-domain-disputes-udrp-basics",
    "slug": "trademarks-and-domain-disputes-udrp-basics",
    "title": "Trademarks and Domain Disputes: UDRP Basics",
    "role": "spoke",
@@ -878,6 +901,7 @@
    "words": 1501
   },
   {
+   "key": "website-launch-checklist-after-buying-a-domain",
    "slug": "website-launch-checklist-after-buying-a-domain",
    "title": "Website Launch Checklist: The First Week After Buying a Domain",
    "role": "spoke",
@@ -899,6 +923,7 @@
    "words": 1545
   },
   {
+   "key": "what-is-a-premium-domain-name",
    "slug": "what-is-a-premium-domain-name",
    "title": "What Is a Premium Domain Name? Meaning and Examples",
    "role": "spoke",

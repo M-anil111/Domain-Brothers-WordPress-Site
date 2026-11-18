@@ -35,7 +35,7 @@ Good preparation does most of the change domain name SEO work. Do these things b
 4. **Record a baseline.** Save current clicks, impressions, indexed pages and rankings for your main terms, so you can compare later.
 5. **Keep the structure stable if you can.** Moving domain and redesigning at the same time makes problems harder to trace.
 
-If you are choosing the new name now, read [how to pick a brand name and domain that lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/). A name you will keep for decades saves you from running this process twice.
+If you are choosing the new name now, read [how to pick a brand name and domain that lasts](/how-to-choose-a-domain-name/). A name you will keep for decades saves you from running this process twice.
 
 ## Build a 301 redirect map, page to page
 
@@ -85,7 +85,7 @@ Redirects catch old links, but your own site should not rely on them. Internal l
 - Change the URL in your analytics, tag manager, ad accounts and email platform.
 - Update your Google Business Profile, social profiles, app store listings and email signatures.
 
-If you are building a new site for the new name at the same time, our [website launch checklist after buying a domain](/website-launch-checklist-after-buying-a-domain/) covers the setup steps. The DNS side, including email records, is in [domain transfers, EPP codes and DNS explained](/domain-transfers-epp-codes-and-dns-explained/).
+If you are building a new site for the new name at the same time, our [website launch checklist after buying a domain](/website-launch-checklist-after-buying-a-domain/) covers the setup steps. The DNS side, including email records, is in [domain transfers, EPP codes and DNS explained](/how-to-transfer-a-domain/).
 
 !img:infographic-i6|Two column infographic: what moves search rankings (content, speed, structure, links, technical health) and what a strong domain adds (clicks, brand searches, links, trust, fewer mistypes)|What moves rankings, and what a strong domain adds.
 

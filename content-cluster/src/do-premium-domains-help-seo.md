@@ -140,7 +140,7 @@ Most domain name SEO myths date from the years before Google's 2012 exact-match 
 
 ## Where to go next
 
-- Read about [branding and naming](/how-to-pick-a-brand-name-and-domain-that-lasts/).
+- Read about [branding and naming](/how-to-choose-a-domain-name/).
 - See how names help campaigns in the [Domain Name Marketing Playbook](/domain-name-marketing-playbook/).
 - If you need help with the site, see our [website design and development](/website-design-development/) and [digital marketing](/digital-marketing-services/) services.
 
