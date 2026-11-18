@@ -101,6 +101,7 @@ return array(
 	),
 
 	'our-team'              => array(
+		'lede_replace' => 'Meet the team helping businesses buy, sell and build with confidence.',
 		'kw'          => 'domain experts',
 		'lede'        => 'Our domain experts help you choose, price, buy and transfer a premium name, with one contact from first message to finished transfer.',
 		'h2'          => 'Meet the domain experts behind Domain Brothers',

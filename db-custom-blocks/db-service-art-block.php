@@ -244,6 +244,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		. 'html body .dbsv-form .dbp-eyebrow{color:#b6f0ea!important;margin:0 0 12px}html body .dbsv-form-copy>p{margin:0 0 20px;font-size:17px!important;line-height:1.6;color:rgba(255,255,255,.82)!important}'
 		. '.dbsv-points{margin:0;padding:0;list-style:none;display:grid;gap:12px}html body .dbsv-points li{display:flex;align-items:center;gap:12px;margin:0;font-size:15.5px!important;color:rgba(255,255,255,.9)!important}'
 		. '.dbsv-points .dbsv-ico{width:38px;height:38px;background:rgba(255,255,255,.1);color:#34d5c5}'
+		. 'html body .dbsv-points li{background-image:none!important;padding-left:0!important}'
 		. '.dbsv-form-card{padding:clamp(20px,3vw,30px);border-radius:22px;background:#fff;color:var(--m-text,#374151)}'
 		. 'html body .dbsv-form-card label,html body .dbsv-form-card .dbc-field label{display:block;margin:0 0 6px;font-size:14.5px!important;font-weight:700;color:var(--m-ink,#111827)!important}'
 		. 'html body .dbsv-form-card input[type=text],html body .dbsv-form-card input[type=email],html body .dbsv-form-card input[type=tel],html body .dbsv-form-card select,html body .dbsv-form-card textarea{width:100%!important;min-height:48px;padding:10px 14px!important;border:1.5px solid #c3c9d2!important;border-radius:12px!important;font-size:16px!important;background:#fff!important;color:var(--m-ink,#111827)!important}'
