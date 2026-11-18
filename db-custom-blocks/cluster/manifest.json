@@ -62,8 +62,8 @@
   },
   "domain-transfers-epp-codes-and-dns-explained": {
    "file": "domain-transfers-epp-codes-and-dns-explained.jpg",
-   "alt": "Cover image for: Domain Transfers, EPP Codes and DNS Explained",
-   "title": "Domain Transfers, EPP Codes and DNS Explained"
+   "alt": "Cover image for: How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
+   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained"
   },
   "how-to-buy-a-domain-name-for-a-website": {
    "file": "how-to-buy-a-domain-name-for-a-website.jpg",
@@ -92,8 +92,8 @@
   },
   "how-to-value-a-premium-domain-name": {
    "file": "how-to-value-a-premium-domain-name.jpg",
-   "alt": "Cover image for: How to Value a Premium Domain Name: A Practical Method",
-   "title": "How to Value a Premium Domain Name: A Practical Method"
+   "alt": "Cover image for: How to Value a Premium Domain: A Domain Valuation Method",
+   "title": "How to Value a Premium Domain: A Domain Valuation Method"
   },
   "ib-backorder-a": {
    "file": "ib-backorder-a.png",
@@ -217,8 +217,8 @@
   },
   "infographic-i1": {
    "file": "infographic-i1.png",
-   "alt": "Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history",
-   "title": "Infographic of six factors that decide domain value: length, extension, keyword fit, brand"
+   "alt": "Infographic showing what is a premium domain through six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history",
+   "title": "Infographic showing what is a premium domain through six factors that decide domain value:"
   },
   "infographic-i10": {
    "file": "infographic-i10.png",
@@ -257,8 +257,8 @@
   },
   "infographic-i7": {
    "file": "infographic-i7.png",
-   "alt": "Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain",
-   "title": "Five step infographic of a domain transfer: unlock, share the EPP code, request the transf"
+   "alt": "How to transfer a domain in five steps: unlock, share the EPP code, request the transfer, approve it, then secure the domain",
+   "title": "How to transfer a domain in five steps: unlock, share the EPP code, request the transfer, "
   },
   "infographic-i8": {
    "file": "infographic-i8.png",
@@ -272,8 +272,8 @@
   },
   "premium-domain-names-complete-guide": {
    "file": "premium-domain-names-complete-guide.jpg",
-   "alt": "Cover image for: The Complete Guide to Premium Domain Names",
-   "title": "The Complete Guide to Premium Domain Names"
+   "alt": "Cover image for: Premium Domains: The Complete Guide to Value, Buying and Use",
+   "title": "Premium Domains: The Complete Guide to Value, Buying and Use"
   },
   "premium-domain-payment-plans-and-financing": {
    "file": "premium-domain-payment-plans-and-financing.jpg",
@@ -329,9 +329,9 @@
   },
   {
    "slug": "premium-domain-names-complete-guide",
-   "title": "The Complete Guide to Premium Domain Names",
+   "title": "Premium Domains: The Complete Guide to Value, Buying and Use",
    "role": "pillar",
-   "excerpt": "Everything you need to know about premium domain names: what they are, how to value one, how to buy it safely, how to pay for it, and how to turn it into traffic, trust and sales.",
+   "excerpt": "Premium domains explained: what they are, how to value one, how to buy safely, how to pay over time, and how to turn a great name into traffic and trust.",
    "tags": [
     "premium domains",
     "domain names",
@@ -346,7 +346,7 @@
     "infographic-i4",
     "infographic-i5"
    ],
-   "words": 2950
+   "words": 3027
   },
   {
    "slug": "brandable-domain-names",
@@ -568,9 +568,9 @@
   },
   {
    "slug": "domain-transfers-epp-codes-and-dns-explained",
-   "title": "Domain Transfers, EPP Codes and DNS Explained",
+   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
    "role": "spoke",
-   "excerpt": "How a domain transfer works from start to finish: registrar, registry and registrant, the EPP authorisation code, the transfer lock, waiting periods, DNS records and what to check so nothing breaks.",
+   "excerpt": "How to transfer a domain from start to finish: who does what, the EPP code, transfer locks, waiting periods, DNS records and the checks that stop problems.",
    "tags": [
     "domain transfer",
     "EPP code",
@@ -582,7 +582,7 @@
    "images": [
     "infographic-i7"
    ],
-   "words": 797
+   "words": 1555
   },
   {
    "slug": "how-to-buy-a-domain-name-from-someone",
@@ -662,9 +662,9 @@
   },
   {
    "slug": "how-to-value-a-premium-domain-name",
-   "title": "How to Value a Premium Domain Name: A Practical Method",
+   "title": "How to Value a Premium Domain: A Domain Valuation Method",
    "role": "spoke",
-   "excerpt": "A step-by-step method for valuing a premium domain: score the name on six factors, check comparable sales, estimate what the name is worth to your business, and set a fair offer.",
+   "excerpt": "A practical domain valuation method: score a premium name on six factors, check comparable sales, estimate what it is worth to your business, set a fair offer.",
    "tags": [
     "premium domains",
     "domain valuation",
@@ -675,7 +675,7 @@
    "images": [
     "infographic-i1"
    ],
-   "words": 931
+   "words": 1466
   },
   {
    "slug": "premium-domain-payment-plans-and-financing",
@@ -747,7 +747,7 @@
    "images": [
     "infographic-i11"
    ],
-   "words": 806
+   "words": 1785
   },
   {
    "slug": "website-launch-checklist-after-buying-a-domain",
@@ -772,7 +772,7 @@
    "slug": "what-is-a-premium-domain-name",
    "title": "What Is a Premium Domain Name? Meaning and Examples",
    "role": "spoke",
-   "excerpt": "A premium domain is a short, memorable, high-demand name that sells for far more than a normal registration. Learn the two meanings of the term, the main types, and how to tell a real premium name from an overpriced one.",
+   "excerpt": "What is a premium domain? A short, high-demand name worth far more than a registration fee. See both meanings of the term, the main types and how to judge one.",
    "tags": [
     "premium domains",
     "domain names",
@@ -783,7 +783,7 @@
    "images": [
     "infographic-i1"
    ],
-   "words": 924
+   "words": 1549
   }
  ]
 }
