@@ -17,9 +17,19 @@
  * ten seconds. Visitor hashes are deleted after 13 months; the daily totals
  * are kept.
  *
- * Domain Brothers > Domain hits shows the numbers per domain (all time, last
- * 7 and 30 days, last visit, offers received), sortable, searchable and
- * exportable; the domain list in the admin gets a Hits column.
+ * Every view is also tagged by where the visitor arrived:
+ *
+ *   landing  the visitor came in through the domain's landing-page address
+ *            (/domains/<name>/?lis=y, where parked-domain traffic is sent).
+ *            db-safety-block.php 301-redirects that address to the domain
+ *            page with a #db-landing marker; the beacon reads the marker,
+ *            reports the view as a landing hit and removes the marker.
+ *   details  every other view of the domain page.
+ *
+ * Domain Brothers > Domain hits shows the numbers per domain (total hits split
+ * into landing page and details page hits, today, last 7 days, this month and
+ * year, last visit, offers received), sortable, searchable and exportable;
+ * the domain list in the admin gets a Hits column.
  *
  * @package DomainBrothers
  */
@@ -27,7 +37,7 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'DB_HITS_TABLE_VERSION' ) ) {
-	define( 'DB_HITS_TABLE_VERSION', '2' );
+	define( 'DB_HITS_TABLE_VERSION', '3' );
 }
 
 /* ───────────────────────────── 1. Tables ──────────────────────────────── */
@@ -44,6 +54,7 @@ add_action( 'init', function () {
 			day     DATE     NOT NULL,
 			hits    INT      NOT NULL DEFAULT 0,
 			uniques INT      NOT NULL DEFAULT 0,
+			landing INT      NOT NULL DEFAULT 0,
 			PRIMARY KEY (post_id, day),
 			KEY idx_day (day)
 		) {$charset};" );
@@ -63,6 +74,12 @@ add_action( 'init', function () {
 			PRIMARY KEY (post_id, day, vhash),
 			KEY idx_day (day)
 		) {$charset};" );
+		// Version 3 adds the landing column. dbDelta adds it to an existing table;
+		// this makes sure it is there even where dbDelta could not alter the table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $wpdb->get_var( "SHOW COLUMNS FROM {$daily} LIKE 'landing'" ) ) {
+			$wpdb->query( "ALTER TABLE {$daily} ADD COLUMN landing INT NOT NULL DEFAULT 0" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 		update_option( 'db_hits_table_version', DB_HITS_TABLE_VERSION );
 	}
 	if ( ! wp_next_scheduled( 'db_hits_purge' ) ) {
@@ -121,9 +138,11 @@ if ( ! function_exists( 'db_hits_visitor' ) ) {
 if ( ! function_exists( 'db_hits_record' ) ) {
 	/**
 	 * Adds one view. Returns 'counted', 'repeat' (inside the 10-second window)
-	 * or 'ignored'.
+	 * or 'ignored'. $landing marks a view that arrived through the landing-page
+	 * address; it still counts in the total.
 	 */
-	function db_hits_record( $post_id, $vhash ) {
+	function db_hits_record( $post_id, $vhash, $landing = false ) {
+		$land = $landing ? 1 : 0;
 		global $wpdb;
 		$key = 'db_hit_' . md5( $vhash . '|' . (int) $post_id );
 		if ( get_transient( $key ) ) {
@@ -142,8 +161,8 @@ if ( ! function_exists( 'db_hits_record' ) ) {
 			(int) $post_id, $vhash, $now, $now, $now
 		) );
 		$wpdb->query( $wpdb->prepare(
-			"INSERT INTO {$dt} (post_id, day, hits, uniques) VALUES (%d, %s, 1, %d) ON DUPLICATE KEY UPDATE hits = hits + 1, uniques = uniques + %d",
-			(int) $post_id, wp_date( 'Y-m-d', $now ), $new, $new
+			"INSERT INTO {$dt} (post_id, day, hits, uniques, landing) VALUES (%d, %s, 1, %d, %d) ON DUPLICATE KEY UPDATE hits = hits + 1, uniques = uniques + %d, landing = landing + %d",
+			(int) $post_id, wp_date( 'Y-m-d', $now ), $new, $land, $new, $land
 		) );
 		// Who visited on which day: lets "unique visitors" be counted for any period.
 		$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}db_hit_vdays (post_id, day, vhash) VALUES (%d, %s, %s)", (int) $post_id, wp_date( 'Y-m-d', $now ), $vhash ) );
@@ -177,7 +196,7 @@ add_action( 'rest_api_init', function () {
 				return $done();
 			}
 			$ip = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? (string) $_SERVER['HTTP_CF_CONNECTING_IP'] : ( isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- hashed.
-			db_hits_record( $id, db_hits_visitor( $ip, $ua ) );
+			db_hits_record( $id, db_hits_visitor( $ip, $ua ), ! empty( $data['l'] ) );
 			return $done();
 		},
 	) );
@@ -195,7 +214,13 @@ add_action( 'wp_footer', function () {
 	?>
 <script id="db-hit-js">
 (function(){
-	var url = <?php echo wp_json_encode( esc_url_raw( rest_url( 'db/v1/hit' ) ) ); ?>, body = JSON.stringify({p: <?php echo (int) $post->ID; ?>}), sent = false;
+	var url = <?php echo wp_json_encode( esc_url_raw( rest_url( 'db/v1/hit' ) ) ); ?>, sent = false;
+	// Arrived through the landing-page address (?lis=y, redirected here with #db-landing)?
+	var landing = location.hash === '#db-landing';
+	if (landing && window.history && history.replaceState) {
+		try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) {}
+	}
+	var body = JSON.stringify(landing ? {p: <?php echo (int) $post->ID; ?>, l: 1} : {p: <?php echo (int) $post->ID; ?>});
 	function send(){
 		if (sent) { return; }
 		sent = true;
@@ -280,13 +305,13 @@ if ( ! function_exists( 'db_hits_query' ) ) {
 			'year'  => "day >= {$q( $b['year'] )}",
 			'range' => $has_range ? "day BETWEEN {$q( $from )} AND {$q( $to )}" : '0',
 		);
-		$hsel = 'SUM(hits) AS all_h';
+		$hsel = 'SUM(hits) AS all_h, SUM(landing) AS all_l';
 		$usel = '';
 		foreach ( $conds as $k => $c ) {
-			$hsel .= ", COALESCE(SUM(CASE WHEN {$c} THEN hits ELSE 0 END),0) AS {$k}_h";
+			$hsel .= ", COALESCE(SUM(CASE WHEN {$c} THEN hits ELSE 0 END),0) AS {$k}_h, COALESCE(SUM(CASE WHEN {$c} THEN landing ELSE 0 END),0) AS {$k}_l";
 			$usel .= ", COUNT(DISTINCT CASE WHEN {$c} THEN vhash END) AS {$k}_u";
 		}
-		$ob_map = array( 'name' => 'p.post_title', 'last' => 'last_ts', 'offers' => 'offers', 'all' => 'all_h', 'all_u' => 'all_u' );
+		$ob_map = array( 'name' => 'p.post_title', 'last' => 'last_ts', 'offers' => 'offers', 'all' => 'all_h', 'all_u' => 'all_u', 'landing' => 'all_l', 'details' => '(all_h - all_l)' );
 		foreach ( array( 'today', 'd7', 'month', 'year', 'range' ) as $k ) {
 			$ob_map[ $k ]          = "{$k}_h";
 			$ob_map[ $k . '_u' ]   = "{$k}_u";
@@ -307,9 +332,9 @@ if ( ! function_exists( 'db_hits_query' ) ) {
 			LEFT JOIN (SELECT post_id, COUNT(*) AS all_u, MAX(last_ts) AS last_ts FROM {$vt} GROUP BY post_id) v ON v.post_id = p.ID
 			{$offers}
 			WHERE p.post_type = 'domain' AND p.post_status = 'publish' AND p.post_title LIKE %s{$in}";
-		$cols = 'p.ID, p.post_title, COALESCE(h.all_h,0) AS all_h, COALESCE(v.all_u,0) AS all_u, COALESCE(v.last_ts,0) AS last_ts, COALESCE(o.offers,0) AS offers';
+		$cols = 'p.ID, p.post_title, COALESCE(h.all_h,0) AS all_h, COALESCE(h.all_l,0) AS all_l, COALESCE(v.all_u,0) AS all_u, COALESCE(v.last_ts,0) AS last_ts, COALESCE(o.offers,0) AS offers';
 		foreach ( array_keys( $conds ) as $k ) {
-			$cols .= ", COALESCE(h.{$k}_h,0) AS {$k}_h, COALESCE(u.{$k}_u,0) AS {$k}_u";
+			$cols .= ", COALESCE(h.{$k}_h,0) AS {$k}_h, COALESCE(h.{$k}_l,0) AS {$k}_l, COALESCE(u.{$k}_u,0) AS {$k}_u";
 		}
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) {$base}", $like ) );
@@ -335,7 +360,8 @@ if ( ! function_exists( 'db_hits_summary' ) ) {
 		$b  = db_hits_bounds();
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return array(
-			'total'  => (int) $wpdb->get_var( "SELECT COALESCE(SUM(hits),0) FROM {$dt}" ),
+			'total'   => (int) $wpdb->get_var( "SELECT COALESCE(SUM(hits),0) FROM {$dt}" ),
+			'landing' => (int) $wpdb->get_var( "SELECT COALESCE(SUM(landing),0) FROM {$dt}" ),
 			'unique' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$vt}" ),
 			'today'  => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(hits),0) FROM {$dt} WHERE day = %s", $b['today'] ) ),
 			'week'   => (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(hits),0) FROM {$dt} WHERE day >= %s", $b['d7'] ) ),
@@ -384,9 +410,9 @@ if ( ! function_exists( 'db_hits_page' ) ) {
 			return '<th><a href="' . esc_url( add_query_arg( array_merge( $keep, array( 'orderby' => $key, 'order' => $next ) ), $base ) ) . '">' . esc_html( $label ) . $arrow . '</a></th>';
 		};
 
-		echo '<div class="wrap"><h1>Domain hits</h1><p>Views of each domain page. Every figure reads <strong>hits / unique visitors</strong>: hits is every view; unique is the number of different people who viewed it in that period. Bots, the team and repeat refreshes within 10 seconds are not counted. Unique visitors are counted from the day tracking started.</p>';
-		echo '<style>.dbs-tiles{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}.dbs-tile{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px 18px;min-width:130px}.dbs-tile b{display:block;font-size:22px}.dbs-sub{color:#646970;font-size:12px}.dbh-u{color:#646970}.dbh-range{background:#f0f6fc}.dbh-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}</style>';
-		printf( '<div class="dbs-tiles"><div class="dbs-tile"><span>All hits</span><b>%s</b></div><div class="dbs-tile"><span>Unique visitor-pages</span><b>%s</b></div><div class="dbs-tile"><span>Hits today</span><b>%s</b></div><div class="dbs-tile"><span>Last 7 days</span><b>%s</b></div><div class="dbs-tile"><span>This month</span><b>%s</b></div></div>', esc_html( number_format_i18n( $sum['total'] ) ), esc_html( number_format_i18n( $sum['unique'] ) ), esc_html( number_format_i18n( $sum['today'] ) ), esc_html( number_format_i18n( $sum['week'] ) ), esc_html( number_format_i18n( $sum['month'] ) ) );
+		echo '<div class="wrap"><h1>Domain hits</h1><p>Views of each domain page. <strong>Total hits</strong> is split into <strong>landing page hits</strong> (visitors who arrived through the domain&rsquo;s landing-page address, where parked-domain traffic is sent) and <strong>details page hits</strong> (every other view of the domain page). The period columns read <strong>hits / unique visitors</strong>: unique is the number of different people who viewed it in that period. Bots, the team and repeat refreshes within 10 seconds are not counted. Unique visitors are counted from the day tracking started; landing page hits from the day the split was added.</p>';
+		echo '<style>.dbs-tiles{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}.dbs-tile{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px 18px;min-width:130px}.dbs-tile b{display:block;font-size:22px}.dbs-sub{color:#646970;font-size:12px}.dbh-u{color:#646970}.dbh-range{background:#f0f6fc}.dbh-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}.dbh-total{font-size:14px}.dbh-split{display:block;margin-top:2px;color:#646970;font-size:12px;white-space:nowrap}.dbh-land{background:#f6fbef}.dbh-det{background:#f3f7fb}</style>';
+		printf( '<div class="dbs-tiles"><div class="dbs-tile"><span>Total hits</span><b>%s</b></div><div class="dbs-tile"><span>Landing page hits</span><b>%s</b></div><div class="dbs-tile"><span>Details page hits</span><b>%s</b></div><div class="dbs-tile"><span>Unique visitor-pages</span><b>%s</b></div><div class="dbs-tile"><span>Hits today</span><b>%s</b></div><div class="dbs-tile"><span>Last 7 days</span><b>%s</b></div><div class="dbs-tile"><span>This month</span><b>%s</b></div></div>', esc_html( number_format_i18n( $sum['total'] ) ), esc_html( number_format_i18n( $sum['landing'] ) ), esc_html( number_format_i18n( max( 0, $sum['total'] - $sum['landing'] ) ) ), esc_html( number_format_i18n( $sum['unique'] ) ), esc_html( number_format_i18n( $sum['today'] ) ), esc_html( number_format_i18n( $sum['week'] ) ), esc_html( number_format_i18n( $sum['month'] ) ) );
 		echo '<form method="get" class="dbh-bar"><input type="hidden" name="page" value="db-hits"><input type="search" name="q" value="' . esc_attr( $search ) . '" placeholder="Domain"> <label>From <input type="date" name="from" value="' . esc_attr( $from ) . '"></label> <label>To <input type="date" name="to" value="' . esc_attr( $to ) . '"></label> <button class="button button-primary">Apply</button>';
 		if ( $rng || '' !== $search ) {
 			echo ' <a class="button" href="' . esc_url( $base ) . '">Clear</a>';
@@ -396,22 +422,27 @@ if ( ! function_exists( 'db_hits_page' ) ) {
 			echo '<p><strong>Date range:</strong> ' . esc_html( $res['from'] . ' to ' . $res['to'] ) . ' (shown in the blue column)</p>';
 		}
 
-		echo '<table class="widefat striped"><thead><tr>' . $th( 'name', 'Domain' ) . $th( 'today', 'Today' ) . $th( 'd7', 'Last 7 days' ) . $th( 'month', 'This month' ) . $th( 'year', 'This year' ) . $th( 'all', 'All time' ); // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '<table class="widefat striped"><thead><tr>' . $th( 'name', 'Domain' ) . $th( 'all', 'Total hits' ) . $th( 'landing', 'Landing page hits' ) . $th( 'details', 'Details page hits' ) . $th( 'today', 'Today' ) . $th( 'd7', 'Last 7 days' ) . $th( 'month', 'This month' ) . $th( 'year', 'This year' ); // phpcs:ignore WordPress.Security.EscapeOutput
 		if ( $rng ) {
 			echo $th( 'range', 'Selected range' ); // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 		echo $th( 'last', 'Last visit' ) . $th( 'offers', 'Offers' ) . '</tr></thead><tbody>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		if ( ! $res['rows'] ) {
-			echo '<tr><td colspan="9">No domains match.</td></tr>';
+			echo '<tr><td colspan="' . ( $rng ? 12 : 11 ) . '">No domains match.</td></tr>';
 		}
 		foreach ( $res['rows'] as $r ) {
+			$land = (int) $r->all_l;
+			$det  = max( 0, (int) $r->all_h - $land );
 			echo '<tr><td><strong><a href="' . esc_url( get_edit_post_link( $r->ID ) ) . '">' . esc_html( strtolower( $r->post_title ) ) . '</a></strong></td>';
+			echo '<td class="dbh-total"><strong>' . esc_html( number_format_i18n( (int) $r->all_h ) ) . '</strong><span class="dbh-split">' . esc_html( number_format_i18n( (int) $r->all_u ) ) . ' unique</span></td>';
+			echo '<td class="dbh-land">' . esc_html( number_format_i18n( $land ) ) . '</td>';
+			echo '<td class="dbh-det">' . esc_html( number_format_i18n( $det ) ) . '</td>';
 			foreach ( array( 'today', 'd7', 'month', 'year' ) as $k ) {
 				echo '<td>' . db_hits_cell( $r->{$k . '_h'}, $r->{$k . '_u'} ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 			}
-			echo '<td><strong>' . db_hits_cell( $r->all_h, $r->all_u ) . '</strong></td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 			if ( $rng ) {
-				echo '<td class="dbh-range">' . db_hits_cell( $r->range_h, $r->range_u ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
+				$rl = (int) $r->range_l;
+				echo '<td class="dbh-range">' . db_hits_cell( $r->range_h, $r->range_u ) . '<span class="dbh-split">Landing ' . esc_html( number_format_i18n( $rl ) ) . ' &middot; Details ' . esc_html( number_format_i18n( max( 0, (int) $r->range_h - $rl ) ) ) . '</span></td>'; // phpcs:ignore WordPress.Security.EscapeOutput
 			}
 			echo '<td>' . ( $r->last_ts ? esc_html( wp_date( 'M j, g:i a', (int) $r->last_ts ) ) : '<span class="dbs-sub">never</span>' ) . '</td><td>' . ( (int) $r->offers ? '<a href="' . esc_url( admin_url( 'admin.php?page=db-offers&tab=all&q=' . rawurlencode( strtolower( $r->post_title ) ) ) ) . '">' . (int) $r->offers . '</a>' : '0' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
@@ -436,20 +467,24 @@ add_action( 'admin_post_db_hits_export', function () {
 	header( 'Content-Type: text/csv; charset=utf-8' );
 	header( 'Content-Disposition: attachment; filename="db-domain-hits-' . gmdate( 'Y-m-d' ) . '.csv"' );
 	$out = fopen( 'php://output', 'w' );
-	$head = array( 'Domain', 'Today hits', 'Today unique', 'Last 7 days hits', 'Last 7 days unique', 'This month hits', 'This month unique', 'This year hits', 'This year unique', 'All time hits', 'All time unique' );
+	$head = array( 'Domain', 'Total hits', 'Landing page hits', 'Details page hits', 'Total unique', 'Today hits', 'Today unique', 'Last 7 days hits', 'Last 7 days unique', 'This month hits', 'This month unique', 'This year hits', 'This year unique' );
 	if ( '' !== $res['from'] ) {
 		$head[] = 'Range ' . $res['from'] . ' to ' . $res['to'] . ' hits';
 		$head[] = 'Range unique';
+		$head[] = 'Range landing page hits';
+		$head[] = 'Range details page hits';
 	}
 	$head[] = 'Last visit (UTC)';
 	$head[] = 'Offers received';
 	fputcsv( $out, $head );
 	foreach ( $res['rows'] as $r ) {
 		$name = strtolower( $r->post_title );
-		$line = array( ( '' !== $name && false !== strpos( '=+-@', $name[0] ) ) ? "'" . $name : $name, (int) $r->today_h, (int) $r->today_u, (int) $r->d7_h, (int) $r->d7_u, (int) $r->month_h, (int) $r->month_u, (int) $r->year_h, (int) $r->year_u, (int) $r->all_h, (int) $r->all_u );
+		$line = array( ( '' !== $name && false !== strpos( '=+-@', $name[0] ) ) ? "'" . $name : $name, (int) $r->all_h, (int) $r->all_l, max( 0, (int) $r->all_h - (int) $r->all_l ), (int) $r->all_u, (int) $r->today_h, (int) $r->today_u, (int) $r->d7_h, (int) $r->d7_u, (int) $r->month_h, (int) $r->month_u, (int) $r->year_h, (int) $r->year_u );
 		if ( '' !== $res['from'] ) {
 			$line[] = (int) $r->range_h;
 			$line[] = (int) $r->range_u;
+			$line[] = (int) $r->range_l;
+			$line[] = max( 0, (int) $r->range_h - (int) $r->range_l );
 		}
 		$line[] = $r->last_ts ? gmdate( 'Y-m-d H:i', (int) $r->last_ts ) : '';
 		$line[] = (int) $r->offers;

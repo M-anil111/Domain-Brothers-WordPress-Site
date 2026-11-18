@@ -87,7 +87,18 @@ add_filter( 'wpcf7_spam', function ( $spam ) {
 		return $spam;
 	}
 	$token = isset( $_POST['cf-turnstile-response'] ) ? wp_unslash( $_POST['cf-turnstile-response'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
-	return ! db_ts_verify( $token, function_exists( 'db_wl_ip' ) ? db_wl_ip() : '' );
+	$ok    = db_ts_verify( $token, function_exists( 'db_wl_ip' ) ? db_wl_ip() : '' );
+	if ( ! $ok ) {
+		// Recorded in Contact Form 7's spam log, shown under Domain Brothers > Form log.
+		$sub = class_exists( 'WPCF7_Submission' ) ? WPCF7_Submission::get_instance() : null;
+		if ( $sub && method_exists( $sub, 'add_spam_log' ) ) {
+			$sub->add_spam_log( array(
+				'agent'  => 'db_turnstile',
+				'reason' => '' === trim( (string) $token ) ? 'no Turnstile token (the widget did not load or was not completed; check the site key allows this hostname)' : 'Cloudflare rejected the Turnstile token',
+			) );
+		}
+	}
+	return ! $ok;
 } );
 
 /** Admin: the two keys, and turning the check off again. */

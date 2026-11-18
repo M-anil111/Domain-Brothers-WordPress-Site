@@ -88,7 +88,14 @@ Pays through the real checkout with Stripe's `4242` test card and checks the red
 - `qa/offer-flow.js` (live, **test mode only**): the whole negotiation through the real admin and buyer page, a test-card payment and the closing webhook; it removes its own test sale at the end. Needs `DB_WP_USER`/`DB_WP_PASS` and `STRIPE_TEST_WEBHOOK_SECRET`.
 - `qa/listing-templates.js` (live): four temporary domains through the admin screen, each must get its own template; removes them.
 - `qa/sold-epp-flow.js` (live, test mode): payment plan to completion, Sold domains report, EPP code send and buyer reveal, revoke. Needs `STRIPE_TEST_WEBHOOK_SECRET`.
-- `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded) and the All offers received log with repeat offers merged.
+- `qa/hits-offers-log.js` (live): hit counting (bots/editors excluded), the total / landing / details columns and the All offers received log with repeat offers merged.
+- `forms/cf7-delivery-test.php` (offline): Contact Form 7 sender fix (visitor address replaced by the site's sending address, visitor as Reply-To, no header injection), the submission log (sent, mail failed with the SMTP error, spam with each check's reason, invalid fields, latest 100, no personal data), the honeypot name and spam reasons.
+
+      php tests/forms/cf7-delivery-test.php
+
+- `hits/landing-split-test.php` (needs a MySQL/MariaDB test database; skips without one): total hits split into landing page and details page hits: table upgrade from version 2, recording through the REST beacon, per-domain totals, sorting, summary tiles, admin columns and the beacon script.
+
+      DB_TEST_USER=... DB_TEST_PASS=... DB_TEST_NAME=... php tests/hits/landing-split-test.php
 - `qa/content-cluster.js` (live): the Domain Guides articles: pages, links, images, structured data, block editor validity, phone layout.
 - `qa/account-flow.js` (live): the account tabs, follower alerts (price, offer, sale), the one alert email with its stop link, My offers, Discover; removes its test data.
 - `qa/sales-features.js` (live): the domain finder and its shortlist, trust center, collections, "Why this price?" on domain pages, phone-width overflow, admin Sales funnel and Buyer intent reports.

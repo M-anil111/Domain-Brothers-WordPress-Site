@@ -38,7 +38,8 @@ get_header();
 			function checkoffervalue() {
 				var $ = window.jQuery;
 				if (!$) { return true; }
-				var v = $('#number-99').val();
+				var v = String($('#number-99').val() || '').replace(/[$\s,]/g, '');
+				$('#number-99').val(v);
 				if (v === '') { $('#number-99').css('border', '1px solid red'); $('.loginpopup').prop('id', 'firs1t'); return false; }
 				$('#number-99').css('border', '');
 				$('.loginpopup').prop('id', 'first');
@@ -49,6 +50,34 @@ get_header();
 				var k = e.which || e.keyCode || e.charCode;
 				return !((k >= 65 && k <= 90) || (k >= 97 && k <= 122) || (k >= 33 && k <= 39) || k === 42 || k === 44 || (k >= 46 && k <= 47) || (k >= 58 && k <= 64) || (k >= 91 && k <= 96) || (k >= 123 && k <= 126));
 			}
+			</script>
+			<script>
+			/* The theme's footer pre-fills the offer box with "$" + a suggested amount
+			   (jQuery("#number-99").val('$2625')) and writes it back on keyup when the
+			   box is emptied. This page already shows a fixed "$" in front of the box,
+			   so the visitor saw "$ $2750". Keep the number, drop the symbol: only in
+			   this box, and only while it sits next to that fixed "$". */
+			(function () {
+				function clean() {
+					var f = document.getElementById('number-99');
+					if (!f || !f.closest || !f.closest('.db-pr-amount')) { return; }
+					var v = f.value || '', c = v.replace(/[$\s,]/g, '');
+					if (c !== v) { f.value = c; }
+				}
+				function bind() {
+					var f = document.getElementById('number-99');
+					if (!f || f.getAttribute('data-db-clean')) { clean(); return; }
+					f.setAttribute('data-db-clean', '1');
+					// Registered after the theme's own keyup handler, so this runs last.
+					['input', 'keyup', 'change', 'focus', 'blur', 'paste'].forEach(function (e) {
+						f.addEventListener(e, function () { setTimeout(clean, 0); });
+					});
+					clean();
+				}
+				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+				// The theme's script can run late (deferred by Cloudflare Rocket Loader).
+				window.addEventListener('load', function () { bind(); setTimeout(clean, 300); setTimeout(clean, 1500); });
+			})();
 			</script>
 			<script>
 			(function () {
