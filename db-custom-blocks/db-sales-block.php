@@ -745,11 +745,31 @@ if ( ! function_exists( 'db_trust_center_body' ) ) {
 			array( 'Transfers', 'Your account shows each transfer stage, from payment through to completion, with notes from our team.' ),
 			array( 'Alerts and email', 'We email you only about domains and searches you chose to follow. Each alert email has a one-click stop link, and you can turn all alert emails off in your account.' ),
 		);
-		$h = '<p class="db-sales-lead">What we do, stated as the site enforces it. Questions go to our contact page.</p><dl class="db-sales-trust">';
+		$ico = function ( $path ) {
+			return '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+		};
+		$icons = array(
+			'Payments'         => '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>',
+			'Receipts'         => '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+			'Payment plans'    => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M8 15l2.200 2.200L15 13"/>',
+			'Transfer codes'   => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+			'Offers'           => '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+			'Transfers'        => '<path d="M4 9h15M15 5l4 4-4 4M20 15H5M9 11l-4 4 4 4"/>',
+			'Alerts and email' => '<path d="M6 16V11a6 6 0 1112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>',
+		);
+		$art = '<svg class="db-tc-art" viewBox="0 0 420 320" role="img" aria-label="A shield protecting a payment and a domain transfer"><defs><linearGradient id="db-tc-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#19b3a6"/><stop offset="1" stop-color="#0b7a75"/></linearGradient></defs>'
+			. '<circle cx="210" cy="160" r="150" fill="#e8f4f3"/><circle cx="210" cy="160" r="108" fill="#d3ecea"/>'
+			. '<path d="M210 62l84 30v62c0 56-36 90-84 108-48-18-84-52-84-108V92z" fill="url(#db-tc-g)"/><path d="M172 162l26 26 52-56" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>'
+			. '<g transform="translate(38 196)"><rect width="128" height="80" rx="14" fill="#fff" stroke="#cfe3e1" stroke-width="2"/><rect x="14" y="16" width="34" height="24" rx="5" fill="#fbbf24"/><rect x="14" y="52" width="70" height="8" rx="4" fill="#cbd5e1"/><rect x="92" y="52" width="22" height="8" rx="4" fill="#cbd5e1"/></g>'
+			. '<g transform="translate(262 40)"><rect width="128" height="56" rx="28" fill="#fff" stroke="#cfe3e1" stroke-width="2"/><circle cx="30" cy="28" r="12" fill="#0b7a75"/><rect x="52" y="22" width="60" height="12" rx="6" fill="#cbd5e1"/></g></svg>';
+		$h = '<section class="db-tc-hero"><div><p class="db-tc-eyebrow">Security, payments and transfers</p><p class="db-tc-lead">Buying a domain means trusting a stranger with money and a transfer. Here is what protects you, stated only as the site enforces it.</p>'
+			. '<p class="db-tc-actions"><a class="db-tc-btn" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains</a><a class="db-tc-btn db-tc-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Ask a question</a></p></div>' . $art . '</section>';
+		$h .= '<ul class="db-tc-pillars"><li><strong>Card data stays with Stripe</strong><span>We never see or store your card number.</span></li><li><strong>Codes are encrypted</strong><span>Transfer codes are shown only to the buyer.</span></li><li><strong>Every step is recorded</strong><span>Offers, payments and transfer stages sit in your account.</span></li></ul>';
+		$h .= '<h2 class="db-tc-h2">How each part of a purchase is protected</h2><dl class="db-sales-trust db-tc-grid">';
 		foreach ( $items as $it ) {
-			$h .= '<div class="db-sales-card"><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
+			$h .= '<div class="db-sales-card db-tc-card"><span class="db-tc-ico">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
 		}
-		$h .= '</dl>';
+		$h .= '</dl><h2 class="db-tc-h2">Policies and guides</h2>';
 		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-plan-setup/' ) ) . '">Payment plan terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
 		return $h;
 	}

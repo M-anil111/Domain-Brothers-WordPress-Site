@@ -137,49 +137,41 @@ if ( ! function_exists( 'db_render_news' ) ) {
 		usort( $items, function ( $a, $b ) { return $b['date'] <=> $a['date']; } );
 		$items = array_slice( $items, 0, $limit );
 
-		$html  = '<div class="db-news-live">';
-		$html .= '<h2 class="db-news-live-heading">Latest From The Industry</h2>';
-		$html .= '<div class="db-news-grid">';
-		foreach ( $items as $it ) {
+		$card = function ( $it, $class, $eager ) {
 			$date_str = $it['date'] ? date_i18n( get_option( 'date_format' ), $it['date'] ) : '';
 			$image    = db_news_og_image( $it['link'] );
-			// A single click target for the whole card that opens the
-			// on-site preview (db-ui-enhancer.js) instead of navigating away
-			// — the actual external link only appears once, inside that
-			// preview, clearly labelled as leaving the site. data-* carries
-			// everything the preview needs so no second network round trip
-			// is needed to build it.
-			$html .= '<article class="db-news-card">';
-			$html .= '<button type="button" class="db-news-card__trigger"'
-				. ' data-title="' . esc_attr( $it['title'] ) . '"'
-				. ' data-excerpt="' . esc_attr( $it['excerpt'] ) . '"'
-				. ' data-source="' . esc_attr( $it['source'] ) . '"'
-				. ' data-date="' . esc_attr( $date_str ) . '"'
-				. ' data-link="' . esc_url( $it['link'] ) . '"'
-				. ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' )
-				. '>';
-			if ( $image ) {
-				// The first row is on screen at once: its images load eagerly, the first at high priority.
-				$shown = isset( $shown ) ? $shown + 1 : 1;
-				$html .= '<span class="db-news-thumb"><img src="' . esc_url( $image ) . '" alt="" ' . ( $shown <= 3 ? 'loading="eager"' . ( 1 === $shown ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async"></span>';
+			$source   = trim( (string) preg_replace( '/\s*\|.*$/', '', (string) $it['source'] ) );
+			// One click target for the whole card. It opens the on-site preview
+			// (db-ui-enhancer.js); the external link appears once, inside that
+			// preview, labelled as leaving the site. data-* carries what it needs.
+			$h  = '<article class="db-an-card ' . esc_attr( $class ) . '"><button type="button" class="db-news-card__trigger db-an-hit"'
+				. ' data-title="' . esc_attr( $it['title'] ) . '" data-excerpt="' . esc_attr( $it['excerpt'] ) . '" data-source="' . esc_attr( $it['source'] ) . '"'
+				. ' data-date="' . esc_attr( $date_str ) . '" data-link="' . esc_url( $it['link'] ) . '"' . ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' ) . '>';
+			$h .= '<span class="db-an-img">' . ( $image ? '<img src="' . esc_url( $image ) . '" alt="" ' . ( $eager ? 'loading="eager"' . ( 1 === $eager ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async">' : '' ) . '</span>';
+			$h .= '<span class="db-an-txt">';
+			if ( '' !== $source ) {
+				$h .= '<span class="db-an-src">' . esc_html( $source ) . '</span>';
 			}
-			$html .= '<span class="db-news-title">' . esc_html( $it['title'] ) . '</span>';
-			$html .= '<span class="db-news-meta">';
-			if ( $it['source'] ) {
-				$html .= '<span class="db-news-source">' . esc_html( $it['source'] ) . '</span>';
+			$h .= '<span class="db-an-title">' . esc_html( $it['title'] ) . '</span>';
+			if ( $it['excerpt'] ) {
+				$h .= '<span class="db-an-ex">' . esc_html( $it['excerpt'] ) . '</span>';
 			}
 			if ( $date_str ) {
-				$html .= '<span class="db-news-date">' . esc_html( $date_str ) . '</span>';
+				$h .= '<span class="db-an-date">' . esc_html( $date_str ) . '</span>';
 			}
-			$html .= '</span>';
-			if ( $it['excerpt'] ) {
-				$html .= '<span class="db-news-excerpt">' . esc_html( $it['excerpt'] ) . '</span>';
+			return $h . '</span></button></article>';
+		};
+
+		$html  = '<div class="db-news-live db-an">';
+		$html .= '<header class="db-an-head"><p class="db-an-day">' . esc_html( date_i18n( 'l, F j' ) ) . '</p><h1 class="db-an-h1">Domain News</h1><p class="db-an-sub">The stories moving the domain industry today, from the publications that cover it.</p></header>';
+		$html .= '<h2 class="db-an-sec db-news-live-heading">Top stories</h2><div class="db-an-top">';
+		foreach ( $items as $n => $it ) {
+			if ( 3 === $n ) {
+				$html .= '</div><h2 class="db-an-sec">More from the industry</h2><div class="db-an-grid">';
 			}
-			$html .= '<span class="db-news-readmore">Read more</span>';
-			$html .= '</button>';
-			$html .= '</article>';
+			$html .= $card( $it, 0 === $n ? 'db-an-lead' : ( $n < 3 ? 'db-an-side' : 'db-an-tile' ), $n < 3 ? $n + 1 : 0 );
 		}
-		$html .= '</div></div>';
+		$html .= '</div><h2 class="db-an-sec db-an-sec--own">From Domain Brothers</h2></div>';
 
 		return $html;
 	}
@@ -196,7 +188,7 @@ add_action( 'template_redirect', function () {
 		if ( false !== strpos( $html, 'db-news-live' ) ) {
 			return $html; // already inserted (defensive, shouldn't recurse)
 		}
-		$news_html = db_render_news( 6 );
+		$news_html = db_render_news( 7 );
 		if ( '' === $news_html ) {
 			return $html; // all feeds unreachable this request — leave the archive as-is
 		}

@@ -76,7 +76,10 @@ if ( ! function_exists( 'db_ad_html' ) ) {
 		$ready  = (bool) preg_match( '/^ca-pub-\d{10,20}$/', $client ) && (bool) preg_match( '/^\d{6,20}$/', $slot );
 		$GLOBALS['db_ads_used'] = $ready ? true : ( $GLOBALS['db_ads_used'] ?? false );
 		if ( ! $ready ) {
-			if ( function_exists( 'db_wl_is_staging' ) && db_wl_is_staging() ) {
+			// No AdSense ids: the slot is not rendered at all, so a page never carries
+			// an empty box. An administrator can see where the slots sit by adding
+			// ?db_ads_preview=1 to any page address.
+			if ( isset( $_GET['db_ads_preview'] ) && current_user_can( 'manage_options' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 				return '<aside class="db-ad db-ad--empty db-ad--' . esc_attr( $key ) . '" aria-label="Advertisement slot"><span>Advertisement slot: ' . esc_html( db_ads_slots()[ $key ] ) . '. Add your AdSense ids under Domain Brothers &gt; Ads.</span></aside>';
 			}
 			return '';

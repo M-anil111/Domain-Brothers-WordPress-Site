@@ -280,3 +280,34 @@ body.dbp-listing .filter-show { display: none; }
 /* ---- all domains: shared header; the page keeps its own filter and list ------ */
 body.dbp-all .dbl-head { margin-bottom: 18px; }
 /* ---- blog post: tag links sit on a dark footer ---------------------------------- */
+
+/* ---- Listing header, second pass: bolder header, facts row, tighter page rhythm ---- */
+html body.dbp #primary #main.site-main, html body.db-ui-active #primary #main.db-wl-page { margin-top: 0 !important; margin-bottom: 0 !important; padding-top: 12px !important; padding-bottom: 4px !important; }
+body.dbp #content.site-content { padding-bottom: 24px !important; }
+body.dbp nav.db-breadcrumbs { margin: 0 0 12px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.dbl-head { position: relative; overflow: hidden; margin: 0 0 26px; padding: clamp(28px, 4.4vw, 56px); border: 0; border-radius: 28px; color: #fff; background: radial-gradient(900px 420px at 100% 0%, rgba(25,179,166,.45) 0%, rgba(25,179,166,0) 62%), radial-gradient(700px 380px at 0% 100%, rgba(37,99,235,.28) 0%, rgba(37,99,235,0) 60%), #0c1424; box-shadow: 0 30px 60px -36px rgba(12,20,36,.7); }
+.dbl-head::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: linear-gradient(120deg, transparent 35%, #000 100%); mask-image: linear-gradient(120deg, transparent 35%, #000 100%); }
+.dbl-head > * { position: relative; z-index: 1; }
+body.dbp .dbl-head .dbp-eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); color: #b6f0ea !important; font-size: 12px !important; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+body.dbp .dbl-head .dbp-eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #34d5c5; box-shadow: 0 0 0 4px rgba(52,213,197,.22); }
+body.dbp .dbl-head .dbl-title { color: #fff !important; font-size: clamp(32px, 5vw, 58px) !important; }
+body.dbp .dbl-head .dbl-intro { color: rgba(255,255,255,.82) !important; font-size: clamp(16.5px, 1.5vw, 18.5px) !important; max-width: 60ch; }
+body.dbp .dbl-head .dbl-intro strong { color: #fff; }
+body.dbp .dbl-head .dbl-chips a { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); color: #fff !important; min-height: 44px; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body.dbp .dbl-head .dbl-chips a:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.5); }
+body.dbp .dbl-head .dbl-chips a[aria-current="page"] { background: #fff; border-color: #fff; color: #0c1424 !important; }
+body.dbp .dbl-head .dbl-chips a:focus-visible { outline: 3px solid #fff; outline-offset: 2px; box-shadow: none; }
+.dbl-head .dbp-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 0; }
+body.dbp .dbl-head .dbp-actions .dbp-btn { background: transparent; border: 1.5px solid rgba(255,255,255,.4); color: #fff !important; }
+body.dbp .dbl-head .dbp-actions .dbp-btn:hover { background: rgba(255,255,255,.12); border-color: #fff; }
+body.dbp .dbl-head .dbp-actions .dbp-btn--primary { background: #fff; border-color: #fff; color: #0c1424 !important; }
+body.dbp .dbl-head .dbp-actions .dbp-btn--primary:hover { background: #e6fffb; }
+.dbl-trust { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 26px 0 0; padding: 20px 0 0; border-top: 1px solid rgba(255,255,255,.14); list-style: none; }
+body.dbp .dbl-trust li { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 14.5px !important; line-height: 1.4; color: rgba(255,255,255,.86) !important; }
+.dbl-trust svg { flex: none; color: #34d5c5; }
+body.dbp .dbl-deals-empty .resp_table, body.dbp .dbl-deals-empty .pagenav { display: none !important; }
+body.dbp-all .dbl-head { margin-bottom: 18px; }
+/* Rows of actions never touch the row of chips or the text above them. */
+body.dbp .dbl-chips + .dbp-actions, body.dbp .dbp-lead + .dbp-actions, body.dbp .dbl-intro + .dbp-actions { margin-top: 22px; }
+body.dbp .dbp-actions { row-gap: 12px; }
+html body.dbp #primary #main.site-main, html body.db-ui-active #primary #main.db-wl-page { padding-top: 26px !important; }

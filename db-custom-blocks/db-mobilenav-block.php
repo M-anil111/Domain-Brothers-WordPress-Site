@@ -343,18 +343,46 @@ if ( ! function_exists( 'db_nav_account_items' ) ) {
  * The theme's footer already lists the other four; this adds Home as the first
  * link of its Explore column so all five stay reachable from the bottom menu.
  */
+if ( ! function_exists( 'db_nav_blog_url' ) ) {
+	/** Where "Blog" goes: the on-site guides archive. */
+	function db_nav_blog_url() {
+		return (string) apply_filters( 'db_nav_blog_url', home_url( '/category/domain-guides/' ) );
+	}
+}
+
 if ( ! function_exists( 'db_nav_footer_home' ) ) {
 	function db_nav_footer_home( $html ) {
-		if ( false === strpos( $html, 'id="db-ft-explore"' ) ) {
+		if ( false === strpos( $html, 'id="db-ft-explore"' ) && false === stripos( $html, 'blog.domainbrothers.com' ) ) {
 			return $html;
 		}
 		$item = '<li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li>';
 		$out  = preg_replace( '#(<h2 id="db-ft-explore">.*?</h2>\s*<ul[^>]*>)#s', '$1 ' . $item, $html, 1 );
-		return null === $out ? $html : $out;
+		$out  = null === $out ? $html : $out;
+		// The blog lives on this site (the guides); the old blog subdomain no
+		// longer answers, so links to its front page point here instead.
+		$blog = esc_url( db_nav_blog_url() );
+		$out2 = preg_replace( '#<a\b([^>]*?)href="https?://blog\.domainbrothers\.com/?"([^>]*)>#i', '<a$1href="' . $blog . '"$2>', $out );
+		$out  = null === $out2 ? $out : $out2;
+		return str_replace( '<a href="' . $blog . '" target="_blank" rel="noopener">', '<a href="' . $blog . '">', $out );
 	}
 }
 add_action( 'template_redirect', function () {
 	if ( ! is_admin() && ! is_feed() && ! is_customize_preview() ) {
 		ob_start( 'db_nav_footer_home' );
+	}
+}, 0 );
+
+// /blog/ opens the guides archive (WordPress would otherwise guess a post whose
+// address merely starts with "blog").
+add_action( 'template_redirect', function () {
+	$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$path = trim( (string) wp_parse_url( $uri, PHP_URL_PATH ), '/' );
+	$home = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+	if ( '' !== $home && 0 === strpos( $path, $home ) ) {
+		$path = trim( substr( $path, strlen( $home ) ), '/' );
+	}
+	if ( 'blog' === $path && ! is_admin() ) {
+		wp_safe_redirect( db_nav_blog_url(), 301 );
+		exit;
 	}
 }, 0 );

@@ -10,6 +10,8 @@ function get_transient( $k ) { return isset( $GLOBALS['t_transients'][ $k ] ) ? 
 function set_transient( $k, $v ) { $GLOBALS['t_transients'][ $k ] = $v; return true; }
 function delete_transient( $k ) { unset( $GLOBALS['t_transients'][ $k ] ); return true; }
 define( 'MINUTE_IN_SECONDS', 60 );
+function get_option( $k, $d = false ) { return isset( $GLOBALS['t_options'][ $k ] ) ? $GLOBALS['t_options'][ $k ] : $d; }
+function update_option( $k, $v ) { $GLOBALS['t_options'][ $k ] = $v; return true; }
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 require __DIR__ . '/../../db-custom-blocks/db-pages-block.php';
 $pass = 0; $fail = 0;
@@ -48,7 +50,7 @@ check( 'priced card shows price, monthly and Buy now', false !== strpos( $l, '$2
 check( 'offer card shows Make an offer and no price', false !== strpos( $l, 'data-name="saska.ca" data-price="0"' ) && false !== strpos( $l, 'Make an offer' ) );
 check( 'category is escaped', false !== strpos( $l, 'Business &amp; &lt;Tech&gt;' ) );
 $e = db_pages_listing_html( '3-character-domains', array(), $links );
-check( 'empty list explains and links on, with no search box', false !== strpos( $e, 'No names in this list right now' ) && false === strpos( $e, 'dbl-q' ) && false !== strpos( $e, 'href="/find/"' ) && false !== strpos( $e, '<strong>0 names available.</strong>' ) );
+check( 'empty list explains and links on, with no search box', false !== strpos( $e, 'dbl-head dbl-head--empty' ) && false === strpos( $e, 'dbl-empty"' ) && false === strpos( $e, 'dbl-q' ) && false !== strpos( $e, 'href="/find/"' ) && false !== strpos( $e, '<strong>0 names available.</strong>' ) );
 $sd = db_pages_listing_html( 'sold', array( array( 'name' => 'wingcms.com', 'url' => '/domains/wingcms-com/', 'price' => 0, 'monthly' => 0, 'cat' => '' ) ), $links );
 check( 'sold list shows a Sold badge, no sort and no price', false !== strpos( $sd, 'dbl-badge">Sold' ) && false === strpos( $sd, 'id="dbl-sort"' ) && false === strpos( $sd, 'Make an offer' ) && false !== strpos( $sd, '<strong>1 name sold.</strong>' ) );
 
@@ -64,7 +66,7 @@ check( 'form sits in a card beside the steps', false !== strpos( $fo, '<div clas
 check( 'a page without a form is unchanged', '<p>x</p>' === db_pages_form_layout( '<p>x</p>', 'T', 'L', array() ) );
 
 $dl = db_pages_deals_layout( '<main id="main" class="site-main"><h1 class="page-title deals-title">Premium Domains on Special Deals <span></span></h1><div class="resp_table"><table><tr><td>Sorry! No record(s) are found</td></tr></table></div></main>', $links );
-check( 'empty deals page gets the header, an empty state and a hiding class', false !== strpos( $dl, 'class="dbl-deals-empty site-main"' ) && false !== strpos( $dl, 'No deals at the moment' ) && false === strpos( $dl, 'deals-title' ) && false !== strpos( $dl, '<a href="/deals/" aria-current="page">Deals</a>' ) );
+check( 'empty deals page gets the header, an empty state and a hiding class', false !== strpos( $dl, 'class="dbl-deals-empty site-main"' ) && false !== strpos( $dl, 'dbl-head dbl-head--empty' ) && false !== strpos( $dl, 'Nothing is discounted today' ) && '0' === get_option( 'db_pages_deals_state' ) && false === strpos( $dl, 'deals-title' ) && false !== strpos( $dl, '<a href="/deals/" aria-current="page">Deals</a>' ) );
 $dl2 = db_pages_deals_layout( '<main id="main" class="site-main"><h1 class="page-title deals-title">X</h1><table><tr><td>name.com</td></tr></table></main>', $links );
 check( 'deals page with deals keeps its table and gets no empty state', false === strpos( $dl2, 'dbl-empty' ) && false !== strpos( $dl2, 'name.com' ) && false === strpos( $dl2, 'dbl-deals-empty' ) );
 
@@ -79,11 +81,13 @@ $GLOBALS['t_transients']['db_pages_set_counts'] = array( '3-character-domains' =
 $t_links = array( 'all' => '/all-domains/', 'deals' => '/premium-domain-deals/' );
 foreach ( array_keys( db_pages_listing_sets() ) as $t_k ) { $t_links[ $t_k ] = '/' . $t_k . '/'; }
 // The counts are cached per request in a static, so this runs in a fresh process.
-$t_code = 'define("ABSPATH","/");function add_filter(){}function add_action(){}function apply_filters($t,$v){return $v;}function esc_html($s){return $s;}function esc_url($s){return $s;}function wp_strip_all_tags($s){return $s;}function get_transient($k){return ' . var_export( $GLOBALS['t_transients']['db_pages_set_counts'], true ) . ';}function set_transient(){}function delete_transient(){}'
+$t_code = 'define("ABSPATH","/");function add_filter(){}function add_action(){}function apply_filters($t,$v){return $v;}function esc_html($s){return $s;}function esc_url($s){return $s;}function wp_strip_all_tags($s){return $s;}function get_transient($k){return ' . var_export( $GLOBALS['t_transients']['db_pages_set_counts'], true ) . ';}function set_transient(){}function delete_transient(){}function get_option($k,$d=false){return "0";}function update_option(){}'
 	. 'require ' . var_export( realpath( __DIR__ . '/../../db-custom-blocks/db-pages-block.php' ), true ) . ';echo db_pages_listing_chips("5-character-domains",' . var_export( $t_links, true ) . ');';
 $t_chips = (string) shell_exec( escapeshellarg( PHP_BINARY ) . ' -r ' . escapeshellarg( $t_code ) );
 check( 'chips: an empty list is not offered', false === strpos( $t_chips, '/3-character-domains/' ) && false === strpos( $t_chips, '/numeric-domains-for-sale/' ) );
 check( 'chips: lists with names stay', false !== strpos( $t_chips, '/4-character-domains/' ) && false !== strpos( $t_chips, '/6-character-domains/' ) && false !== strpos( $t_chips, '/sold/' ) );
+check( 'chips: Deals is not offered while no deal is running', false === strpos( $t_chips, '/premium-domain-deals/' ) );
+check( 'chips: the facts row follows the chips', false !== strpos( $t_chips, '<ul class="dbl-trust">' ) );
 check( 'chips: the current list stays even when empty', false !== strpos( $t_chips, '/5-character-domains/" aria-current="page"' ) );
 
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

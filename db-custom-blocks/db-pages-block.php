@@ -249,10 +249,28 @@ if ( ! function_exists( 'db_pages_listing_chips' ) ) {
 			}
 			$h .= '<a href="' . esc_url( $links[ $k ] ) . '"' . ( $k === $current ? ' aria-current="page"' : '' ) . '>' . esc_html( $v['chip'] ) . '</a>';
 		}
-		if ( isset( $links['deals'] ) ) {
+		// Deals: the theme's deals page records whether it found any (see
+		// db_pages_deals_layout); until it has run once the chip is shown.
+		if ( isset( $links['deals'] ) && ( 'deals' === $current || '0' !== (string) get_option( 'db_pages_deals_state', '' ) ) ) {
 			$h .= '<a href="' . esc_url( $links['deals'] ) . '"' . ( 'deals' === $current ? ' aria-current="page"' : '' ) . '>Deals</a>';
 		}
-		return $h . '</nav>';
+		return $h . '</nav>' . db_pages_listing_trust();
+	}
+}
+
+if ( ! function_exists( 'db_pages_listing_trust' ) ) {
+	/**
+	 * Three short facts under the list chips: what every listing comes with.
+	 *
+	 * @return string
+	 */
+	function db_pages_listing_trust() {
+		$tick = '<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="10" fill="currentColor" opacity=".18"/><path d="M5.500 10.400l3 3 6-6.400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+		$h    = '<ul class="dbl-trust">';
+		foreach ( array( 'Payment plans on every priced name', 'Offers answered within one business day', 'Transfer handled for you, start to finish' ) as $fact ) {
+			$h .= '<li>' . $tick . '<span>' . esc_html( $fact ) . '</span></li>';
+		}
+		return $h . '</ul>';
 	}
 }
 
@@ -328,14 +346,20 @@ if ( ! function_exists( 'db_pages_deals_layout' ) ) {
 			return $html;
 		}
 		$empty = (bool) preg_match( '#No record\(s\)#i', $html );
-		$head  = '<section class="dbl-head"><p class="dbp-eyebrow">Limited offers</p><h1 class="dbl-title">Premium domains on special deals</h1>'
-			. '<p class="dbl-intro">Names we have reduced for a limited time.' . ( $empty ? ' <strong>No deals are running right now.</strong>' : '' ) . '</p>' . db_pages_listing_chips( 'deals', $links ) . '</section>';
-		if ( $empty ) {
-			$head .= '<section class="dbl-empty"><h2>No deals at the moment</h2><p>Deals come and go. Every listed name can still be bought in full or on a payment plan, and many are open to offers.</p>'
-				. '<p class="dbp-actions"><a class="dbp-btn dbp-btn--primary" href="' . esc_url( $links['all'] ) . '">Browse all domains</a><a class="dbp-btn" href="' . esc_url( $links['finder'] ) . '">Use the domain finder</a></p></section>';
-			$html = preg_replace( '#<main\b([^>]*)class="#', '<main$1class="dbl-deals-empty ', $html, 1 );
-			$m[0][1] += strlen( 'dbl-deals-empty ' );
+		// Remembered for the chip row on every other list page.
+		if ( ( $empty ? '0' : '1' ) !== (string) get_option( 'db_pages_deals_state', '' ) ) {
+			update_option( 'db_pages_deals_state', $empty ? '0' : '1', false );
 		}
+		$head = '<section class="dbl-head' . ( $empty ? ' dbl-head--empty' : '' ) . '"><p class="dbp-eyebrow">Limited offers</p><h1 class="dbl-title">Premium domains on special deals</h1>';
+		if ( $empty ) {
+			$head .= '<p class="dbl-intro">Nothing is discounted today. Reduced names are posted here first, and every listed name can still be bought in full, paid monthly or negotiated.</p>'
+				. '<p class="dbp-actions"><a class="dbp-btn dbp-btn--primary" href="' . esc_url( $links['all'] ) . '">Browse all domains</a><a class="dbp-btn" href="' . esc_url( $links['finder'] ) . '">Use the domain finder</a></p>';
+			$html  = preg_replace( '#<main\b([^>]*)class="#', '<main$1class="dbl-deals-empty ', $html, 1 );
+			$m[0][1] += strlen( 'dbl-deals-empty ' );
+		} else {
+			$head .= '<p class="dbl-intro">Names we have reduced for a limited time. Each can be bought in full or on a payment plan.</p>';
+		}
+		$head .= db_pages_listing_chips( 'deals', $links ) . '</section>';
 		return substr_replace( $html, $head, $m[0][1], strlen( $m[0][0] ) );
 	}
 }
@@ -355,11 +379,12 @@ if ( ! function_exists( 'db_pages_listing_html' ) ) {
 		$n    = count( $rows );
 		$h    = '<section class="dbl-head"><p class="dbp-eyebrow">' . ( $sold ? 'Track record' : 'Browse by type' ) . '</p><h1 class="dbl-title">' . esc_html( $set['title'] ) . '</h1>'
 			. '<p class="dbl-intro">' . esc_html( $set['intro'] ) . ' <strong>' . (int) $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ( $sold ? ' sold' : ' available' ) . '.</strong></p>';
-		$h   .= db_pages_listing_chips( $slug, $links ) . '</section>';
 		if ( ! $rows ) {
-			return $h . '<section class="dbl-empty"><h2>No names in this list right now</h2><p>Our inventory changes every week. These are good places to look next.</p>'
-				. '<p class="dbp-actions"><a class="dbp-btn dbp-btn--primary" href="' . esc_url( $links['all'] ) . '">Browse all domains</a><a class="dbp-btn" href="' . esc_url( $links['finder'] ) . '">Use the domain finder</a><a class="dbp-btn" href="' . esc_url( $links['acquire'] ) . '">Ask us to find a name</a></p></section>';
+			return str_replace( '<section class="dbl-head">', '<section class="dbl-head dbl-head--empty">', $h )
+				. '<p class="dbp-actions"><a class="dbp-btn dbp-btn--primary" href="' . esc_url( $links['all'] ) . '">Browse all domains</a><a class="dbp-btn" href="' . esc_url( $links['finder'] ) . '">Use the domain finder</a><a class="dbp-btn" href="' . esc_url( $links['acquire'] ) . '">Ask us to find a name</a></p>'
+				. db_pages_listing_chips( $slug, $links ) . '</section>';
 		}
+		$h   .= db_pages_listing_chips( $slug, $links ) . '</section>';
 		$h .= '<div class="dbl-tools"><label class="dbl-search"><span class="screen-reader-text">Search this list</span><input type="search" id="dbl-q" placeholder="Search this list" autocomplete="off"></label>';
 		if ( ! $sold ) {
 			$h .= '<label class="dbl-sort"><span>Sort</span><select id="dbl-sort"><option value="name">Name (A to Z)</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option></select></label>';
