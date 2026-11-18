@@ -227,3 +227,44 @@ add_filter( 'body_class', function ( $c ) {
 	}
 	return $c;
 } );
+
+/*
+ * Old guide addresses. When a post's slug changes, WordPress keeps the old one
+ * in _wp_old_slug and redirects from it in template_redirect, but Rank Math's
+ * "redirect 404s to the home page" fallback runs earlier and sends visitors to
+ * the home page instead. On a one-segment 404 that matches an old slug of a
+ * published post, send a permanent redirect to the post's current address.
+ */
+add_action( 'wp', function ( $wp ) {
+	if ( is_admin() || ! is_404() || ! $wp instanceof WP ) {
+		return;
+	}
+	$path = trim( (string) $wp->request, '/' );
+	if ( '' === $path || false !== strpos( $path, '/' ) || sanitize_title( $path ) !== $path ) {
+		return;
+	}
+	$ids = get_posts(
+		array(
+			'post_type'        => 'post',
+			'post_status'      => 'publish',
+			'meta_key'         => '_wp_old_slug', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value'       => $path, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'fields'           => 'ids',
+			'numberposts'      => 1,
+			'suppress_filters' => true,
+		)
+	);
+	if ( ! $ids ) {
+		return;
+	}
+	$url = get_permalink( (int) $ids[0] );
+	if ( ! $url ) {
+		return;
+	}
+	$query = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_QUERY ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	if ( '' !== $query ) {
+		$url .= ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query;
+	}
+	wp_safe_redirect( $url, 301, 'Domain Brothers old slug' );
+	exit;
+}, 0 );
