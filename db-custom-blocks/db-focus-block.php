@@ -42,6 +42,16 @@ if ( ! function_exists( 'db_focus_defs' ) ) {
 					}
 				}
 			}
+			// Extra copy appended to existing sections, and short stand-alone sections.
+			$more = is_readable( __DIR__ . '/focus/more.php' ) ? include __DIR__ . '/focus/more.php' : array();
+			if ( is_array( $more ) ) {
+				foreach ( (array) ( $more['append'] ?? array() ) as $slug => $blocks ) {
+					if ( isset( $defs[ $slug ]['body'] ) && is_array( $defs[ $slug ]['body'] ) ) {
+						$defs[ $slug ]['body'] = array_merge( $defs[ $slug ]['body'], (array) $blocks );
+					}
+				}
+				$defs += (array) ( $more['defs'] ?? array() );
+			}
 			$defs = (array) apply_filters( 'db_focus_defs', $defs );
 		}
 		return $defs;
