@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.91.2
+ * Version:     3.91.3
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.91.2' );
+define( 'DB_BLOCKS_LOADED', '3.91.3' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1532,6 +1532,13 @@ if ( ! function_exists( 'db_aeo_og_image' ) ) {
 
 if ( ! function_exists( 'db_aeo_emit' ) ) {
 	function db_aeo_emit( $graph_node ) {
+		// When Rank Math writes the <head> it already describes the organisation,
+		// the website, the page, the article and the breadcrumb trail; emitting
+		// them here too would give search engines each entity twice.
+		if ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD && isset( $graph_node['@type'] )
+			&& in_array( $graph_node['@type'], (array) apply_filters( 'db_aeo_rankmath_types', array( 'Organization', 'WebSite', 'WebPage', 'Article', 'BlogPosting', 'NewsArticle', 'BreadcrumbList', 'Service' ) ), true ) ) {
+			return;
+		}
 		$json = wp_json_encode( array_merge( array( '@context' => 'https://schema.org' ), $graph_node ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 		echo '<script type="application/ld+json">' . "\n" . $json . "\n" . '</script>' . "\n";
 	}
