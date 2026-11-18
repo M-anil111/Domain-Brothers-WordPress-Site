@@ -1,0 +1,178 @@
+<?php
+/**
+ * Rank Math bridge.
+ *
+ * Rank Math is used on this site for what editors see: the focus keyword, the
+ * SEO title and description fields and the content score. The front end keeps
+ * one owner of the <head> tags, which is this plugin (db-seo-meta-block.php), so
+ * installing Rank Math changes nothing a visitor or a crawler receives:
+ *
+ *   1. Rank Math's own front-end output is switched off.
+ *   2. An SEO title or description typed into Rank Math for a page, post or
+ *      listing replaces this plugin's built-in copy for that URL.
+ *   3. In the editor, Rank Math analyses the page as it is rendered. Most pages
+ *      here are built by templates and filters, so the stored post content is a
+ *      fraction of what the page shows; without this the score would describe
+ *      an empty page.
+ *
+ * Define DB_RANKMATH_OWNS_HEAD as true (wp-config.php) to hand the <head> to
+ * Rank Math instead. This plugin's SEO block then stands down.
+ *
+ * @package db-custom-blocks
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// Rank Math stays dormant until a rankmath.com account is connected or that step
+// is skipped. Focus keywords and scores need no account, so the step is skipped
+// here; an account can still be connected from Rank Math > Dashboard later.
+// This file loads before Rank Math (plugins load in folder-name order).
+if ( ! defined( 'RANK_MATH_REGISTRATION_SKIP' ) ) {
+	define( 'RANK_MATH_REGISTRATION_SKIP', true );
+}
+
+if ( ! function_exists( 'db_rankmath_present' ) ) {
+	/**
+	 * True when the Rank Math plugin is loaded.
+	 *
+	 * @return bool
+	 */
+	function db_rankmath_present() {
+		return class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' );
+	}
+}
+
+if ( ! function_exists( 'db_rankmath_analysis_only' ) ) {
+	/**
+	 * True when Rank Math is limited to the editor (the default).
+	 *
+	 * @return bool
+	 */
+	function db_rankmath_analysis_only() {
+		return ! ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD );
+	}
+}
+
+// 1. No Rank Math tags on the front end while this plugin owns the <head>.
+add_filter( 'rank_math/frontend/disable_integration', function ( $disabled ) {
+	return db_rankmath_analysis_only() ? true : $disabled;
+} );
+
+if ( ! function_exists( 'db_rankmath_text' ) ) {
+	/**
+	 * A Rank Math field as plain text, with its %variables% expanded.
+	 *
+	 * @param string       $value Stored field value.
+	 * @param WP_Post|null $post  Post the value belongs to.
+	 * @return string
+	 */
+	function db_rankmath_text( $value, $post = null ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return '';
+		}
+		if ( false !== strpos( $value, '%' ) && class_exists( '\\RankMath\\Helper' ) && is_callable( array( '\\RankMath\\Helper', 'replace_vars' ) ) ) {
+			$value = (string) \RankMath\Helper::replace_vars( $value, $post );
+		}
+		return trim( wp_strip_all_tags( $value ) );
+	}
+}
+
+if ( ! function_exists( 'db_rankmath_overlay' ) ) {
+	/**
+	 * 2. Let the Rank Math fields of the current page override the built-in copy.
+	 *
+	 * @param array|null $def SEO definition (title, desc, kw) or null.
+	 * @return array|null
+	 */
+	function db_rankmath_overlay( $def ) {
+		if ( ! db_rankmath_analysis_only() || ! ( is_singular() || is_front_page() ) ) {
+			return $def;
+		}
+		$post = get_queried_object();
+		if ( ! $post instanceof WP_Post ) {
+			return $def;
+		}
+		$title = db_rankmath_text( get_post_meta( $post->ID, 'rank_math_title', true ), $post );
+		$desc  = db_rankmath_text( get_post_meta( $post->ID, 'rank_math_description', true ), $post );
+		if ( '' === $title && '' === $desc ) {
+			return $def;
+		}
+		if ( ! is_array( $def ) ) {
+			$def = array( 'title' => '', 'desc' => '', 'kw' => '' );
+		}
+		if ( '' !== $title ) {
+			$def['title'] = $title;
+		}
+		if ( '' !== $desc ) {
+			$def['desc'] = $desc;
+		}
+		return $def;
+	}
+}
+
+if ( ! function_exists( 'db_rankmath_rendered_types' ) ) {
+	/**
+	 * Post types whose pages are assembled by templates and filters.
+	 *
+	 * @return string[]
+	 */
+	function db_rankmath_rendered_types() {
+		return (array) apply_filters( 'db_rankmath_rendered_types', array( 'page', 'domain' ) );
+	}
+}
+
+// 3. Feed the rendered page to the Rank Math analysis in the editor.
+add_action( 'rank_math/admin/editor_scripts', function () {
+	$post = get_post();
+	if ( ! $post instanceof WP_Post || 'publish' !== $post->post_status || ! in_array( $post->post_type, db_rankmath_rendered_types(), true ) ) {
+		return;
+	}
+	$url = get_permalink( $post );
+	if ( ! $url ) {
+		return;
+	}
+	$handle = 'db-rankmath-rendered';
+	wp_register_script( $handle, false, array( 'wp-hooks' ), DB_BLOCKS_LOADED, true );
+	wp_enqueue_script( $handle );
+	wp_add_inline_script( $handle, 'window.dbRankMath = ' . wp_json_encode( array( 'url' => add_query_arg( 'db_seo_src', '1', $url ) ) ) . ';' . db_rankmath_editor_js() );
+}, 30 );
+
+if ( ! function_exists( 'db_rankmath_editor_js' ) ) {
+	/**
+	 * Editor script: fetch the public page, keep its main content and hand that
+	 * to Rank Math through its documented `rank_math_content` filter.
+	 *
+	 * @return string
+	 */
+	function db_rankmath_editor_js() {
+		return <<<'JS'
+(function () {
+	if (!window.wp || !wp.hooks || !window.dbRankMath || !window.fetch) { return; }
+	var rendered = '';
+	wp.hooks.addFilter('rank_math_content', 'db-custom-blocks/rendered', function (content) {
+		return rendered || content;
+	}, 99);
+	function refresh() {
+		if (window.rankMathEditor && typeof rankMathEditor.refresh === 'function') { rankMathEditor.refresh('content'); }
+	}
+	fetch(dbRankMath.url, { credentials: 'same-origin' }).then(function (r) {
+		return r.ok ? r.text() : '';
+	}).then(function (html) {
+		if (!html) { return; }
+		var doc = new DOMParser().parseFromString(html, 'text/html');
+		var main = doc.querySelector('main') || doc.querySelector('#content') || doc.body;
+		if (!main) { return; }
+		main.querySelectorAll('script,style,noscript,template,svg,iframe,form,nav,.db-ad,.screen-reader-text,[hidden],[aria-hidden="true"]').forEach(function (el) { el.remove(); });
+		rendered = main.innerHTML.replace(/\s+/g, ' ');
+		window.dbRankMath.words = (main.textContent || '').trim().split(/\s+/).length;
+		window.dbRankMath.ready = true;
+		refresh();
+		setTimeout(refresh, 1500);
+	}).catch(function () { window.dbRankMath.ready = true; });
+}());
+JS;
+	}
+}

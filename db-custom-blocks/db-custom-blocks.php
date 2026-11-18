@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.80.6
+ * Version:     3.82.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.80.6' );
+define( 'DB_BLOCKS_LOADED', '3.82.0' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
@@ -67,8 +67,12 @@ if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	 * RankMath, so they were double-emitting meta alongside Yoast.
 	 */
 	function db_seo_other_plugin() {
-		return class_exists( 'RankMath' )
-			|| defined( 'RANK_MATH_VERSION' )
+		// Rank Math runs here as an editor-side analysis tool only (see
+		// db-rankmath-block.php): its front-end output is switched off and this
+		// plugin keeps emitting the tags, unless DB_RANKMATH_OWNS_HEAD is true.
+		$rank_math = ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) )
+			&& defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD;
+		return $rank_math
 			|| defined( 'WPSEO_VERSION' )
 			|| class_exists( 'WPSEO_Options' );
 	}
@@ -4633,6 +4637,8 @@ require_once __DIR__ . '/db-delay-block.php';
 require_once __DIR__ . '/db-pages-block.php';
 require_once __DIR__ . '/db-sections-block.php';
 require_once __DIR__ . '/db-priced-block.php';
+require_once __DIR__ . '/db-seo-audit-block.php';
+require_once __DIR__ . '/db-rankmath-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {

@@ -6,6 +6,10 @@ define( 'ABSPATH', __DIR__ . '/' );
 function add_filter() {} function add_action() {} function apply_filters( $t, $v ) { return $v; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, "UTF-8", false ); } // like WordPress: no double encoding
 function esc_url( $s ) { return $s; }
+function get_transient( $k ) { return isset( $GLOBALS['t_transients'][ $k ] ) ? $GLOBALS['t_transients'][ $k ] : false; }
+function set_transient( $k, $v ) { $GLOBALS['t_transients'][ $k ] = $v; return true; }
+function delete_transient( $k ) { unset( $GLOBALS['t_transients'][ $k ] ); return true; }
+define( 'MINUTE_IN_SECONDS', 60 );
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 require __DIR__ . '/../../db-custom-blocks/db-pages-block.php';
 $pass = 0; $fail = 0;
@@ -69,5 +73,17 @@ check( 'all-domains heading becomes the shared header with the count', false !==
 check( 'another page is unchanged', '<h1>x</h1>' === db_pages_all_layout( '<h1>x</h1>', $links ) );
 $al2 = db_pages_all_layout( '<h2 class="page-title all_domains">Names &mdash; <span>1 Domains</span></h2>', $links );
 check( 'the theme h2 form is matched too', false !== strpos( $al2, '<strong>1 name available.</strong>' ) );
+
+// Empty lists leave the chip row (dynamic); the current list always stays.
+$GLOBALS['t_transients']['db_pages_set_counts'] = array( '3-character-domains' => 0, '4-character-domains' => 7, '5-character-domains' => 0, '6-character-domains' => 2, 'numeric-domains-for-sale' => 0, 'sold' => 3 );
+$t_links = array( 'all' => '/all-domains/', 'deals' => '/premium-domain-deals/' );
+foreach ( array_keys( db_pages_listing_sets() ) as $t_k ) { $t_links[ $t_k ] = '/' . $t_k . '/'; }
+// The counts are cached per request in a static, so this runs in a fresh process.
+$t_code = 'define("ABSPATH","/");function add_filter(){}function add_action(){}function apply_filters($t,$v){return $v;}function esc_html($s){return $s;}function esc_url($s){return $s;}function wp_strip_all_tags($s){return $s;}function get_transient($k){return ' . var_export( $GLOBALS['t_transients']['db_pages_set_counts'], true ) . ';}function set_transient(){}function delete_transient(){}'
+	. 'require ' . var_export( realpath( __DIR__ . '/../../db-custom-blocks/db-pages-block.php' ), true ) . ';echo db_pages_listing_chips("5-character-domains",' . var_export( $t_links, true ) . ');';
+$t_chips = (string) shell_exec( escapeshellarg( PHP_BINARY ) . ' -r ' . escapeshellarg( $t_code ) );
+check( 'chips: an empty list is not offered', false === strpos( $t_chips, '/3-character-domains/' ) && false === strpos( $t_chips, '/numeric-domains-for-sale/' ) );
+check( 'chips: lists with names stay', false !== strpos( $t_chips, '/4-character-domains/' ) && false !== strpos( $t_chips, '/6-character-domains/' ) && false !== strpos( $t_chips, '/sold/' ) );
+check( 'chips: the current list stays even when empty', false !== strpos( $t_chips, '/5-character-domains/" aria-current="page"' ) );
 
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

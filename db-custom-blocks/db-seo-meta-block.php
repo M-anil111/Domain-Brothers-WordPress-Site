@@ -27,8 +27,10 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'DB_SEO_ACTIVE' ) ) {
-	// Only RankMath fully renders <head> meta; if it's present, stand down.
-	define( 'DB_SEO_ACTIVE', ! ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) ) );
+	// Stand down only when Rank Math is present AND has been given the <head>
+	// (DB_RANKMATH_OWNS_HEAD). By default Rank Math is used for its editor
+	// analysis only and this block stays the single owner of the tags.
+	define( 'DB_SEO_ACTIVE', ! ( ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) ) && defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) );
 }
 
 if ( ! defined( 'DB_SEO_SUFFIX' ) ) {
@@ -624,6 +626,9 @@ if ( ! function_exists( 'db_seo_current' ) ) {
 		}
 		$done  = true;
 		$cache = db_seo_resolve();
+		if ( function_exists( 'db_rankmath_overlay' ) ) {
+			$cache = db_rankmath_overlay( $cache );
+		}
 		return $cache;
 	}
 }

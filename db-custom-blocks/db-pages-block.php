@@ -240,7 +240,13 @@ if ( ! function_exists( 'db_pages_listing_chips' ) ) {
 	/** Links between the domain lists; the current one is marked. */
 	function db_pages_listing_chips( $current, array $links ) {
 		$h = '<nav class="dbl-chips" aria-label="Domain lists"><a href="' . esc_url( $links['all'] ) . '">All domains</a>';
+		$counts = db_pages_listing_counts();
 		foreach ( db_pages_listing_sets() as $k => $v ) {
+			// A list with nothing in it is not offered; it comes back by itself
+			// as soon as a matching name is listed.
+			if ( $k !== $current && isset( $counts[ $k ] ) && 0 === $counts[ $k ] ) {
+				continue;
+			}
 			$h .= '<a href="' . esc_url( $links[ $k ] ) . '"' . ( $k === $current ? ' aria-current="page"' : '' ) . '>' . esc_html( $v['chip'] ) . '</a>';
 		}
 		if ( isset( $links['deals'] ) ) {
@@ -249,6 +255,57 @@ if ( ! function_exists( 'db_pages_listing_chips' ) ) {
 		return $h . '</nav>';
 	}
 }
+
+if ( ! function_exists( 'db_pages_listing_counts' ) ) {
+	/**
+	 * How many names each list holds right now (slug => count). Cached for
+	 * fifteen minutes and dropped whenever a listing is saved or removed.
+	 *
+	 * @return array<string,int>
+	 */
+	function db_pages_listing_counts() {
+		static $counts = null;
+		if ( null !== $counts ) {
+			return $counts;
+		}
+		$cached = get_transient( 'db_pages_set_counts' );
+		if ( is_array( $cached ) ) {
+			$counts = $cached;
+			return $counts;
+		}
+		$counts = array();
+		$posts  = function_exists( 'db_finder_candidates' ) ? (array) db_finder_candidates() : null;
+		foreach ( db_pages_listing_sets() as $slug => $set ) {
+			if ( ! empty( $set['sold'] ) ) {
+				if ( function_exists( 'db_sold_listings' ) ) {
+					$counts[ $slug ] = count( array_filter( (array) db_sold_listings(), function ( $p ) {
+						return 'publish' === $p->post_status;
+					} ) );
+				}
+				continue;
+			}
+			if ( null === $posts ) {
+				continue; // unknown: keep the list visible
+			}
+			$n = 0;
+			foreach ( $posts as $p ) {
+				if ( db_pages_listing_match( $set, $p->post_title ) ) {
+					++$n;
+				}
+			}
+			$counts[ $slug ] = $n;
+		}
+		set_transient( 'db_pages_set_counts', $counts, 15 * MINUTE_IN_SECONDS );
+		return $counts;
+	}
+}
+
+foreach ( array( 'save_post_domain', 'deleted_post', 'trashed_post', 'untrashed_post' ) as $db_pages_hook ) {
+	add_action( $db_pages_hook, function () {
+		delete_transient( 'db_pages_set_counts' );
+	} );
+}
+unset( $db_pages_hook );
 
 if ( ! function_exists( 'db_pages_listing_links' ) ) {
 	function db_pages_listing_links() {

@@ -47,6 +47,10 @@ add_action( 'wp_footer', function () {
 		// every menu click doesn't pay for a redirect hop.
 		'Contact'       => esc_url( home_url( '/contact-us/' ) ),
 	);
+	// Home, Payment Plans, News, About and Contact live in the footer menu
+	// only: the top menu (desktop bar and drawer) carries the two things a
+	// visitor comes for, the names and the services, plus the account links.
+	$links = array_diff_key( $links, array_flip( (array) apply_filters( 'db_nav_footer_only', array( 'Home', 'Payment Plans', 'News', 'About', 'Contact' ) ) ) );
 	// The 5 dedicated service pages (see db_service_page_defs() in
 	// db-custom-blocks.php — each already has its own real content and SEO
 	// meta) had no path into this drawer at all: an earlier attempt at
@@ -333,3 +337,24 @@ if ( ! function_exists( 'db_nav_account_items' ) ) {
 			. '<li class="' . $cls . '" hidden><a href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" data-db-acct="signout">Sign out</a></li>';
 	}
 }
+
+/*
+ * "Home" left the top menu together with News, Payment Plans, About and Contact.
+ * The theme's footer already lists the other four; this adds Home as the first
+ * link of its Explore column so all five stay reachable from the bottom menu.
+ */
+if ( ! function_exists( 'db_nav_footer_home' ) ) {
+	function db_nav_footer_home( $html ) {
+		if ( false === strpos( $html, 'id="db-ft-explore"' ) ) {
+			return $html;
+		}
+		$item = '<li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li>';
+		$out  = preg_replace( '#(<h2 id="db-ft-explore">.*?</h2>\s*<ul[^>]*>)#s', '$1 ' . $item, $html, 1 );
+		return null === $out ? $html : $out;
+	}
+}
+add_action( 'template_redirect', function () {
+	if ( ! is_admin() && ! is_feed() && ! is_customize_preview() ) {
+		ob_start( 'db_nav_footer_home' );
+	}
+}, 0 );
