@@ -557,3 +557,50 @@ add_action( 'init', function () {
 	$next  = $commit ? '' : '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( array( 'db_fix_post_images' => '1', 'commit' => '1' ), home_url( '/' ) ), 'db_fix_post_images' ) ) . '">Commit these changes</a></p>';
 	wp_die( '<p><strong>' . $mode . '</strong> — ' . count( $report ) . ' post(s) affected:</p><p>' . implode( '</p><p>', $report ) . '</p>' . $next, 'DB Post Image Repair', array( 'response' => 200 ) );
 } );
+
+/*
+ * Category archives (the guides blog at /category/domain-guides/ and the news
+ * categories) use the same cards and grid as /news/, under a masthead with the
+ * category name and description.
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_category() ) {
+		return;
+	}
+	$term = get_queried_object();
+	if ( ! $term instanceof WP_Term ) {
+		return;
+	}
+	ob_start( function ( $html ) use ( $term ) {
+		$guides = 'domain-guides' === $term->slug;
+		$title  = $guides ? 'Domain Guides' : $term->name;
+		$desc   = trim( wp_strip_all_tags( term_description( $term ) ) );
+		if ( '' === $desc ) {
+			$desc = $guides
+				? 'Practical guides to buying, valuing, transferring and marketing premium domain names, written by the Domain Brothers team.'
+				: 'Stories from the domain industry, collected daily.';
+		}
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		$head  = '<header class="db-an-head db-an-head--cat"><p class="db-an-day">' . ( $guides ? 'The Domain Brothers blog' : 'Domain news' ) . '</p><h1 class="db-an-h1">' . esc_html( $title ) . ( $paged > 1 ? ' <span class="db-an-page">Page ' . (int) $paged . '</span>' : '' ) . '</h1><p class="db-an-sub">' . esc_html( $desc ) . '</p></header>';
+		$out   = preg_replace( '#<header class="page-header">.*?</header>#s', '', $html, 1 );
+		$out   = null === $out ? $html : $out;
+		$out   = db_news_own_cards( $out );
+		$pos   = strpos( $out, '<div class="db-an-grid db-an-own">' );
+		if ( false === $pos ) {
+			return $html;
+		}
+		$end = strpos( $out, '</div>', strrpos( $out, '</a></article>' ) );
+		if ( false === $end ) {
+			return $html;
+		}
+		$out = substr_replace( $out, '</div></div>', $end, strlen( '</div>' ) );
+		return substr_replace( $out, '<div class="db-an db-an--cat">' . $head, $pos, 0 );
+	} );
+}, 20 );
+
+// A fuller first page for category archives: 12 cards (three rows of four).
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( ! is_admin() && $q->is_main_query() && $q->is_category() ) {
+		$q->set( 'posts_per_page', 12 );
+	}
+} );

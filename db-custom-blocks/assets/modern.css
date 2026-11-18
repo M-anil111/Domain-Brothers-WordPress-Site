@@ -1085,3 +1085,9 @@ html body.dbp .dbp-title + .dbp-tagline, html body.dbp .dbf-wrap h1 + .dbf-lead,
 html body.db-ui-active .db-an-head .db-an-day { margin-bottom: 10px; }
 html body.db-ui-active h3 + .db-legacy-offer-box { margin-top: 12px; }
 html body.db-ui-active .dbs h3 + .dbs-tech { margin-top: 6px; }
+/* Category archives (guides blog): same frame as /news/. */
+body.category.db-ui-active #main { max-width: 1180px !important; margin: 0 auto !important; padding: 26px var(--m-gutter) 16px !important; }
+body.category.db-ui-active #main > .news-cnt { margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; }
+.db-an--cat .db-an-head { margin-bottom: 26px; }
+html body.db-ui-active .db-an-page { font-size: .45em; font-weight: 700; letter-spacing: 0; color: var(--m-muted); vertical-align: middle; }
+body.category.db-ui-active .pagenav { margin: 28px 0 8px; }
