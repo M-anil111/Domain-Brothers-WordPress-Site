@@ -43,8 +43,11 @@ if ( ! function_exists( 'db_focus_defs' ) ) {
 				}
 			}
 			// Extra copy appended to existing sections, and short stand-alone sections.
-			$more = is_readable( __DIR__ . '/focus/more.php' ) ? include __DIR__ . '/focus/more.php' : array();
-			if ( is_array( $more ) ) {
+			foreach ( (array) glob( __DIR__ . '/focus/more*.php' ) as $more_file ) {
+				$more = include $more_file;
+				if ( ! is_array( $more ) ) {
+					continue;
+				}
 				foreach ( (array) ( $more['append'] ?? array() ) as $slug => $blocks ) {
 					if ( isset( $defs[ $slug ]['body'] ) && is_array( $defs[ $slug ]['body'] ) ) {
 						$defs[ $slug ]['body'] = array_merge( $defs[ $slug ]['body'], (array) $blocks );
@@ -109,6 +112,15 @@ if ( ! function_exists( 'db_focus_current' ) ) {
 		$defs = db_focus_defs();
 		if ( is_front_page() ) {
 			return isset( $defs['_front'] ) ? $defs['_front'] : null;
+		}
+		if ( is_home() && ! is_paged() ) {
+			// The posts page (News) is a page, but is_page() is false on it.
+			$posts_page = (int) get_option( 'page_for_posts' );
+			$post       = $posts_page ? get_post( $posts_page ) : null;
+			if ( $post instanceof WP_Post && isset( $defs[ $post->post_name ] ) ) {
+				return $defs[ $post->post_name ];
+			}
+			return null;
 		}
 		if ( is_page() ) {
 			$post = get_queried_object();
@@ -184,7 +196,12 @@ if ( ! function_exists( 'db_focus_inject' ) ) {
 		}
 		$section = db_focus_section_html( $def, $base_url );
 		// Above the closing call-to-action band where the page has one.
-		$cta = strrpos( substr( $html, 0, $end ), '<section class="dbp-cta"' );
+		// Above the enquiry form on service pages: content after a form can be
+		// parsed into it, and the guide reads better before the form anyway.
+		$cta = strrpos( substr( $html, 0, $end ), '<section class="dbsv-form"' );
+		if ( false === $cta ) {
+			$cta = strrpos( substr( $html, 0, $end ), '<section class="dbp-cta"' );
+		}
 		$at  = ( false !== $cta && $cta > $main ) ? $cta : $end;
 		$html = substr( $html, 0, $at ) . $section . substr( $html, $at );
 
