@@ -64,6 +64,8 @@ Each extension is run by a registry that sets the wholesale price, and your regi
 - **Use restrictions.** A few extensions are limited to verified organisations in one sector.
 - **Policy changes.** A registry can change its rules or prices over time, and country codes depend on the policy of the country behind them. Read the registry's own terms.
 
+!img:ib-ext-a|Domain extensions registry rules: residency, HTTPS security, use limits, renewals, policy changes and stability|Registry rules to check on domain extensions before you buy.
+
 ## Using more than one extension
 
 Many businesses own several domain extensions and use only one as the main address. The others protect the brand and catch visitors who guess the wrong ending.
@@ -80,6 +82,8 @@ Many businesses own several domain extensions and use only one as the main addre
 3. **What can you afford over five years?** Add the purchase price and the renewals.
 4. **Who else holds the other extensions?** If a competitor has the .com, think about confusion and the cost of buying it later.
 5. **Is the extension stable?** Check the registry's rules and history.
+
+!img:ib-ext-b|Five questions for choosing between domain extensions: customers, voice, budget, rivals and stability|Five questions for choosing between domain extensions.
 
 ## Protect your name
 

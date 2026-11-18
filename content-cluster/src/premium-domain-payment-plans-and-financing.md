@@ -40,6 +40,8 @@ A reminder email goes out before each payment, so nothing arrives as a surprise.
 | Cash needed now | The full price | One monthly payment |
 | Best for | A clear budget, an urgent transfer | Cash flow, testing a plan, bigger prices |
 
+!img:ib-finance-a|Domain financing compared with paying in full|Domain financing compared with paying in full.
+
 If the price is within your budget and you want the name outright, paying in full is simplest. If you would rather keep cash for building the business, a plan is sensible.
 
 ## What to compare in any domain financing offer
@@ -50,6 +52,8 @@ If the price is within your budget and you want the name outright, paying in ful
 - **Use of the name.** Can you point it at your site now? You should be able to.
 - **Missed payments.** Find out how many days you have, how many retries there are, and what happens at the end. On our plans a failed card payment is retried for a set number of days with reminders, and after that the plan ends and the domain returns to our inventory. Payments already made are non-refundable. Read the terms before you start, and tell us early if you expect a problem.
 - **Early payoff.** Can you pay the balance sooner? It is worth asking.
+
+!img:ib-finance-b|Six things to compare in any domain financing offer|What to compare in any domain financing offer.
 
 ## Making a plan work for you
 

@@ -25,6 +25,8 @@ That is the answer to the narrow question of domain name SEO. A domain that only
 
 The domain still matters, just not as a direct ranking factor. Good domain name SEO is about the signals a name influences around the site.
 
+!img:ib-domseo-b|Domain name SEO comparison: what a strong name does and does not do for rankings|What domain name SEO can and cannot expect from a strong name.
+
 ### 1. Click-through
 
 When your result shows a clear, trustworthy address, more people click it. A short name on a clean extension looks more credible next to a hyphenated, long or unusual one.
@@ -72,6 +74,8 @@ Some domain name SEO decisions are made once and are expensive to change later, 
 ## Domain name SEO checks before you buy
 
 A name with a clean history is a better starting point than one with a past you do not know. These checks take an hour and can save months.
+
+!img:ib-domseo-a|Domain name SEO checks before you buy: archive, search, links, trademarks and Search Console|Five domain name SEO checks to run before you buy.
 
 1. **Look at the archive.** Check past versions of the site on a web archive. Spam pages, copied content or adult content are warning signs.
 2. **Search the name.** Search for the domain on Google and look at what comes up, including mentions on other sites.

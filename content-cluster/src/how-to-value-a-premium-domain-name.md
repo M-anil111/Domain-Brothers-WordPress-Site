@@ -55,6 +55,8 @@ You are estimating, not predicting. The point is to find out whether the price i
 
 Move the price up or down for these things.
 
+!img:ib-value-a|Domain valuation factors that move the price down or up|Domain valuation: the factors that move the price.
+
 | Factor | Moves the price |
 |---|---|
 | Trademark conflict in your market | Down a lot, or walk away |
@@ -108,6 +110,8 @@ Name A scores high on length, extension, keyword fit, brandability and evidence.
 - **Trusting automated estimates alone.** Free calculators are fine as a starting point, but they cannot see trademark risk or brand fit.
 - **Falling for urgency.** "Another buyer is interested" is sometimes true and often a tactic. Ask for proof or take your time.
 - **Forgetting the cost to switch later.** Changing names later costs far more than paying for the right one now.
+
+!img:ib-value-b|Six domain valuation mistakes to avoid|Six domain valuation mistakes to avoid.
 
 ## Where to go next
 

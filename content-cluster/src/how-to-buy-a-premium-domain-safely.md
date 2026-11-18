@@ -23,6 +23,8 @@ Buying premium domains starts with what you need the name to do. Write down thre
 
 ## Stage 2: Check the name and the seller
 
+
+!img:ib-safe-a|Checks before buying premium domains: trademarks, history, sound, renewal price, registration record and the seller|Six checks before buying premium domains.
 ### The name
 
 - **Trademarks.** Search the trademark register of each market you will sell in. In the United States, start at the [USPTO trademark search](https://www.uspto.gov/trademarks). A match can mean losing the name later.
@@ -77,6 +79,8 @@ When buying premium domains for a company, register the name to the company rath
 ## Who you buy from changes the risk
 
 The rules for buying premium domains depend on who is selling. The checks in Stage 2 apply to every purchase, but the payment step and the main risks differ.
+
+!img:ib-safe-b|Buying premium domains from a private owner, a marketplace or a broker compared|Buying premium domains: how the risk changes with the seller.
 
 ### Buying premium domains from a marketplace
 

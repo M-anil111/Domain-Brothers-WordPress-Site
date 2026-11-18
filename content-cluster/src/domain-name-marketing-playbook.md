@@ -82,6 +82,8 @@ Test it with the radio test: say the name once to someone who has never heard it
 3. Publish the home, about and contact pages.
 4. Add analytics and Search Console.
 
+!img:ib-mkt-a|A 30 day domain name marketing plan in four weekly steps|A 30 day domain name marketing plan, week by week.
+
 **Week 2: Presence**
 1. Claim matching social handles and complete each profile.
 2. Update your email signature and every place the old name appears.
@@ -117,6 +119,8 @@ When a premium domain replaces an older or longer name, the change is itself a m
 ## Measuring domain name marketing
 
 If you cannot see which channel brought a visitor, you cannot decide where to spend next month's budget. Set up measurement before the first campaign.
+
+!img:ib-mkt-b|Measuring domain name marketing: tagged links, campaign pages, conversions, brand searches, direct visits and referrals|Six ways of measuring domain name marketing.
 
 - **Tag every campaign link** with source, medium and campaign parameters, so your analytics tool groups visits by channel.
 - **Give each print or event campaign its own page or vanity address.** Visits to that page tell you what the flyer or talk achieved.

@@ -49,6 +49,8 @@ How to measure it is in [How to Value a Premium Domain Name](/how-to-value-a-pre
 | Market shifts | Fashions in extensions and keywords change | Favour strong, timeless names |
 | Fraud | Fake escrow, stolen names | Follow [safe buying](/how-to-buy-a-premium-domain-safely/) steps |
 
+!img:ib-invest-a|Premium domain investment risks: no income, renewal costs, slow sales, legal claims, market shifts and fraud|The risks of a premium domain investment.
+
 ## A sensible way to start in premium domain investment
 
 1. **Learn the market.** Read sales reports, watch auctions and note what names sell for.
@@ -114,6 +116,8 @@ Think in terms of the questions below rather than numbers, because every busines
 ## Reviewing a premium domain investment each year
 
 Set a date once a year to look at every name you hold and decide what happens next.
+
+!img:ib-invest-b|Reviewing a premium domain investment each year: keep, sell, build or let go|Four outcomes when reviewing a premium domain investment.
 
 - **Keep it** if demand in its field is growing, renewal costs are reasonable and you still believe in the end users you listed.
 - **Sell it** if you have received serious offers, if the field has cooled, or if the money would work harder elsewhere. Our [brokerage team](/domain-brokerage-services/) can market it, and our guide to [selling a domain name](/how-to-sell-a-domain-name/) explains the process.

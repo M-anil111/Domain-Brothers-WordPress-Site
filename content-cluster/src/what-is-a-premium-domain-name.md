@@ -36,6 +36,8 @@ If a name is already registered, you are in the first group. If a registrar says
 
 Five features show up again and again in the names that sell for the most. We go through them in detail in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/), but the short list is:
 
+!img:ib-premium-b|What is a premium domain: short, real words, the right extension, brandable, proven demand and clean history|What is a premium domain? Six qualities that make one.
+
 - **Short.** Fewer characters are easier to type, say and remember. Our collections of [3 character](/3-character-domains/), [4 character](/4-character-domains/), [5 character](/5-character-domains/) and [6 character](/6-character-domains/) names show how length shapes price, and our [numeric domains](/numeric-domains-for-sale/) page covers number-only names.
 - **A real word or clear phrase.** Names people already know are easier to market than invented ones.
 - **The right extension.** .com is the global default; a country code or a strong new extension can fit a niche or a region.
@@ -68,6 +70,8 @@ Five features show up again and again in the names that sell for the most. We go
 ## Is a premium domain worth it for you?
 
 Knowing what is a premium domain is half the decision; the other half is whether one is worth it for you. Ask three questions.
+
+!img:ib-premium-a|What is a premium domain compared with a normal domain|What is a premium domain compared with a normal one.
 
 1. **Will the name be on everything?** If it is the name of your company or main product, a premium domain pays you back every day.
 2. **Does a weak name cost you today?** If customers mistype it, forget it or doubt it, you are already paying.

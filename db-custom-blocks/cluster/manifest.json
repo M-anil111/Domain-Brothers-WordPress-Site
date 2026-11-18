@@ -125,6 +125,16 @@
    "alt": "Choosing a domain name for a business: List, Test, Check, Decide",
    "title": "Choosing a domain name for a business: List, Test, Check, Decide"
   },
+  "ib-domseo-a": {
+   "file": "ib-domseo-a.png",
+   "alt": "Domain name SEO checks before you buy: archive, search, links, trademarks and Search Console",
+   "title": "Domain name SEO checks before you buy: archive, search, links, trademarks and Search Conso"
+  },
+  "ib-domseo-b": {
+   "file": "ib-domseo-b.png",
+   "alt": "Domain name SEO comparison: what a strong name does and does not do for rankings",
+   "title": "Domain name SEO comparison: what a strong name does and does not do for rankings"
+  },
   "ib-escrow-a": {
    "file": "ib-escrow-a.png",
    "alt": "How domain escrow works: Agree, Pay, Transfer, Confirm, Release",
@@ -134,6 +144,26 @@
    "file": "ib-escrow-b.png",
    "alt": "Signs of a fake escrow site: New website, Seller's choice, Odd payment, Spelling, Pressure, No licence",
    "title": "Signs of a fake escrow site: New website, Seller's choice, Odd payment, Spelling, Pressure"
+  },
+  "ib-ext-a": {
+   "file": "ib-ext-a.png",
+   "alt": "Domain extensions registry rules: residency, HTTPS security, use limits, renewals, policy changes and stability",
+   "title": "Domain extensions registry rules: residency, HTTPS security, use limits, renewals, policy "
+  },
+  "ib-ext-b": {
+   "file": "ib-ext-b.png",
+   "alt": "Five questions for choosing between domain extensions: customers, voice, budget, rivals and stability",
+   "title": "Five questions for choosing between domain extensions: customers, voice, budget, rivals an"
+  },
+  "ib-finance-a": {
+   "file": "ib-finance-a.png",
+   "alt": "Domain financing compared with paying in full",
+   "title": "Domain financing compared with paying in full"
+  },
+  "ib-finance-b": {
+   "file": "ib-finance-b.png",
+   "alt": "Six things to compare in any domain financing offer",
+   "title": "Six things to compare in any domain financing offer"
   },
   "ib-flipping-a": {
    "file": "ib-flipping-a.png",
@@ -145,6 +175,26 @@
    "alt": "Domain flipping: costs and risks: Renewals, Slow sales, Fees, Trademarks, Price swings, Your time",
    "title": "Domain flipping: costs and risks: Renewals, Slow sales, Fees, Trademarks, Price swings, Yo"
   },
+  "ib-invest-a": {
+   "file": "ib-invest-a.png",
+   "alt": "Premium domain investment risks: no income, renewal costs, slow sales, legal claims, market shifts and fraud",
+   "title": "Premium domain investment risks: no income, renewal costs, slow sales, legal claims, marke"
+  },
+  "ib-invest-b": {
+   "file": "ib-invest-b.png",
+   "alt": "Reviewing a premium domain investment each year: keep, sell, build or let go",
+   "title": "Reviewing a premium domain investment each year: keep, sell, build or let go"
+  },
+  "ib-launch-a": {
+   "file": "ib-launch-a.png",
+   "alt": "Website launch checklist for the first week, from securing the domain to the quality check",
+   "title": "Website launch checklist for the first week, from securing the domain to the quality check"
+  },
+  "ib-launch-b": {
+   "file": "ib-launch-b.png",
+   "alt": "Website launch checklist final tests: addresses, forms, titles, noindex, 404 page and backup",
+   "title": "Website launch checklist final tests: addresses, forms, titles, noindex, 404 page and back"
+  },
   "ib-leasing-a": {
    "file": "ib-leasing-a.png",
    "alt": "Domain leasing. Leasing, lease to own and payment plans: Lease, Lease to own, Payment plan",
@@ -154,6 +204,26 @@
    "file": "ib-leasing-b.png",
    "alt": "Check these before you sign: Ownership, Missed payment, Total cost, Early payoff, Use rights, End of term",
    "title": "Check these before you sign: Ownership, Missed payment, Total cost, Early payoff, Use righ"
+  },
+  "ib-mkt-a": {
+   "file": "ib-mkt-a.png",
+   "alt": "A 30 day domain name marketing plan in four weekly steps",
+   "title": "A 30 day domain name marketing plan in four weekly steps"
+  },
+  "ib-mkt-b": {
+   "file": "ib-mkt-b.png",
+   "alt": "Measuring domain name marketing: tagged links, campaign pages, conversions, brand searches, direct visits and referrals",
+   "title": "Measuring domain name marketing: tagged links, campaign pages, conversions, brand searches"
+  },
+  "ib-naming-a": {
+   "file": "ib-naming-a.png",
+   "alt": "How to choose a domain name: six mistakes that force a rename",
+   "title": "How to choose a domain name: six mistakes that force a rename"
+  },
+  "ib-naming-b": {
+   "file": "ib-naming-b.png",
+   "alt": "How to choose a domain name to match your brand in five steps",
+   "title": "How to choose a domain name to match your brand in five steps"
   },
   "ib-parking-a": {
    "file": "ib-parking-a.png",
@@ -174,6 +244,26 @@
    "file": "ib-pillar-b.png",
    "alt": "Buying a domain name for a website: Decide, Check, Agree, Pay, Launch",
    "title": "Buying a domain name for a website: Decide, Check, Agree, Pay, Launch"
+  },
+  "ib-premium-a": {
+   "file": "ib-premium-a.png",
+   "alt": "What is a premium domain compared with a normal domain",
+   "title": "What is a premium domain compared with a normal domain"
+  },
+  "ib-premium-b": {
+   "file": "ib-premium-b.png",
+   "alt": "What is a premium domain: short, real words, the right extension, brandable, proven demand and clean history",
+   "title": "What is a premium domain: short, real words, the right extension, brandable, proven demand"
+  },
+  "ib-safe-a": {
+   "file": "ib-safe-a.png",
+   "alt": "Checks before buying premium domains: trademarks, history, sound, renewal price, registration record and the seller",
+   "title": "Checks before buying premium domains: trademarks, history, sound, renewal price, registrat"
+  },
+  "ib-safe-b": {
+   "file": "ib-safe-b.png",
+   "alt": "Buying premium domains from a private owner, a marketplace or a broker compared",
+   "title": "Buying premium domains from a private owner, a marketplace or a broker compared"
   },
   "ib-sell-a": {
    "file": "ib-sell-a.png",
@@ -214,6 +304,26 @@
    "file": "ib-someone-b.png",
    "alt": "Do it yourself or use a broker: Contact the owner yourself, Use a domain broker",
    "title": "Do it yourself or use a broker: Contact the owner yourself, Use a domain broker"
+  },
+  "ib-transfer-a": {
+   "file": "ib-transfer-a.png",
+   "alt": "Checks before you transfer a domain: recent changes, expiry date, contact email, account, DNS records and extension rules",
+   "title": "Checks before you transfer a domain: recent changes, expiry date, contact email, account, "
+  },
+  "ib-transfer-b": {
+   "file": "ib-transfer-b.png",
+   "alt": "After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and save records",
+   "title": "After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and"
+  },
+  "ib-value-a": {
+   "file": "ib-value-a.png",
+   "alt": "Domain valuation factors that move the price down or up",
+   "title": "Domain valuation factors that move the price down or up"
+  },
+  "ib-value-b": {
+   "file": "ib-value-b.png",
+   "alt": "Six domain valuation mistakes to avoid",
+   "title": "Six domain valuation mistakes to avoid"
   },
   "infographic-i1": {
    "file": "infographic-i1.png",
@@ -404,6 +514,8 @@
    "file": "choosing-a-domain-extension-com-ca-io-and-more.html",
    "featured": "choosing-a-domain-extension-com-ca-io-and-more",
    "images": [
+    "ib-ext-a",
+    "ib-ext-b",
     "infographic-i3"
    ],
    "words": 1410
@@ -422,6 +534,8 @@
    "file": "do-premium-domains-help-seo.html",
    "featured": "do-premium-domains-help-seo",
    "images": [
+    "ib-domseo-a",
+    "ib-domseo-b",
     "infographic-i6"
    ],
    "words": 1410
@@ -522,6 +636,8 @@
    "file": "domain-name-marketing-playbook.html",
    "featured": "domain-name-marketing-playbook",
    "images": [
+    "ib-mkt-a",
+    "ib-mkt-b",
     "infographic-i5"
    ],
    "words": 1412
@@ -580,6 +696,8 @@
    "file": "domain-transfers-epp-codes-and-dns-explained.html",
    "featured": "domain-transfers-epp-codes-and-dns-explained",
    "images": [
+    "ib-transfer-a",
+    "ib-transfer-b",
     "infographic-i7"
    ],
    "words": 1555
@@ -618,6 +736,8 @@
    "file": "how-to-buy-a-premium-domain-safely.html",
    "featured": "how-to-buy-a-premium-domain-safely",
    "images": [
+    "ib-safe-a",
+    "ib-safe-b",
     "infographic-i2"
    ],
    "words": 1461
@@ -636,6 +756,8 @@
    "file": "how-to-pick-a-brand-name-and-domain-that-lasts.html",
    "featured": "how-to-pick-a-brand-name-and-domain-that-lasts",
    "images": [
+    "ib-naming-a",
+    "ib-naming-b",
     "infographic-i8"
    ],
    "words": 1402
@@ -673,6 +795,8 @@
    "file": "how-to-value-a-premium-domain-name.html",
    "featured": "how-to-value-a-premium-domain-name",
    "images": [
+    "ib-value-a",
+    "ib-value-b",
     "infographic-i1"
    ],
    "words": 1466
@@ -690,6 +814,8 @@
    "file": "premium-domain-payment-plans-and-financing.html",
    "featured": "premium-domain-payment-plans-and-financing",
    "images": [
+    "ib-finance-a",
+    "ib-finance-b",
     "infographic-i9"
    ],
    "words": 1411
@@ -707,6 +833,8 @@
    "file": "premium-domains-as-business-assets-and-investments.html",
    "featured": "premium-domains-as-business-assets-and-investments",
    "images": [
+    "ib-invest-a",
+    "ib-invest-b",
     "infographic-i10"
    ],
    "words": 1456
@@ -764,6 +892,8 @@
    "file": "website-launch-checklist-after-buying-a-domain.html",
    "featured": "website-launch-checklist-after-buying-a-domain",
    "images": [
+    "ib-launch-a",
+    "ib-launch-b",
     "infographic-i4"
    ],
    "words": 1436
@@ -781,6 +911,8 @@
    "file": "what-is-a-premium-domain-name.html",
    "featured": "what-is-a-premium-domain-name",
    "images": [
+    "ib-premium-a",
+    "ib-premium-b",
     "infographic-i1"
    ],
    "words": 1549

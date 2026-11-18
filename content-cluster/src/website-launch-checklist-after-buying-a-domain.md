@@ -34,6 +34,8 @@ Use this table as the summary, then work through the detail day by day below. Ea
 
 Security is the first item on any website launch checklist, because a lost or hijacked domain takes the site and the email with it.
 
+!img:ib-launch-a|Website launch checklist for the first week, from securing the domain to the quality check|The website launch checklist across the first week.
+
 1. **Confirm ownership.** Check that the registrant details and email address are yours.
 2. **Turn on the registrar lock** so the name cannot be transferred without you.
 3. **Turn on two-factor sign-in** on the registrar account and on the email address that receives its messages.
@@ -111,6 +113,8 @@ If an item on this website launch checklist fails, fix it before the announcemen
 ## Final tests: the website launch checklist before you announce
 
 Before you tell customers about the site, run one last pass. It takes about an hour and catches the problems visitors would otherwise find for you.
+
+!img:ib-launch-b|Website launch checklist final tests: addresses, forms, titles, noindex, 404 page and backup|Final tests on the website launch checklist.
 
 1. **Visit every version of the address**: with and without `www`, on http and https. All of them should land on the one preferred address.
 2. **Submit every form** and confirm that the message arrives in the right inbox, not the spam folder.

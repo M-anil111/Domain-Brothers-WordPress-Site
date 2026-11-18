@@ -43,6 +43,8 @@ If you and the seller use the same registrar, an account move is usually the sim
 
 Most failed or slow transfers come from something that could have been checked in five minutes. Before anyone requests a code, run through this list with the seller.
 
+!img:ib-transfer-a|Checks before you transfer a domain: recent changes, expiry date, contact email, account, DNS records and extension rules|What to check before you transfer a domain.
+
 - **Recent changes.** ICANN policy lets a registrar refuse a transfer within 60 days of the initial registration or a previous change of registrar. If the name was registered or moved recently, plan around that date.
 - **Expiry date.** If the domain expires within the next few weeks, agree who renews it first. A name that lapses during the move can get stuck or cost more to recover.
 - **Contact details.** The registrant email address must be one the seller can still read, because confirmation messages go there.
@@ -94,6 +96,8 @@ Even when both sides know how to transfer a domain, small details cause most del
 ## After the transfer: secure the domain
 
 Knowing how to transfer a domain is half the job; the other half is keeping it. On the day the transfer completes:
+
+!img:ib-transfer-b|After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and save records|How to secure the name the day you transfer a domain.
 
 1. **Check the record.** Look up the domain and confirm that your registrar is now listed.
 2. **Turn the lock back on** so nobody can move the name without your approval.

@@ -58,6 +58,8 @@ Run each candidate through these.
 - **Names that are hard in another language.** Check the sound and meaning in the languages you will sell in.
 - **Settling for a long domain.** If the best name is only available as a long address, the name is not available.
 
+!img:ib-naming-a|How to choose a domain name: six mistakes that force a rename|How to choose a domain name without the mistakes that force a rename.
+
 ## How to choose a domain name to match your brand
 
 1. **List your top ten names** and check each at once for domain, social handles and trademarks.
@@ -65,6 +67,8 @@ Run each candidate through these.
 3. **Decide how much the name is worth to you.** A single-word or short brandable name is worth the price if it will carry the business.
 4. **Consider alternatives:** a country code, a close variation, or a different word with the same meaning. [Choosing a Domain Extension](/choosing-a-domain-extension-com-ca-io-and-more/) compares them.
 5. **Secure everything together.** When you commit, buy the domain, claim the social handles and file the trademark if appropriate. We also help with [social media handles](/acquire-social-media-handles/).
+
+!img:ib-naming-b|How to choose a domain name to match your brand in five steps|How to choose a domain name that matches your brand, step by step.
 
 ## How to choose a domain name when your first choice is taken
 
