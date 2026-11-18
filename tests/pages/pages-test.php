@@ -64,4 +64,10 @@ check( 'empty deals page gets the header, an empty state and a hiding class', fa
 $dl2 = db_pages_deals_layout( '<main id="main" class="site-main"><h1 class="page-title deals-title">X</h1><table><tr><td>name.com</td></tr></table></main>', $links );
 check( 'deals page with deals keeps its table and gets no empty state', false === strpos( $dl2, 'dbl-empty' ) && false !== strpos( $dl2, 'name.com' ) && false === strpos( $dl2, 'dbl-deals-empty' ) );
 
+$al = db_pages_all_layout( '<main><h1 class="page-title all_domains">Names &mdash; <span>206 Domains</span></h1><form></form></main>', $links );
+check( 'all-domains heading becomes the shared header with the count', false !== strpos( $al, 'Premium domains for sale' ) && false !== strpos( $al, '<strong>206 names available.</strong>' ) && false !== strpos( $al, '<a href="/all/" aria-current="page">All domains</a>' ) && false === strpos( $al, 'all_domains' ) && false !== strpos( $al, '<form></form>' ) );
+check( 'another page is unchanged', '<h1>x</h1>' === db_pages_all_layout( '<h1>x</h1>', $links ) );
+$al2 = db_pages_all_layout( '<h2 class="page-title all_domains">Names &mdash; <span>1 Domains</span></h2>', $links );
+check( 'the theme h2 form is matched too', false !== strpos( $al2, '<strong>1 name available.</strong>' ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

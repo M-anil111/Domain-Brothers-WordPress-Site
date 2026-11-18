@@ -905,3 +905,42 @@ Desktop, 306 URLs: every page scores 90-100. Median Performance is 99-100 and Ac
 - **Malformed HTML in imported ICANN articles.** Empty links and list items wrapped in links (link-name on 72 pages, list/listitem on 7) need editing in those posts. The same goes for hot-linked images from other sites that no longer load (console errors on 273 posts).
 - **Cloudflare.** Its bot-detection script (`/cdn-cgi/challenge-platform/`, from Bot Fight Mode or JavaScript Detections) uses a deprecated browser API, which costs about 4 Best-practices points on pages where it runs. Zaraz also loads GA alongside Tag Manager, which itself loads the same GA property, so GA is loaded twice. Settings for both are in the Cloudflare dashboard.
 - **Logo.** The only logo is 200x54 px. On phones Lighthouse asks for about 2x (image-size-responsive on 651 pages). Upload a 400 px or SVG logo.
+
+## 40. Page redesign: 30 pages (v3.80.0 - v3.80.6)
+
+**Scope.** The 30 pages on the owner's "pending design" list. Code: `db-custom-blocks/db-pages-block.php` and `assets/pages.css` (loaded only on these pages). Content stays in WordPress; the block reshapes it at render time. Tests: `tests/pages/pages-test.php`, 32/32.
+
+| Group | Pages | What changed |
+|---|---|---|
+| Service pages | 8 services, 2 social-handle pages, About Domain Brothers | Hero (title, tagline, intro, two buttons), an "at a glance" card built from the page's own bullets, benefit cards, native collapsible FAQ, closing call-to-action band |
+| Listing pages | 3, 4, 5, 6-character, numeric, sold | Rendered by the plugin instead of the theme's tables: title with live count, links between lists, search, sort, cards with price and monthly price. The theme showed "Nothing Found" for an empty list and mixed sold names into for-sale lists. |
+| Deals, All domains | 2 | Same header and list links. An empty deals result becomes an empty state. All domains keeps its filter and list. |
+| Forms | Acquire a handle, Acquire premium domain, Domain transfer | Handle form: headline, three steps and a form card. The other two restyled; the transfer page's illustration no longer overlaps the header. |
+| EPP guidelines | 1 | One collapsible section per registrar under a hero with jump links |
+| 404, Domains under review | 2 | Centred card designs |
+| Home, News, domain page, blog post, Thank-you | 5 | Already on the new design. Speed and contrast fixes only (below). |
+
+**Speed and accessibility fixes found by Lighthouse**
+- News: the first row of thumbnails loads eagerly (the first at high priority). Mobile performance 83 to 92.
+- Blog post: the featured image is preloaded; tag links on the dark footer strip are readable. Accessibility 96 to 100; mobile LCP 3.6 s to 2.1 s.
+- The top ad slot goes under the new header panels, never inside them.
+
+**Lighthouse, mobile (slow-4G phone profile), v3.80.4 - v3.80.6**
+
+| Group | Performance | Accessibility |
+|---|---|---|
+| Service pages (11) | 93-100 | 100 |
+| Listing pages (8, with All domains) | 93-100 | 100 |
+| Forms, EPP, under review, thank-you | 95-100 | 100 |
+| Home | 94 | 100 |
+| News | 92 | 100 |
+| Blog post | 95 | 100 |
+| Domain page | 85-90 | 100 |
+
+Desktop: 98-100 on the 25 pages that finished. The 404 page cannot be audited (Lighthouse refuses a 404 response); it was checked by screenshot.
+
+**Open**
+- Domain page (85-90 mobile): about 2 s of render delay comes from render-blocking theme CSS (`style.css`, 51 KB) and jQuery in the head. Removing them needs a pass over the theme's inline scripts.
+- News thumbnails are hot-linked from the source sites; storing them locally would remove the dependency on those servers.
+- Blog post: a 0.07 layout shift remains (inside the "good" range).
+- Design polish of Home, News and the domain page beyond these fixes has not been done.

@@ -143,16 +143,16 @@ body.dbp .dbl-empty p { margin: 0 auto; max-width: 52ch; font-size: 16.5px !impo
 /* =========================================================================
    Form fields on every redesigned page
    ========================================================================= */
-body.dbp main :is(input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="number"], textarea, select):not(#dbl-q):not(#dbl-sort) { width: 100% !important; min-height: 50px; padding: 12px 16px !important; border: 1px solid var(--m-line-2) !important; border-radius: 12px !important; background: #fff !important; font-size: 16px !important; line-height: 1.4; color: var(--m-ink) !important; box-shadow: none !important; transition: border-color .15s ease, box-shadow .15s ease; }
-body.dbp main textarea { min-height: 130px; resize: vertical; }
-body.dbp main :is(input, textarea, select):focus { outline: none !important; border-color: var(--m-accent) !important; box-shadow: var(--m-ring) !important; }
-body.dbp main input[readonly] { background: var(--m-soft) !important; color: var(--m-muted) !important; }
-body.dbp main .wpcf7 label { display: block; margin: 0; font-size: 14px !important; font-weight: 700; color: var(--m-ink); }
-body.dbp main .wpcf7 p { margin: 0 0 16px; }
-body.dbp main :is(input[type="submit"], button[type="submit"]):not(.db-404-search button) { display: inline-flex; align-items: center; justify-content: center; width: auto !important; min-height: 52px; padding: 0 30px !important; border: 0 !important; border-radius: var(--m-pill) !important; background: var(--m-btn) !important; color: #fff !important; font-size: 16px !important; font-weight: 700; cursor: pointer; transition: transform .15s ease, background .15s ease; }
-body.dbp main :is(input[type="submit"], button[type="submit"]):hover { background: var(--m-btn-hover) !important; transform: translateY(-1px); }
-body.dbp main .wpcf7-not-valid-tip { margin-top: 6px; font-size: 13.5px !important; color: #b42318; }
-body.dbp main .wpcf7-response-output { margin: 16px 0 0 !important; padding: 14px 16px !important; border-radius: 12px; font-size: 15px !important; }
+body.dbp:not(.dbp-all) main :is(input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="number"], textarea, select):not(#dbl-q):not(#dbl-sort) { width: 100% !important; min-height: 50px; padding: 12px 16px !important; border: 1px solid var(--m-line-2) !important; border-radius: 12px !important; background: #fff !important; font-size: 16px !important; line-height: 1.4; color: var(--m-ink) !important; box-shadow: none !important; transition: border-color .15s ease, box-shadow .15s ease; }
+body.dbp:not(.dbp-all) main textarea { min-height: 130px; resize: vertical; }
+body.dbp:not(.dbp-all) main :is(input, textarea, select):focus { outline: none !important; border-color: var(--m-accent) !important; box-shadow: var(--m-ring) !important; }
+body.dbp:not(.dbp-all) main input[readonly] { background: var(--m-soft) !important; color: var(--m-muted) !important; }
+body.dbp:not(.dbp-all) main .wpcf7 label { display: block; margin: 0; font-size: 14px !important; font-weight: 700; color: var(--m-ink); }
+body.dbp:not(.dbp-all) main .wpcf7 p { margin: 0 0 16px; }
+body.dbp:not(.dbp-all) main :is(input[type="submit"], button[type="submit"]):not(.db-404-search button) { display: inline-flex; align-items: center; justify-content: center; width: auto !important; min-height: 52px; padding: 0 30px !important; border: 0 !important; border-radius: var(--m-pill) !important; background: var(--m-btn) !important; color: #fff !important; font-size: 16px !important; font-weight: 700; cursor: pointer; transition: transform .15s ease, background .15s ease; }
+body.dbp:not(.dbp-all) main :is(input[type="submit"], button[type="submit"]):hover { background: var(--m-btn-hover) !important; transform: translateY(-1px); }
+body.dbp:not(.dbp-all) main .wpcf7-not-valid-tip { margin-top: 6px; font-size: 13.5px !important; color: #b42318; }
+body.dbp:not(.dbp-all) main .wpcf7-response-output { margin: 16px 0 0 !important; padding: 14px 16px !important; border-radius: 12px; font-size: 15px !important; }
 
 /* ---- a form beside "what happens next" ------------------------------------ */
 .dbf-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(24px, 4vw, 56px); align-items: start; margin: 8px 0 40px; padding: clamp(24px, 4vw, 56px); border: 1px solid var(--m-line); border-radius: 28px; background: radial-gradient(1000px 420px at 0% 0%, #d9f0ee 0%, rgba(217,240,238,0) 60%), linear-gradient(180deg, #f3faf9 0%, #fff 100%); }
@@ -276,3 +276,7 @@ body.dbp-listing .deals-tbl th { padding: 14px 16px; background: var(--m-soft); 
 body.dbp-listing .deals-tbl td { padding: 14px 16px; border: 0; border-top: 1px solid var(--m-line); font-size: 15.5px !important; }
 body.dbp-listing .filter-dels .select_info { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 0 0 16px; }
 body.dbp-listing .filter-show { display: none; }
+
+/* ---- all domains: shared header; the page keeps its own filter and list ------ */
+body.dbp-all .dbl-head { margin-bottom: 18px; }
+/* ---- blog post: tag links sit on a dark footer ---------------------------------- */

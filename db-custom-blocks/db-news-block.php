@@ -159,7 +159,9 @@ if ( ! function_exists( 'db_render_news' ) ) {
 				. ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' )
 				. '>';
 			if ( $image ) {
-				$html .= '<span class="db-news-thumb"><img src="' . esc_url( $image ) . '" alt="" loading="lazy" decoding="async"></span>';
+				// The first row is on screen at once: its images load eagerly, the first at high priority.
+				$shown = isset( $shown ) ? $shown + 1 : 1;
+				$html .= '<span class="db-news-thumb"><img src="' . esc_url( $image ) . '" alt="" ' . ( $shown <= 3 ? 'loading="eager"' . ( 1 === $shown ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async"></span>';
 			}
 			$html .= '<span class="db-news-title">' . esc_html( $it['title'] ) . '</span>';
 			$html .= '<span class="db-news-meta">';

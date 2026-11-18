@@ -59,6 +59,9 @@ if ( ! function_exists( 'db_pages_kind' ) ) {
 		if ( is_page( array_keys( db_pages_listing_sets() ) ) || is_page( 'premium-domain-deals' ) ) {
 			return 'listing';
 		}
+		if ( is_page( 'all-domains' ) ) {
+			return 'all';
+		}
 		if ( is_page( 'epp-guidelines' ) ) {
 			return 'epp';
 		}
@@ -464,3 +467,64 @@ add_filter( 'the_content', function ( $html ) {
 	}
 	return $html;
 }, 20 );
+
+/* ---------------------------------------------------------- all domains */
+
+if ( ! function_exists( 'db_pages_all_layout' ) ) {
+	/** "Names — 206 Domains" becomes the shared list header with the count and the links between lists. */
+	function db_pages_all_layout( $html, array $links ) {
+		if ( ! preg_match( '#<h([12]) class="page-title all_domains">.*?<span>\s*(\d+)[^<]*</span>\s*</h\1>#s', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$n    = (int) $m[2][0];
+		$head = '<section class="dbl-head"><p class="dbp-eyebrow">Marketplace</p><h1 class="dbl-title">Premium domains for sale</h1>'
+			. '<p class="dbl-intro">Buy in full, pay monthly or make an offer. <strong>' . $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ' available.</strong></p>'
+			. str_replace( '<a href="' . esc_url( $links['all'] ) . '">All domains</a>', '<a href="' . esc_url( $links['all'] ) . '" aria-current="page">All domains</a>', db_pages_listing_chips( '', $links ) ) . '</section>';
+		return substr_replace( $html, $head, $m[0][1], strlen( $m[0][0] ) );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( 'all' !== db_pages_kind() ) {
+		return;
+	}
+	ob_start( function ( $html ) {
+		return db_pages_all_layout( $html, db_pages_listing_links() );
+	} );
+}, 27 );
+
+/* ------------------------------------------------ blog post and news speed */
+
+// The featured image of a post is the largest thing on screen: load it first.
+add_filter( 'wp_get_attachment_image_attributes', function ( $attr, $attachment ) {
+	if ( is_admin() || ! is_singular( 'post' ) || (int) $attachment->ID !== (int) get_post_thumbnail_id( get_queried_object_id() ) ) {
+		return $attr;
+	}
+	$attr['fetchpriority'] = 'high';
+	$attr['loading']       = 'eager';
+	return $attr;
+}, 20, 2 );
+
+add_filter( 'post_thumbnail_html', function ( $html ) {
+	if ( is_admin() || ! is_singular( 'post' ) || ! in_the_loop() || false !== strpos( $html, 'fetchpriority' ) ) {
+		return $html;
+	}
+	return preg_replace( '#<img\b#', '<img fetchpriority="high" loading="eager"', preg_replace( '#\sloading="lazy"#', '', $html ), 1 );
+}, 20 );
+
+add_action( 'wp_head', function () {
+	if ( is_admin() || ! is_singular( 'post' ) ) {
+		return;
+	}
+	$id = (int) get_post_thumbnail_id( get_queried_object_id() );
+	if ( $id ) {
+		$src    = wp_get_attachment_image_url( $id, 'post-thumbnail' );
+		$srcset = wp_get_attachment_image_srcset( $id, 'post-thumbnail' );
+		$sizes  = wp_get_attachment_image_sizes( $id, 'post-thumbnail' );
+		if ( $src ) {
+			echo '<link rel="preload" as="image" href="' . esc_url( $src ) . '"' . ( $srcset ? ' imagesrcset="' . esc_attr( $srcset ) . '" imagesizes="' . esc_attr( $sizes ? $sizes : '100vw' ) . '"' : '' ) . ' fetchpriority="high">' . "\n";
+		}
+	}
+	// Tag links under a post sit on the dark footer strip (3.5:1 in the link teal).
+	echo '<style id="db-post-tags">.single-post .entry-footer .tags-links a,.single-post .entry-footer .cat-links a{color:#8fe3dc!important}</style>' . "\n";
+}, 6 );
