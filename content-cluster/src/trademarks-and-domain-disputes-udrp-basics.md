@@ -46,11 +46,11 @@ All three are needed. If the complainant wins, the usual remedy is transfer or c
 
 ## The three UDRP elements in more detail
 
-Each element has its own tests, and panels have built up a large body of decisions on how to apply them. WIPO summarises the panel views in its published overview of UDRP decisions, which is worth reading before you respond to a case or file one.
+Each element has its own tests, and WIPO publishes an overview of how panels apply them.
 
 ### Element 1: identical or confusingly similar
 
-Panels compare the domain with the trademark side by side. The extension, such as .com, is usually ignored. A domain that contains the whole mark, even with an added word, is often found confusingly similar. This element is a low bar: it only shows that the complainant has standing, and most cases are decided on the other two.
+Panels compare the domain with the trademark side by side and usually ignore the extension. A domain that contains the whole mark, even with an added word, is often found confusingly similar. This is a low bar; most cases turn on the other two elements.
 
 ### Element 2: no rights or legitimate interests
 
@@ -60,11 +60,11 @@ The UDRP lists ways a domain holder can show a legitimate interest:
 - Being commonly known by the name, as a person, business or organisation.
 - Making a legitimate non-commercial or fair use of the name, without intent to mislead consumers or tarnish the mark.
 
-The complainant makes a first case, and then the holder needs to bring evidence. A dictionary word used for its dictionary meaning is a common legitimate interest.
+A dictionary word used for its dictionary meaning is a common legitimate interest.
 
 ### Element 3: bad faith under the UDRP
 
-The policy gives examples of bad faith. They include registering a name mainly to sell it to the trademark owner or a competitor for more than the costs of registration, registering names to block owners from using their marks as part of a pattern, registering mainly to disrupt a competitor, and using the name to attract visitors for profit by creating confusion with the mark. The complainant must show bad faith both when the name was registered and in how it is used. A domain registered years before the trademark existed is rarely found to be registered in bad faith.
+The policy's examples include registering a name mainly to sell it to the trademark owner or a competitor for more than the registration costs, blocking owners from using their marks as a pattern, disrupting a competitor, and attracting visitors for profit by creating confusion with the mark. A domain registered years before the trademark existed is rarely found to be registered in bad faith.
 
 ### How a case works
 
@@ -75,21 +75,19 @@ The policy gives examples of bad faith. They include registering a name mainly t
 
 ## The UDRP timeline, step by step
 
-The rules set short deadlines, which is why the UDRP is faster than a lawsuit. A typical case under the [WIPO process](https://www.wipo.int/amc/en/domains/) runs like this:
+Short deadlines make the process faster than a lawsuit. A typical case under the [WIPO process](https://www.wipo.int/amc/en/domains/) runs like this:
 
-1. **Complaint filed.** The complainant files the complaint and pays the provider's fee. The provider checks that the complaint is complete.
-2. **Domain locked.** The registrar confirms who holds the domain and locks it, so it cannot be moved to another holder or registrar while the case runs.
-3. **Case starts.** The provider notifies the domain holder, and the formal proceeding begins.
+1. **Complaint filed.** The complainant files and pays the provider's fee.
+2. **Domain locked.** The registrar confirms the holder and locks the domain while the case runs.
+3. **Case starts.** The provider notifies the domain holder.
 4. **Response due.** The holder has 20 days to file a written response with evidence.
 5. **Panel appointed.** The provider appoints a panel of one or three members.
-6. **Decision.** The panel normally decides within 14 days of its appointment, on the written record only. There are no hearings.
-7. **Implementation.** If the decision orders a transfer or cancellation, the registrar waits 10 business days. If the holder shows in that time that it has started a court case, the registrar holds off.
-
-From filing to decision, most UDRP cases take about two months. The proceeding is usually in the language of the registration agreement.
+6. **Decision.** The panel normally decides within 14 days of its appointment, on the written record. There are no hearings.
+7. **Implementation.** The registrar waits 10 business days before a transfer or cancellation, and holds off if the holder starts a court case in that time.
 
 ### Who pays for a UDRP case
 
-The complainant pays the provider's fee, which depends on the number of domains and the size of the panel. The provider publishes its fees on its website. A domain holder pays nothing to respond, unless it asks for a three-member panel, in which case the two sides share that cost. Each side pays its own lawyer.
+The complainant pays the provider's published fee. A holder pays nothing to respond unless it asks for a three-member panel, in which case the two sides share that cost. Each side pays its own lawyer.
 
 ## Possible UDRP outcomes
 
@@ -99,21 +97,19 @@ A panel can reach one of three results:
 - **Cancellation:** the registration is deleted. Complainants rarely ask for this, because the name can then be registered by someone else.
 - **Complaint denied:** the holder keeps the domain.
 
-Decisions are published, so anyone can read the reasoning. A losing holder cannot appeal within the UDRP, but can go to court in the relevant jurisdiction. A losing complainant can also go to court or, in limited situations, file again with new evidence.
+Decisions are published. There is no appeal within the process, but either side can go to court.
 
 ### Reverse domain name hijacking
 
-If a panel finds that a complainant brought a case in bad faith, for example to pressure a legitimate owner into giving up a name it could not buy, it can declare reverse domain name hijacking. The finding is published, but it carries no fine or damages.
+If a complainant brought a case in bad faith, for example to pressure an owner into giving up a name it could not buy, the panel can declare reverse domain name hijacking. The finding carries no fine.
 
 ## The UDRP and other dispute processes
 
-The UDRP covers .com, .net, .org and the other generic extensions, but it is not the only route.
+The policy covers .com, .net, .org and other generic extensions, but it is not the only route.
 
-- **Uniform Rapid Suspension (URS):** a faster, cheaper process for newer generic extensions, for the clearest cases. The only remedy is suspension of the domain, not transfer.
+- **Uniform Rapid Suspension (URS):** a faster process for newer generic extensions and the clearest cases. The only remedy is suspension.
 - **Country-code policies:** many country-code extensions run their own process. For example, .uk disputes go to Nominet's dispute resolution service.
-- **Courts:** either side can go to court, before, during or after a UDRP case. In the United States, the Anticybersquatting Consumer Protection Act can award damages, which the UDRP cannot.
-
-Other approved UDRP providers besides WIPO include the Forum and the Czech Arbitration Court.
+- **Courts:** either side can go to court at any stage. In the United States, the Anticybersquatting Consumer Protection Act can award damages.
 
 ## How to protect yourself as a buyer
 
@@ -144,7 +140,6 @@ Premium domains are valuable because they are clear, common words and phrases, a
 !details:How long does a UDRP case take?|Most UDRP cases take about two months from filing to decision. The holder has 20 days to respond, and the panel normally decides within 14 days of its appointment. If the panel orders a transfer, the registrar waits 10 business days before acting, to allow the holder to start a court case.
 !details:Can I lose a domain under the UDRP if I bought it in good faith?|The complainant has to prove all three elements, including bad faith at registration and in use. A name made of common words, bought and used for their ordinary meaning, is in a strong position. Keep records that show why and when you chose the name, and respond to any complaint on time.
 !details:What happens if I ignore a UDRP complaint?|The panel decides on the complainant's evidence alone. Panels still check that all three elements are met, but without a response the holder loses the chance to show a legitimate interest or good faith. Ignoring a complaint is the quickest way to lose a name.
-!details:Can the UDRP award money?|No. The only remedies are transfer or cancellation of the domain. Each side pays its own costs, and the complainant pays the provider fee. Money damages require a court case, for example under the Anticybersquatting Consumer Protection Act in the United States.
 
 ## Where to go next
 
