@@ -116,6 +116,9 @@ if ( ! function_exists( 'db_lk_dns' ) ) {
 				}
 			}
 			$out[ $type ] = array_slice( $rows, 0, 6 );
+			if ( 'A' === $type ) {
+				$out['AD'] = ! empty( $r['json']['AD'] );
+			}
 		}
 		$out['SPF'] = (bool) array_filter( $out['TXT'], static function ( $t ) { return 0 === stripos( $t, 'v=spf1' ); } );
 		unset( $out['TXT'] );
@@ -202,40 +205,67 @@ if ( ! function_exists( 'db_lk_ssl' ) ) {
 }
 
 if ( ! function_exists( 'db_lk_site' ) ) {
-	/** How the website answers: status, final address, server and security headers. @return array<string,mixed> */
+	/**
+	 * How the website answers: the redirect chain, final status, response headers and security headers.
+	 * Each hop is fetched with wp_safe_remote_get, which refuses private and reserved addresses.
+	 *
+	 * @return array<string,mixed>
+	 */
 	function db_lk_site( $name ) {
-		$res = wp_safe_remote_get( 'https://' . $name . '/', array( 'timeout' => 6, 'redirection' => 5, 'limit_response_size' => 20000, 'user-agent' => 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)' ) );
-		$https = true;
-		if ( is_wp_error( $res ) ) {
-			$res   = wp_safe_remote_get( 'http://' . $name . '/', array( 'timeout' => 6, 'redirection' => 5, 'limit_response_size' => 20000, 'user-agent' => 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)' ) );
-			$https = false;
+		$ua   = 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)';
+		$url  = 'https://' . $name . '/';
+		$hops = array();
+		$res  = null;
+		for ( $i = 0; $i < 6; $i++ ) {
+			$res = wp_safe_remote_get( $url, array( 'timeout' => 6, 'redirection' => 0, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
+			if ( is_wp_error( $res ) && 0 === $i ) {
+				$url = 'http://' . $name . '/';
+				$res = wp_safe_remote_get( $url, array( 'timeout' => 6, 'redirection' => 0, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
+			}
+			if ( is_wp_error( $res ) ) {
+				break;
+			}
+			$code   = (int) wp_remote_retrieve_response_code( $res );
+			$hops[] = array( 'url' => esc_url_raw( $url ), 'code' => $code );
+			$loc    = (string) wp_remote_retrieve_header( $res, 'location' );
+			if ( $code >= 300 && $code < 400 && '' !== $loc ) {
+				$url = WP_Http::make_absolute_url( $loc, $url );
+				continue;
+			}
+			break;
 		}
-		if ( is_wp_error( $res ) ) {
+		if ( ! $hops || ! $res || is_wp_error( $res ) && ! $hops ) {
 			return array( 'state' => 'none' );
 		}
-		$h     = wp_remote_retrieve_headers( $res );
-		$final = $name;
-		if ( isset( $res['http_response'] ) && is_object( $res['http_response'] ) && method_exists( $res['http_response'], 'get_response_object' ) ) {
-			$final = (string) ( $res['http_response']->get_response_object()->url ?? '' );
-		}
-		$body  = (string) wp_remote_retrieve_body( $res );
+		$last  = end( $hops );
+		$h     = is_wp_error( $res ) ? array() : wp_remote_retrieve_headers( $res );
+		$body  = is_wp_error( $res ) ? '' : (string) wp_remote_retrieve_body( $res );
 		$title = '';
 		if ( preg_match( '#<title[^>]*>(.*?)</title>#is', $body, $m ) ) {
 			$title = trim( wp_strip_all_tags( html_entity_decode( $m[1], ENT_QUOTES, 'UTF-8' ) ) );
 			$title = function_exists( 'mb_substr' ) ? mb_substr( $title, 0, 120 ) : substr( $title, 0, 120 );
 		}
 		$sec = array();
-		foreach ( array( 'strict-transport-security' => 'HSTS', 'content-security-policy' => 'CSP', 'x-frame-options' => 'X-Frame-Options', 'x-content-type-options' => 'X-Content-Type-Options', 'referrer-policy' => 'Referrer-Policy' ) as $k => $label ) {
+		foreach ( array( 'strict-transport-security' => 'Strict-Transport-Security', 'content-security-policy' => 'Content-Security-Policy', 'x-frame-options' => 'X-Frame-Options', 'x-content-type-options' => 'X-Content-Type-Options', 'referrer-policy' => 'Referrer-Policy', 'permissions-policy' => 'Permissions-Policy' ) as $k => $label ) {
 			$sec[ $label ] = isset( $h[ $k ] );
 		}
+		$shown = array();
+		foreach ( array( 'content-type', 'server', 'date', 'cache-control', 'content-encoding', 'content-length', 'last-modified', 'etag', 'vary', 'x-powered-by', 'strict-transport-security', 'content-security-policy', 'x-frame-options', 'x-content-type-options', 'referrer-policy', 'permissions-policy', 'location' ) as $k ) {
+			if ( isset( $h[ $k ] ) ) {
+				$v            = is_array( $h[ $k ] ) ? implode( ', ', $h[ $k ] ) : (string) $h[ $k ];
+				$shown[ $k ] = sanitize_text_field( function_exists( 'mb_substr' ) ? mb_substr( $v, 0, 180 ) : substr( $v, 0, 180 ) );
+			}
+		}
 		return array(
-			'state'  => 'ok',
-			'code'   => (int) wp_remote_retrieve_response_code( $res ),
-			'https'  => $https,
-			'final'  => esc_url_raw( $final ),
-			'server' => sanitize_text_field( (string) ( $h['server'] ?? '' ) ),
-			'title'  => sanitize_text_field( $title ),
-			'secure' => $sec,
+			'state'   => 'ok',
+			'code'    => (int) $last['code'],
+			'https'   => 0 === strpos( $last['url'], 'https://' ),
+			'final'   => $last['url'],
+			'hops'    => $hops,
+			'server'  => sanitize_text_field( (string) ( $h['server'] ?? '' ) ),
+			'title'   => sanitize_text_field( $title ),
+			'secure'  => $sec,
+			'headers' => $shown,
 		);
 	}
 }
@@ -405,11 +435,96 @@ if ( ! function_exists( 'db_lk_estimate' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_parts' ) ) {
+	/** Every part a lookup can return. */
+	function db_lk_parts() {
+		return array( 'registry', 'dns', 'ssl', 'site', 'dmarc', 'host', 'archive', 'rank', 'comparables', 'estimate' );
+	}
+}
+
+if ( ! function_exists( 'db_lk_collect' ) ) {
+	/**
+	 * The lookup result for a name, computing only the requested parts that are not cached yet.
+	 * Parts that were not requested come back in their empty shape so the page script never breaks.
+	 *
+	 * @param string   $name  Validated domain name.
+	 * @param string[] $parts Requested parts (empty = all).
+	 * @return array<string,mixed>
+	 */
+	function db_lk_collect( $name, array $parts ) {
+		$all   = db_lk_parts();
+		$parts = $parts ? array_values( array_intersect( $all, $parts ) ) : $all;
+		if ( in_array( 'host', $parts, true ) && ! in_array( 'dns', $parts, true ) ) {
+			$parts[] = 'dns';
+		}
+		$key  = 'db_lk3_' . md5( $name );
+		$data = get_transient( $key );
+		$data = is_array( $data ) ? $data : array( 'domain' => $name, 'done' => array() );
+		foreach ( $parts as $part ) {
+			if ( in_array( $part, (array) $data['done'], true ) ) {
+				continue;
+			}
+			switch ( $part ) {
+				case 'registry':
+					$data['registry'] = db_lk_registry( $name );
+					break;
+				case 'dns':
+					$data['dns'] = db_lk_dns( $name );
+					break;
+				case 'ssl':
+					$data['ssl'] = db_lk_ssl( $name );
+					break;
+				case 'site':
+					$data['site'] = db_lk_site( $name );
+					break;
+				case 'dmarc':
+					$data['dmarc'] = db_lk_mailauth( $name );
+					break;
+				case 'host':
+					$data['host'] = db_lk_host( $data['dns'] ?? db_lk_dns( $name ) );
+					break;
+				case 'archive':
+					$data['archive'] = db_lk_archive( $name );
+					break;
+				case 'rank':
+					$data['rank'] = db_lk_rank( $name );
+					break;
+				case 'comparables':
+					$data['comparables'] = db_lk_comparables( $name );
+					break;
+				case 'estimate':
+					$data['estimate'] = db_lk_estimate( $name );
+					break;
+			}
+			$data['done'][] = $part;
+		}
+		$data['checked'] = gmdate( 'Y-m-d H:i' ) . ' UTC';
+		set_transient( $key, $data, 6 * HOUR_IN_SECONDS );
+		$empty = array(
+			'registry'    => array( 'state' => 'skipped' ),
+			'dns'         => array(),
+			'ssl'         => array( 'state' => 'skipped' ),
+			'site'        => array( 'state' => 'skipped' ),
+			'dmarc'       => array( 'state' => 'skipped' ),
+			'host'        => array( 'state' => 'skipped' ),
+			'archive'     => array( 'state' => 'skipped' ),
+			'rank'        => array( 'state' => 'skipped' ),
+			'comparables' => array( 'sold' => array( 'state' => 'none' ), 'ask' => array( 'state' => 'none' ) ),
+			'estimate'    => null,
+		);
+		$out         = array_merge( $empty, array_intersect_key( $data, $empty ) );
+		$out['domain']  = $name;
+		$out['checked'] = $data['checked'];
+		$out['name']    = db_lk_name( $name );
+		return $out;
+	}
+}
+
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'db/v1', '/domain-lookup', array(
 		'methods'             => 'GET',
 		'permission_callback' => '__return_true',
-		'args'                => array( 'd' => array( 'required' => true, 'type' => 'string' ) ),
+		'args'                => array( 'd' => array( 'required' => true, 'type' => 'string' ), 'parts' => array( 'required' => false, 'type' => 'string' ) ),
 		'callback'            => function ( WP_REST_Request $req ) {
 			$raw = strtolower( trim( (string) $req->get_param( 'd' ) ) );
 			$raw = preg_replace( '#^https?://#', '', $raw );
@@ -427,26 +542,8 @@ add_action( 'rest_api_init', function () {
 			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
-			$key  = 'db_lk2_' . md5( $name );
-			$data = get_transient( $key );
-			if ( ! is_array( $data ) ) {
-				$data = array(
-					'domain'      => $name,
-					'registry'    => db_lk_registry( $name ),
-					'dns'         => $dns = db_lk_dns( $name ),
-					'ssl'         => db_lk_ssl( $name ),
-					'site'        => db_lk_site( $name ),
-					'dmarc'       => db_lk_mailauth( $name ),
-					'host'        => db_lk_host( $dns ),
-					'name'        => db_lk_name( $name ),
-					'archive'     => db_lk_archive( $name ),
-					'rank'        => db_lk_rank( $name ),
-					'comparables' => db_lk_comparables( $name ),
-					'estimate'    => db_lk_estimate( $name ),
-					'checked'     => gmdate( 'Y-m-d H:i' ) . ' UTC',
-				);
-				set_transient( $key, $data, 6 * HOUR_IN_SECONDS );
-			}
+			$parts = array_filter( array_map( 'sanitize_key', explode( ',', (string) $req->get_param( 'parts' ) ) ) );
+			$data  = db_lk_collect( $name, $parts );
 			return $send( $data );
 		},
 	) );
@@ -533,9 +630,9 @@ if ( ! function_exists( 'db_lk_body' ) ) {
 	function db_lk_body() {
 		$u    = static function ( $p ) { return esc_url( home_url( $p ) ); };
 		$h    = '<p class="db-sales-lead">Look up any domain name with free public data: who registered it and when, where it points, whether the web remembers it, and what similar names have sold for.</p>';
-		$h   .= '<style>' . db_lk_css() . '</style><div class="dblk" id="dblk">';
-		$h   .= '<form class="dblk-form" id="dblk-form" novalidate><label for="dblk-in">Domain name</label><div class="dblk-row"><input id="dblk-in" name="d" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" required><button type="submit">Look up</button></div><p class="dblk-hint">Free. Results come from public sources and are cached for a few hours.</p></form>';
-		$h   .= '<div id="dblk-out" class="dblk-out" aria-live="polite"></div>';
+		$h   .= db_lk_widget();
+		$h   .= (string) apply_filters( 'db_lk_hub_tools', '' );
+		$h   .= '<div class="dblk">';
 		$h   .= '<section class="dblk-src"><h2>Where the information comes from</h2><ul>'
 			. '<li><strong>Registry record.</strong> The public RDAP record held by the domain\'s registry: registration and expiry dates, registrar, status and name servers.</li>'
 			. '<li><strong>DNS.</strong> Live records from Cloudflare\'s public resolver: website address, mail servers and name servers.</li>'
@@ -548,7 +645,6 @@ if ( ! function_exists( 'db_lk_body' ) ) {
 			. '<li><strong>Comparable sales.</strong> Recorded sale prices of similar names Domain Brothers has sold, and the asking prices of similar names listed now.</li></ul>'
 			. '<p>This is information, not an appraisal or advice. What a name sells for depends on the buyer, the seller and the moment. Looking for a name? <a href="' . $u( '/all-domains/' ) . '">Browse all domains</a>, try the <a href="' . $u( '/find-a-domain/' ) . '">domain finder</a>, see <a href="' . $u( '/sold/' ) . '">what has sold</a> or use the <a href="' . $u( '/payment-terms/' ) . '">payment plan calculator</a>.</p>'
 			. '<p><a class="dblk-cta" href="' . $u( '/all-domains/' ) . '">Buy a premium domain now</a></p></section></div>';
-		$h   .= '<script data-no-delay>' . db_lk_js( esc_url_raw( rest_url( 'db/v1/domain-lookup' ) ) ) . '</script>';
 		return $h;
 	}
 }
@@ -576,31 +672,36 @@ if ( ! function_exists( 'db_lk_css' ) ) {
 }
 
 if ( ! function_exists( 'db_lk_js' ) ) {
-	/** Client script: reads the form, calls the endpoint and builds the cards with textContent only. */
-	function db_lk_js( $endpoint ) {
-		return '(function(){var f=document.getElementById("dblk-form"),o=document.getElementById("dblk-out");if(!f||!o)return;var EP=' . wp_json_encode( $endpoint ) . ',EXT=' . wp_json_encode( esc_url_raw( rest_url( 'db/v1/domain-extensions' ) ) ) . ';'
-			. 'function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}'
-			. 'function money(n){return "$"+Math.round(n).toLocaleString("en-US")}'
-			. 'function card(title,rows,wide){var c=el("div","dblk-card"+(wide?" is-wide":""));c.appendChild(el("h3","",title));if(typeof rows==="string"){c.appendChild(el("p","",rows));return c}var d=el("dl");rows.forEach(function(r){d.appendChild(el("dt","",r[0]));d.appendChild(el("dd","",r[1]))});c.appendChild(d);return c}'
-			. 'function render(j){o.textContent="";var h=el("div","dblk-head");h.appendChild(el("strong","",j.domain));h.appendChild(el("span","","Checked "+j.checked));o.appendChild(h);'
-			. 'var r=j.registry;if(r.state==="ok"){var e=r.events||{};var rows=[["Registered",e.registration||"Not shown"],["Expires",e.expiration||"Not shown"],["Last changed",e["last changed"]||e.lastchanged||"Not shown"],["Registrar",r.registrar||"Not shown"],["DNSSEC",r.dnssec===null?"Not shown":(r.dnssec?"Signed":"Not signed")]];var c=card("Registry record",rows);if(r.status&&r.status.length){var p=el("p");p.style.marginTop="12px";r.status.forEach(function(s){p.appendChild(el("span","dblk-pill",s))});c.appendChild(p)}o.appendChild(c)}'
-			. 'else if(r.state==="none"){o.appendChild(card("Registry record","No registration record was found. The name looks unregistered."))}else{o.appendChild(card("Registry record","This extension does not publish a public registry record, or the registry did not answer."))}'
-			. 'var d=j.dns||{},has=function(k){return d[k]&&d[k].length};o.appendChild(card("DNS",[["Website address",has("A")||has("AAAA")?(d.A||[]).concat(d.AAAA||[]).join(", "):"None"],["Mail servers",has("MX")?d.MX.join(", "):"None"],["Name servers",has("NS")?d.NS.join(", "):"None"],["SPF record",d.SPF?"Present":"Not found"]]));'
-			. 'var a=j.archive;if(a.state==="ok"){var ca=card("Web history","The Wayback Machine has captured this name. Latest capture near "+a.date+".");var l=el("p");l.style.marginTop="10px";var an=el("a","","See the captures");an.href=a.url;an.target="_blank";an.rel="noopener";l.appendChild(an);ca.appendChild(l);o.appendChild(ca)}else{o.appendChild(card("Web history",a.state==="none"?"No captures found in the Wayback Machine.":"The archive did not answer."))}'
-			. 'var k=j.rank;o.appendChild(card("Popularity",k.state==="ok"?"Ranked #"+k.rank.toLocaleString("en-US")+" in the Tranco top one million sites ("+k.date+").":(k.state==="none"?"Not in the top one million sites. Most names are not.":"The ranking service did not answer.")));'
-			. 'var m=j.comparables.sold;if(m.state==="ok"){o.appendChild(card("Comparable sales at Domain Brothers",[["Basis",m.basis],["Names sold",String(m.count)],["Median price",money(m.median)],["Range",money(m.low)+" to "+money(m.high)]]))}else{o.appendChild(card("Comparable sales at Domain Brothers","Too few similar names have a recorded sale price to show a fair comparison."))}var n=j.comparables.ask;if(n.state==="ok"){o.appendChild(card("Similar names for sale now (asking prices)",[["Basis",n.basis],["Names listed",String(n.count)],["Median asking price",money(n.median)],["Range",money(n.low)+" to "+money(n.high)]]))}var sl=j.ssl;if(sl.state==="ok"){var sr=[["Issuer",sl.issuer||"Not shown"],["Valid from",sl.from],["Expires",sl.to+(sl.days!==null?" ("+(sl.days<0?"expired":sl.days+" days left")+")":"")],["Covers this name",sl.covers?"Yes":"No"]];o.appendChild(card("SSL certificate",sr))}else{o.appendChild(card("SSL certificate","No certificate was found on port 443. The site may not use HTTPS."))}'
-			. 'var st=j.site;if(st.state==="ok"){var sec=st.secure||{},on=Object.keys(sec).filter(function(k){return sec[k]}),off=Object.keys(sec).filter(function(k){return !sec[k]});o.appendChild(card("Website response",[["Status",String(st.code)+(st.https?" over HTTPS":" over HTTP only")],["Final address",st.final||"Not shown"],["Page title",st.title||"None"],["Server",st.server||"Not shown"],["Security headers",on.length+" of "+(on.length+off.length)+(off.length?" (missing: "+off.join(", ")+")":"")]]))}else{o.appendChild(card("Website response","The website did not respond."))}'
-			. 'var dm=j.dmarc,ho=j.host;o.appendChild(card("Email security",[["SPF",(j.dns&&j.dns.SPF)?"Present":"Not found"],["DMARC",dm.state==="ok"?"Present, policy: "+dm.policy:"Not found"]]));'
-			. 'if(ho.state==="ok"){o.appendChild(card("Hosting network",[["Address",ho.ip],["Network",ho.network||"Not shown"],["Country",ho.country||"Not shown"]]))}'
-			. 'var nm=j.name;o.appendChild(card("The name itself",[["Length",nm.length+" characters before the dot"],["Extension","."+nm.extension],["Type",nm.type],["Hyphens",String(nm.hyphens)],["Digits",String(nm.digits)],["Easy to read aloud",nm.readable?"Likely":"Probably not"]]));'
-			. 'var xc=el("div","dblk-card is-wide");xc.appendChild(el("h3","","Other extensions"));var xp=el("p","","See whether "+nm.label+" has a registration record under other popular extensions.");xc.appendChild(xp);var xb=el("button","dblk-sec","Check extensions");xb.type="button";xc.appendChild(xb);o.appendChild(xc);'
-			. 'xb.addEventListener("click",function(){xb.disabled=true;xb.textContent="Checking...";fetch(EXT+"?d="+encodeURIComponent(nm.label),{headers:{Accept:"application/json"}}).then(function(r){return r.json().then(function(q){return{ok:r.ok,q:q}})}).then(function(x){xb.remove();if(!x.ok){xp.textContent=(x.q&&(x.q.error||x.q.message))||"The check failed.";return}xp.textContent="";x.q.results.forEach(function(e){xp.appendChild(el("span","dblk-pill dblk-"+e.state,"."+e.ext+": "+(e.state==="free"?"no record found":(e.state==="taken"?"registered":"cannot be checked"))))});xc.appendChild(el("p","dblk-hint","No record found means the registry shows no registration. Confirm with a registrar before relying on it."))}).catch(function(){xb.remove();xp.textContent="The check could not be completed."})});'
-			. 'var s=j.estimate;if(s&&s.state==="ok"){o.appendChild(card("Computer estimate (not an appraisal)",[["Auction",money(s.auction)],["Marketplace",money(s.marketplace)],["Brokerage",money(s.brokerage)]],true))}'
-			. '}'
-			. 'f.addEventListener("submit",function(ev){ev.preventDefault();var v=f.d.value.trim();if(!v)return;var b=f.querySelector("button");b.disabled=true;b.textContent="Looking up...";o.textContent="";'
-			. 'fetch(EP+"?d="+encodeURIComponent(v),{headers:{Accept:"application/json"}}).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})}).then(function(x){if(!x.ok){var e=el("div","dblk-err",(x.j&&(x.j.error||x.j.message))||"Lookup failed.");o.appendChild(e)}else{render(x.j)}}).catch(function(){o.appendChild(el("div","dblk-err","The lookup could not be completed. Check your connection and try again."))}).then(function(){b.disabled=false;b.textContent="Look up"})});'
-			. 'var q=new URLSearchParams(location.search).get("d");if(q){f.d.value=q;f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit",{cancelable:true}))}'
-			. '}());';
+	/**
+	 * Client script: config first, then assets/domain-lookup.js (cards are built with textContent only).
+	 *
+	 * @param array<string,mixed> $cfg Keys: show (card titles; empty = all), parts (lookups to run), autoext, button.
+	 * @return string
+	 */
+	function db_lk_js( array $cfg = array() ) {
+		$cfg += array( 'show' => array(), 'parts' => array(), 'autoext' => false, 'button' => 'Look up' );
+		$cfg['ep']  = esc_url_raw( rest_url( 'db/v1/domain-lookup' ) );
+		$cfg['ext'] = esc_url_raw( rest_url( 'db/v1/domain-extensions' ) );
+		$file       = __DIR__ . '/assets/domain-lookup.js';
+		$js         = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions
+		return 'window.DBLK=' . wp_json_encode( $cfg ) . ';' . $js;
+	}
+}
+
+if ( ! function_exists( 'db_lk_widget' ) ) {
+	/**
+	 * The lookup form, result area and script.
+	 *
+	 * @param array<string,mixed> $cfg    See db_lk_js().
+	 * @param string              $label  Field label.
+	 * @param string              $hint   Placeholder text.
+	 */
+	function db_lk_widget( array $cfg = array(), $label = 'Domain name', $hint = 'example.com' ) {
+		$cfg += array( 'button' => 'Look up' );
+		return '<style>' . db_lk_css() . '</style><div class="dblk" id="dblk">'
+			. '<form class="dblk-form" id="dblk-form" novalidate><label for="dblk-in">' . esc_html( $label ) . '</label><div class="dblk-row"><input id="dblk-in" name="d" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' . esc_attr( $hint ) . '" required><button type="submit">' . esc_html( $cfg['button'] ) . '</button></div><p class="dblk-hint">Free. Results come from public sources and are cached for a few hours.</p></form>'
+			. '<div id="dblk-out" class="dblk-out" aria-live="polite"></div></div>'
+			. '<script data-no-delay>' . db_lk_js( $cfg ) . '</script>';
 	}
 }
 
@@ -608,11 +709,9 @@ add_action( 'template_redirect', function () {
 	if ( is_admin() || ! function_exists( 'db_sales_request_path' ) || 'domain-tools' !== db_sales_request_path() ) {
 		return;
 	}
-	add_filter( 'pre_get_document_title', static function () {
-		return 'Free Domain Tools: Lookup, SSL, DNS, Email Security and Extensions | Domain Brothers';
-	} );
+	// Title, description and Open Graph come from db_tp_route_meta() (db-tool-pages-block.php).
 	add_action( 'wp_head', static function () {
-		echo '<meta name="description" content="Look up any domain for free: registration date, registrar, expiry, DNS records, web history, popularity rank and what similar names have sold for.">' . "\n";
+		echo '<link rel="canonical" href="' . esc_url( home_url( '/domain-tools/' ) ) . '">' . "\n";
 	}, 1 );
 	db_sales_render( 'Free domain tools', 'Domain tools', db_lk_body() );
 }, 11 );
