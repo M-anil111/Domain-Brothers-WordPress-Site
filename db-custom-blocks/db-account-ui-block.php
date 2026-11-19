@@ -246,3 +246,37 @@ add_action( 'wp_footer', function () {
 </script>
 	<?php
 }, 93 );
+
+/*
+ * Navigation labels, fixed in the page output.
+ *
+ *  - Signed in: the header shows "My account" and Sign out straight away. The
+ *    script that does this waits for the first interaction on this site, so a
+ *    signed-in visitor saw "Sign in" and "Create account" until they moved.
+ *    Signed-in pages are never served from the page cache, so this is safe.
+ *  - The theme's footer links "Payment Plans" to the FAQs. It now goes to the
+ *    Payment terms page under that name (the theme file is not edited).
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || is_feed() || is_embed() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+		return;
+	}
+	$signed_in = function_exists( 'db_wl_email' ) && '' !== db_wl_email();
+	ob_start( function ( $html ) use ( $signed_in ) {
+		if ( ! is_string( $html ) || '' === $html ) {
+			return $html;
+		}
+		if ( false !== strpos( $html, '>Payment Plans</a>' ) ) {
+			$out  = preg_replace( '#<a href="[^"]*/faqs/?"([^>]*)>Payment Plans</a>#', '<a href="' . esc_url( home_url( '/payment-terms/' ) ) . '"$1>Payment Terms</a>', $html );
+			$html = is_string( $out ) ? $out : $html;
+		}
+		if ( $signed_in && false !== strpos( $html, 'data-db-acct=' ) ) {
+			$html = preg_replace( '#<a([^>]*?)href="[^"]*/sign-in/?"([^>]*?)data-db-acct="signin">Sign in</a>#', '<a$1href="' . esc_url( home_url( '/my-wishlist/' ) ) . '"$2data-db-acct="signin">My account</a>', $html ) ?: $html;
+			$html = preg_replace( '#(<a[^>]*?data-db-acct="register")([^>]*>)#', '$1 hidden$2', $html ) ?: $html;
+			$html = preg_replace( '#(data-db-acct="signout")\s+hidden#', '$1', $html ) ?: $html;
+			$html = preg_replace( '#<li([^>]*?)\s+hidden(>\s*<a[^>]*data-db-acct="(?:signout)")#', '<li$1$2', $html ) ?: $html;
+			$html = preg_replace( '#<li([^>]*?)(>\s*<a[^>]*data-db-acct="register")#', '<li$1 hidden$2', $html ) ?: $html;
+		}
+		return $html;
+	} );
+}, 3 );
