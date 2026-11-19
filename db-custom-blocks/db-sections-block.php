@@ -122,10 +122,10 @@ if ( ! function_exists( 'db_develop_banner_html' ) ) {
 			'app'     => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="2.500" width="10" height="19" rx="2.500"/><path d="M11 18.500h2"/></svg>',
 		);
 		$cards = array(
-			array( 'logo', 'Get a logo designed', 'A mark and brand look that fit the name.', home_url( '/other-services/' ) ),
-			array( 'social', 'Social media marketing', 'Launch campaigns that find your first customers.', home_url( '/digital-marketing/' ) ),
+			array( 'logo', 'Get a logo designed', 'A mark and brand look that fit the name.', home_url( '/website-design-development/' ) ),
+			array( 'social', 'Social media marketing', 'Launch campaigns that find your first customers.', home_url( '/digital-marketing-services/' ) ),
 			array( 'website', 'Website design and build', 'A fast, modern site, live on ' . $name . '.', home_url( '/website-design-development/' ) ),
-			array( 'app', 'Mobile apps', 'iPhone and Android apps for your idea.', home_url( '/mobile-app-development/' ) ),
+			array( 'app', 'Mobile apps', 'iPhone and Android apps for your idea.', home_url( '/mobile-app-development-services/' ) ),
 		);
 		$html  = '<section class="db-dev" aria-labelledby="db-dev-h"><div class="db-dev-inner">';
 		$html .= '<div class="db-dev-copy"><p class="db-dev-eyebrow">Domain Brothers Studio</p><h2 id="db-dev-h">Want to develop this domain?</h2><p class="db-dev-sub">Buy <strong>' . esc_html( $name ) . '</strong> and build on it with one team: logo, social media, website and mobile apps, from first sketch to launch day.</p>';

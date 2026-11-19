@@ -468,10 +468,10 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 		// Service chips — reuse db_services_list() if available
 		$services = function_exists( 'db_services_list' ) ? db_services_list() : array(
 			'Website Design & Development' => '/website-design-development/',
-			'Digital Marketing'            => '/digital-marketing/',
-			'Software Development'         => '/software-development/',
-			'Mobile App Development'       => '/mobile-app-development/',
-			'Other Services'               => '/other-services/',
+			'Digital Marketing'            => '/digital-marketing-services/',
+			'Software Development'         => '/custom-software-development-services/',
+			'Mobile App Development'       => '/mobile-app-development-services/',
+			'Hosting & Maintenance'        => '/web-hosting-maintenance-services/',
 		);
 
 		$chips = '<div class="db-ty-chips">';
