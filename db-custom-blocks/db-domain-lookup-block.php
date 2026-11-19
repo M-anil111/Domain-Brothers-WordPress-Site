@@ -54,11 +54,19 @@ if ( ! function_exists( 'db_lk_http' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_rdap_missing' ) ) {
+	/** True when a 404 only means that the extension has no RDAP service (so nothing can be said). */
+	function db_lk_rdap_missing( $body ) {
+		$j = is_array( $body ) ? $body : json_decode( (string) $body, true );
+		return is_array( $j ) && false !== stripos( (string) ( $j['title'] ?? '' ) . ' ' . (string) ( $j['description'][0] ?? '' ), 'no rdap service' );
+	}
+}
+
 if ( ! function_exists( 'db_lk_registry' ) ) {
 	/** @return array<string,mixed> */
 	function db_lk_registry( $name ) {
 		$r = db_lk_http( 'https://rdap.org/domain/' . rawurlencode( $name ) );
-		if ( 404 === $r['code'] ) {
+		if ( 404 === $r['code'] && ! db_lk_rdap_missing( $r['json'] ) ) {
 			return array( 'state' => 'none' );
 		}
 		if ( 200 !== $r['code'] || ! $r['json'] ) {
@@ -144,6 +152,140 @@ if ( ! function_exists( 'db_lk_rank' ) ) {
 		}
 		$ranks = (array) ( $r['json']['ranks'] ?? array() );
 		return empty( $ranks ) ? array( 'state' => 'none' ) : array( 'state' => 'ok', 'rank' => (int) ( $ranks[0]['rank'] ?? 0 ), 'date' => sanitize_text_field( (string) ( $ranks[0]['date'] ?? '' ) ) );
+	}
+}
+
+if ( ! function_exists( 'db_lk_ssl' ) ) {
+	/** Certificate presented on port 443: issuer, validity and days left. @return array<string,mixed> */
+	function db_lk_ssl( $name ) {
+		// Never connect to a name that points inside a private or reserved network.
+		$ip = gethostbyname( $name );
+		if ( $ip === $name || ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return array( 'state' => 'none' );
+		}
+		$ctx = stream_context_create( array( 'ssl' => array( 'capture_peer_cert' => true, 'verify_peer' => false, 'verify_peer_name' => false, 'SNI_enabled' => true, 'peer_name' => $name ) ) );
+		$fp  = @stream_socket_client( 'ssl://' . $ip . ':443', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $ctx ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! $fp ) {
+			return array( 'state' => 'none' );
+		}
+		$params = stream_context_get_params( $fp );
+		fclose( $fp );
+		$cert = isset( $params['options']['ssl']['peer_certificate'] ) ? openssl_x509_parse( $params['options']['ssl']['peer_certificate'] ) : false;
+		if ( ! is_array( $cert ) ) {
+			return array( 'state' => 'none' );
+		}
+		$to   = (int) ( $cert['validTo_time_t'] ?? 0 );
+		$from = (int) ( $cert['validFrom_time_t'] ?? 0 );
+		$san  = array();
+		foreach ( explode( ',', (string) ( $cert['extensions']['subjectAltName'] ?? '' ) ) as $part ) {
+			if ( 0 === strpos( trim( $part ), 'DNS:' ) ) {
+				$san[] = sanitize_text_field( substr( trim( $part ), 4 ) );
+			}
+		}
+		$covers = false;
+		foreach ( array_merge( $san, array( (string) ( $cert['subject']['CN'] ?? '' ) ) ) as $n ) {
+			$n = strtolower( $n );
+			if ( $n === $name || ( 0 === strpos( $n, '*.' ) && substr( $name, strpos( $name, '.' ) ) === substr( $n, 1 ) ) ) {
+				$covers = true;
+			}
+		}
+		return array(
+			'state'  => 'ok',
+			'issuer' => sanitize_text_field( (string) ( $cert['issuer']['O'] ?? $cert['issuer']['CN'] ?? '' ) ),
+			'from'   => $from ? gmdate( 'Y-m-d', $from ) : '',
+			'to'     => $to ? gmdate( 'Y-m-d', $to ) : '',
+			'days'   => $to ? (int) floor( ( $to - time() ) / DAY_IN_SECONDS ) : null,
+			'covers' => $covers,
+			'names'  => count( $san ),
+		);
+	}
+}
+
+if ( ! function_exists( 'db_lk_site' ) ) {
+	/** How the website answers: status, final address, server and security headers. @return array<string,mixed> */
+	function db_lk_site( $name ) {
+		$res = wp_safe_remote_get( 'https://' . $name . '/', array( 'timeout' => 6, 'redirection' => 5, 'limit_response_size' => 20000, 'user-agent' => 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)' ) );
+		$https = true;
+		if ( is_wp_error( $res ) ) {
+			$res   = wp_safe_remote_get( 'http://' . $name . '/', array( 'timeout' => 6, 'redirection' => 5, 'limit_response_size' => 20000, 'user-agent' => 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)' ) );
+			$https = false;
+		}
+		if ( is_wp_error( $res ) ) {
+			return array( 'state' => 'none' );
+		}
+		$h     = wp_remote_retrieve_headers( $res );
+		$final = $name;
+		if ( isset( $res['http_response'] ) && is_object( $res['http_response'] ) && method_exists( $res['http_response'], 'get_response_object' ) ) {
+			$final = (string) ( $res['http_response']->get_response_object()->url ?? '' );
+		}
+		$body  = (string) wp_remote_retrieve_body( $res );
+		$title = '';
+		if ( preg_match( '#<title[^>]*>(.*?)</title>#is', $body, $m ) ) {
+			$title = trim( wp_strip_all_tags( html_entity_decode( $m[1], ENT_QUOTES, 'UTF-8' ) ) );
+			$title = function_exists( 'mb_substr' ) ? mb_substr( $title, 0, 120 ) : substr( $title, 0, 120 );
+		}
+		$sec = array();
+		foreach ( array( 'strict-transport-security' => 'HSTS', 'content-security-policy' => 'CSP', 'x-frame-options' => 'X-Frame-Options', 'x-content-type-options' => 'X-Content-Type-Options', 'referrer-policy' => 'Referrer-Policy' ) as $k => $label ) {
+			$sec[ $label ] = isset( $h[ $k ] );
+		}
+		return array(
+			'state'  => 'ok',
+			'code'   => (int) wp_remote_retrieve_response_code( $res ),
+			'https'  => $https,
+			'final'  => esc_url_raw( $final ),
+			'server' => sanitize_text_field( (string) ( $h['server'] ?? '' ) ),
+			'title'  => sanitize_text_field( $title ),
+			'secure' => $sec,
+		);
+	}
+}
+
+if ( ! function_exists( 'db_lk_mailauth' ) ) {
+	/** DMARC policy from the _dmarc record. @return array<string,mixed> */
+	function db_lk_mailauth( $name ) {
+		$r = db_lk_http( 'https://cloudflare-dns.com/dns-query?name=' . rawurlencode( '_dmarc.' . $name ) . '&type=TXT', array( 'Accept' => 'application/dns-json' ) );
+		foreach ( (array) ( $r['json']['Answer'] ?? array() ) as $a ) {
+			$t = trim( (string) ( $a['data'] ?? '' ), '" ' );
+			if ( 0 === stripos( $t, 'v=DMARC1' ) ) {
+				return array( 'state' => 'ok', 'policy' => preg_match( '/\bp=(none|quarantine|reject)/i', $t, $m ) ? strtolower( $m[1] ) : 'unknown' );
+			}
+		}
+		return array( 'state' => 'none' );
+	}
+}
+
+if ( ! function_exists( 'db_lk_host' ) ) {
+	/** Network that owns the website address, from the public RDAP IP record. @return array<string,mixed> */
+	function db_lk_host( array $dns ) {
+		$ip = $dns['A'][0] ?? '';
+		if ( '' === $ip || ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return array( 'state' => 'none' );
+		}
+		$r = db_lk_http( 'https://rdap.org/ip/' . rawurlencode( $ip ) );
+		if ( 200 !== $r['code'] || ! $r['json'] ) {
+			return array( 'state' => 'unavailable', 'ip' => $ip );
+		}
+		return array( 'state' => 'ok', 'ip' => $ip, 'network' => sanitize_text_field( (string) ( $r['json']['name'] ?? '' ) ), 'country' => sanitize_text_field( (string) ( $r['json']['country'] ?? '' ) ) );
+	}
+}
+
+if ( ! function_exists( 'db_lk_name' ) ) {
+	/** Plain facts about the name itself. @return array<string,mixed> */
+	function db_lk_name( $name ) {
+		list( $label, $ext ) = db_lk_split( $name );
+		$core   = str_replace( '-', '', $label );
+		$vowels = preg_match_all( '/[aeiouy]/i', $core );
+		$run    = preg_match( '/[^aeiouy0-9]{5,}/i', $core );
+		return array(
+			'label'     => $label,
+			'length'    => strlen( $label ),
+			'extension' => $ext,
+			'hyphens'   => substr_count( $label, '-' ),
+			'digits'    => preg_match_all( '/[0-9]/', $label ),
+			'idn'       => 0 === strpos( $label, 'xn--' ),
+			'readable'  => strlen( $core ) > 0 && $vowels > 0 && ! $run,
+			'type'      => ctype_digit( $core ) ? 'numeric' : ( ctype_alpha( $core ) ? 'letters only' : 'letters and numbers' ),
+		);
 	}
 }
 
@@ -285,13 +427,18 @@ add_action( 'rest_api_init', function () {
 			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
-			$key  = 'db_lk_' . md5( $name );
+			$key  = 'db_lk2_' . md5( $name );
 			$data = get_transient( $key );
 			if ( ! is_array( $data ) ) {
 				$data = array(
 					'domain'      => $name,
 					'registry'    => db_lk_registry( $name ),
-					'dns'         => db_lk_dns( $name ),
+					'dns'         => $dns = db_lk_dns( $name ),
+					'ssl'         => db_lk_ssl( $name ),
+					'site'        => db_lk_site( $name ),
+					'dmarc'       => db_lk_mailauth( $name ),
+					'host'        => db_lk_host( $dns ),
+					'name'        => db_lk_name( $name ),
 					'archive'     => db_lk_archive( $name ),
 					'rank'        => db_lk_rank( $name ),
 					'comparables' => db_lk_comparables( $name ),
@@ -299,6 +446,82 @@ add_action( 'rest_api_init', function () {
 					'checked'     => gmdate( 'Y-m-d H:i' ) . ' UTC',
 				);
 				set_transient( $key, $data, 6 * HOUR_IN_SECONDS );
+			}
+			return $send( $data );
+		},
+	) );
+} );
+
+if ( ! function_exists( 'db_lk_extensions' ) ) {
+	/**
+	 * Registered or not, for one name across popular extensions, in parallel.
+	 * An RDAP 404 means no registration record; anything else unclear is "unknown".
+	 *
+	 * @return array<int,array{ext:string,state:string}>
+	 */
+	function db_lk_extensions( $label ) {
+		$exts     = array( 'com', 'net', 'org', 'ca', 'io', 'co', 'ai', 'app', 'dev', 'info' );
+		$requests = array();
+		foreach ( $exts as $x ) {
+			$requests[ $x ] = array( 'url' => 'https://rdap.org/domain/' . rawurlencode( $label . '.' . $x ), 'type' => 'GET', 'headers' => array( 'Accept' => 'application/json' ) );
+		}
+		$out = array();
+		if ( class_exists( '\\WpOrg\\Requests\\Requests' ) ) {
+			$res = \WpOrg\Requests\Requests::request_multiple( $requests, array( 'timeout' => 8, 'follow_redirects' => true, 'redirects' => 4 ) );
+			foreach ( $exts as $x ) {
+				$r     = $res[ $x ] ?? null;
+				$code  = ( is_object( $r ) && isset( $r->status_code ) ) ? (int) $r->status_code : 0;
+				$out[] = array( 'ext' => $x, 'state' => 200 === $code ? 'taken' : ( 404 === $code && ! db_lk_rdap_missing( is_object( $r ) ? $r->body : '' ) ? 'free' : 'unknown' ) );
+			}
+			// Some registries drop a connection now and then; try each unclear one once more (at most three).
+			$tries = 0;
+			foreach ( $out as $k => $row ) {
+				if ( 'unknown' === $row['state'] && $tries < 3 ) {
+					++$tries;
+					$r = db_lk_http( 'https://rdap.org/domain/' . rawurlencode( $label . '.' . $row['ext'] ) );
+					if ( 200 === $r['code'] ) {
+						$out[ $k ]['state'] = 'taken';
+					} elseif ( 404 === $r['code'] && ! db_lk_rdap_missing( $r['json'] ) ) {
+						$out[ $k ]['state'] = 'free';
+					}
+				}
+			}
+			return $out;
+		}
+		foreach ( $exts as $x ) {
+			$r     = db_lk_http( $requests[ $x ]['url'] );
+			$out[] = array( 'ext' => $x, 'state' => 200 === $r['code'] ? 'taken' : ( 404 === $r['code'] && ! db_lk_rdap_missing( $r['json'] ) ? 'free' : 'unknown' ) );
+		}
+		return $out;
+	}
+}
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'db/v1', '/domain-extensions', array(
+		'methods'             => 'GET',
+		'permission_callback' => '__return_true',
+		'args'                => array( 'd' => array( 'required' => true, 'type' => 'string' ) ),
+		'callback'            => function ( WP_REST_Request $req ) {
+			$raw   = strtolower( trim( (string) $req->get_param( 'd' ) ) );
+			$label = preg_replace( '#^https?://#', '', $raw );
+			$label = explode( '.', explode( '/', preg_replace( '#^www\.#', '', $label ) )[0] )[0];
+			$send  = static function ( $data, $code = 200 ) {
+				$res = new WP_REST_Response( $data, $code );
+				$res->header( 'Cache-Control', 'no-store' );
+				return $res;
+			};
+			if ( ! preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $label ) ) {
+				return $send( array( 'error' => 'Enter a name such as example.' ), 400 );
+			}
+			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
+			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup-ext|' . $ip, 6, 10 * MINUTE_IN_SECONDS ) ) {
+				return $send( array( 'error' => 'Too many checks. Please wait a few minutes and try again.' ), 429 );
+			}
+			$key  = 'db_lk_ext_' . md5( $label );
+			$data = get_transient( $key );
+			if ( ! is_array( $data ) ) {
+				$data = array( 'label' => $label, 'results' => db_lk_extensions( $label ) );
+				set_transient( $key, $data, 2 * HOUR_IN_SECONDS );
 			}
 			return $send( $data );
 		},
@@ -317,6 +540,10 @@ if ( ! function_exists( 'db_lk_body' ) ) {
 			. '<li><strong>Registry record.</strong> The public RDAP record held by the domain\'s registry: registration and expiry dates, registrar, status and name servers.</li>'
 			. '<li><strong>DNS.</strong> Live records from Cloudflare\'s public resolver: website address, mail servers and name servers.</li>'
 			. '<li><strong>Web history.</strong> Whether the Internet Archive\'s Wayback Machine has captured the site, and when it last did.</li>'
+			. '<li><strong>SSL certificate.</strong> The certificate the site presents on port 443: issuer, validity and whether it covers the name.</li>'
+			. '<li><strong>Website response.</strong> How the site answers a request: status, redirects, server and security headers.</li>'
+			. '<li><strong>Email security and hosting.</strong> SPF and DMARC records, and the network that owns the site\'s address.</li>'
+			. '<li><strong>Other extensions.</strong> Whether a name has a registration record under popular extensions (RDAP).</li>'
 			. '<li><strong>Popularity.</strong> The name\'s position in the Tranco list of the top one million websites, when it appears.</li>'
 			. '<li><strong>Comparable sales.</strong> Recorded sale prices of similar names Domain Brothers has sold, and the asking prices of similar names listed now.</li></ul>'
 			. '<p>This is information, not an appraisal or advice. What a name sells for depends on the buyer, the seller and the moment. Looking for a name? <a href="' . $u( '/all-domains/' ) . '">Browse all domains</a>, try the <a href="' . $u( '/find-a-domain/' ) . '">domain finder</a>, see <a href="' . $u( '/sold/' ) . '">what has sold</a> or use the <a href="' . $u( '/payment-terms/' ) . '">payment plan calculator</a>.</p>'
@@ -334,7 +561,7 @@ if ( ! function_exists( 'db_lk_css' ) ) {
 			. '.dblk-row input:focus{outline:3px solid rgba(181,230,29,.55);border-color:var(--navy)}'
 			. '.dblk-row button,html body .dblk .dblk-cta{display:inline-flex;align-items:center;justify-content:center;padding:15px 24px;border:0;border-radius:12px;background:var(--navy);color:#fff!important;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none}'
 			. '.dblk-row button:hover,html body .dblk .dblk-cta:hover{background:#1b2d49}.dblk-row button[disabled]{opacity:.6;cursor:wait}'
-			. '.dblk-hint{margin:8px 0 0;font-size:14px;color:#5a6475}'
+			. '.dblk-hint{margin:8px 0 0;font-size:14px;color:#5a6475}.dblk-card .dblk-sec{margin-top:12px;padding:11px 18px;border:1px solid var(--navy);border-radius:10px;background:#fff;color:var(--navy);font-size:15px;font-weight:700;cursor:pointer}.dblk-card .dblk-sec:hover{background:var(--soft)}.dblk-pill.dblk-taken{background:#eceff3;color:#4b5563}.dblk-pill.dblk-unknown{background:#fff4d6;color:#7a5a00}'
 			. '.dblk-out{margin:28px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.dblk-out:empty{display:none}'
 			. '.dblk-card{padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff}.dblk-card.is-wide{grid-column:1/-1}'
 			. '.dblk-card h3{margin:0 0 12px;font-size:17px;color:var(--ink)}.dblk-card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:15px}'
@@ -351,17 +578,24 @@ if ( ! function_exists( 'db_lk_css' ) ) {
 if ( ! function_exists( 'db_lk_js' ) ) {
 	/** Client script: reads the form, calls the endpoint and builds the cards with textContent only. */
 	function db_lk_js( $endpoint ) {
-		return '(function(){var f=document.getElementById("dblk-form"),o=document.getElementById("dblk-out");if(!f||!o)return;var EP=' . wp_json_encode( $endpoint ) . ';'
+		return '(function(){var f=document.getElementById("dblk-form"),o=document.getElementById("dblk-out");if(!f||!o)return;var EP=' . wp_json_encode( $endpoint ) . ',EXT=' . wp_json_encode( esc_url_raw( rest_url( 'db/v1/domain-extensions' ) ) ) . ';'
 			. 'function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}'
 			. 'function money(n){return "$"+Math.round(n).toLocaleString("en-US")}'
 			. 'function card(title,rows,wide){var c=el("div","dblk-card"+(wide?" is-wide":""));c.appendChild(el("h3","",title));if(typeof rows==="string"){c.appendChild(el("p","",rows));return c}var d=el("dl");rows.forEach(function(r){d.appendChild(el("dt","",r[0]));d.appendChild(el("dd","",r[1]))});c.appendChild(d);return c}'
 			. 'function render(j){o.textContent="";var h=el("div","dblk-head");h.appendChild(el("strong","",j.domain));h.appendChild(el("span","","Checked "+j.checked));o.appendChild(h);'
 			. 'var r=j.registry;if(r.state==="ok"){var e=r.events||{};var rows=[["Registered",e.registration||"Not shown"],["Expires",e.expiration||"Not shown"],["Last changed",e["last changed"]||e.lastchanged||"Not shown"],["Registrar",r.registrar||"Not shown"],["DNSSEC",r.dnssec===null?"Not shown":(r.dnssec?"Signed":"Not signed")]];var c=card("Registry record",rows);if(r.status&&r.status.length){var p=el("p");p.style.marginTop="12px";r.status.forEach(function(s){p.appendChild(el("span","dblk-pill",s))});c.appendChild(p)}o.appendChild(c)}'
-			. 'else if(r.state==="none"){o.appendChild(card("Registry record","No registration record was found. The name looks unregistered, or this extension does not publish one."))}else{o.appendChild(card("Registry record","The registry did not answer. Try again in a moment."))}'
+			. 'else if(r.state==="none"){o.appendChild(card("Registry record","No registration record was found. The name looks unregistered."))}else{o.appendChild(card("Registry record","This extension does not publish a public registry record, or the registry did not answer."))}'
 			. 'var d=j.dns||{},has=function(k){return d[k]&&d[k].length};o.appendChild(card("DNS",[["Website address",has("A")||has("AAAA")?(d.A||[]).concat(d.AAAA||[]).join(", "):"None"],["Mail servers",has("MX")?d.MX.join(", "):"None"],["Name servers",has("NS")?d.NS.join(", "):"None"],["SPF record",d.SPF?"Present":"Not found"]]));'
 			. 'var a=j.archive;if(a.state==="ok"){var ca=card("Web history","The Wayback Machine has captured this name. Latest capture near "+a.date+".");var l=el("p");l.style.marginTop="10px";var an=el("a","","See the captures");an.href=a.url;an.target="_blank";an.rel="noopener";l.appendChild(an);ca.appendChild(l);o.appendChild(ca)}else{o.appendChild(card("Web history",a.state==="none"?"No captures found in the Wayback Machine.":"The archive did not answer."))}'
 			. 'var k=j.rank;o.appendChild(card("Popularity",k.state==="ok"?"Ranked #"+k.rank.toLocaleString("en-US")+" in the Tranco top one million sites ("+k.date+").":(k.state==="none"?"Not in the top one million sites. Most names are not.":"The ranking service did not answer.")));'
-			. 'var m=j.comparables.sold;if(m.state==="ok"){o.appendChild(card("Comparable sales at Domain Brothers",[["Basis",m.basis],["Names sold",String(m.count)],["Median price",money(m.median)],["Range",money(m.low)+" to "+money(m.high)]]))}else{o.appendChild(card("Comparable sales at Domain Brothers","Too few similar names have a recorded sale price to show a fair comparison."))}var n=j.comparables.ask;if(n.state==="ok"){o.appendChild(card("Similar names for sale now (asking prices)",[["Basis",n.basis],["Names listed",String(n.count)],["Median asking price",money(n.median)],["Range",money(n.low)+" to "+money(n.high)]]))}var s=j.estimate;if(s&&s.state==="ok"){o.appendChild(card("Computer estimate (not an appraisal)",[["Auction",money(s.auction)],["Marketplace",money(s.marketplace)],["Brokerage",money(s.brokerage)]],true))}'
+			. 'var m=j.comparables.sold;if(m.state==="ok"){o.appendChild(card("Comparable sales at Domain Brothers",[["Basis",m.basis],["Names sold",String(m.count)],["Median price",money(m.median)],["Range",money(m.low)+" to "+money(m.high)]]))}else{o.appendChild(card("Comparable sales at Domain Brothers","Too few similar names have a recorded sale price to show a fair comparison."))}var n=j.comparables.ask;if(n.state==="ok"){o.appendChild(card("Similar names for sale now (asking prices)",[["Basis",n.basis],["Names listed",String(n.count)],["Median asking price",money(n.median)],["Range",money(n.low)+" to "+money(n.high)]]))}var sl=j.ssl;if(sl.state==="ok"){var sr=[["Issuer",sl.issuer||"Not shown"],["Valid from",sl.from],["Expires",sl.to+(sl.days!==null?" ("+(sl.days<0?"expired":sl.days+" days left")+")":"")],["Covers this name",sl.covers?"Yes":"No"]];o.appendChild(card("SSL certificate",sr))}else{o.appendChild(card("SSL certificate","No certificate was found on port 443. The site may not use HTTPS."))}'
+			. 'var st=j.site;if(st.state==="ok"){var sec=st.secure||{},on=Object.keys(sec).filter(function(k){return sec[k]}),off=Object.keys(sec).filter(function(k){return !sec[k]});o.appendChild(card("Website response",[["Status",String(st.code)+(st.https?" over HTTPS":" over HTTP only")],["Final address",st.final||"Not shown"],["Page title",st.title||"None"],["Server",st.server||"Not shown"],["Security headers",on.length+" of "+(on.length+off.length)+(off.length?" (missing: "+off.join(", ")+")":"")]]))}else{o.appendChild(card("Website response","The website did not respond."))}'
+			. 'var dm=j.dmarc,ho=j.host;o.appendChild(card("Email security",[["SPF",(j.dns&&j.dns.SPF)?"Present":"Not found"],["DMARC",dm.state==="ok"?"Present, policy: "+dm.policy:"Not found"]]));'
+			. 'if(ho.state==="ok"){o.appendChild(card("Hosting network",[["Address",ho.ip],["Network",ho.network||"Not shown"],["Country",ho.country||"Not shown"]]))}'
+			. 'var nm=j.name;o.appendChild(card("The name itself",[["Length",nm.length+" characters before the dot"],["Extension","."+nm.extension],["Type",nm.type],["Hyphens",String(nm.hyphens)],["Digits",String(nm.digits)],["Easy to read aloud",nm.readable?"Likely":"Probably not"]]));'
+			. 'var xc=el("div","dblk-card is-wide");xc.appendChild(el("h3","","Other extensions"));var xp=el("p","","See whether "+nm.label+" has a registration record under other popular extensions.");xc.appendChild(xp);var xb=el("button","dblk-sec","Check extensions");xb.type="button";xc.appendChild(xb);o.appendChild(xc);'
+			. 'xb.addEventListener("click",function(){xb.disabled=true;xb.textContent="Checking...";fetch(EXT+"?d="+encodeURIComponent(nm.label),{headers:{Accept:"application/json"}}).then(function(r){return r.json().then(function(q){return{ok:r.ok,q:q}})}).then(function(x){xb.remove();if(!x.ok){xp.textContent=(x.q&&(x.q.error||x.q.message))||"The check failed.";return}xp.textContent="";x.q.results.forEach(function(e){xp.appendChild(el("span","dblk-pill dblk-"+e.state,"."+e.ext+": "+(e.state==="free"?"no record found":(e.state==="taken"?"registered":"cannot be checked"))))});xc.appendChild(el("p","dblk-hint","No record found means the registry shows no registration. Confirm with a registrar before relying on it."))}).catch(function(){xb.remove();xp.textContent="The check could not be completed."})});'
+			. 'var s=j.estimate;if(s&&s.state==="ok"){o.appendChild(card("Computer estimate (not an appraisal)",[["Auction",money(s.auction)],["Marketplace",money(s.marketplace)],["Brokerage",money(s.brokerage)]],true))}'
 			. '}'
 			. 'f.addEventListener("submit",function(ev){ev.preventDefault();var v=f.d.value.trim();if(!v)return;var b=f.querySelector("button");b.disabled=true;b.textContent="Looking up...";o.textContent="";'
 			. 'fetch(EP+"?d="+encodeURIComponent(v),{headers:{Accept:"application/json"}}).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})}).then(function(x){if(!x.ok){var e=el("div","dblk-err",(x.j&&(x.j.error||x.j.message))||"Lookup failed.");o.appendChild(e)}else{render(x.j)}}).catch(function(){o.appendChild(el("div","dblk-err","The lookup could not be completed. Check your connection and try again."))}).then(function(){b.disabled=false;b.textContent="Look up"})});'
@@ -375,7 +609,7 @@ add_action( 'template_redirect', function () {
 		return;
 	}
 	add_filter( 'pre_get_document_title', static function () {
-		return 'Free Domain Tools: Lookup, Registry Record, DNS and Comparable Sales | Domain Brothers';
+		return 'Free Domain Tools: Lookup, SSL, DNS, Email Security and Extensions | Domain Brothers';
 	} );
 	add_action( 'wp_head', static function () {
 		echo '<meta name="description" content="Look up any domain for free: registration date, registrar, expiry, DNS records, web history, popularity rank and what similar names have sold for.">' . "\n";
