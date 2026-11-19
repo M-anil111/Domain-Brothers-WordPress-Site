@@ -713,7 +713,7 @@ if ( ! function_exists( 'db_sales_render' ) ) {
 			$lead = $lm[2];
 			$body = $lm[1] . substr( $body, strlen( $lm[0] ) );
 		}
-		$eyebrow = array( 'Find a domain' => 'Domain finder', 'Collections' => 'Curated lists', 'Trust center' => 'Security and payments' );
+		$eyebrow = array( 'Find a domain' => 'Domain finder', 'Collections' => 'Curated lists', 'Trust center' => 'Security and payments', 'Payment plans' => 'Pay over time' );
 		if ( 'Trust center' === $crumb ) { // has its own illustrated header
 			echo '<h1 class="page-title">' . esc_html( $title ) . '</h1>';
 		} else echo '<header class="dbs2-hero"><p class="dbs2-eyebrow">' . esc_html( isset( $eyebrow[ $crumb ] ) ? $eyebrow[ $crumb ] : 'Domain Brothers' ) . '</p><h1 class="dbs2-title">' . esc_html( $title ) . '</h1>' . ( '' !== $lead ? '<p class="dbs2-lead">' . wp_kses( $lead, array( 'a' => array( 'href' => array() ), 'strong' => array() ) ) . '</p>' : '' ) . '</header>';
@@ -812,7 +812,7 @@ if ( ! function_exists( 'db_trust_center_body' ) ) {
 			$h .= '<div class="db-sales-card db-tc-card"><span class="db-tc-ico">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
 		}
 		$h .= '</dl><h2 class="db-tc-h2">Policies and guides</h2>';
-		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-plan-setup/' ) ) . '">Payment plan terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
+		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-plans/' ) ) . '">Payment plan terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
 		return $h;
 	}
 }

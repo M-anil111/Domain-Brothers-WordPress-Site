@@ -774,8 +774,13 @@ add_action( 'template_redirect', function () {
 		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
 	}
 	if ( '' === $email ) {
-		$auth_mode = isset( $_GET['auth'] ) && 'register' === sanitize_key( wp_unslash( $_GET['auth'] ) ) ? 'register' : 'signin'; // phpcs:ignore WordPress.Security.NonceVerification
-		echo db_wl_auth_html( $auth_mode ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+		if ( function_exists( 'db_wl_intro_active' ) && db_wl_intro_active() ) {
+			// No ?auth= card requested: explain the wishlist first (db-wishlist-intro-block.php).
+			echo db_wl_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+		} else {
+			$auth_mode = isset( $_GET['auth'] ) && 'register' === sanitize_key( wp_unslash( $_GET['auth'] ) ) ? 'register' : 'signin'; // phpcs:ignore WordPress.Security.NonceVerification
+			echo db_wl_auth_html( $auth_mode ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+		}
 	} else {
 		$ids  = db_wl_ids( $email );
 		$rows = '';

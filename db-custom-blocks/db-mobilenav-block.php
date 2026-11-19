@@ -37,9 +37,9 @@ add_action( 'wp_footer', function () {
 		'Home'          => $home,
 		'Browse Domains'=> esc_url( home_url( '/all-domains/' ) ),
 		// Not /payment-plan-setup/: that page is the checkout step for a
-		// domain already chosen, and renders a $0.00 order without one. The
-		// FAQ is where the plans are actually explained.
-		'Payment Plans' => esc_url( home_url( '/faqs/' ) ),
+		// domain already chosen, and redirects away without one. The plans
+		// are explained on /payment-plans/ (db-payment-plans-block.php).
+		'Payment Plans' => esc_url( home_url( '/payment-plans/' ) ),
 		'Services'      => esc_url( home_url( '/our-services/' ) ),
 		'News'          => esc_url( home_url( '/news/' ) ),
 		'About'         => esc_url( home_url( '/about-us/' ) ),
