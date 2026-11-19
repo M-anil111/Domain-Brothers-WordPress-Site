@@ -440,7 +440,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Burger menu links (no WP nav menu is registered on this theme).
 		$menu = array(
 			'Browse Domains' => $browse_href,
-			'Payment Plans'  => esc_url( home_url( '/payment-plans/' ) ),
+			'Payment Terms'  => esc_url( home_url( '/payment-terms/' ) ),
 			'Services'       => esc_url( home_url( '/website-design-development/' ) ),
 			'News'           => esc_url( home_url( '/news/' ) ),
 			'Contact'        => $offer_href,

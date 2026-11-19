@@ -38,8 +38,8 @@ add_action( 'wp_footer', function () {
 		'Browse Domains'=> esc_url( home_url( '/all-domains/' ) ),
 		// Not /payment-plan-setup/: that page is the checkout step for a
 		// domain already chosen, and redirects away without one. The plans
-		// are explained on /payment-plans/ (db-payment-plans-block.php).
-		'Payment Plans' => esc_url( home_url( '/payment-plans/' ) ),
+		// are explained on /payment-terms/ (db-payment-plans-block.php).
+		'Payment Terms' => esc_url( home_url( '/payment-terms/' ) ),
 		'Services'      => esc_url( home_url( '/our-services/' ) ),
 		'News'          => esc_url( home_url( '/news/' ) ),
 		'About'         => esc_url( home_url( '/about-us/' ) ),
@@ -50,7 +50,7 @@ add_action( 'wp_footer', function () {
 	// Home, Payment Plans, News, About and Contact live in the footer menu
 	// only: the top menu (desktop bar and drawer) carries the two things a
 	// visitor comes for, the names and the services, plus the account links.
-	$links = array_diff_key( $links, array_flip( (array) apply_filters( 'db_nav_footer_only', array( 'Home', 'Payment Plans', 'News', 'About', 'Contact' ) ) ) );
+	$links = array_diff_key( $links, array_flip( (array) apply_filters( 'db_nav_footer_only', array( 'Home', 'Payment Terms', 'News', 'About', 'Contact' ) ) ) );
 	// The 5 dedicated service pages (see db_service_page_defs() in
 	// db-custom-blocks.php — each already has its own real content and SEO
 	// meta) had no path into this drawer at all: an earlier attempt at

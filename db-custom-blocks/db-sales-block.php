@@ -812,7 +812,7 @@ if ( ! function_exists( 'db_trust_center_body' ) ) {
 			$h .= '<div class="db-sales-card db-tc-card"><span class="db-tc-ico">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
 		}
 		$h .= '</dl><h2 class="db-tc-h2">Policies and guides</h2>';
-		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-plans/' ) ) . '">Payment plan terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
+		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-terms/' ) ) . '">Payment terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
 		return $h;
 	}
 }

@@ -62,7 +62,7 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 							array( 'Domain finder', $u( '/find-a-domain/' ), 'Describe the business, get matching names' ),
 							array( 'Collections', $u( '/collections/' ), 'Names grouped by industry and use' ),
 							array( 'My wishlist', $u( '/my-wishlist/' ), 'Saved names and price alerts' ),
-							array( 'Payment plans', $u( '/payment-plans/' ), 'Spread the cost over 3 to 12 months' ),
+							array( 'Payment terms', $u( '/payment-terms/' ), 'Card payments, plans and ownership' ),
 						),
 					),
 				),
