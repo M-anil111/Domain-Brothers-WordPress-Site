@@ -87,7 +87,7 @@ A name with a clean history is a better starting point than one with a past you 
 4. **Check for trademarks.** A name that clashes with a brand is a legal risk as well as a marketing one. See [Trademarks and Domain Disputes](/trademarks-and-domain-disputes-udrp-basics/).
 5. **Check Search Console after you take control.** Verify the domain and look at the manual actions report. If Google has applied a manual action, the report explains it, and you can fix the cause and request a review.
 
-Our team can help you [find a domain](/find-a-domain/) that suits the brand, and our [appraisal service](/domain-appraisal-services/) looks at a name before you commit.
+Our team can help you [find a domain](/find-a-domain/) that suits the brand.
 
 ## Domain name SEO when you move to a new domain
 
@@ -143,7 +143,5 @@ Most domain name SEO myths date from the years before Google's 2012 exact-match 
 - Read about [branding and naming](/how-to-choose-a-domain-name/).
 - See how names help campaigns in the [Domain Name Marketing Playbook](/domain-name-marketing-playbook/).
 - If you need help with the site, see our [website design and development](/website-design-development/) and [digital marketing](/digital-marketing-services/) services.
-
-!cta Make your domain work harder|From a clean launch to ongoing marketing, we can help you turn a good name into steady traffic.|Digital marketing services|/digital-marketing-services/|Browse premium domains|/all-domains/
 
 !related

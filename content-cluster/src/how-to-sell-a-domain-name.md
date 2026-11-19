@@ -19,7 +19,6 @@ If you have ever typed "how do I sell my domain" into a search bar, you have met
 
 !img:ib-sell-a|Sell my domain. Selling a domain name, step by step: Value, Price, List, Agree, Transfer|Selling a domain name, step by step.
 
-
 Owners usually reach the "sell my domain" decision for one of three reasons. The business has rebranded, the project never launched, or someone has made an offer. Each reason sets a different deadline and a different floor price, so write yours down first.
 
 Ask yourself two questions. How soon do you need the money? What is the lowest price you would accept without regret? A seller with no deadline can wait for the right buyer. A seller who needs cash this month should price for a faster sale and accept that it may be lower.
@@ -38,7 +37,7 @@ A useful valuation looks at the same factors buyers use:
 - **Comparable sales.** What similar names actually sold for, not what they were listed at.
 - **Clean history.** No trademark conflict, no spam past, no penalty history.
 
-Our guide on [how to value a premium domain name](/how-to-value-a-premium-domain-name/) explains the full method. If you want an outside view, our [domain appraisal service](/domain-appraisal-services/) reviews the name and gives you a written opinion before you list it.
+Our guide on [how to value a premium domain name](/how-to-value-a-premium-domain-name/) explains the full method. If you want an outside view, ask a broker you trust to review the name and explain the reasoning before you list it.
 
 ## Step 2: Set a price, or decide to take offers
 
@@ -79,8 +78,6 @@ You can contact businesses that would benefit from the name: companies using the
 Pointing the domain at a simple page that says the name is for sale, with a contact form, catches buyers who type it in directly. It costs little and works alongside every other route.
 
 The [Wikipedia overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_resale) gives useful background on how the aftermarket developed and how these channels fit together.
-
-!cta Thinking about selling a name?|Domain Brothers does not run a seller marketplace today, but we are happy to talk. Get a written appraisal first, or tell us about the name and what you hope to achieve.|Get an appraisal|/domain-appraisal-services/|Contact us|/contact-us/
 
 ## Step 4: Avoid the common seller scams
 
@@ -139,6 +136,6 @@ Selling one name to fund a better one is common. If that is your plan, browse ou
 !details:How much is my domain worth?|A name is worth what a willing buyer will pay, which depends on length, extension, meaning, comparable sales and clean history. Automated tools give a rough starting point but cannot see trademark risk or buyer fit. A written appraisal from someone who reviews the name by hand gives you a more defensible range.
 !details:Do I need a broker to sell my domain?|No. Many owners sell successfully through marketplace listings or direct outreach. A broker helps most when the name is valuable, the buyer pool is small, or you want to stay anonymous. Expect a higher commission in return for that work and reach.
 !details:Is it safe to sell a domain without escrow?|It can be, if the buyer is known to you and you wait until a bank transfer has fully cleared before you release the transfer code. With a stranger, use a reputable escrow service or a marketplace checkout. Never accept payment methods that can be reversed after the name has moved.
-!details:Can Domain Brothers sell my domain for me?|Domain Brothers does not run a seller marketplace or list names for other owners today. We can appraise your name so you know its value before you list it elsewhere, and you are welcome to contact us to talk through your options.
+!details:Can Domain Brothers sell my domain for me?|Domain Brothers does not run a seller marketplace or list names for other owners today. You are welcome to contact us to talk through your options.
 
 !related

@@ -117,6 +117,4 @@ Seller payment plans are one form of domain financing and one of several ways th
 - Read the [FAQs](/faqs/) for our process.
 - See [Premium Domains as Business Assets and Investments](/premium-domain-investment/) for the return side.
 
-!cta Spread the cost, keep the name|Pick a domain, choose three, six, nine or twelve months, and start using it today.|Browse premium domains|/all-domains/|Ask a question|/contact-us/
-
 !related

@@ -111,6 +111,4 @@ Google has said that the extension is not a ranking factor on its own in most ca
 !details:Which domain extensions cost the most to renew?|It varies by registry and changes over time. Technology extensions such as .io and .ai, and names a registry classes as premium, often renew at much higher prices than .com. Check the renewal price at your registrar before you buy, not only the first-year price.
 !details:Should I buy several domain extensions for my brand?|Buy the ones a customer is likely to guess and the ones a competitor could use against you, usually the .com and your country code. Redirect them all to one main address so you build one brand and one set of links.
 
-!cta Find the right extension for your business|Tell us what you are building and where your customers are, and we will suggest names.|Browse premium domains|/all-domains/|Talk to a broker|/domain-brokerage-services/
-
 !related

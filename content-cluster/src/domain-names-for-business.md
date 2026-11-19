@@ -18,7 +18,6 @@ Domain names for business do more work than most founders expect: the name sits 
 
 !img:ib-business-a|Domain names for business. What a good business domain does: Easy to say, Easy to spell, Fits the brand, Right extension, Clear legally, Room to grow|What a good business domain does.
 
-
 A business domain is the address customers type, the sender name on every email and the first thing many people see in a search result. When the name is clear, people find you without help. When it is awkward, they mistype it, send email to the wrong address or click a competitor whose name they remember better.
 
 The cost of a weak name is quiet and ongoing. It shows up as lost referrals, extra ad spend to repeat the name, and support time spent spelling it out on the phone. That is why domain names for business deserve the same care as the company name itself, and why many companies choose the name and the domain together.
@@ -100,8 +99,6 @@ Most short, clear names in .com are already registered. A taken name is not alwa
 Start by checking our [listed premium names](/all-domains/), which show clear prices and accept offers. If the name you want is held by someone else and not listed, read [how to buy a domain name from someone](/how-to-buy-a-domain-name-from-someone/) for the steps, or ask our [domain brokerage](/domain-brokerage-services/) team to approach the owner confidentially on your behalf. We write down the research (ownership, comparable sales and a price range) before anyone is contacted.
 
 Compare the asking price with the cost of a weaker name over several years. Domain names for business are long-term assets, and a name that saves a little on every introduction often repays its price.
-
-!cta Looking for a name your business can grow into?|Browse listed premium names with clear prices and monthly payment plans, or ask our brokers to approach the owner of a name you have in mind.|Browse premium domains|/all-domains/|Talk to a domain broker|/domain-brokerage-services/
 
 ## Frequently asked questions
 

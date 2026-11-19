@@ -18,7 +18,6 @@ Domain leasing lets you use a domain name that someone else owns, in return for 
 
 !img:ib-leasing-a|Domain leasing. Leasing, lease to own and payment plans: Lease, Lease to own, Payment plan|Leasing, lease to own and payment plans.
 
-
 Domain leasing is a rental agreement for a domain name. The owner, often called the lessor, keeps the name registered in their own account. You, the lessee, pay a fee each month or year and in return the name points at your website or email.
 
 People also call it **domain rental**, or say they **rent a domain**. The idea is close to renting an office: you get the use, the landlord keeps the title. A lease to own deal works much like a [rent-to-own](https://en.wikipedia.org/wiki/Rent-to-own) agreement for goods. When the lease ends, the name goes back to the owner unless you renew or buy it.
@@ -127,8 +126,6 @@ Here is how our plans work:
 - Every instalment is non-refundable. If you stop paying, the plan can end, and you can lose both the domain and the payments already made.
 
 That last point is similar to the default risk in a lease to own domain deal, so treat the decision with the same care. Choose a term you are confident you can complete. The full terms are in our guide to [premium domain payment plans and financing](/premium-domain-payment-plans-and-financing/), and all domain sales are final.
-
-!cta Spread the cost of a premium name|Browse listed names and choose a monthly payment plan of 3 to 12 months at checkout, or ask us about a name first.|Browse listed domains|/all-domains/|Ask a question|/contact-us/
 
 If the name you want is owned by someone else and is not for lease, our [domain brokerage](/domain-brokerage-services/) team can approach the owner confidentially and try to buy it for you.
 

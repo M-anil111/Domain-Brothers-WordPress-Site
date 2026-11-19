@@ -18,7 +18,6 @@ Short domain names are the scarcest names on the internet, because the number of
 
 !img:ib-shortnames-a|Short domain names. How many short letter combinations exist: 2 letters, 3 letters, 4 letters|How many short letter combinations exist.
 
-
 The supply of short domain names is a simple calculation. With 26 letters, each position in the name has 26 options, so the number of combinations is 26 raised to the length of the name. Add the ten digits and each position has 36 options.
 
 | Length | Letters only | Letters and digits |
@@ -99,8 +98,6 @@ Prices for short domain names are set by owners, not registries. The Wikipedia o
 If two to four letters are out of reach, two nearby groups offer much of the same benefit. Five character names are still short enough to type quickly and often include real words or clean brandable forms; see our [five character domains](/5-character-domains/).
 
 Numeric names, made only of digits, have their own market. They suit sectors and regions where numbers carry meaning or are easier to share than letters. Our [numeric domains for sale](/numeric-domains-for-sale/) page lists current options.
-
-!cta Looking for a short name?|Browse three and four character domains with listed prices, or send an offer and a broker will reply within one business day.|Browse 3 character domains|/3-character-domains/|Browse 4 character domains|/4-character-domains/
 
 ## Buying short domain names safely
 

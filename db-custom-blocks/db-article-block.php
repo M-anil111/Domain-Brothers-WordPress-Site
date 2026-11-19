@@ -83,36 +83,14 @@ if ( ! function_exists( 'db_article_cta' ) ) {
 	 * @return array{title:string,text:string,primary:array,secondary:array}
 	 */
 	function db_article_cta( $post ) {
-		$text = strtolower( $post->post_title . ' ' . implode( ' ', wp_list_pluck( (array) get_the_tags( $post->ID ), 'name' ) ) );
-		if ( preg_match( '/\b(market|seo|launch|website|brand)/', $text ) ) {
-			return array(
-				'title'     => 'Put your domain to work',
-				'text'      => 'From the launch to steady traffic: websites, SEO and marketing built around a strong name.',
-				'primary'   => array( 'Talk to our team', home_url( '/digital-marketing-services/#get-started' ) ),
-				'secondary' => array( 'Browse premium domains', home_url( '/all-domains/' ) ),
-			);
-		}
-		if ( preg_match( '/\b(sell|apprais|valu|worth|price)/', $text ) ) {
-			return array(
-				'title'     => 'What is your domain worth?',
-				'text'      => 'Get a written price range based on comparable sales, from brokers with 27+ years of deals.',
-				'primary'   => array( 'Get an appraisal', home_url( '/domain-appraisal-services/#get-started' ) ),
-				'secondary' => array( 'See recent sales', home_url( '/sold/' ) ),
-			);
-		}
-		if ( preg_match( '/\b(transfer|epp|dns|registrar)/', $text ) ) {
-			return array(
-				'title'     => 'Moving a domain?',
-				'text'      => 'We handle transfers start to finish, with every stage reported and your code stored encrypted.',
-				'primary'   => array( 'Start a transfer', home_url( '/domain-transfer/' ) ),
-				'secondary' => array( 'EPP code guide', home_url( '/epp-guidelines/' ) ),
-			);
-		}
+		unset( $post );
+		// One call to action for every post: buying a premium domain. Other
+		// services (appraisal, brokerage, marketing) are deliberately not pushed.
 		return array(
-			'title'     => 'Find a name that fits',
-			'text'      => 'Premium domains with clear prices, monthly payment plans and offers answered in one business day.',
-			'primary'   => array( 'Browse premium domains', home_url( '/all-domains/' ) ),
-			'secondary' => array( 'Talk to a broker', home_url( '/domain-brokerage-services/#get-started' ) ),
+			'title'     => 'Ready to buy a premium domain?',
+			'text'      => 'Premium domains with clear prices, flexible payment terms and offers answered within one business day.',
+			'primary'   => array( 'Buy a premium domain now', home_url( '/all-domains/' ) ),
+			'secondary' => array( '', '' ),
 		);
 	}
 }
@@ -150,13 +128,6 @@ if ( ! function_exists( 'db_article_layout' ) ) {
 		$author   = 'Domain Brothers team';
 		$about    = home_url( '/about-us/' );
 
-		// Mid-article call to action before the H2 nearest the middle.
-		if ( count( $toc ) >= 4 ) {
-			$target = $toc[ (int) floor( count( $toc ) / 2 ) ][0];
-			$mid    = '<aside class="dbb-mid" aria-label="Domain Brothers"><div><p class="dbb-mid-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p></div><a class="dbb-btn" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a></aside>';
-			$body   = preg_replace( '#(<h2\\b[^>]*\\bid="' . preg_quote( $target, '#' ) . '")#', str_replace( '$', '\\$', $mid ) . '$1', $body, 1 );
-		}
-
 		$tocs = '';
 		if ( count( $toc ) >= 3 ) {
 			$items = '';
@@ -191,13 +162,12 @@ if ( ! function_exists( 'db_article_layout' ) ) {
 			. '<div class="dbb-meta"><span class="dbb-avatar" aria-hidden="true">DB</span><span><a href="' . esc_url( $about ) . '">' . esc_html( $author ) . '</a><br><time datetime="' . esc_attr( get_the_date( 'c', $post ) ) . '">' . esc_html( $pub ) . '</time>'
 			. ( $mod !== $pub ? ' &middot; Updated <time datetime="' . esc_attr( get_the_modified_date( 'c', $post ) ) . '">' . esc_html( $mod ) . '</time>' : '' )
 			. ' &middot; ' . (int) $minutes . ' min read</span></div></header>'
-			. '<div class="dbb-grid"><div class="dbb-main">' . ( '' !== $tocs ? '<div class="dbb-toc-m">' . $tocs . '</div>' : '' )
+			. '<div class="dbb-grid"><div class="dbb-main">' . ( '' !== $tocs ? '<div class="dbb-toc-m">' . str_replace( '<details open>', '<details>', $tocs ) . '</div>' : '' )
 			. '<article class="' . esc_attr( implode( ' ', get_post_class( 'dbb-body', $post ) ) ) . '">' . $body . '</article>'
 			. '<section class="dbb-end"><div class="dbb-share"><span>Share</span>' . $share . '</div>' . ( '' !== $tags ? '<div class="dbb-tags">' . $tags . '</div>' : '' )
 			. '<div class="dbb-author"><span class="dbb-avatar dbb-avatar--lg" aria-hidden="true">DB</span><div><p class="dbb-author-n">Written by the <a href="' . esc_url( home_url( '/our-team/' ) ) . '">Domain Brothers team</a></p><p>Domain brokers and marketers with 27+ years of combined experience and 5,000+ domain sales. We write about what we see in real deals.</p></div></div>'
-			. ( false !== strpos( $body, 'db-cta' ) ? '' : '<div class="dbb-final"><div><p class="dbb-final-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p></div><p class="dbb-final-a"><a class="dbb-btn dbb-btn--light" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a><a class="dbb-btn dbb-btn--ghost" href="' . esc_url( $cta['secondary'][1] ) . '">' . esc_html( $cta['secondary'][0] ) . '</a></p></div>' ) . '</section></div>'
-			. '<aside class="dbb-side">' . $tocs
-			. '<div class="dbb-sidecta"><p class="dbb-sidecta-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p><a class="dbb-btn" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a><a class="dbb-sidecta-2" href="' . esc_url( $cta['secondary'][1] ) . '">' . esc_html( $cta['secondary'][0] ) . ' &rarr;</a></div></aside></div>'
+			. '<div class="dbb-final"><div><p class="dbb-final-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p></div><p class="dbb-final-a"><a class="dbb-btn dbb-btn--light" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a></p></div></section></div>'
+			. '<aside class="dbb-side">' . $tocs . '</aside></div>'
 			. '</div>';
 		unset( $footer );
 		return substr_replace( $html, $out, $art[0][1], strlen( $art[0][0] ) );
@@ -260,6 +230,12 @@ html body.db-ui-active .dbb-toc a{display:flex;gap:10px;padding:7px 8px;border-r
 .dbb-toc a::before{content:counter(dbb);flex:none;width:20px;color:var(--m-accent,#0b7a75);font-weight:800}
 html body.db-ui-active .dbb-toc a:hover,html body.db-ui-active .dbb-toc a.is-on{background:#f1f8f7;color:var(--m-ink,#111827)!important}
 .dbb-toc-m{display:none;margin:0 0 26px}
+/* The theme sets overflow-x:hidden on <body>, which makes it a scroll container and stops position:sticky. clip hides horizontal overflow without that. */
+html body.single-post,html body.single-post #page,html body.single-post #content{overflow-x:clip!important;overflow-y:visible!important}
+.dbb-side{max-height:calc(100vh - 120px)}
+.dbb-side .dbb-toc{display:flex;flex-direction:column;max-height:calc(100vh - 120px)}
+.dbb-side .dbb-toc details{display:flex;flex-direction:column;min-height:0}
+.dbb-side .dbb-toc ol{max-height:none;min-height:0;overflow:auto;overscroll-behavior:contain}
 .dbb-sidecta{padding:22px;border-radius:20px;color:#fff;background:radial-gradient(420px 240px at 100% 0%,rgba(25,179,166,.5) 0%,rgba(25,179,166,0) 65%),#0c1424}
 html body.db-ui-active .dbb-sidecta-t,html body.db-ui-active .dbb-final-t,html body.db-ui-active .dbb-mid-t{margin:0 0 8px;font-size:19px;line-height:1.25;font-weight:800;letter-spacing:-.015em;color:inherit}
 html body.db-ui-active .dbb-sidecta p{margin:0 0 16px;font-size:14.5px;line-height:1.55;color:rgba(255,255,255,.82)}
@@ -286,7 +262,7 @@ html body.db-ui-active .dbb-final .dbb-final-t{font-size:22px;color:#fff;margin:
 .dbb-final-a{display:flex;flex-wrap:wrap;gap:10px}
 html body.db-ui-active .dbb-btn--ghost{background:transparent;border:1.5px solid rgba(255,255,255,.45);color:#fff!important}
 html body.single-post.db-ui-active .post-navigation{max-width:720px;margin:30px 0 0}
-@media (max-width:1020px){.dbb-grid{grid-template-columns:minmax(0,1fr)}.dbb-side{display:none}.dbb-toc-m{display:block}html body.db-ui-active .dbb-body,.dbb-end{max-width:none}}
+@media (max-width:1020px){.dbb-grid{grid-template-columns:minmax(0,1fr)}.dbb-side{display:none}.dbb-toc-m{display:block;position:sticky;top:64px;z-index:30;margin:0 0 22px}.dbb-toc-m .dbb-toc{padding:10px 14px;box-shadow:0 8px 22px -14px rgba(12,20,36,.45)}.dbb-toc-m .dbb-toc summary{display:flex;align-items:center;justify-content:space-between;margin:0;padding:6px 0}.dbb-toc-m .dbb-toc summary::after{content:"\25BE";font-size:14px}.dbb-toc-m .dbb-toc details[open] summary{margin-bottom:8px}.dbb-toc-m .dbb-toc ol{max-height:55vh}html body.db-ui-active .dbb-body,.dbb-end{max-width:none}}
 @media (max-width:560px){.dbb-mid{flex-direction:column;align-items:flex-start}html body.db-ui-active .dbb-body>p,html body.db-ui-active .dbb-body>ul>li,html body.db-ui-active .dbb-body>ol>li{font-size:17px!important}}
 CSS;
 	if ( function_exists( 'db_external_style' ) && db_external_style( 'article', $css ) ) {

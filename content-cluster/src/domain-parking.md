@@ -18,7 +18,6 @@ Domain parking means pointing a registered domain name at a simple holding page 
 
 !img:ib-parking-a|Domain parking. Three ways to use an unused domain: Ad parking, For-sale page, Build a site|Three ways to use an unused domain.
 
-
 Domain parking is the practice of registering a name and pointing it at a placeholder instead of a full website. The page a visitor sees is called a **parking page** or lander. The [Wikipedia article on domain parking](https://en.wikipedia.org/wiki/Domain_parking) gives a short history of the practice.
 
 People park names for different reasons:
@@ -105,8 +104,6 @@ If your main aim is to sell a name, the lander matters more than any ad income. 
 
 Before you set a price, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/), and see our guide on [how to sell a domain name](/sell-my-domain/) for the wider process.
 
-!cta Thinking about selling a parked name?|Domain Brothers does not offer parking, but we can appraise a name you own so you know what to ask, and you can contact us to discuss selling it.|Request an appraisal|/domain-appraisal-services/|Contact us|/contact-us/
-
 ## When to park and when to build
 
 Domain parking suits some names and some owners. Building suits others. Ask what the name is for.
@@ -127,7 +124,7 @@ For a business, even a small, real website usually does more for the name than a
 
 ## Does Domain Brothers offer domain parking?
 
-No. Domain Brothers does not offer domain parking or ad parking pages. We sell listed premium names, handle the transfer to the buyer's registrar account, and offer appraisal and brokerage. If you own a name and want to know its worth before you decide whether to park, build or sell, our appraisal service is a good start.
+No. Domain Brothers does not offer domain parking or ad parking pages. We sell listed premium names, handle the transfer to the buyer's registrar account, and offer brokerage. If you own a name, compare it with [recent sales](/sold/) before you decide whether to park, build or sell.
 
 ## Frequently asked questions
 
@@ -135,6 +132,6 @@ No. Domain Brothers does not offer domain parking or ad parking pages. We sell l
 !details:Does a parked domain hurt SEO when I build a site later?|Usually not. A name with a quiet parking history tends to start much like any new site. The bigger concern is a history of spam or misleading content, which can take time to overcome. Check the name's past on a web archive before you buy, and build useful pages once you launch.
 !details:What should a parking page show if I want to sell the name?|Show the name clearly, say that it is for sale, give a price or an offer form, and explain how to contact you. Remove ads so nothing distracts the buyer. A short note on how payment and transfer work also helps a serious buyer feel safe enough to ask.
 !details:Can ad parking cause legal problems?|It can. If the ads on the page relate to someone else's trademark, the brand owner may treat that as bad faith use, and it may be cited in a UDRP complaint. Avoid names that match known brands, and check which ads your parking company shows on each name you park.
-!details:Does Domain Brothers park domains for owners?|No. Domain Brothers does not offer parking. We sell listed premium names and offer appraisal, brokerage and transfer handling. If you own a name and are thinking of selling it, you can request an appraisal or contact us to discuss it.
+!details:Does Domain Brothers park domains for owners?|No. Domain Brothers does not offer parking. We sell listed premium names and offer brokerage and transfer handling. If you own a name and are thinking of selling it, you are welcome to contact us to discuss it.
 
 !related

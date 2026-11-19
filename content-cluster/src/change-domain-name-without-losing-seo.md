@@ -18,7 +18,6 @@ Change domain name SEO work decides whether a rebrand keeps its search traffic o
 
 !img:ib-seo-a|Change domain name seo. Moving to a new domain without losing rankings: Map, Redirect, Notify, Update, Monitor|Moving to a new domain without losing rankings.
 
-
 Your rankings are tied to URLs. Each page has earned links, history and trust at its current address. When you move to a new domain, that value only follows if search engines can see that the old page and the new page are the same thing.
 
 A **rebrand domain change** done in a hurry often breaks this link. Common results are pages that return errors, redirects that all land on the home page, and a new site that blocks crawlers by mistake. Each of these can cost traffic that takes months to recover.
@@ -96,8 +95,6 @@ Redirects pass visitors and signals from old links, but a direct link to the new
 Outreach is the slowest part of change domain name SEO, so start it in the first week. Begin with your list of top linking domains. Contact the sites you have a relationship with first: partners, suppliers, directories, associations and press you have worked with. Send a short note with the exact old link and the new address.
 
 You will not update every link, and that is fine. Focus on the links that send real visitors or come from well-known sites. If you previously uploaded a disavow file, upload it again in the new property.
-
-!cta Planning a rebrand on a better name?|Browse listed premium names, or talk to our team about building and promoting the new site.|Browse listed domains|/all-domains/|Website design and development|/website-design-development/
 
 ## Change domain name SEO monitoring after launch
 

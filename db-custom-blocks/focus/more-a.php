@@ -126,7 +126,7 @@ return array(
 			'If you need the name by a fixed date, such as a launch, the listed price removes the risk of a slow negotiation. If timing is flexible, an offer costs only a short wait, since a broker replies within one business day.',
 			array( 'h3' => 'Common reasons a domain offer stalls' ),
 			'Offers slow down when the figure has no reasoning behind it, when the buyer gives a range instead of one number, or when a counter-offer waits days for an answer. Each of these is easy to avoid. Write down your highest price before you send the first number, and you will know at once whether a counter-offer works for you.',
-			'Remember that an agreed price is binding once you pay, and all sales are final. Settle questions about the name, the plan and the transfer before you accept. If you want an independent check on value first, <a href="/domain-appraisal-services/">an appraisal</a> gives you a written view.',
+			'Remember that an agreed price is binding once you pay, and all sales are final. Settle questions about the name, the plan and the transfer before you accept.',
 			'If you would rather pay monthly, say so in the first message, so the broker can answer on the price and the plan together. If the name you want is not for sale here, <a href="/find-a-domain/">tell us what you are looking for</a> and we will suggest listed names that fit.',
 		),
 	),

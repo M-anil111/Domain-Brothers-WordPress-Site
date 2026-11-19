@@ -116,7 +116,7 @@ Knowing what is a premium domain also helps you spot names that are not. Some se
 - A private seller will not use escrow or will not confirm they own the name.
 - The price is fixed in a way that makes no sense next to similar names.
 
-When in doubt, ask for an independent opinion. Our [domain appraisal](/domain-appraisal-services/) team will give you one.
+When in doubt, ask for an independent opinion before you pay.
 
 ## Where to go next
 
@@ -130,7 +130,5 @@ When in doubt, ask for an independent opinion. Our [domain appraisal](/domain-ap
 !details:Is a premium domain a good investment?|It can hold or gain value when the name is short, meaningful and on a trusted extension, but nothing guarantees a resale. Buy a premium name first because it helps your business every day, and treat any resale value as a bonus rather than the reason to buy.
 !details:Can I pay for a premium domain monthly?|Yes. On Domain Brothers you can pay by card in full or on a monthly plan of 3 to 12 months. The domain stays with us until the final payment clears and then transfers to you. Each instalment is non-refundable, so choose a plan you can finish.
 !details:How do I know if a name is really premium?|Look for short length, real words, a trusted extension and comparable sales of similar names, not just a high asking price. If the seller cannot point to evidence, ask for an independent appraisal before you pay anything.
-
-!cta Browse names that are already for sale|Every listing shows its price or invites an offer.|Browse premium domains|/all-domains/|See recent sales|/sold/
 
 !related

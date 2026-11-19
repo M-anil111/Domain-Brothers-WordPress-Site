@@ -124,6 +124,4 @@ For names bought from us: after payment clears, we start the transfer within the
 - Learn why registrars differ in the [domain management services](/domain-management-services/) overview.
 - See [Trademarks and Domain Disputes](/trademarks-and-domain-disputes-udrp-basics/) if you receive a complaint after a transfer.
 
-!cta Want us to handle the transfer?|We guide every buyer through the process, from the authorisation code to the first day on your own account.|Buy a domain|/buy-domains-service/|Read our EPP guidelines|/epp-guidelines/
-
 !related

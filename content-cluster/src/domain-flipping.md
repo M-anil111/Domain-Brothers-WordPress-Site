@@ -18,7 +18,6 @@ Domain flipping is the practice of buying domain names at a low price and resell
 
 !img:ib-flipping-a|The domain flipping cycle: Research, Buy, Hold, List, Sell|The domain flipping cycle.
 
-
 Domain flipping is a short-cycle form of domain investing. An investor registers or buys a name, holds it, and sells it to someone who values it more, usually a business that wants it for a website. The "flip" is the resale.
 
 Some investors aim for a quick sale to other investors at a small margin. Others hold names for years waiting for the right end user. The [Wikipedia article on domain name speculation](https://en.wikipedia.org/wiki/Domain_name_speculation) traces how this market developed since the early days of the commercial web.
@@ -100,8 +99,6 @@ Our guide on [how to value a premium domain name](/how-to-value-a-premium-domain
 Many enquiries open with a low offer. Reply politely, give a counter-offer, and explain it briefly with facts such as length, extension or comparable sales. Buyers respond better to reasons than to round numbers.
 
 Decide your floor price before the conversation starts, and do not reveal it. If a buyer cannot reach your floor, a courteous "not at this price" keeps the door open. Some buyers return months later with a better offer, especially once their business has grown.
-
-!cta Want a second opinion before you buy or sell?|Our appraisal looks at the name, its comparables and its risks, and gives you a written view of its value.|Request an appraisal|/domain-appraisal-services/|Browse listed domains|/all-domains/
 
 !img:infographic-i10|Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it|The four ways a premium domain earns its keep.
 

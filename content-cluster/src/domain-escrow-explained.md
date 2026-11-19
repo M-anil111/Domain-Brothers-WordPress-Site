@@ -18,7 +18,6 @@ Domain escrow is a way to buy or sell a domain name between two parties who do n
 
 !img:ib-escrow-a|How domain escrow works: Agree, Pay, Transfer, Confirm, Release|How domain escrow works.
 
-
 [Escrow](https://en.wikipedia.org/wiki/Escrow) is an old arrangement in which a neutral party holds money or property until agreed conditions are met. Domain escrow applies that idea to domain names. The escrow agent does not own the name or set the price. It holds the buyer's funds and releases them when both sides have done what they agreed.
 
 A **domain escrow service** is useful when the buyer and seller are strangers, when the price is high enough that losing it would hurt, or when one side is in another country. It replaces trust in the other party with trust in a regulated intermediary.
@@ -129,8 +128,6 @@ Domain Brothers does not offer escrow, and our checkout is not an escrow service
 - All domain sales are final.
 
 On a payment plan, the name transfers after the final payment clears. Details are in our guide to [premium domain payment plans and financing](/premium-domain-payment-plans-and-financing/).
-
-!cta Buy a listed name directly|Browse premium names with clear prices, or ask our team how payment and transfer work before you buy.|Browse listed domains|/all-domains/|Read the FAQs|/faqs/
 
 ## Frequently asked questions
 

@@ -147,6 +147,4 @@ Premium domains are valuable because they are clear, common words and phrases, a
 - Read our [domain management services](/domain-management-services/) if you hold many names.
 - Ask our [team](/contact-us/) if you have a question about a specific name.
 
-!cta Buying a name you want to be sure about?|Ask us to check a name before you commit, and we will tell you what we see.|Contact us|/contact-us/|Browse premium domains|/all-domains/
-
 !related

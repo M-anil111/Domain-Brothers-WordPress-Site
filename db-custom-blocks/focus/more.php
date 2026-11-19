@@ -25,7 +25,7 @@ return array(
 		'sold'                      => array(
 			array( 'h3' => 'What recent domain sales do not tell you' ),
 			'Recent domain sales show what a buyer paid, not what every similar name is worth. A sale can include factors you cannot see, such as a deadline, a trademark or a buyer who needed that exact word.',
-			'Read recent domain sales as a range, not a price tag. If you want a written view on a specific name, <a href="/domain-appraisal-services/">a domain appraisal</a> compares it with recent domain sales and the names on sale today.',
+			'Read recent domain sales as a range, not a price tag.',
 		),
 		'about-us'                  => array(
 			array( 'h3' => 'What to expect from a domain name company' ),

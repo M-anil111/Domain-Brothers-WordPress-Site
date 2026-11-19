@@ -77,7 +77,7 @@ Before you buy, test the name against the factors that buyers and businesses car
 - **History.** Was it used for spam or anything that could follow it? Check a web archive.
 - **Holding cost.** What does renewal cost each year, and for how many years can you hold it?
 
-If you want a second opinion, our [domain appraisal services](/domain-appraisal-services/) look at a specific name before you commit.
+For a second opinion, compare the name with recent sales on our [sold domains](/sold/) page before you commit.
 
 ## Premium domain investment costs to budget for
 
@@ -130,7 +130,7 @@ Write the decision down with the reason, so next year's review starts from facts
 ## Frequently asked questions
 
 !details:Is premium domain investment a good idea for beginners?|It can be, with care. Start with one or two names in a field you understand, set a budget that includes several years of renewals, and only use money you can leave tied up. Domains earn nothing until they are used or sold, and good names can take years to find the right buyer.
-!details:How do I value a premium domain investment?|Look at length, clarity, extension, the number of businesses that could use the name, comparable sales and legal clarity. Our guide to valuing a premium domain explains each factor, and our appraisal service can review a specific name. Be wary of automated values, which cannot judge who would actually pay.
+!details:How do I value a premium domain investment?|Look at length, clarity, extension, the number of businesses that could use the name, comparable sales and legal clarity. Our guide to valuing a premium domain explains each factor. Be wary of automated values, which cannot judge who would actually pay.
 !details:What are the main risks of premium domain investment?|The main risks are holding a name that earns nothing, renewal costs that add up, slow sales, trademark claims and changes in which names and extensions are in demand. Fraud is another risk when buying privately. Research each name, check trademarks and buy only from sellers you can verify.
 !details:Can I spread the cost of a premium domain?|Yes. We offer monthly plans of 3 to 12 months by card. Nine-month plans add 5% interest and 12-month plans add 10%; shorter plans add none. The domain stays with us until the final payment clears. Instalments are non-refundable, and missed payments can lose the domain.
 
@@ -139,7 +139,5 @@ Write the decision down with the reason, so next year's review starts from facts
 - Read the basics in [What Is a Premium Domain Name?](/what-is-a-premium-domain-name/)
 - Learn how names are marketed in the [Domain Name Marketing Playbook](/domain-name-marketing-playbook/).
 - See what has sold on our [sold domains](/sold/) page.
-
-!cta Own a name you want to sell?|Our brokers market premium domains to buyers who are ready to pay, and handle the negotiation.|Sell a domain|/sell-domains-service/|Browse premium domains|/all-domains/
 
 !related

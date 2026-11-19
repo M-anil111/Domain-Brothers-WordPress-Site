@@ -133,6 +133,4 @@ This workshop puts the whole method on how to choose a domain name into one afte
 !details:Is a keyword in the domain still worth having?|A keyword can make the name clear at a glance, which helps people choose to click. It does not rank a site on its own. Choose a keyword name when it is also a good brand, not only because it contains a search term.
 !details:When is a premium domain worth paying for?|When the name will carry the business for years and the cheaper options fail the phone, radio, search or picture tests. A premium name you keep usually costs less than a rename later, and a payment plan can spread the price.
 
-!cta Need a name that is already available?|Browse premium names you can own today, or tell us what you are building.|Browse premium domains|/all-domains/|Get naming help|/contact-us/
-
 !related

@@ -18,7 +18,6 @@ A domain backorder is a request to register a name the moment its current owner 
 
 !img:ib-backorder-a|Domain backorder. What typically happens after a domain expires: Expiry, Grace period, Redemption, Pending delete, Released|What typically happens after a domain expires.
 
-
 Every registration has an expiry date. If the owner does not renew, the name does not become free the next day. It moves through a series of stages, and exact timings vary by registrar and by extension. For a typical generic top-level domain such as .com, the sequence looks like this.
 
 | Stage | Typical length | What happens |
@@ -118,8 +117,6 @@ If you need a name for a launch date, a rebrand or a campaign, waiting on an exp
 There is also a quality question. Names that drop are, by definition, names someone chose not to keep. Many good ones are renewed for decades and never expire, so the best match for your brand may only be available through a sale. Our guide to [domain names for business](/domain-names-for-business/) explains what to look for.
 
 Domain Brothers does not offer backorders. We sell listed premium names with clear prices, accept offers with a broker reply within one business day, and offer card payment plans of 3 to 12 months. If the name you want is owned by someone else and is not expiring, our [domain brokerage service](/domain-brokerage-services/) can research the owner and approach them confidentially for you.
-
-!cta Need a name without the wait?|Browse premium names you can buy today, or ask our brokers to approach the owner of a name that is already taken.|Browse listed domains|/all-domains/|Domain brokerage|/domain-brokerage-services/
 
 ## Frequently asked questions
 

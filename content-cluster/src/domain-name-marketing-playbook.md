@@ -151,6 +151,4 @@ Review the numbers every month, keep what works and stop what does not.
 - Understand the asset side in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 - Browse names you can own today in our [domain list](/all-domains/).
 
-!cta Put your name to work|We design, build and market sites for premium domain owners, from the first page to the first campaign.|Digital marketing services|/digital-marketing-services/|Comprehensive digital solutions|/comprehensive-digital-solutions/
-
 !related

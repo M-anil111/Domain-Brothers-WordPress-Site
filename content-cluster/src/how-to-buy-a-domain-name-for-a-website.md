@@ -18,7 +18,6 @@ Knowing how to buy a domain name for a website saves you money and weeks of dela
 
 !img:ib-pillar-a|How to buy a domain name for a website. Two ways to get a domain name: Register a new name, Buy a taken name|Two ways to get a domain name.
 
-
 Every guide on how to buy a domain name for a website should start here, because the search is easier when you know what you are judging. Write down who the site is for, where those people live, and how they will hear the name: in an ad, a podcast, a referral or a search result.
 
 Then set a few rules for the name itself:
@@ -80,7 +79,7 @@ Registration fees are set by registrars and are broadly similar for the same ext
 | Buy a listed premium name | The listed price or an agreed offer | Length, meaning, extension and comparable sales |
 | Buy an unlisted name | A negotiated price, plus broker fees if you use one | The owner's plans and how much the name matters to you |
 
-Price is where most questions about how to buy a domain name for a website end up. Before you make an offer, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/) and check recorded sales on our [sold domains](/sold/) page. If you want a written opinion, our [appraisal service](/domain-appraisal-services/) values the name for you.
+Price is where most questions about how to buy a domain name for a website end up. Before you make an offer, read [how to value a premium domain name](/how-to-value-a-premium-domain-name/) and check recorded sales on our [sold domains](/sold/) page.
 
 Remember who is on the other side. Some owners are businesses that once used the name. Others are investors who buy names to resell; our guide to [domain flipping](/domain-flipping/) explains how they think about price. A name showing a parked page with ads is usually held by an investor, and our [domain parking](/domain-parking/) guide explains what that page tells you.
 
@@ -114,8 +113,6 @@ The last step in how to buy a domain name for a website is the one buyers rush. 
 If you are replacing an older name, plan the move with permanent redirects from every old URL to its new match. Our guide on how to [change a domain name without losing SEO](/change-domain-name-without-losing-seo/) walks through the process. Keep the old name registered so the redirects keep working.
 
 Once the move is complete, you may decide you no longer need some names you hold. Our guide on [how to sell a domain name](/sell-my-domain/) covers pricing and listing them. If you would rather have the site built for you, our [website design and development](/website-design-development/) team can take it from DNS to launch.
-
-!cta Found the name you want?|Browse listed premium names with clear prices and payment plans, or ask our brokers to buy a name that someone else owns.|Browse premium domains|/all-domains/|Talk to a domain broker|/domain-brokerage-services/
 
 ## Frequently asked questions
 

@@ -23,7 +23,6 @@ Buying premium domains starts with what you need the name to do. Write down thre
 
 ## Stage 2: Check the name and the seller
 
-
 !img:ib-safe-a|Checks before buying premium domains: trademarks, history, sound, renewal price, registration record and the seller|Six checks before buying premium domains.
 ### The name
 
@@ -134,7 +133,5 @@ If buying premium domains on your own feels like too much, we handle every step 
 !details:Do I need escrow when buying premium domains from Domain Brothers?|No. Domain Brothers does not use escrow for its own sales. Payment is confirmed before the transfer starts, the steps are set out before you pay, and a broker answers your questions first. Escrow remains good advice when you buy from a private seller you do not know.
 !details:Can I pay for a premium domain in instalments?|Yes. Domain Brothers takes card payment in full or on a monthly plan of 3 to 12 months. Shorter plans have no interest, nine-month plans add 5% and twelve-month plans add 10%. The name transfers after the final payment clears, and every instalment is non-refundable.
 !details:What should I do if a transfer is delayed?|Check that the name is unlocked, that the authorisation code is correct and that the contact email at the losing registrar works, because most delays come from one of those three. If you bought from a marketplace or broker, send them your order details so they can check the transfer status.
-
-!cta Buy with confidence|Clear written terms, personal service and a transfer you can follow from the first message to the final handover.|Browse premium domains|/all-domains/|Ask us to find a name|/domain-brokerage-services/
 
 !related

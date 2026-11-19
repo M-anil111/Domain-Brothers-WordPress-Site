@@ -18,7 +18,6 @@ Learning how to buy a domain name from someone is the answer when the name you w
 
 !img:ib-someone-a|How to buy a domain name from someone. Buying a domain name from its owner: Look up, Research, Approach, Agree, Transfer|Buying a domain name from its owner.
 
-
 The first step in how to buy a domain name from someone is finding out who that someone is. Every registered name has a registration record held by its registrar. The [ICANN Lookup tool](https://lookup.icann.org/en) queries that record through RDAP, the modern replacement for WHOIS, and shows the registrar, the creation date, the expiry date and the name servers.
 
 Since data protection rules tightened, most records hide personal details. You will usually see the registrar's name and either a privacy service, a relay email address or a web form for contacting the registrant. That relay is the legitimate route to the owner, and messages sent through it do reach them.
@@ -87,8 +86,6 @@ Our [domain brokerage service](/domain-brokerage-services/) takes the work of ho
 
 A broker also helps when the price matters more than speed. Owners tend to respond differently to an experienced buyer who cites comparable sales than to a first-time buyer who seems keen.
 
-!cta Want us to approach the owner for you?|Tell us the name you want. We research ownership and comparable sales, agree a price range with you, and contact the owner confidentially.|Start a brokerage request|/domain-brokerage-services/|Browse listed names|/all-domains/
-
 !img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors that set a domain name's value.
 
 ## Paying and transferring: how to buy a domain name from someone safely
@@ -117,7 +114,7 @@ If any item is missing, pause. A genuine seller will wait a day while you check;
 
 !details:Is it legal to buy a domain name from someone who owns it?|Yes. Domain names are routinely bought and sold between private owners and companies. The sale is legal as long as the seller has the right to transfer the name and neither side is infringing a trademark. Check the trademark register before you buy, and keep a written record of the agreement and the payment.
 !details:What if the owner does not respond?|Send one short follow-up after a week or two, then stop. The owner may not check the relay address, or may not want to sell. You can watch the expiry date in case the name lapses, choose a different name, or ask a broker, who may know the owner or reach them by another route.
-!details:How much should I offer for a domain owned by someone else?|Base your offer on comparable sales, the name's length, meaning and extension, and its value to your business. Start below the price you would be glad to pay and keep your walk-away figure private. An appraisal gives you a written reference point if you are unsure where to begin the negotiation.
+!details:How much should I offer for a domain owned by someone else?|Base your offer on comparable sales, the name's length, meaning and extension, and its value to your business. Start below the price you would be glad to pay and keep your walk-away figure private. Recorded sales of similar names give you a reference point if you are unsure where to begin the negotiation.
 !details:Can I find out who owns a domain if WHOIS privacy is on?|Usually not directly. Privacy services hide personal details by design. You can still contact the owner through the registrar's relay email or contact form, look for contact details on the website itself, or use a broker. A court order or a dispute process can reveal details in legal cases, but not for a simple purchase.
 !details:How long does it take to buy a domain name from someone?|Finding the owner and agreeing a price can take days or several weeks, depending on how quickly they reply. Once terms are agreed and paid, a push within the same registrar can finish the same day, while a move between registrars usually takes up to five days after the code is entered.
 

@@ -113,7 +113,7 @@ There is no universal price list for premium domains. The right price is the one
 
 ### Checking a price before you negotiate
 
-Use at least three sources. Look at sales databases for comparable names, see what the same name might earn as a brand (what a customer is worth to you), and consider a professional appraisal for any purchase that matters to your plan. We offer [domain appraisal services](/domain-appraisal-services/) if you want an independent view.
+Use at least three sources. Look at sales databases for comparable names, see what the same name might earn as a brand (what a customer is worth to you), and consider a professional appraisal for any purchase that matters to your plan.
 
 Our full method, with worked examples, is in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/).
 
@@ -210,8 +210,6 @@ Before you buy, check that the name does not clash with a registered trademark i
 !details:Will a premium domain improve my Google ranking?|Not by itself. It can raise click-through, trust and direct visits, which help your marketing, but ranking depends mostly on helpful content and a good site.
 !details:What happens if I make an offer?|We read it personally and reply by email. You can accept, counter or walk away, and the conversation stays on a private page.
 !details:Do I have to renew a premium domain?|Yes. You pay the registrar's renewal fee each year or multi-year term. Turn on auto-renew and keep your contact details up to date.
-
-!cta Ready to find your name?|Browse premium domains by length, keyword and category, or tell us what you are building and we will suggest names.|Browse premium domains|/all-domains/|Talk to a domain broker|/domain-brokerage-services/
 
 !related
 
