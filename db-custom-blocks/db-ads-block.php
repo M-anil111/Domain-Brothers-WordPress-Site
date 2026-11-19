@@ -64,10 +64,41 @@ if ( ! function_exists( 'db_ads_settings' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ads_enabled' ) ) {
+	/**
+	 * Master switch. Ads stay off everywhere (slots, the AdSense script and the
+	 * staging placeholders) until an administrator ticks "Show ads" under
+	 * Domain Brothers > Ads. The publisher id built into this plugin does not
+	 * turn them on by itself.
+	 */
+	function db_ads_enabled() {
+		$o = db_ads_settings();
+		return ! empty( $o['enabled'] ) && '1' === (string) $o['enabled'];
+	}
+}
+
+if ( ! function_exists( 'db_ads_strip_placeholders' ) ) {
+	/**
+	 * Removes pasted "Google Display Ad 728 x 90" placeholder boxes from page
+	 * content (the Terms of use page carried four) together with a wrapper that
+	 * holds nothing else. Real slots are rendered by db_ad_html() and are not touched.
+	 */
+	function db_ads_strip_placeholders( $html ) {
+		if ( false === strpos( $html, 'Display Ad' ) ) {
+			return $html;
+		}
+		$box = '<div class="[a-z0-9_-]*\bad\b[^"]*"[^>]*>\s*<p class="[a-z0-9_-]*ad-label">[^<]*</p>\s*<div class="[a-z0-9_-]*ad-box">\s*<span class="[a-z0-9_-]*ad-title">[^<]*Display Ad[^<]*</span>\s*(?:<span class="[a-z0-9_-]*ad-size">[^<]*</span>)?\s*</div>\s*</div>';
+		$out = preg_replace( '#<div class="[a-z0-9_-]*bleed">\s*<div class="[a-z0-9_-]*wrap">\s*' . $box . '\s*</div>\s*</div>#i', '', $html );
+		$out = is_string( $out ) ? preg_replace( '#' . $box . '#i', '', $out ) : $html;
+		return is_string( $out ) ? $out : $html;
+	}
+}
+add_filter( 'the_content', 'db_ads_strip_placeholders', 999 );
+
 if ( ! function_exists( 'db_ad_html' ) ) {
 	/** One banner slot (responsive display ad). Empty string when ads are not set up on a live site. */
 	function db_ad_html( $key ) {
-		if ( is_admin() || ! array_key_exists( $key, db_ads_slots() ) ) {
+		if ( is_admin() || ! db_ads_enabled() || ! array_key_exists( $key, db_ads_slots() ) ) {
 			return '';
 		}
 		$o      = db_ads_settings();
@@ -91,7 +122,7 @@ if ( ! function_exists( 'db_ad_html' ) ) {
 // The AdSense code goes in the <head> of every public page (this is also what Google checks to verify site ownership).
 add_action( 'wp_head', function () {
 	$client = db_ads_client();
-	if ( '' === $client || ! db_ads_page_allowed() ) {
+	if ( '' === $client || ! db_ads_enabled() || ! db_ads_page_allowed() ) {
 		return;
 	}
 	$GLOBALS['db_ads_head'] = true;
@@ -144,7 +175,8 @@ if ( ! function_exists( 'db_ads_admin_page' ) ) {
 		echo '<p>Banner slots show on domain pages, the home page, domain lists, news and other content pages (never on checkout, thank-you, account or admin pages). Create <em>Display ad units</em> in AdSense (one can be reused for several slots), then paste your publisher id and the ad unit ids here. A slot left empty shows nothing. Leave the publisher id empty to show no ads on the live site.</p>';
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="db_ads_save">';
 		wp_nonce_field( 'db_ads_save' );
-		echo '<table class="form-table" role="presentation"><tr><th><label for="db_ads_client">Publisher id</label></th><td><input type="text" id="db_ads_client" name="client" class="regular-text" placeholder="ca-pub-1234567890123456" value="' . esc_attr( db_ads_client() ) . '"></td></tr>';
+		echo '<table class="form-table" role="presentation"><tr><th>Show ads</th><td><label><input type="checkbox" name="enabled" value="1"' . checked( db_ads_enabled(), true, false ) . '> Turn ads on across the site (off until you add your AdSense ids and tick this)</label></td></tr>'
+			. '<tr><th><label for="db_ads_client">Publisher id</label></th><td><input type="text" id="db_ads_client" name="client" class="regular-text" placeholder="ca-pub-1234567890123456" value="' . esc_attr( db_ads_client() ) . '"></td></tr>';
 		echo '<tr><th><label for="db_ads_default_unit">Default ad unit id</label></th><td><input type="text" id="db_ads_default_unit" name="default_unit" class="regular-text" placeholder="Ad unit id, digits only" value="' . esc_attr( $o['default_unit'] ?? '' ) . '"><p class="description">Used by every slot below that has no id of its own. One responsive display ad unit is enough.</p></td></tr>';
 		foreach ( db_ads_slots() as $k => $label ) {
 			echo '<tr><th><label for="db_ads_' . esc_attr( $k ) . '">' . esc_html( $label ) . '</label></th><td><input type="text" id="db_ads_' . esc_attr( $k ) . '" name="' . esc_attr( $k ) . '" class="regular-text" placeholder="Ad unit id, digits only" value="' . esc_attr( $o[ $k ] ?? '' ) . '"></td></tr>';
@@ -161,6 +193,7 @@ add_action( 'admin_post_db_ads_save', function () {
 		wp_die( 'Not allowed.' );
 	}
 	$out    = array();
+	$out['enabled'] = ! empty( $_POST['enabled'] ) ? '1' : '0';
 	$client = isset( $_POST['client'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['client'] ) ) ) : '';
 	$out['client'] = preg_match( '/^ca-pub-\d{10,20}$/', $client ) ? $client : '';
 	foreach ( array_keys( db_ads_slots() ) as $k ) {
