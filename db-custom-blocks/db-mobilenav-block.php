@@ -64,10 +64,10 @@ add_action( 'wp_footer', function () {
 	// hovered — the whole drawer is a touch/click surface).
 	$service_pages = array(
 		'Website Design & Development' => esc_url( home_url( '/website-design-development/' ) ),
-		'Digital Marketing'            => esc_url( home_url( '/digital-marketing/' ) ),
-		'Software Development'         => esc_url( home_url( '/software-development/' ) ),
-		'Mobile App Development'       => esc_url( home_url( '/mobile-app-development/' ) ),
-		'Other Services'               => esc_url( home_url( '/other-services/' ) ),
+		'Digital Marketing'            => esc_url( home_url( '/digital-marketing-services/' ) ),
+		'Software Development'         => esc_url( home_url( '/custom-software-development-services/' ) ),
+		'Mobile App Development'       => esc_url( home_url( '/mobile-app-development-services/' ) ),
+		'Hosting & Maintenance'        => esc_url( home_url( '/web-hosting-maintenance-services/' ) ),
 	);
 	$logo = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
 	?>

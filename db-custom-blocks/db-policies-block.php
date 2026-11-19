@@ -112,3 +112,36 @@ add_action( 'admin_post_db_policies_import', function () {
 	wp_safe_redirect( admin_url( 'tools.php?page=db-policies&done=1' ) );
 	exit;
 } );
+
+/*
+ * Staging only (beta.): the policy pages publish themselves the first time an
+ * administrator opens WP Admin after an upload that changes them. Each bundle
+ * (manifest + page files) is published once; the result is on Tools > Policy
+ * pages. The live site keeps the manual "Publish policy pages" button.
+ */
+add_action( 'admin_init', function () {
+	if ( wp_doing_ajax() || ! function_exists( 'db_is_staging_host' ) || ! db_is_staging_host() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$files = array_merge( array( __DIR__ . '/policies/manifest.json' ), (array) glob( __DIR__ . '/policies/*.html' ) );
+	$sig   = '';
+	foreach ( $files as $f ) {
+		$sig .= is_readable( $f ) ? md5_file( $f ) : 'x';
+	}
+	$sig = md5( $sig );
+	if ( get_option( 'db_policies_auto_sig' ) === $sig || get_transient( 'db_policies_auto_lock' ) ) {
+		return;
+	}
+	set_transient( 'db_policies_auto_lock', 1, 120 );
+	$report = db_policies_import();
+	$failed = array_filter( $report, function ( $r ) {
+		return 'failed' === $r['action'] || '' !== $r['error'];
+	} );
+	set_transient( 'db_policies_report', $report, DAY_IN_SECONDS );
+	if ( ! $failed ) {
+		update_option( 'db_policies_auto_sig', $sig, false );
+	}
+	add_action( 'admin_notices', function () use ( $failed ) {
+		echo '<div class="notice ' . ( $failed ? 'notice-error' : 'notice-success' ) . ' is-dismissible"><p>' . esc_html( $failed ? 'Staging: some policy pages could not be published.' : 'Staging: the six policy pages were published from the plugin files.' ) . ' <a href="' . esc_url( admin_url( 'tools.php?page=db-policies&done=1' ) ) . '">See the result</a></p></div>';
+	} );
+} );

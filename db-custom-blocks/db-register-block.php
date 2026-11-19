@@ -418,7 +418,7 @@ add_action( 'template_redirect', function () {
 	echo '</main></div>';
 	get_footer();
 	exit;
-}, 4 );
+}, 6 );
 
 add_filter( 'pre_get_document_title', function ( $title ) {
 	return function_exists( 'db_sales_request_path' ) && in_array( db_sales_request_path(), array( 'register', 'sign-up', 'signup', 'create-account' ), true ) ? 'Create your account | Domain Brothers' : $title;
