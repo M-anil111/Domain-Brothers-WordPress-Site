@@ -42,7 +42,7 @@ if ( ! function_exists( 'db_wl_intro_html' ) ) {
 	/** @return string The explainer section (escaped). */
 	function db_wl_intro_html() {
 		$signin   = esc_url( add_query_arg( 'auth', 'signin', home_url( '/my-wishlist/' ) ) . '#db-au' );
-		$register = esc_url( add_query_arg( 'auth', 'register', home_url( '/my-wishlist/' ) ) . '#db-au' );
+		$register = esc_url( home_url( '/register/' ) );
 		$minutes  = defined( 'DB_WL_CODE_TTL' ) ? max( 1, (int) round( DB_WL_CODE_TTL / 60 ) ) : 10;
 
 		$art = '<svg class="dbwi-art" viewBox="0 0 420 300" role="img" aria-label="A saved domain with a price alert">'

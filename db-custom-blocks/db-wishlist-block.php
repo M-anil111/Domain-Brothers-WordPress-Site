@@ -453,7 +453,7 @@ add_action( 'template_redirect', function () {
 	if ( is_admin() || ! function_exists( 'db_sales_request_path' ) ) {
 		return;
 	}
-	$map  = array( 'sign-in' => 'signin', 'signin' => 'signin', 'login' => 'signin', 'log-in' => 'signin', 'account' => 'signin', 'my-account' => 'signin', 'register' => 'register', 'sign-up' => 'register', 'signup' => 'register', 'create-account' => 'register' );
+	$map  = array( 'sign-in' => 'signin', 'signin' => 'signin', 'login' => 'signin', 'log-in' => 'signin', 'account' => 'signin', 'my-account' => 'signin' );
 	$path = db_sales_request_path();
 	if ( isset( $map[ $path ] ) ) {
 		wp_safe_redirect( add_query_arg( 'auth', $map[ $path ], home_url( '/my-wishlist/' ) ), 302 );
@@ -621,6 +621,8 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			return;
 		}
 		if (state.signedIn) { return; }
+		// Sign in and Create account are pages (/sign-in/, /register/), not a popup: let the link go.
+		if (kind === 'signin' || kind === 'register') { return; }
 		e.preventDefault();
 		var toggle = document.getElementById('db-mnav-toggle');
 		if (toggle && toggle.getAttribute('aria-expanded') === 'true') { toggle.click(); }
@@ -633,7 +635,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		api('state', 'GET').then(function (j) {
 			state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); paintAccount();
 			var m = /[?&]auth=(signin|register)\b/.exec(location.search);
-			if (m && !state.signedIn && !document.getElementById('db-au')) { onSignedIn = goAccount; openSignIn(0, m[1]); }
+			if (m && !state.signedIn && !document.getElementById('db-au') && m[1] === 'signin') { onSignedIn = goAccount; openSignIn(0, m[1]); }
 		}).catch(function () {});
 		mountButton(); mountPage();
 	}
@@ -774,6 +776,10 @@ add_action( 'template_redirect', function () {
 		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
 	}
 	if ( '' === $email ) {
+		if ( isset( $_GET['auth'] ) && 'register' === sanitize_key( wp_unslash( $_GET['auth'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			wp_safe_redirect( home_url( '/register/' ), 302 );
+			exit;
+		}
 		if ( function_exists( 'db_wl_intro_active' ) && db_wl_intro_active() ) {
 			// No ?auth= card requested: explain the wishlist first (db-wishlist-intro-block.php).
 			echo db_wl_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
