@@ -120,6 +120,7 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 							array( 'Domain news', $u( '/news/' ), 'What is moving in the domain industry' ),
 							array( 'Blog', $u( '/category/domain-guides/' ), 'Guides for buyers and sellers' ),
 							array( 'EPP code guide', $u( '/epp-guidelines/' ), 'Get the transfer code at any registrar' ),
+							array( 'Domain tools', $u( '/domain-tools/' ), 'Free lookup: registry, DNS and comparable sales' ),
 						),
 					),
 					array(
