@@ -128,6 +128,8 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 							array( 'Refund policy', $u( '/refund-policy/' ), 'When and how refunds apply' ),
 							array( 'Privacy policy', $u( '/privacy-policy/' ), 'What we collect and why' ),
 							array( 'Terms of use', $u( '/terms-of-use/' ), 'The rules for using this site' ),
+							array( 'Cookie policy', $u( '/cookie-policy/' ), 'The cookies we use and how to control them' ),
+							array( 'Acceptable use', $u( '/acceptable-use-policy/' ), 'What is not allowed on the site' ),
 						),
 					),
 				),
