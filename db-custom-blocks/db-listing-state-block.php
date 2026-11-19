@@ -465,8 +465,9 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 			if ( 'ok' === $inq ) {
 				$h .= '<p class="db-un-note db-un-note--ok" role="status">Thanks. We have your request and will come back to you by email.</p>';
 			} else {
-				if ( in_array( $inq, array( 'bad', 'wait' ), true ) ) {
-					$h .= '<p class="db-un-note db-un-note--err" role="alert">' . ( 'wait' === $inq ? 'Please wait a little before sending another request.' : 'Please enter a valid email address and try again.' ) . '</p>';
+				if ( in_array( $inq, array( 'bad', 'wait', 'check' ), true ) ) {
+					$msg = array( 'wait' => 'Please wait a little before sending another request.', 'check' => 'The security check did not complete. Please try again.' );
+					$h  .= '<p class="db-un-note db-un-note--err" role="alert">' . ( $msg[ $inq ] ?? 'Please enter a valid email address and try again.' ) . '</p>';
 				}
 				$h .= '<form class="db-un-form" id="inquiry" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 				$h .= '<h2>Ask the owner</h2><p>Leave your email. We will let you know what they say.</p>';
@@ -474,7 +475,7 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 				$h .= '<div class="db-un-hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 				$h .= '<label for="db-un-email">Your email</label><input type="email" id="db-un-email" name="email" required autocomplete="email" maxlength="190">';
 				$h .= '<label for="db-un-msg">Anything we should tell the owner? (optional)</label><textarea id="db-un-msg" name="message" rows="3" maxlength="600"></textarea>';
-				$h .= '<button type="submit">Ask the owner</button></form>';
+				$h .= '<div class="db-ts"></div><button type="submit">Ask the owner</button></form>';
 			}
 			$h .= '</section>';
 		}
@@ -539,6 +540,19 @@ if ( ! function_exists( 'db_listing_handle_inquiry' ) ) {
 		$t = isset( $_POST['t'] ) ? (int) $_POST['t'] : 0;
 		if ( $t > 0 && ( time() - $t ) < 3 ) {
 			$go( 'wait' );
+		}
+		if ( function_exists( 'db_ts_enabled' ) && db_ts_enabled() ) {
+			$token = isset( $_POST['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) : '';
+			if ( ! db_ts_verify( $token, function_exists( 'db_wl_ip' ) ? db_wl_ip() : '' ) ) {
+				$go( 'check' );
+			}
+		}
+		if ( function_exists( 'db_spam_score' ) ) {
+			$verdict = db_spam_score( array( 'email' => isset( $_POST['email'] ) ? (string) wp_unslash( $_POST['email'] ) : '', 'message' => isset( $_POST['message'] ) ? (string) wp_unslash( $_POST['message'] ) : '' ) );
+			if ( $verdict['score'] >= DB_SPAM_THRESHOLD ) {
+				error_log( 'DB spam: blocked a listing enquiry (' . implode( '; ', $verdict['reasons'] ) . ').' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				$go( 'ok' ); // look successful, send nothing.
+			}
 		}
 		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$key = 'db_inq_' . md5( $ip );

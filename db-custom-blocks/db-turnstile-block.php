@@ -5,8 +5,11 @@
  * Off until both keys are saved under Domain Brothers > Launch checks. With keys:
  *   - every Contact Form 7 form gets a Turnstile widget, and a submission without a
  *     valid token is treated as spam;
- *   - the sign-in code request (/wishlist/code) and the account offer (/account/offer)
- *     require a valid token;
+ *   - the sign-in code request (/wishlist/code), the registration code request
+ *     (/account/register), the account offer (/account/offer), the broker request on
+ *     the finder and the "Ask the owner" enquiry require a valid token. Offer and
+ *     deal-buyer pages are guarded by a private token, a honeypot and per-IP limits;
+ *     save-search and transfer messages need a signed-in account;
  *   - the secret key is stored encrypted (db_smtp_encrypt) and never shown again.
  *
  * Fail closed: if Cloudflare cannot be reached to verify a token, the form is refused and
