@@ -4695,3 +4695,9 @@ if ( is_readable( __DIR__ . '/db-team-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-forms-block.php' ) ) {
 	require_once __DIR__ . '/db-forms-block.php';
 }
+foreach ( array( 'db-consent-block.php', 'db-footer-links-block.php', 'db-service-redirects-block.php', 'db-test-data-block.php' ) as $db_optional_block ) {
+	if ( is_readable( __DIR__ . '/' . $db_optional_block ) ) {
+		require_once __DIR__ . '/' . $db_optional_block;
+	}
+}
+unset( $db_optional_block );

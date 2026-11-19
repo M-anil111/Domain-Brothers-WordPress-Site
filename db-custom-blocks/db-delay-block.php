@@ -64,7 +64,7 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 	 * Marks third-party script tags in a page so they start late.
 	 * Pure function: tested offline in tests/speed/delay-test.php.
 	 */
-	function db_delay_rewrite( $html, array $hosts ) {
+	function db_delay_rewrite( $html, array $hosts, $immediate = false ) {
 		if ( ! is_string( $html ) || ( false === stripos( $html, '<script' ) && false === stripos( $html, '<iframe' ) ) || false === stripos( $html, '</body>' ) ) {
 			return $html;
 		}
@@ -118,11 +118,15 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 			return $out;
 		}
 		$loader = '<script data-no-delay>(function(){var done=false,ev=["pointerdown","keydown","touchstart","scroll","mousemove","wheel"];'
-			. 'function go(){if(done)return;done=true;ev.forEach(function(e){removeEventListener(e,go,{passive:true});});'
+			// Consent (db-consent-block.php): while a visitor who must be asked has not accepted, nothing starts.
+			. 'function ok(){var C=window.dbConsent;return !C||C.ok();}'
+			. 'function go(){if(done||!ok())return;done=true;ev.forEach(function(e){removeEventListener(e,go,{passive:true});});'
 			. 'document.querySelectorAll(\'script[type="text/db-delay"]\').forEach(function(o){var n=document.createElement("script");'
 			. 'for(var i=0;i<o.attributes.length;i++){var a=o.attributes[i];if(a.name==="type"||a.name==="data-src")continue;n.setAttribute(a.name,a.value);}'
 			. 'var s=o.getAttribute("data-src");if(s){n.src=s;if(!o.hasAttribute("defer"))n.async=true;}else{n.text=o.text;}o.parentNode.replaceChild(n,o);});}'
 			. 'ev.forEach(function(e){addEventListener(e,go,{passive:true});});'
+			. 'document.addEventListener("db-consent",function(e){if(e.detail&&e.detail.choice==="all")go();});'
+			. ( $immediate ? 'go();' : '' )
 			. 'function later(){var ms=' . (int) apply_filters( 'db_delay_fallback_ms', 0 ) . ';if(ms>0)setTimeout(go,ms);}if(document.readyState==="complete"){later();}else{addEventListener("load",later);}})();</script>';
 		$pos = strripos( $out, '</body>' );
 		return substr( $out, 0, $pos ) . $loader . substr( $out, $pos );
@@ -217,14 +221,17 @@ add_action( 'template_redirect', function () {
 }, -998 );
 
 add_action( 'template_redirect', function () {
-	if ( is_admin() || is_feed() || is_robots() || is_embed() || is_customize_preview() || ! db_delay_enabled() ) {
+	if ( is_admin() || is_feed() || is_robots() || is_embed() || is_customize_preview() ) {
 		return;
 	}
-	if ( isset( $_GET['db_nodelay'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$consent = function_exists( 'db_consent_active' ) && db_consent_active();
+	$delay   = db_delay_enabled() && ! isset( $_GET['db_nodelay'] ); // phpcs:ignore WordPress.Security.NonceVerification
+	if ( ! $delay && ! $consent ) {
 		return;
 	}
-	ob_start( function ( $html ) {
-		return db_delay_rewrite( $html, db_delay_hosts() );
+	// With delay off but cookie consent on, the scripts are still held back, then start at once (or on "Accept all").
+	ob_start( function ( $html ) use ( $delay ) {
+		return db_delay_rewrite( $html, db_delay_hosts(), ! $delay );
 	} );
 }, -999 );
 
