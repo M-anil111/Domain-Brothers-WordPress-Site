@@ -147,7 +147,7 @@ if ( ! function_exists( 'db_render_news' ) ) {
 			$h  = '<article class="db-an-card ' . esc_attr( $class ) . '"><button type="button" class="db-news-card__trigger db-an-hit"'
 				. ' data-title="' . esc_attr( $it['title'] ) . '" data-excerpt="' . esc_attr( $it['excerpt'] ) . '" data-source="' . esc_attr( $it['source'] ) . '"'
 				. ' data-date="' . esc_attr( $date_str ) . '" data-link="' . esc_url( $it['link'] ) . '"' . ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' ) . '>';
-			$h .= '<span class="db-an-img">' . ( $image ? '<img src="' . esc_url( $image ) . '" alt="" ' . ( $eager ? 'loading="eager"' . ( 1 === $eager ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async">' : '' ) . '</span>';
+			$h .= '<span class="db-an-img">' . db_img_placeholder( '' !== $source ? $source : 'Domain news', $it['title'] ) . ( $image ? '<img src="' . esc_url( $image ) . '" alt="" ' . ( $eager ? 'loading="eager"' . ( 1 === $eager ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async">' : '' ) . '</span>';
 			$h .= '<span class="db-an-txt">';
 			if ( '' !== $source ) {
 				$h .= '<span class="db-an-src">' . esc_html( $source ) . '</span>';
@@ -228,7 +228,7 @@ if ( ! function_exists( 'db_news_own_cards' ) ) {
 			$cat = preg_match( '#rel="category tag"[^>]*>(.*?)</a>#s', $a, $c ) ? trim( wp_strip_all_tags( $c[1] ) ) : 'Domain Brothers';
 			++$n;
 			return '<article class="db-an-card db-an-tile"><a class="db-an-hit" href="' . esc_url( $t[1] ) . '">'
-				. '<span class="db-an-img">' . ( '' !== $img ? '<img src="' . esc_url( $img ) . '" alt="" loading="lazy" decoding="async">' : '' ) . '</span>'
+				. '<span class="db-an-img">' . db_img_placeholder( $cat, $title ) . ( '' !== $img ? '<img src="' . esc_url( $img ) . '" alt="" loading="lazy" decoding="async">' : '' ) . '</span>'
 				. '<span class="db-an-txt"><span class="db-an-src">' . esc_html( $cat ) . '</span><span class="db-an-title">' . esc_html( $title ) . '</span>'
 				. ( '' !== $date ? '<span class="db-an-date">' . esc_html( $date ) . '</span>' : '' ) . '</span></a></article>';
 		}, $html );
