@@ -3,7 +3,8 @@
 Domain Brothers is a premium domain marketplace on WordPress. Staging is
 `https://beta.domainbrothers.com` (HTTP Basic Auth, always `noindex`);
 production is `https://www.domainbrothers.com`. All custom behaviour lives in
-one plugin, `db-custom-blocks/`. The theme (DomainFolio, commercial, no child
+one plugin, `db-custom-blocks/` (the designer's All Domains redesign is bundled in
+`db-custom-blocks/designer/`; the old `db_*.php` snippets are archived in `legacy/snippets/`). The theme (DomainFolio, commercial, no child
 theme) is not edited.
 
 ## Main parts of the system
