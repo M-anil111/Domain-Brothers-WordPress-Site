@@ -239,6 +239,9 @@ if ( ! function_exists( 'db_focus_inject' ) ) {
 		$at  = ( false !== $cta && $cta > $main ) ? $cta : $end;
 		$html = substr( $html, 0, $at ) . $section . substr( $html, $at );
 
+		if ( false !== strpos( $html, 'id="dbs-page"' ) ) {
+			return $html; // the template page uses the sentence as its hero lead.
+		}
 		if ( ! empty( $def['lede'] ) && ! empty( $def['lede_replace'] ) && false !== strpos( $html, $def['lede_replace'], $main ) ) {
 			// The page already has an introduction line: the keyword sentence takes its place.
 			$pos  = strpos( $html, $def['lede_replace'], $main );
