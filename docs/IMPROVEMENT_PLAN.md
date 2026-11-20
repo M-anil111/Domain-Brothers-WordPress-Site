@@ -282,6 +282,16 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 | E2 | Price history chart above the existing table. | 3.110.1 |
 | H1 | axe-core run on 12 templates at desktop and phone width: fixed zoom blocking on virtual pages, the Sold badge contrast and keyboard access to three sideways-scrolling tables. The audit is the script `tests/qa/axe-audit.js`; it needs the live site, so it runs by hand after a deploy, not in CI. | 3.109.1, 3.110.2 |
 
+**Design pass (3.112 to 3.114), each checked in a browser at desktop and phone width and with axe-core:**
+
+| Where | What shipped | Version |
+|---|---|---|
+| Domain pages | "See it in use": the name as a browser address bar (the URL types in), an email address, a business card and a social profile. No JavaScript. | 3.112.3 |
+| Home page | "The market right now": four live numbers and a price-band chart from our own listings, cached for an hour. | 3.113.1 |
+| Domain tools hub and every lookup tool | "Try an example" chips that run a real lookup in one tap. | 3.114.0 |
+
+All motion is CSS only and is switched off under reduced motion. Not yet redesigned: the home hero, the service pages, news, the sold page and the account area. A rotating "names you could own today" line in the home hero is the next candidate.
+
 **Not built, and why:**
 
 | Group | Items | Reason |
