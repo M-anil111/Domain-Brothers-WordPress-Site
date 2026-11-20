@@ -1,0 +1,68 @@
+<?php
+/** Offline tests for db-search-log-block.php and db-learn-pages-block.php. Run: php tests/hygiene/learn-test.php */
+
+define( 'ABSPATH', '/' );
+function add_action() {}
+function add_filter() {}
+function esc_url( $u ) { return htmlspecialchars( $u, ENT_QUOTES ); }
+function esc_html( $s ) { return htmlspecialchars( $s, ENT_QUOTES ); }
+function esc_attr( $s ) { return htmlspecialchars( $s, ENT_QUOTES ); }
+function home_url( $p = '/' ) { return 'https://example.test' . $p; }
+require __DIR__ . '/../../db-custom-blocks/db-search-log-block.php';
+require __DIR__ . '/../../db-custom-blocks/db-learn-pages-block.php';
+
+$pass = 0;
+$fail = 0;
+function check( $name, $ok ) { global $pass, $fail; if ( $ok ) { $pass++; echo "PASS $name\n"; } else { $fail++; echo "FAIL $name\n"; } }
+
+// ---- search log
+check( 'term is lowercased and tidied', 'blue sky' === db_sl_normalise( "  Blue   SKY \n" ) );
+check( 'html is stripped', 'hello' === db_sl_normalise( '<b>Hello</b>' ) );
+check( 'email-like terms are dropped', '' === db_sl_normalise( 'me@example.com' ) );
+check( 'links are dropped', '' === db_sl_normalise( 'https://spam.example' ) && '' === db_sl_normalise( 'www.spam.example' ) );
+check( 'one-character terms are dropped', '' === db_sl_normalise( 'a' ) );
+check( 'long terms are cut at 60', 60 === strlen( db_sl_normalise( str_repeat( 'x', 100 ) ) ) );
+$log = db_sl_add( array(), 'Shoes', 0, 100 );
+$log = db_sl_add( $log, 'shoes', 3, 200 );
+check( 'repeat searches are counted together', 2 === $log['shoes']['n'] );
+check( 'misses count only searches that found nothing', 1 === $log['shoes']['miss'] );
+check( 'last searched time is kept', 200 === $log['shoes']['last'] );
+check( 'dropped terms leave the log unchanged', $log === db_sl_add( $log, 'a@b.co', 0, 300 ) );
+$big = array();
+for ( $i = 0; $i < 5; $i++ ) { $big = db_sl_add( $big, 'popular term', 1, 500 ); }
+for ( $i = 0; $i < DB_SEARCH_LOG_MAX + 20; $i++ ) { $big = db_sl_add( $big, 'rare term ' . $i, 0, 1000 + $i ); }
+check( 'log is capped', count( $big ) <= DB_SEARCH_LOG_MAX );
+check( 'the most searched term survives the cap', isset( $big['popular term'] ) && 5 === $big['popular term']['n'] );
+
+// ---- glossary
+$terms = db_gl_terms();
+$names = array_column( $terms, 0 );
+check( 'glossary has at least 25 terms', count( $terms ) >= 25 );
+check( 'terms are unique', count( $names ) === count( array_unique( array_map( 'strtolower', $names ) ) ) );
+check( 'terms are alphabetical', $names === ( function ( $n ) { usort( $n, 'strcasecmp' ); return $n; } )( $names ) );
+check( 'every definition is a full sentence of sensible length', 0 === count( array_filter( $terms, function ( $t ) { return strlen( $t[1] ) < 60 || strlen( $t[1] ) > 320 || '.' !== substr( $t[1], -1 ); } ) ) );
+$anchors = array_map( 'db_gl_anchor', $names );
+check( 'anchors are unique and clean', count( $anchors ) === count( array_unique( $anchors ) ) && 0 === count( array_filter( $anchors, function ( $a ) { return ! preg_match( '/^t-[a-z0-9-]+$/', $a ); } ) ) );
+$body = db_gl_body();
+check( 'page lists every term once as a definition', count( $terms ) === substr_count( $body, '<dt ' ) );
+check( 'page links to the tools and the call to action', false !== strpos( $body, '/domain-tools/' ) && false !== strpos( $body, 'Buy a premium domain now' ) );
+
+// ---- price index
+check( 'median of odd list', 3.0 === db_pi_median( array( 5, 1, 3 ) ) );
+check( 'median of even list', 2.5 === db_pi_median( array( 4, 1, 2, 3 ) ) );
+$rows = array();
+foreach ( array( 1000, 2000, 3000 ) as $p ) { $rows[] = array( 'len' => 4, 'ext' => 'com', 'price' => $p ); }
+foreach ( array( 500, 700 ) as $p ) { $rows[] = array( 'len' => 5, 'ext' => 'ca', 'price' => $p ); }
+foreach ( array( 100, 200, 300, 400 ) as $p ) { $rows[] = array( 'len' => 9, 'ext' => 'io', 'price' => $p ); }
+$s = db_pi_stats( $rows );
+check( 'groups under three names are left out', ! isset( $s['by_len']['5'] ) && ! isset( $s['by_ext']['ca'] ) );
+check( 'median, low and high per group', 2000.0 === $s['by_len']['4']['median'] && 1000.0 === $s['by_len']['4']['low'] && 3000.0 === $s['by_len']['4']['high'] );
+check( 'eight and longer are one group', 4 === $s['by_len']['8+']['n'] );
+check( 'other extensions are grouped', 4 === $s['by_ext']['other']['n'] && 3 === $s['by_ext']['com']['n'] );
+check( 'total counts every row', 9 === $s['total'] );
+check( 'length groups come out in order', array( '4', '8+' ) === array_map( 'strval', array_keys( $s['by_len'] ) ) );
+check( 'empty inventory still renders a page', false !== strpos( db_pi_body(), 'Not enough names' ) );
+check( 'both learn pages are registered', isset( db_learn_pages()['domain-glossary'], db_learn_pages()['domain-price-index'] ) );
+
+echo "\n$pass passed, $fail failed\n";
+exit( $fail ? 1 : 0 );

@@ -71,30 +71,30 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | B1 | Build and submit a disavow file for the spam link set. | 399 referring domains on six cheap extensions; 515 links with the "Premium Backlinks…" anchor. | S | Low |
 | B2 | Keep the six old posts that carry 178 backlinks each live, or 301 them to the closest guide. | Preserves link equity instead of 404s. | S | None |
 | B3 | Remove beta from search and keep it behind login and noindex. | Beta URLs appear in ranking data. | S | Low |
-| B4 | Product and Offer schema on every domain page (price, currency, availability). | Domain pages have no structured data. | M | None |
-| B5 | Fix domain page headings to a single h1 and a clean title such as "Name.ca – Premium Domain for Sale". | Sample title is "Gizmofreak.ca is on sale. Business Domain, Other Domain, Shopping Domain". | S | None |
-| B6 | Templated 140 to 155 character descriptions for domain pages. | 40 of 40 are under 70 characters. | S | None |
+| B4 | **BUILT** (Product and Offer schema already emitted by the plugin; missing on production only because it is not deployed). Product and Offer schema on every domain page (price, currency, availability). | Domain pages have no structured data. | M | None |
+| B5 | **BUILT** (domain titles already templated by the plugin; missing on production only because it is not deployed). Fix domain page headings to a single h1 and a clean title such as "Name.ca – Premium Domain for Sale". | Sample title is "Gizmofreak.ca is on sale. Business Domain, Other Domain, Shopping Domain". | S | None |
+| B6 | **BUILT** (domain descriptions already templated by the plugin; missing on production only because it is not deployed). Templated 140 to 155 character descriptions for domain pages. | 40 of 40 are under 70 characters. | S | None |
 | B7 | Shorten titles over 60 characters. | 33 of 45 posts. | S | None |
 | B8 | Intro copy, FAQs and ItemList schema on the 17 domain category pages. | Categories already attract links (103 to one of them). | M | None |
-| B9 | ItemList schema on every listing page. | Helps search engines understand lists of names. | S | None |
+| B9 | **BUILT** (ItemList already emitted on category pages; missing on production only because it is not deployed). ItemList schema on every listing page. | Helps search engines understand lists of names. | S | None |
 | B10 | Organization schema with logo, contact point and social profiles. | Needed for brand panels; verify the profile URLs. | S | Low |
-| B11 | BreadcrumbList schema on domain pages. | None today. | S | None |
+| B11 | **BUILT** (BreadcrumbList already emitted on domain pages; missing on production only because it is not deployed). BreadcrumbList schema on domain pages. | None today. | S | None |
 | B12 | "Related domains" and "more in this category" blocks on each domain page. | Internal links and cross-selling. | M | None |
 | B13 | Update robots.txt so `Sitemap:` points to the real sitemap. | It points to an HTML page today. | S | Low |
 | B14 | Decide the AI crawler policy: keep training blocked, allow search and answer bots (OAI-SearchBot, PerplexityBot, ChatGPT-User). | Blocking everything removes the site from AI answers. | S | Low |
-| B15 | Add `llms.txt` describing the site for AI assistants. | Cheap and harmless. | S | None |
+| B15 | **BUILT 3.106.0** (llms.txt route). Add `llms.txt` describing the site for AI assistants. | Cheap and harmless. | S | None |
 | B16 | Alt text on all images, generated in bulk and reviewable. | 71 of 195 page images have none. | M | None |
-| B17 | Add `loading="lazy"` and `decoding="async"` to theme images. | 182 of 195 page images and 440 of 440 domain images lack it. | S | None |
-| B18 | Width and height on images to stop layout shift. | 12 of 14 home images have none. | S | None |
+| B17 | **BUILT 3.106.0** (lazy and async image attributes). Add `loading="lazy"` and `decoding="async"` to theme images. | 182 of 195 page images and 440 of 440 domain images lack it. | S | None |
+| B18 | **BUILT 3.106.0** (image width and height from local files). Width and height on images to stop layout shift. | 12 of 14 home images have none. | S | None |
 | B19 | Fix `/news/` layout shift (0.298). | Above the "poor" line. | S | None |
 | B20 | Preload the hero image and self-host fonts with `font-display: swap`. | Google Fonts and Font Awesome load from third parties. | M | None |
 | B21 | Remove unused scripts per page (reCAPTCHA, chat, migrate). | 32 to 40 scripts per page. | M | None |
 | B22 | Enable Brotli and long-lived caching for static files. | Only gzip is served; the theme stylesheet sets no cache header. | S | Low |
 | B23 | Cache anonymous pages at the edge (Cloudflare). | `cf-cache-status: DYNAMIC`; server response 1.0 to 1.6 s. | M | Low |
-| B24 | Remove the `X-Powered-By` header. | Reveals the PHP version. | S | None |
-| B25 | A useful 404 page (search, popular names, categories) with a proper title. | The 404 title is the generic "Get Latest Updates…". | S | None |
+| B24 | **BUILT 3.106.0** (X-Powered-By removed). Remove the `X-Powered-By` header. | Reveals the PHP version. | S | None |
+| B25 | **BUILT 3.106.0** (helpful 404 page, 404 status, noindex). A useful 404 page (search, popular names, categories) with a proper title. | The 404 title is the generic "Get Latest Updates…". | S | None |
 | B26 | Unique titles on every page. | Duplicate and empty titles on production. | S | None |
-| B27 | Auto-ping IndexNow on publish and update. | Faster indexing in Bing and others. | S | Low |
+| B27 | **BUILT 3.106.0** (IndexNow on publish (off on staging)). Auto-ping IndexNow on publish and update. | Faster indexing in Bing and others. | S | Low |
 | B28 | Add Bing Webmaster Tools. | A second search source. | S | Low |
 | B29 | Add "Last updated" and bylines to guides, with Person schema for the founders. | E-E-A-T signals. | S | None |
 | B30 | Stop syndicating full news text; use short excerpts with a link to the source. | A full copy of a TechRadar review ranks at 31, and copies dilute the site. | M | None |
@@ -110,13 +110,13 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | C2 | Repeat for 3, 5 and 6 character, numeric and .ca lists, using SE Ranking to pick terms. | The same pattern applies to every list page. | M | None |
 | C3 | Rewrite the brokerage page around "domain brokerage" (30 searches, difficulty 38) first, then "domain broker". | "Domain broker" is 1,000 searches but difficulty 78; build up to it. | M | None |
 | C4 | Buy-side guide: "How to buy a domain name" with payment plans and transfer steps. | Supports every listing and the brokerage page. | M | None |
-| C5 | Glossary of 40 domain terms (EPP code, RDAP, ccTLD, backorder, registrar lock and so on). | Internal link hub and answer-engine material. | M | None |
+| C5 | **BUILT 3.106.0** (28-term glossary page). Glossary of 40 domain terms (EPP code, RDAP, ccTLD, backorder, registrar lock and so on). | Internal link hub and answer-engine material. | M | None |
 | C6 | Honest comparison pages: Domain Brothers vs Sedo, Afternic and Atom. | High-intent searches; the policy research already gathered the facts. | M | Low |
 | C7 | A page for each of the top 12 industries (food, finance, tech, health, travel, auto…). | Category pages exist; give each unique copy. | M | None |
 | C8 | Unique "ideas for this domain" block on each listing (three business ideas, similar names). | Avoids thin, repeated copy across 200 pages. | M | Low |
 | C9 | FAQ section on every listing page with FAQPage schema. | Targets "people also ask". | M | None |
 | C10 | Auto-built monthly "domains sold" roundup from your own sold records. | Fresh content with no writing. | S | None |
-| C11 | Public "domain price index": median asking price by length and extension, updated automatically. | Linkable data nobody else has for these names. | M | Low |
+| C11 | **BUILT 3.106.0** (live domain price index page). Public "domain price index": median asking price by length and extension, updated automatically. | Linkable data nobody else has for these names. | M | Low |
 | C12 | Case studies from sold names (10 stories). | Social proof for buyers and brokerage clients. | M | Some |
 | C13 | Canada pages: "buy a .ca domain", "Canadian domain broker". | Volumes need checking first; the audience and law are Canadian. | M | None |
 | C14 | Reconcile "15+ years" and "27+ years" everywhere. | Inconsistent claims hurt trust. | S | Low |
@@ -126,8 +126,8 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | C18 | A "Pricing and fees" page for brokerage, written plainly. | People search for what brokers charge; validate volume first. | M | Some |
 | C19 | A "How we protect your payment" page tied to the Payment Terms. | Removes the main buying objection. | S | None |
 | C20 | Publish the 14 tool pages, then submit them in Search Console. | Built; the targets are listed in `tools/seo-tools-keywords.json`. | S | Low |
-| C21 | Add tool pages for "propagation checker" (590, difficulty 49) and "nslookup specific DNS server" (590, difficulty 32 to 41). | Measured volume with realistic difficulty. | M | None |
-| C22 | Add a certificate decoder (320, difficulty 25) and an HSTS checker page (170, difficulty 30). | Low difficulty and easy to build. | M | None |
+| C21 | **BUILT 3.106.0** (DNS propagation checker and nslookup pages). Add tool pages for "propagation checker" (590, difficulty 49) and "nslookup specific DNS server" (590, difficulty 32 to 41). | Measured volume with realistic difficulty. | M | None |
+| C22 | **BUILT 3.106.0** (certificate decoder page). Add a certificate decoder (320, difficulty 25) and an HSTS checker page (170, difficulty 30). | Low difficulty and easy to build. | M | None |
 | C23 | Update the tool page copy every six months. | Keeps "last updated" honest. | S | None |
 
 ### D. Conversion
@@ -163,7 +163,7 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | E6 | Weekly KPI email to the owner (visits, offers, plans, revenue). | One glance at the business. | M | None |
 | E7 | Slack or email alert on every new offer or enquiry. | Faster replies win sales. | S | Low |
 | E8 | Hot-lead list in the CRM from views, saves and offers. | Tells you whom to contact first. | M | None |
-| E9 | Log site searches and show what people look for that you do not have. | Pure inventory insight. | S | None |
+| E9 | **BUILT 3.106.0** (site search log (Tools > Search terms)). Log site searches and show what people look for that you do not have. | Pure inventory insight. | S | None |
 | E10 | Self-serve "Delete my account and data" and "Download my data". | Privacy rights in several countries. | M | None |
 | E11 | A "domain watch" tool: alert when a domain's registration or expiry changes. | Built on the RDAP lookup; useful to brokerage prospects. | M | None |
 | E12 | Seller marketplace. | Planned and on hold. | L | Some |
@@ -195,8 +195,8 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | G3 | Content Security Policy in report-only mode, then enforce. | None today. | M | None |
 | G4 | Verify offsite backups and test a restore. | Backups are only real once restored. | S | Low |
 | G5 | Remove the two inactive plugins (Contact Form DB, WP Mail SMTP). | Fewer things to patch. | S | Low |
-| G6 | Publish `security.txt`. | A place to report problems. | S | None |
-| G7 | Purge old form entries after 24 months. | Data minimisation. | S | None |
+| G6 | **BUILT 3.106.0** (security.txt). Publish `security.txt`. | A place to report problems. | S | None |
+| G7 | **BUILT 3.106.0** (24-month form entry purge). Purge old form entries after 24 months. | Data minimisation. | S | None |
 | G8 | CASL and unsubscribe check on every marketing email. | Canadian anti-spam law. | S | None |
 | G9 | Schedule a weekly Wordfence scan with email alerts. | Early warning. | S | Low |
 | G10 | Confirm the consent banner blocks analytics until accepted on production. | Tested on beta only. | S | None |
@@ -222,7 +222,7 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | I2 | Track 50 target keywords weekly in SE Ranking. | You see progress and lost rankings. | S | None |
 | I3 | Weekly email of new and lost backlinks. | Spots spam early. | S | None |
 | I4 | Uptime monitoring with alerts. | Know before customers do. | S | Low |
-| I5 | Email alert when a new fatal error appears in the DB Fatal Log. | Today you must look. | S | None |
+| I5 | **BUILT 3.106.0** (fatal error email alert). Email alert when a new fatal error appears in the DB Fatal Log. | Today you must look. | S | None |
 | I6 | Nightly Playwright run against production. | Catches silent breakage. | M | Low |
 | I7 | Weekly top-404 report and automatic redirect suggestions. | Recovers lost traffic. | S | None |
 | I8 | A funnel report (view, save, offer, plan, paid). | Shows where buyers drop out. | M | None |
@@ -232,7 +232,7 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 | # | Recommendation | Why | Effort | Human |
 |---|---|---|---|---|
 | J1 | Split the 4,713-line `db-custom-blocks.php` into modules. | The largest file mixes many concerns; smaller files are safer to change. | M | None |
-| J2 | GitHub Actions: lint every PHP file, run every offline test and check JavaScript on each pull request. | Only manual checks exist today. | S | None |
+| J2 | **BUILT 3.106.0** (GitHub Actions CI). GitHub Actions: lint every PHP file, run every offline test and check JavaScript on each pull request. | Only manual checks exist today. | S | None |
 | J3 | Add PHP static analysis and coding-standard checks. | Finds bugs before deploy. | M | None |
 | J4 | Fixture tests for the lookup parsers (RDAP, DNS, certificate, headers). | The tool pages depend on them. | S | None |
 | J5 | Run the live QA suite in CI against beta. | Needs the staging login as a secret. | M | Low |
@@ -263,3 +263,24 @@ Legend: **Effort** S under half a day, M one to three days, L a week or more. **
 - **Month 3:** performance (B20 to B23, F1 to F4), engineering (J1, J3 to J6), product (E1 to E11).
 
 Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 recommendations**.
+
+## 5. Status after the 2026-11-20 build
+
+**Correction:** I first listed B4, B5, B6, B9 and B11 as new work. The plugin already produces them (product and offer markup, templated domain titles and descriptions, breadcrumb and list markup), so they are built and only absent on production because it runs the old build.
+
+**Built and tested in 3.106.0** (15 items): B15, B17, B18, B24, B25, B27, C5, C11, C21, C22, E9, G6, G7, I5, J2. They add seven modules, three more tool pages (17 in all), a glossary, a price index and a CI workflow. Every item has an automated test, and I ran the plugin on a throwaway local WordPress to confirm the pages, the lookups and the error handling work for real.
+
+**Not built, and why:**
+
+| Group | Items | Reason |
+|---|---|---|
+| Needs deploying to production | A1 to A13 | Production is not in the connected hosting account. |
+| Needs an account, key or DNS access | B22, B23, B28, B33, G1, G2, G4, G5, G9, I1 to I4, I6, J5, J6 | Cloudflare, Bing, DNS, Wordfence, backups and monitoring all sit outside the repository. |
+| Needs a decision or facts from you | C3, C6, C12 to C14, C17, C18, D3, D4, D14, E12 to E14 | Prices, claims, case studies and partner accounts are yours to confirm. |
+| Larger builds not started | D1, D7, D8, E1, E4 to E8, E10, E11, E15, E16, K1 to K7, J1, J3 | Each needs its own design and live testing with real email and payments. I did not want to ship them untested. |
+| Content writing | B8, B16, B29, B30, C1 to C4, C7 to C10, C15, C16, C19, C23 | Large volumes of copy that should be read by a person before publishing. |
+| Not touched | F, H and the rest of B | Need measuring on the live theme first. |
+
+**Found while building:** Rank Math is set to redirect unknown URLs to the home page on beta. That behaves like a soft 404, which Google discourages. Turn it off under Rank Math > Redirections > Settings so the new 404 page can show.
+
+**Retest result:** 15 offline suites pass (the original 11 and 4 new ones, more than 300 checks in all), every PHP file lints, every script passes a syntax check, and the local WordPress run served all 17 tool pages, the glossary, the price index, `llms.txt`, `security.txt`, the sitemap, the IndexNow key file and a real 404. Not retested: the live beta site (no credentials this session).

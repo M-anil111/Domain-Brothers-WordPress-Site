@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.105.2
+ * Version:     3.106.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.105.2' );
+define( 'DB_BLOCKS_LOADED', '3.106.0' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4693,6 +4693,11 @@ require_once __DIR__ . '/db-policies-block.php';
 require_once __DIR__ . '/db-service-template-block.php';
 require_once __DIR__ . '/db-domain-lookup-block.php';
 require_once __DIR__ . '/db-tool-pages-block.php';
+require_once __DIR__ . '/db-resolve-tools-block.php';
+require_once __DIR__ . '/db-learn-pages-block.php';
+require_once __DIR__ . '/db-site-hygiene-block.php';
+require_once __DIR__ . '/db-search-log-block.php';
+require_once __DIR__ . '/db-alerts-block.php';
 require_once __DIR__ . '/db-article-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.

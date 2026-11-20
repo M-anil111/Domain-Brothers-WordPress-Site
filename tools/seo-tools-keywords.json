@@ -2,19 +2,351 @@
  "source": "SE Ranking, US database, researched 2026-11-19",
  "note": "volume = monthly US searches; kd = keyword difficulty (0-100). Head terms were rejected as too hard for a new site; pages target the low-difficulty variants and use the head term as a secondary.",
  "pages": {
-  "domain-age-checker": {"primary": "domain age checker", "kd": 37, "volume": 170, "also": {"how old is a website": [480, 26], "when was a website created": [390, 30], "how old is a domain": [320, 32], "domain age": [290, 32], "website age": [260, 28]}},
-  "domain-registration-lookup": {"primary": "when was a domain first registered", "kd": 37, "volume": 590, "also": {"when was a domain name registered": [590, 40], "domain registration date": [90, 33], "find who owns a website": [590, 46], "whois lookup": [60500, 99]}},
-  "domain-expiry-checker": {"primary": "check domain name expiry", "kd": 30, "volume": 440, "also": {"domain name expiry check": [440, 38], "domain expiry date checker": [70, 20], "check domain expiration date": [50, 22], "domain expiration": [610, 40]}},
-  "ssl-certificate-checker": {"primary": "ssl certificate expiry check", "kd": 44, "volume": 170, "also": {"ssl certificate checker": [150, 58], "how to check ssl certificate": [260, 38], "ssl checker": [8000, 75], "ssl scanner": [320, 36], "website's security certificate": [320, 37]}},
-  "http-header-checker": {"primary": "http header checker", "kd": 52, "volume": 320, "also": {"checking http headers": [320, 46], "live http headers": [260, 17], "http status checker": [210, 43], "redirect checker": [140, 50], "http header": [920, 39]}},
-  "security-headers-checker": {"primary": "security headers check", "kd": 37, "volume": 320, "also": {"security headers": [470, 33], "security header check": [320, 32], "check security headers": [320, 39], "hsts checker": [170, 30]}},
-  "dnssec-checker": {"primary": "dnssec checker", "kd": 36, "volume": 590, "also": {}},
-  "dmarc-spf-checker": {"primary": "dmarc verification", "kd": 19, "volume": 260, "also": {"dmarc checker": [3600, 72], "spf checker": [1800, 71], "dmarc tools": [210, 14], "check dkim and spf": [320, 48]}},
-  "domain-ip-lookup": {"primary": "get ip of domain", "kd": 39, "volume": 590, "also": {"find ip from domain": [590, 47], "ip address for domain": [590, 45], "ip address by domain": [590, 40], "how to find out who hosts website": [590, 50], "ip lookup": [135000, 79]}},
-  "dns-lookup": {"primary": "dns query", "kd": 44, "volume": 810, "also": {"dns resolution": [810, 45], "mx record checker": [10, 41], "dns lookup": [20100, 93], "dns checker": [33100, 95]}},
-  "website-history-checker": {"primary": "website history checker", "kd": 27, "volume": 480, "also": {"site history checker": [480, 32], "domain history checker": [170, 45]}},
-  "domain-extension-checker": {"primary": "domain extension checker", "kd": 64, "volume": 10, "also": {"tld checker": [90, 66], "domain availability checker": [720, 74], "domain name checker": [2400, 80]}},
-  "website-rank-checker": {"primary": "website ranking checker", "kd": 57, "volume": 210, "also": {"domain rank checker": [30, 51], "domain authority checker": [6600, 67]}},
-  "domain-name-analyzer": {"primary": "domain name analyzer", "kd": 41, "volume": 20, "also": {"domain name generator": [2900, 67]}}
+  "domain-age-checker": {
+   "primary": "domain age checker",
+   "kd": 37,
+   "volume": 170,
+   "also": {
+    "how old is a website": [
+     480,
+     26
+    ],
+    "when was a website created": [
+     390,
+     30
+    ],
+    "how old is a domain": [
+     320,
+     32
+    ],
+    "domain age": [
+     290,
+     32
+    ],
+    "website age": [
+     260,
+     28
+    ]
+   }
+  },
+  "domain-registration-lookup": {
+   "primary": "when was a domain first registered",
+   "kd": 37,
+   "volume": 590,
+   "also": {
+    "when was a domain name registered": [
+     590,
+     40
+    ],
+    "domain registration date": [
+     90,
+     33
+    ],
+    "find who owns a website": [
+     590,
+     46
+    ],
+    "whois lookup": [
+     60500,
+     99
+    ]
+   }
+  },
+  "domain-expiry-checker": {
+   "primary": "check domain name expiry",
+   "kd": 30,
+   "volume": 440,
+   "also": {
+    "domain name expiry check": [
+     440,
+     38
+    ],
+    "domain expiry date checker": [
+     70,
+     20
+    ],
+    "check domain expiration date": [
+     50,
+     22
+    ],
+    "domain expiration": [
+     610,
+     40
+    ]
+   }
+  },
+  "ssl-certificate-checker": {
+   "primary": "ssl certificate expiry check",
+   "kd": 44,
+   "volume": 170,
+   "also": {
+    "ssl certificate checker": [
+     150,
+     58
+    ],
+    "how to check ssl certificate": [
+     260,
+     38
+    ],
+    "ssl checker": [
+     8000,
+     75
+    ],
+    "ssl scanner": [
+     320,
+     36
+    ],
+    "website's security certificate": [
+     320,
+     37
+    ]
+   }
+  },
+  "http-header-checker": {
+   "primary": "http header checker",
+   "kd": 52,
+   "volume": 320,
+   "also": {
+    "checking http headers": [
+     320,
+     46
+    ],
+    "live http headers": [
+     260,
+     17
+    ],
+    "http status checker": [
+     210,
+     43
+    ],
+    "redirect checker": [
+     140,
+     50
+    ],
+    "http header": [
+     920,
+     39
+    ]
+   }
+  },
+  "security-headers-checker": {
+   "primary": "security headers check",
+   "kd": 37,
+   "volume": 320,
+   "also": {
+    "security headers": [
+     470,
+     33
+    ],
+    "security header check": [
+     320,
+     32
+    ],
+    "check security headers": [
+     320,
+     39
+    ],
+    "hsts checker": [
+     170,
+     30
+    ]
+   }
+  },
+  "dnssec-checker": {
+   "primary": "dnssec checker",
+   "kd": 36,
+   "volume": 590,
+   "also": {}
+  },
+  "dmarc-spf-checker": {
+   "primary": "dmarc verification",
+   "kd": 19,
+   "volume": 260,
+   "also": {
+    "dmarc checker": [
+     3600,
+     72
+    ],
+    "spf checker": [
+     1800,
+     71
+    ],
+    "dmarc tools": [
+     210,
+     14
+    ],
+    "check dkim and spf": [
+     320,
+     48
+    ]
+   }
+  },
+  "domain-ip-lookup": {
+   "primary": "get ip of domain",
+   "kd": 39,
+   "volume": 590,
+   "also": {
+    "find ip from domain": [
+     590,
+     47
+    ],
+    "ip address for domain": [
+     590,
+     45
+    ],
+    "ip address by domain": [
+     590,
+     40
+    ],
+    "how to find out who hosts website": [
+     590,
+     50
+    ],
+    "ip lookup": [
+     135000,
+     79
+    ]
+   }
+  },
+  "dns-lookup": {
+   "primary": "dns query",
+   "kd": 44,
+   "volume": 810,
+   "also": {
+    "dns resolution": [
+     810,
+     45
+    ],
+    "mx record checker": [
+     10,
+     41
+    ],
+    "dns lookup": [
+     20100,
+     93
+    ],
+    "dns checker": [
+     33100,
+     95
+    ]
+   }
+  },
+  "website-history-checker": {
+   "primary": "website history checker",
+   "kd": 27,
+   "volume": 480,
+   "also": {
+    "site history checker": [
+     480,
+     32
+    ],
+    "domain history checker": [
+     170,
+     45
+    ]
+   }
+  },
+  "domain-extension-checker": {
+   "primary": "domain extension checker",
+   "kd": 64,
+   "volume": 10,
+   "also": {
+    "tld checker": [
+     90,
+     66
+    ],
+    "domain availability checker": [
+     720,
+     74
+    ],
+    "domain name checker": [
+     2400,
+     80
+    ]
+   }
+  },
+  "website-rank-checker": {
+   "primary": "website ranking checker",
+   "kd": 57,
+   "volume": 210,
+   "also": {
+    "domain rank checker": [
+     30,
+     51
+    ],
+    "domain authority checker": [
+     6600,
+     67
+    ]
+   }
+  },
+  "domain-name-analyzer": {
+   "primary": "domain name analyzer",
+   "kd": 41,
+   "volume": 20,
+   "also": {
+    "domain name generator": [
+     2900,
+     67
+    ]
+   }
+  },
+  "dns-propagation-checker": {
+   "primary": "propagation checker",
+   "kd": 49,
+   "volume": 590,
+   "also": {
+    "check propagation": [
+     590,
+     43
+    ],
+    "dns checker": [
+     33100,
+     95
+    ]
+   }
+  },
+  "nslookup-online": {
+   "primary": "nslookup specify dns server",
+   "kd": 32,
+   "volume": 590,
+   "also": {
+    "nslookup to specific dns server": [
+     590,
+     34
+    ],
+    "nslookup from specific dns server": [
+     590,
+     41
+    ],
+    "dns lookup command": [
+     590,
+     41
+    ]
+   }
+  },
+  "certificate-decoder": {
+   "primary": "decode certificate",
+   "kd": 25,
+   "volume": 320,
+   "also": {
+    "online certificate decoder": [
+     260,
+     29
+    ],
+    "certificate decode online": [
+     260,
+     29
+    ],
+    "cert viewer": [
+     390,
+     40
+    ],
+    "certificate viewer": [
+     390,
+     48
+    ]
+   }
+  }
  }
 }

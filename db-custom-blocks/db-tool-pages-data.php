@@ -158,7 +158,7 @@ return array(
 			array( 'What does "does not cover this name" mean?', 'The certificate was issued for other host names. Visitors to this name will see a browser warning. Reissue the certificate to include it.' ),
 			array( 'Why was no certificate found?', 'The site may not offer HTTPS on port 443, may be offline, or may block connections from outside its network.' ),
 		),
-		'related'  => array( 'security-headers-checker', 'http-header-checker', 'domain-expiry-checker' ),
+		'related'  => array( 'certificate-decoder', 'security-headers-checker', 'http-header-checker' ),
 	),
 
 	'http-header-checker' => array(
@@ -365,7 +365,7 @@ return array(
 			array( 'Why do I see old records after a change?', 'Resolvers cache records for their time to live. Wait for it to expire and check again.' ),
 			array( 'Does this show every record type?', 'It shows A, AAAA, MX and NS records and an SPF flag. Other types, such as TXT contents, are not listed.' ),
 		),
-		'related'  => array( 'domain-ip-lookup', 'dmarc-spf-checker', 'dnssec-checker' ),
+		'related'  => array( 'dns-propagation-checker', 'nslookup-online', 'dnssec-checker' ),
 	),
 
 	'website-history-checker' => array(
@@ -505,6 +505,115 @@ return array(
 			array( 'Where can I find names of a certain length?', 'Browse our 3, 4, 5 and 6-character domain lists, or all domains.' ),
 		),
 		'related'  => array( 'domain-extension-checker', 'domain-age-checker', 'website-rank-checker' ),
+	),
+
+	'dns-propagation-checker' => array(
+		'name'       => 'DNS Propagation Checker',
+		'title'      => 'DNS Propagation Checker: Compare Resolvers',
+		'meta'       => 'Check whether a DNS change has spread. Compare answers from Cloudflare, Google and AdGuard public DNS for A, MX, NS, TXT and more.',
+		'kw'         => 'propagation checker',
+		'lead'       => 'Ask three major public DNS servers the same question and see whether they agree, so you know whether a change to a domain\'s records has spread.',
+		'widget'     => 'resolve',
+		'widget_cfg' => array( 'resolver' => 'all', 'pickresolver' => false, 'button' => 'Check propagation' ),
+		'parts'      => array(),
+		'show'       => array(),
+		'button'     => 'Check propagation',
+		'steps'      => array(
+			array( 'Enter the domain', 'Use the name whose records you changed, for example example.com.' ),
+			array( 'Choose the record', 'A for the website, MX for email, NS for name servers, TXT for verification and email security.' ),
+			array( 'Compare the answers', 'If all three servers match, the change has reached the major public resolvers.' ),
+		),
+		'sections'   => array(
+			array( 'What DNS propagation really is', array(
+				'When you change a DNS record, nothing is "pushed" across the internet. Resolvers that already hold the old answer keep serving it until its time to live (TTL) runs out, then ask again and get the new one. Propagation is the time it takes for those cached copies to expire.',
+			) ),
+			array( 'What this check compares', array(
+				'The tool asks Cloudflare, Google and AdGuard public DNS the same question at the same moment and lines the answers up. These are three of the most widely used resolvers, which is a useful signal, but it does not test every internet provider or your own device. Answers are held for one minute so you can watch a change land.',
+			) ),
+			array( 'If the answers differ', array(
+				'Different answers usually mean a change is still spreading. Compare the time to live shown for each answer: after that many seconds, the older copy should expire. To make future changes faster, lower the TTL on the record a day before you change it, then raise it again afterwards.',
+				'If every server returns the old value long after the TTL, the change may not have been saved at your DNS host, or the domain may be using different name servers than you edited. Check the NS records.',
+			) ),
+		),
+		'faqs'       => array(
+			array( 'How long does DNS propagation take?', 'It depends on the record\'s time to live. Many records use between five minutes and a day. Most changes reach the large public resolvers within minutes to a few hours.' ),
+			array( 'Why does my site show the old address on one device?', 'Your device, router or internet provider may still be holding the old answer. Restarting the router or flushing the local DNS cache clears your own copy.' ),
+			array( 'Does this check every DNS server in the world?', 'No. It compares three major public resolvers. That is a good indicator, not a global guarantee.' ),
+			array( 'What does a name server change need?', 'Changing NS records at the registrar can take longer, because the parent zone also caches them. Check that the registrar shows the new name servers first.' ),
+		),
+		'related'    => array( 'nslookup-online', 'dns-lookup', 'dnssec-checker' ),
+	),
+
+	'nslookup-online' => array(
+		'name'       => 'Nslookup Online',
+		'title'      => 'Nslookup Online: Query a Specific DNS Server',
+		'meta'       => 'Run an nslookup online and choose the DNS server: Cloudflare, Google or AdGuard. Look up A, MX, NS, TXT, CNAME, SOA and CAA records.',
+		'kw'         => 'nslookup specify dns server',
+		'lead'       => 'Run an nslookup from your browser and choose which public DNS server answers: Cloudflare, Google or AdGuard.',
+		'widget'     => 'resolve',
+		'widget_cfg' => array( 'resolver' => 'cloudflare', 'pickresolver' => true, 'button' => 'Run nslookup' ),
+		'parts'      => array(),
+		'show'       => array(),
+		'button'     => 'Run nslookup',
+		'steps'      => array(
+			array( 'Enter the domain', 'For example example.com.' ),
+			array( 'Pick the record and server', 'Choose A, AAAA, MX, NS, TXT, CNAME, SOA or CAA, and one server or all three.' ),
+			array( 'Read the answer', 'See the records, the time to live and how long the server took to reply.' ),
+		),
+		'sections'   => array(
+			array( 'The command-line equivalent', array(
+				'On Windows, macOS and Linux the same query is: nslookup -type=MX example.com 8.8.8.8. The last part is the DNS server to ask. Leave it out and nslookup uses whichever server your device is set to. This page does the same from the browser, so there is nothing to install.',
+			) ),
+			array( 'Record types you can query', array(
+				'A and AAAA give website addresses. MX lists the mail servers and their priority. NS lists the name servers. TXT holds text such as SPF, DMARC and ownership checks. CNAME shows an alias. SOA shows the zone\'s primary server and serial number. CAA lists which certificate authorities may issue certificates for the domain.',
+			) ),
+			array( 'Why servers can give different answers', array(
+				'Each public resolver keeps its own cache, so two servers can return different answers while a change is spreading. They can also differ when a service returns different addresses depending on where the question comes from. Choose "Compare all" to see them side by side.',
+			) ),
+		),
+		'faqs'       => array(
+			array( 'How do I nslookup a specific DNS server?', 'On the command line, add the server at the end: nslookup example.com 1.1.1.1. On this page, choose the server from the DNS server list.' ),
+			array( 'What does "Name does not exist" mean?', 'The server reports that no such domain exists (also called NXDOMAIN). Check the spelling and that the domain is registered.' ),
+			array( 'Why does one server answer faster?', 'Servers differ in distance and cache. A popular name is usually already cached, so repeat queries are fast.' ),
+			array( 'Is nslookup the same as dig?', 'They answer the same kind of question. Dig shows more detail and is common on Linux and macOS; nslookup is available on every major system.' ),
+		),
+		'related'    => array( 'dns-propagation-checker', 'dns-lookup', 'domain-ip-lookup' ),
+	),
+
+	'certificate-decoder' => array(
+		'name'       => 'Certificate Decoder',
+		'title'      => 'Certificate Decoder: Read an SSL Certificate',
+		'meta'       => 'Decode a PEM certificate online: subject, issuer, validity dates, names covered, signature and serial number. Nothing is stored.',
+		'kw'         => 'decode certificate',
+		'lead'       => 'Paste a certificate and read what is inside it: who it was issued to, who issued it, when it is valid and which names it covers.',
+		'widget'     => 'cert',
+		'widget_cfg' => array( 'button' => 'Decode certificate' ),
+		'parts'      => array(),
+		'show'       => array(),
+		'button'     => 'Decode certificate',
+		'steps'      => array(
+			array( 'Copy the certificate', 'It starts with -----BEGIN CERTIFICATE----- and ends with -----END CERTIFICATE-----.' ),
+			array( 'Paste and decode', 'Paste the whole block, including both lines, and press the button.' ),
+			array( 'Read the details', 'Subject, issuer, dates, status, names covered, signature and serial number.' ),
+		),
+		'sections'   => array(
+			array( 'What is inside a certificate', array(
+				'An SSL or TLS certificate states who it was issued to (the subject), who issued it (the issuer), the dates it is valid between, the host names it covers, and the signature that proves the issuer vouches for it. Browsers use these facts to decide whether to trust a site.',
+			) ),
+			array( 'How to get the certificate as text', array(
+				'In most browsers you can view a site\'s certificate from the padlock and export it. On a computer with OpenSSL, this command prints a site\'s certificate in the right format: openssl s_client -connect example.com:443 -servername example.com, then copy the block between the BEGIN and END lines.',
+			) ),
+			array( 'Keep your private key private', array(
+				'You only ever need to paste the certificate, which is public. Never paste a private key into any website. This tool refuses text that contains one, and it does not store anything you paste.',
+			) ),
+		),
+		'faqs'       => array(
+			array( 'How do I decode a certificate?', 'Paste the PEM text above and press the button. The details appear in a table.' ),
+			array( 'What is a PEM file?', 'PEM is a text format for certificates. It starts with a BEGIN CERTIFICATE line and ends with an END CERTIFICATE line, with encoded data between them.' ),
+			array( 'Can I decode a certificate request or a key?', 'No. This tool decodes one certificate at a time. It refuses private keys on purpose.' ),
+			array( 'How do I check a live site\'s certificate instead?', 'Use the SSL certificate checker, which reads the certificate a site presents and shows its expiry.' ),
+		),
+		'related'    => array( 'ssl-certificate-checker', 'security-headers-checker', 'http-header-checker' ),
 	),
 
 );

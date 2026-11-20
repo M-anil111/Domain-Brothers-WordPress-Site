@@ -94,7 +94,11 @@ if ( ! function_exists( 'db_tp_body' ) ) {
 	function db_tp_body( $slug ) {
 		$p = db_tp_pages()[ $slug ];
 		$h = '<p class="db-sales-lead">' . esc_html( $p['lead'] ) . '</p>';
-		$h .= db_lk_widget( array( 'show' => $p['show'], 'parts' => $p['parts'], 'autoext' => ! empty( $p['autoext'] ), 'button' => $p['button'] ), isset( $p['label'] ) ? $p['label'] : 'Domain name', isset( $p['hint'] ) ? $p['hint'] : 'example.com' );
+		if ( ! empty( $p['widget'] ) && function_exists( 'db_rs_widget' ) ) {
+			$h .= db_rs_widget( $p['widget'], isset( $p['widget_cfg'] ) ? (array) $p['widget_cfg'] : array() );
+		} else {
+			$h .= db_lk_widget( array( 'show' => $p['show'], 'parts' => $p['parts'], 'autoext' => ! empty( $p['autoext'] ), 'button' => $p['button'] ), isset( $p['label'] ) ? $p['label'] : 'Domain name', isset( $p['hint'] ) ? $p['hint'] : 'example.com' );
+		}
 		$h .= '<div class="dbtp"><style>' . db_tp_css() . '</style>';
 		$h .= '<ol class="dbtp-steps">';
 		foreach ( $p['steps'] as $s ) {
@@ -141,7 +145,9 @@ if ( ! function_exists( 'db_tp_route_meta' ) ) {
 		}
 		$slug = db_tp_slug();
 		if ( '' === $slug ) {
-			return null;
+			// Other virtual pages (glossary, price index) register their own meta here.
+			$extra = apply_filters( 'db_tp_route_meta_extra', null, db_sales_request_path() );
+			return is_array( $extra ) ? $extra : null;
 		}
 		$p = db_tp_pages()[ $slug ];
 		return array( $p['title'] . ' | Domain Brothers', $p['meta'], db_tp_url( $slug ) );
@@ -222,6 +228,7 @@ if ( ! function_exists( 'db_tp_sitemap_xml' ) ) {
 		foreach ( array_keys( db_tp_pages() ) as $slug ) {
 			$urls[] = db_tp_url( $slug );
 		}
+		$urls = array_values( array_unique( array_merge( $urls, (array) apply_filters( 'db_tp_sitemap_urls', array() ) ) ) );
 		foreach ( $urls as $u ) {
 			$xml .= '<url><loc>' . esc_url( $u ) . '</loc><lastmod>' . esc_html( $lastmod ) . '</lastmod></url>' . "\n";
 		}
