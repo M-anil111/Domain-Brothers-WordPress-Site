@@ -51,6 +51,11 @@ if ( ! function_exists( 'db_alert_body' ) ) {
 }
 
 add_action( 'db_fatal_alert', function () {
+	// First run: remember where the log stands now, so only errors recorded from here on are mailed.
+	if ( false === get_option( 'db_fatal_alerted', false ) ) {
+		update_option( 'db_fatal_alerted', time(), false );
+		return;
+	}
 	$log = get_option( defined( 'DB_SAFETY_OPTION' ) ? DB_SAFETY_OPTION : 'db_fatal_log', array() );
 	$m   = db_alert_body( is_array( $log ) ? $log : array(), (int) get_option( 'db_fatal_alerted', 0 ), (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
 	if ( ! $m ) {

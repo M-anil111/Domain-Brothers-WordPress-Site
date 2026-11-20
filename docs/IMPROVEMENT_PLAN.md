@@ -283,4 +283,11 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 
 **Found while building:** Rank Math is set to redirect unknown URLs to the home page on beta. That behaves like a soft 404, which Google discourages. Turn it off under Rank Math > Redirections > Settings so the new 404 page can show.
 
-**Retest result:** 15 offline suites pass (the original 11 and 4 new ones, more than 300 checks in all), every PHP file lints, every script passes a syntax check, and the local WordPress run served all 17 tool pages, the glossary, the price index, `llms.txt`, `security.txt`, the sitemap, the IndexNow key file and a real 404. Not retested: the live beta site (no credentials this session).
+**Retest result (live on beta, plugin 3.106.2):**
+
+- **Offline:** 15 test suites pass (more than 300 checks), every PHP file lints, every script passes a syntax check.
+- **Live pages:** 15 of 15 checks pass. All 17 tool pages have one title, one canonical, FAQ schema, one h1 and a working widget; the glossary, price index, `llms.txt`, `security.txt`, the tools sitemap (20 URLs) and the Rank Math sitemap entry all load; `X-Powered-By` is gone; an unknown URL returns a real 404 with the helpful page and noindex; 24 existing pages (services, policies, news, register, wishlist and others) return 200 with complete HTML, one h1 and no printed PHP errors; 82 of 86 images on five real pages now carry a loading attribute, and all 86 carry decoding.
+- **Live browser, desktop and phone:** 24 of 24 checks pass. Every tool returned real data (registry, SSL, headers, DNSSEC, email security, hosting network, history, rank, extension availability, resolver comparison, nslookup on a chosen server, certificate decoding and the private-key refusal), with no sideways scroll and no JavaScript errors.
+- **Server side:** search logging records a search and shows misses, both scheduled jobs (fatal alert, entry purge) are queued, the IndexNow key file is served, and the fatal log shows no errors since 2026-11-19 02:35 UTC (before the 3.104 deploy). The fatal-error email now sets a baseline on its first run instead of mailing old history; I checked that it sends nothing.
+
+**Two fixes made during the live retest:** `/register/` had three h1 headings (one per step) and `/news/` had two (the theme prints a hidden one). Both now have one.

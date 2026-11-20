@@ -97,6 +97,24 @@ if ( ! function_exists( 'db_hyg_img_dims' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_hyg_single_h1' ) ) {
+	/**
+	 * Keeps one h1 per page. When the page has a visible h1, any screen-reader-only h1 (the theme
+	 * prints one on the news page) becomes a plain paragraph with the same classes.
+	 */
+	function db_hyg_single_h1( $html ) {
+		if ( ! is_string( $html ) || substr_count( strtolower( $html ), '<h1' ) < 2 ) {
+			return $html;
+		}
+		if ( ! preg_match( '/<h1\b(?![^>]*screen-reader-text)[^>]*>/i', $html ) ) {
+			return $html;
+		}
+		return preg_replace_callback( '#<h1\b([^>]*screen-reader-text[^>]*)>(.*?)</h1>#is', static function ( $m ) {
+			return '<p' . $m[1] . '>' . $m[2] . '</p>';
+		}, $html );
+	}
+}
+
 add_action( 'template_redirect', function () {
 	if ( is_admin() || wp_doing_ajax() || is_feed() || is_embed() || is_robots() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 		return;
@@ -105,7 +123,7 @@ add_action( 'template_redirect', function () {
 		if ( ! is_string( $html ) || false === stripos( $html, '<html' ) ) {
 			return $html;
 		}
-		return db_hyg_img_fix( $html, 'db_hyg_img_dims' );
+		return db_hyg_img_fix( db_hyg_single_h1( $html ), 'db_hyg_img_dims' );
 	} );
 }, 8 );
 

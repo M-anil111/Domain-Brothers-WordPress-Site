@@ -34,6 +34,16 @@ check( 'self-closing tag keeps its slash', '/>' === substr( db_hyg_img_fix( '<im
 check( 'html without images is unchanged', '<p>hi</p>' === db_hyg_img_fix( '<p>hi</p>' ) );
 check( 'idempotent', $out === db_hyg_img_fix( $out, $dims, 3 ) );
 
+// ---- one h1
+$two = '<main><h1 class="page-title screen-reader-text">News</h1><h1 class="db-an-h1">Domain News</h1></main>';
+$fixed = db_hyg_single_h1( $two );
+check( 'screen-reader-only h1 is demoted when a visible h1 exists', 1 === substr_count( $fixed, '<h1' ) && false !== strpos( $fixed, '<p class="page-title screen-reader-text">News</p>' ) );
+check( 'the visible h1 is kept', false !== strpos( $fixed, '<h1 class="db-an-h1">Domain News</h1>' ) );
+$only_sr = '<h1 class="screen-reader-text">Only</h1><h1 class="screen-reader-text">Two</h1>';
+check( 'with no visible h1 nothing is changed', $only_sr === db_hyg_single_h1( $only_sr ) );
+check( 'a single h1 is untouched', '<h1>A</h1>' === db_hyg_single_h1( '<h1>A</h1>' ) );
+check( 'two visible h1s are left for the page to fix', '<h1>A</h1><h1>B</h1>' === db_hyg_single_h1( '<h1>A</h1><h1>B</h1>' ) );
+
 // ---- llms.txt and security.txt
 $llms = db_hyg_llms_txt( 'https://example.test' );
 check( 'llms.txt starts with a title', 0 === strpos( $llms, "# Domain Brothers\n" ) );

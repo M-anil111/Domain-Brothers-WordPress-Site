@@ -469,14 +469,14 @@ if ( ! function_exists( 'db_reg_page_html' ) ) {
 			. '<p class="db-reg-alt">Already have an account? <a href="' . esc_url( $cfg['signin'] ) . '">Sign in</a></p></form>';
 
 		// Step 2.
-		$h .= '<form class="db-reg-step" data-step="code" hidden novalidate><h1 class="db-reg-title">Check your email</h1>'
+		$h .= '<form class="db-reg-step" data-step="code" hidden novalidate><h2 class="db-reg-title">Check your email</h2>'
 			. '<p class="db-reg-sub">We sent a 6-digit code to <strong data-email></strong>. Enter it to finish. It works for 10 minutes.</p>'
 			. '<div class="db-reg-field"><label for="db-reg-code">Your 6-digit code</label><input id="db-reg-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></div>'
 			. '<button type="submit" class="db-reg-btn">Confirm and create account</button><p class="db-reg-msg" role="status" aria-live="polite"></p>'
 			. '<p class="db-reg-alt"><button type="button" class="db-reg-link" data-resend>Send a new code</button> <span aria-hidden="true">&middot;</span> <button type="button" class="db-reg-link" data-back>Use a different email</button></p></form>';
 
 		// Step 3.
-		$h .= '<form class="db-reg-step" data-step="profile" hidden novalidate><h1 class="db-reg-title">Your account is ready</h1>'
+		$h .= '<form class="db-reg-step" data-step="profile" hidden novalidate><h2 class="db-reg-title">Your account is ready</h2>'
 			. '<p class="db-reg-sub">A few optional questions help us show you names that fit. You can change any answer later in your Profile.</p>' . $q
 			. '<button type="submit" class="db-reg-btn">Save and go to my account</button><p class="db-reg-msg" role="status" aria-live="polite"></p>'
 			. '<p class="db-reg-alt"><button type="button" class="db-reg-link" data-skip>Skip for now</button></p></form>';
