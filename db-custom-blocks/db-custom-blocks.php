@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.114.0
+ * Version:     3.115.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.114.0' );
+define( 'DB_BLOCKS_LOADED', '3.115.0' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -481,7 +481,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		}
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
-		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
+		$html .= '<h1 class="db-hp-h1">The right domain<br>changes <span class="db-hp-mark">everything</span>.</h1>';
 		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase includes a step-by-step transfer and is eligible for flexible payment plans.</p>';
 		// A search-first hero: one big search box, then the extensions people actually browse.
 		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
@@ -504,6 +504,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 		}
 		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
+		$html .= (string) apply_filters( 'db_hp_hero_showcase', '' ); // Real listings under the search box (db-hero-showcase-block.php).
 		$html .= '<div class="db-hp-trust db-hp-marquee" role="group" aria-label="Why buyers choose Domain Brothers"><div class="db-hp-viewport">' . $trust_html . '</div><button type="button" class="db-hp-pause" aria-pressed="false" aria-label="Pause scrolling"><span aria-hidden="true">&#10074;&#10074;</span></button></div>';
 		$html .= '<script>(function(){var b=document.querySelector(".db-hp-pause");if(!b){return;}b.addEventListener("click",function(){var m=b.closest(".db-hp-marquee"),p=m.classList.toggle("is-paused");b.setAttribute("aria-pressed",p?"true":"false");b.setAttribute("aria-label",p?"Resume scrolling":"Pause scrolling");b.firstChild.innerHTML=p?"&#9654;":"&#10074;&#10074;";});})();</script>';
 		$html .= '</div></section>';
@@ -4639,6 +4640,7 @@ require_once __DIR__ . '/db-onpage-seo-block.php';
    /all-domains/ FILTER + SORT BAR
    ============================================================ */
 require_once __DIR__ . '/db-domain-filter-block.php';
+require_once __DIR__ . '/db-hero-showcase-block.php';
 
 /* ============================================================
    RECOMMENDED DOMAINS + EXIT OFFER ON DOMAIN PAGES
