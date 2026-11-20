@@ -64,5 +64,19 @@ check( 'length groups come out in order', array( '4', '8+' ) === array_map( 'str
 check( 'empty inventory still renders a page', false !== strpos( db_pi_body(), 'Not enough names' ) );
 check( 'both learn pages are registered', isset( db_learn_pages()['domain-glossary'], db_learn_pages()['domain-price-index'] ) );
 
+// ---- market pulse
+$ask = array();
+foreach ( array( 1200, 2400, 3000, 4800, 6000, 9000, 9500, 12000, 20000, 30000 ) as $pr ) { $ask[] = array( 'len' => 6, 'ext' => 'com', 'price' => $pr ); }
+$pd = db_pulse_compute( $ask, 7 );
+check( 'pulse: counts, median and lowest', 10 === $pd['count'] && 7500.0 === $pd['median'] && 1200.0 === $pd['low'] && 7 === $pd['sold'] );
+check( 'pulse: bands add up to the count', 10 === array_sum( array_column( $pd['bands'], 1 ) ) && array( 2, 2, 3, 2, 1 ) === array_column( $pd['bands'], 1 ) );
+check( 'pulse: too few names gives nothing', array() === db_pulse_compute( array( array( 'price' => 100 ), array( 'price' => 200 ) ), 0 ) && '' === db_pulse_html( array() ) );
+check( 'pulse: zero and junk prices are ignored', 10 === db_pulse_compute( array_merge( $ask, array( array( 'price' => 0 ), array( 'price' => 'x' ) ) ), 0 )['count'] );
+$ph = db_pulse_html( $pd, '/domain-price-index/' );
+check( 'pulse: markup has heading, four tiles and five bars', false !== strpos( $ph, 'id="db-pulse-h"' ) && 4 === substr_count( $ph, 'class="db-pulse-tile"' ) && 5 === substr_count( $ph, 'class="db-pulse-fill"' ) );
+check( 'pulse: sold tile hidden under three sales', 3 === substr_count( db_pulse_html( db_pulse_compute( $ask, 2 ) ), 'class="db-pulse-tile"' ) );
+check( 'pulse: motion is switched off under reduced motion', false !== strpos( $ph, 'prefers-reduced-motion:reduce' ) );
+check( 'pulse: bar widths are percentages of the largest band', false !== strpos( $ph, 'width:100%' ) && false !== strpos( $ph, 'width:33%' ) );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

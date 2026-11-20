@@ -222,3 +222,94 @@ add_action( 'template_redirect', function () {
 	}, 1 );
 	db_sales_render( $pages[ $path ][0], $pages[ $path ][0], call_user_func( $pages[ $path ][3] ) );
 }, 11 );
+
+/* ---------------------------------------------------------------- market pulse (home page) */
+
+if ( ! function_exists( 'db_pulse_compute' ) ) {
+	/**
+	 * Headline numbers and a price-band chart from asking-price rows. Pure: tested offline.
+	 * Returns an empty array when there are too few names for the numbers to mean anything.
+	 *
+	 * @param array<int, array{price:float|int|string}> $ask  Rows from db_lk_index()['ask'].
+	 * @param int                                        $sold Sold listings.
+	 * @return array{count:int,median:float,low:float,sold:int,max:int,bands:array<int, array{0:string,1:int}>}|array{}
+	 */
+	function db_pulse_compute( array $ask, $sold ) {
+		$prices = array();
+		foreach ( $ask as $r ) {
+			$p = (float) ( $r['price'] ?? 0 );
+			if ( $p > 0 ) {
+				$prices[] = $p;
+			}
+		}
+		if ( count( $prices ) < 5 ) {
+			return array();
+		}
+		$bands = array( array( 'Under $2.5k', 0 ), array( '$2.5k to $5k', 0 ), array( '$5k to $10k', 0 ), array( '$10k to $25k', 0 ), array( '$25k and up', 0 ) );
+		foreach ( $prices as $p ) {
+			$i = $p < 2500 ? 0 : ( $p < 5000 ? 1 : ( $p < 10000 ? 2 : ( $p < 25000 ? 3 : 4 ) ) );
+			++$bands[ $i ][1];
+		}
+		return array(
+			'count'  => count( $prices ),
+			'median' => db_pi_median( $prices ),
+			'low'    => min( $prices ),
+			'sold'   => max( 0, (int) $sold ),
+			'max'    => max( array_column( $bands, 1 ) ),
+			'bands'  => $bands,
+		);
+	}
+}
+
+if ( ! function_exists( 'db_pulse_html' ) ) {
+	/** The band's markup for computed numbers, or '' when there is nothing to show. Pure. */
+	function db_pulse_html( array $d, $index_url = '/domain-price-index/' ) {
+		if ( ! $d ) {
+			return '';
+		}
+		$e     = function ( $v ) { return htmlspecialchars( (string) $v, ENT_QUOTES ); };
+		$money = function ( $n ) { return '$' . number_format( (float) $n ); };
+		$tiles = array(
+			array( number_format( $d['count'] ), 'names with a listed price' ),
+			array( $money( $d['median'] ), 'median asking price' ),
+			array( $money( $d['low'] ), 'lowest asking price' ),
+		);
+		if ( $d['sold'] >= 3 ) {
+			$tiles[] = array( number_format( $d['sold'] ), 'names sold' );
+		}
+		$h = '<style>.db-pulse{max-width:1100px;margin:0 auto;padding:28px 20px 8px;color:#0a1628}.db-pulse h2{font-size:clamp(24px,3.4vw,34px);line-height:1.15;margin:0 0 6px;text-align:left}'
+			. '.db-pulse .db-pulse-sub{margin:0 0 20px;color:#4b5563;text-align:left}.db-pulse-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}'
+			. '@media(min-width:860px){.db-pulse-grid{grid-template-columns:1fr 1.1fr;align-items:stretch}}'
+			. '.db-pulse-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}.db-pulse-tile{background:#0a1628;color:#fff;border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;gap:4px;animation:db-pulse-rise .6s cubic-bezier(.2,.7,.2,1) both}'
+			. '.db-pulse-tile:nth-child(2){animation-delay:.07s}.db-pulse-tile:nth-child(3){animation-delay:.14s}.db-pulse-tile:nth-child(4){animation-delay:.21s}'
+			. '.db-pulse-tile:nth-child(odd) b{color:#b5e61d}.db-pulse-tile b{font-size:clamp(26px,4vw,38px);line-height:1;font-variant-numeric:tabular-nums}.db-pulse-tile span{font-size:14px;color:#cbd5e1}'
+			. '.db-pulse-chart{background:#f1f5f2;border-radius:16px;padding:18px 18px 14px}.db-pulse-chart h3{margin:0 0 12px;font-size:14px;letter-spacing:.07em;text-transform:uppercase;color:#4b5563;text-align:left}'
+			. '.db-pulse-bars{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}.db-pulse-bars li{display:grid;grid-template-columns:104px 1fr 34px;align-items:center;gap:10px;font-size:14px;color:#1f2937}'
+			. '.db-pulse-track{background:#e0e7e2;border-radius:6px;height:14px;overflow:hidden}.db-pulse-fill{display:block;height:100%;background:linear-gradient(90deg,#137a3e,#2fa561);border-radius:6px;transform-origin:left;animation:db-pulse-grow .9s cubic-bezier(.2,.7,.2,1) .2s both}'
+			. '.db-pulse-bars b{text-align:right;font-variant-numeric:tabular-nums}.db-pulse-link{display:inline-block;margin-top:12px;font-weight:700;color:#0b6b36}'
+			. '@keyframes db-pulse-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}@keyframes db-pulse-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}'
+			. '@media(prefers-reduced-motion:reduce){.db-pulse-tile,.db-pulse-fill{animation:none!important}}</style>';
+		$h .= '<section class="db-pulse" aria-labelledby="db-pulse-h"><h2 id="db-pulse-h">The market right now</h2>'
+			. '<p class="db-pulse-sub">Live numbers from our own listings, so you can see what a fair price looks like before you decide.</p><div class="db-pulse-grid"><div class="db-pulse-tiles">';
+		foreach ( $tiles as $t ) {
+			$h .= '<div class="db-pulse-tile"><b>' . $e( $t[0] ) . '</b><span>' . $e( $t[1] ) . '</span></div>';
+		}
+		$h .= '</div><div class="db-pulse-chart"><h3>Names by asking price</h3><ul class="db-pulse-bars">';
+		foreach ( $d['bands'] as $b ) {
+			$w  = $d['max'] > 0 ? max( 2, (int) round( 100 * $b[1] / $d['max'] ) ) : 0;
+			$h .= '<li><span>' . $e( $b[0] ) . '</span><span class="db-pulse-track" aria-hidden="true"><i class="db-pulse-fill" style="width:' . ( $b[1] > 0 ? $w : 0 ) . '%"></i></span><b>' . (int) $b[1] . '<span class="screen-reader-text"> names</span></b></li>';
+		}
+		return $h . '</ul><a class="db-pulse-link" href="' . $e( $index_url ) . '">See the full price index</a></div></div></section>';
+	}
+}
+
+add_filter( 'db_hp_sections', function ( $html ) {
+	$d = get_transient( 'db_pulse' );
+	if ( ! is_array( $d ) ) {
+		$idx  = function_exists( 'db_lk_index' ) ? db_lk_index() : array( 'ask' => array() );
+		$sold = function_exists( 'db_sold_listings' ) ? count( db_sold_listings() ) : 0;
+		$d    = db_pulse_compute( (array) ( $idx['ask'] ?? array() ), $sold );
+		set_transient( 'db_pulse', $d, HOUR_IN_SECONDS );
+	}
+	return $html . db_pulse_html( $d, home_url( '/domain-price-index/' ) );
+}, 9 );
