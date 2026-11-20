@@ -32,7 +32,7 @@ if ( ! function_exists( 'db_hh_pick' ) ) {
 			$name  = strtolower( trim( (string) ( $r['n'] ?? '' ) ) );
 			$price = (float) ( $r['p'] ?? 0 );
 			$url   = (string) ( $r['u'] ?? '' );
-			if ( '' === $url || $price < 500 || $price > 50000 || ! preg_match( '/^([a-z0-9][a-z0-9\-]{0,60})(\.[a-z0-9\-]{2,24})$/', $name, $m ) ) {
+			if ( '' === $url || $price < 500 || $price > 50000 || ! preg_match( '/^([a-z0-9][a-z0-9\-]{0,11})(\.[a-z0-9\-]{2,24})$/', $name, $m ) ) {
 				continue;
 			}
 			$by[ $m[2] ][] = array( 'n' => $name, 'label' => $m[1], 'ext' => $m[2], 'p' => $price, 'u' => $url );
@@ -72,8 +72,9 @@ if ( ! function_exists( 'db_hh_html' ) ) {
 			. '.db-hh-card{display:flex;flex-direction:column;gap:2px;padding:16px 18px;background:#fff;border:1px solid #dfe5e1;border-radius:16px;text-decoration:none;color:#0a1628;box-shadow:0 6px 20px rgba(10,22,40,.06);animation:db-hh-rise .7s cubic-bezier(.2,.7,.2,1) both;transition:transform .2s,box-shadow .2s,border-color .2s}'
 			. '.db-hh-grid li:nth-child(2) .db-hh-card{animation-delay:.1s}.db-hh-grid li:nth-child(3) .db-hh-card{animation-delay:.2s}'
 			. '.db-hh-card:hover,.db-hh-card:focus-visible{transform:translateY(-3px);box-shadow:0 12px 28px rgba(10,22,40,.12);border-color:#0a1628}'
-			. '.db-hh-name{font-size:22px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}.db-hh-name em{font-style:normal;color:#0b6b36}'
-			. '.db-hh-price{font-size:15px;font-weight:700}.db-hh-mo{font-size:13px;color:#4b5563}'
+			. 'html body .db-hh a.db-hh-card,html body .db-hh a.db-hh-card:hover{color:#0a1628!important;text-decoration:none!important}'
+			. '.db-hh-name{font-size:22px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}html body .db-hh .db-hh-name em{font-style:normal;color:#0b6b36!important}'
+			. 'html body .db-hh .db-hh-price{font-size:15px;font-weight:700;color:#0a1628!important}html body .db-hh .db-hh-mo{font-size:13px;color:#4b5563!important}'
 			. '@media(max-width:560px){.db-hh-grid{grid-template-columns:1fr}.db-hh-card{flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 12px}.db-hh-name{font-size:19px}}'
 			. '@keyframes db-hh-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes db-hh-sweep{to{background-size:100% 100%}}'
 			. '@keyframes db-hh-pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}'

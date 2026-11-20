@@ -19,6 +19,7 @@ check( 'one name per extension', 3 === count( $p ) && 3 === count( array_unique(
 check( 'shortest label wins in an extension; ties go to the price nearest $5,000', 'beta.com' !== $p[0]['n'] && 'zeta.com' === $p[0]['n'] );
 check( 'extensions with more names come first', '.com' === $p[0]['ext'] && '.ca' === $p[1]['ext'] );
 check( 'too cheap, too dear and malformed names are skipped', ! in_array( '.io', array_column( $p, 'ext' ), true ) && ! in_array( '.co', array_column( $p, 'ext' ), true ) && ! in_array( 'bad name.com', array_column( $p, 'n' ), true ) );
+check( 'labels over 12 characters are skipped', ! in_array( 'longerbrandname.com', array_column( db_hh_pick( array( row( 'longerbrandname.com', 4000 ), row( 'ok.ca', 4000 ) ), 3 ), 'n' ), true ) );
 check( 'rows without a URL are skipped', array() === db_hh_pick( array( array( 'n' => 'a.com', 'p' => 1000, 'u' => '' ) ), 3 ) );
 check( 'output is stable across input order', array_column( db_hh_pick( array_reverse( $rows ), 3 ), 'n' ) === array_column( $p, 'n' ) );
 check( 'n of zero returns nothing', array() === db_hh_pick( $rows, 0 ) );
