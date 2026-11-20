@@ -97,6 +97,23 @@ if ( ! function_exists( 'db_hyg_img_dims' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_hyg_viewport_fix' ) ) {
+	/**
+	 * Lets visitors pinch-zoom: removes maximum-scale and user-scalable=no from the viewport meta
+	 * (axe "meta-viewport", critical). Pages the on-page SEO filter never sees, such as the virtual
+	 * tool and register pages, are covered here.
+	 */
+	function db_hyg_viewport_fix( $html ) {
+		if ( ! is_string( $html ) || ( false === stripos( $html, 'user-scalable' ) && false === stripos( $html, 'maximum-scale' ) ) ) {
+			return $html;
+		}
+		return preg_replace_callback( '#<meta\s+name=["\']viewport["\']\s+content=["\']([^"\']*)["\']#i', function ( $m ) {
+			$c = preg_replace( '/\s*,?\s*(?:maximum-scale\s*=\s*[\d.]+|user-scalable\s*=\s*(?:no|0))/i', '', $m[1] );
+			return str_replace( $m[1], trim( $c, ' ,' ), $m[0] );
+		}, $html );
+	}
+}
+
 if ( ! function_exists( 'db_hyg_single_h1' ) ) {
 	/**
 	 * Keeps one h1 per page. When the page has a visible h1, any screen-reader-only h1 (the theme
@@ -123,9 +140,9 @@ add_action( 'template_redirect', function () {
 		if ( ! is_string( $html ) || false === stripos( $html, '<html' ) ) {
 			return $html;
 		}
-		return db_hyg_img_fix( db_hyg_single_h1( $html ), 'db_hyg_img_dims' );
+		return db_hyg_img_fix( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ), 'db_hyg_img_dims' );
 	} );
-}, 8 );
+}, 3 ); // Early on purpose: virtual pages that render and exit before priority 8 would skip it.
 
 /* ----------------------------------------------------------------- headers */
 

@@ -116,7 +116,7 @@ html body.dbp-listing.dbp-listing #dbl-grid .dbl-card--sold .dbl-badge {
 	border-radius: 999px !important;
 	background: var(--dbs-red-soft) !important;
 	box-shadow: none !important;
-	color: var(--dbs-red) !important;
+	color: #a11919 !important; /* 6.4:1 on the soft red; the brand red was 3.9:1 (WCAG AA needs 4.5:1) */
 	font-size: 12.5px !important;
 	font-weight: 800 !important;
 	line-height: 1 !important;

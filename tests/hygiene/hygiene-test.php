@@ -72,5 +72,11 @@ check( 'payload key location is on the host', 'https://example.test/' . $k . '.t
 // ---- retention
 check( 'retention cutoff is 730 days back', '2024-11-' === substr( db_hyg_retention_cutoff( 1795000000 ), 0, 8 ) || '2024-12-' === substr( db_hyg_retention_cutoff( 1795000000 ), 0, 8 ) );
 
+// ---- viewport zoom
+check( 'viewport: maximum-scale and user-scalable removed', '<meta name="viewport" content="width=device-width, initial-scale=1">' === db_hyg_viewport_fix( '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">' ) );
+check( 'viewport: user-scalable=0 removed', false === stripos( db_hyg_viewport_fix( '<meta name="viewport" content="width=device-width,user-scalable=0">' ), 'user-scalable' ) );
+check( 'viewport: a clean tag is untouched', '<meta name="viewport" content="width=device-width,initial-scale=1">' === db_hyg_viewport_fix( '<meta name="viewport" content="width=device-width,initial-scale=1">' ) );
+check( 'viewport: non-strings pass through', null === db_hyg_viewport_fix( null ) );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
