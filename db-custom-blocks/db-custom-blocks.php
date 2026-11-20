@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.118.0
+ * Version:     3.118.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.118.0' );
+define( 'DB_BLOCKS_LOADED', '3.118.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -859,7 +859,19 @@ function db_plan_widget_html() {
 	$d_b64 = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$p_b64 = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : '';
 
+	$pa_bar = '';
+	$proof  = '';
+	if ( function_exists( 'db_pa_html' ) ) {
+		$dp_post = get_page_by_title( $domain, OBJECT, 'domain' );
+		$dp_url  = $dp_post ? get_permalink( $dp_post ) : home_url( '/' );
+		$pa_bar  = db_pa_html( array( 'back_url' => $dp_url, 'back_label' => 'Back to ' . $domain, 'share_url' => $dp_url, 'share_title' => $domain . ' is for sale at Domain Brothers' ) );
+		if ( function_exists( 'db_proof_html' ) ) {
+			$proof = db_proof_html( $dp_post ? $dp_post->ID : 0, $domain );
+		}
+	}
+
 	ob_start();
+	echo $pa_bar; // phpcs:ignore WordPress.Security.EscapeOutput
 	?>
 	<div class="db-plan" id="db-plan"
 		data-price="<?php echo esc_attr( $price ); ?>"
@@ -875,6 +887,7 @@ function db_plan_widget_html() {
 			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
 			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
+		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
 		<div class="db-plan-summary">
 			<div class="db-plan-monthly">
@@ -900,7 +913,7 @@ function db_plan_widget_html() {
 	<style>
 		.db-plan{max-width:760px;margin:32px auto;padding:0 4px;font-family:inherit;color:#1a1a1a;}
 		.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
-		.db-plan-domain{color:#0a6ed1;}
+		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
 		.db-plan-total{font-size:15px;color:#444;margin:0 0 20px;}
 		.db-plan-zero{display:inline-block;background:#e7f6ec;color:#137a3e;font-weight:600;padding:2px 10px;border-radius:999px;font-size:13px;}
 		.db-plan-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 24px;}
