@@ -163,7 +163,7 @@ const PAGES = [
 	}
 	{
 		const r = await http('/domains/fatality-ca/');
-		record('FN-10', 'Offer', 'Make-an-Offer form 1878 is on domain pages', /data-wpcf7-id="1878"/.test(r.body));
+		record('FN-10', 'Offer', 'domain pages link to the offer page, not a popup form', /make-an-offer/.test(r.body) && !/data-wpcf7-id="1878"/.test(r.body));
 		record('FN-11', 'Offer', 'offer redirect uses this site, not production', !/www\.domainbrothers\.com\/thank-you/.test(r.body) && /var DB_OFFER_FORM_ID = 1878;/.test(r.body));
 		const r2 = await http('/domains/aethereum-ca/');
 		const buy = (r2.body.match(/class="db-dd-btn db-dd-btn--primary" href="([^"]+)"/) || [])[1] || '';
@@ -255,7 +255,7 @@ const PAGES = [
 		const page = await ctx.newPage();
 		await page.goto(`${BASE}/payment-plan-setup/?d=${encodeURIComponent(D)}&p=${encodeURIComponent(P)}`, { waitUntil: 'load' });
 		await page.waitForTimeout(1000);
-		const rates = { 3: 0, 6: 0, 9: 5, 12: 10 };
+		const rates = { 3: 0, 6: 5, 9: 8, 12: 10 };
 		const terms = await page.$$eval('.db-plan-term', (els) => els.length);
 		record('FN-20', 'Plans', 'plan chooser shows 4 terms', terms === 4, terms);
 		for (let i = 0; i < terms; i++) {
