@@ -135,7 +135,7 @@ The long version, with checklists for each stage, is in [How to Buy a Premium Do
 
 You do not have to find the whole price on day one. A good payment plan spreads the cost over months while the name works for your business.
 
-Here is how our plans work. You choose a three, six, nine or twelve month plan; the three and six month plans carry no interest, nine-month plans add 5% and twelve-month plans add 10%. The first payment starts the plan. While you pay, the domain stays with Domain Brothers, and you can already point it at your website. Ownership transfers to you after the final payment clears. If a payment fails, we email you and retry for a set period before the plan ends, Every instalment is non-refundable, and stopping payments can lose the domain and the payments made, so read the terms before you start.
+Here is how our plans work. You choose a three, six, nine or twelve month plan; the three-month plan carries no interest, six-month plans add 5%, nine-month plans add 8% and twelve-month plans add 10%. The first payment starts the plan. While you pay, the domain stays with Domain Brothers, and you can already point it at your website. Ownership transfers to you after the final payment clears. If a payment fails, we email you and retry for a set period before the plan ends, Every instalment is non-refundable, and stopping payments can lose the domain and the payments made, so read the terms before you start.
 
 For help choosing between paying in full and paying over time, see [Premium Domain Payment Plans and Financing](/premium-domain-payment-plans-and-financing/).
 

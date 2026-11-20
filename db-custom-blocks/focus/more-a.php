@@ -37,7 +37,7 @@ return array(
 				'Receive the name in your own registrar account, under your control',
 				'Get help from the same contact until the transfer resolves',
 			),
-			'Plans shorter than 9 months carry no interest. A 9-month plan adds 5% and a 12-month plan adds 10%, and the full cost is shown before you commit.',
+			'The 3-month plan carries no interest. A 6-month plan adds 5%, a 9-month plan adds 8% and a 12-month plan adds 10%, and the full cost is shown before you commit.',
 			array( 'h3' => 'Experience behind the advice' ),
 			'Kartik and Jay Mehta bring over 27 years of combined experience to each conversation. That experience is most useful at the start, when you are deciding between names. We will tell you plainly if a cheaper name would serve you just as well, or if a name carries a risk you have not spotted, such as an awkward spelling.',
 			'Some buyers arrive with a single name in mind. Others have only a budget and a brand idea. For the second group, <a href="/find-a-domain/">find a domain</a> and the <a href="/collections/">collections</a> are a good place to start, and a short message to us can narrow the list further.',
@@ -93,7 +93,7 @@ return array(
 			array( 'h3' => 'Negotiating on 4 letter domains for sale' ),
 			'Every listing shows a price, and most accept offers. Base your figure on comparable sold names with the same extension and a similar pattern, and say how you plan to use the name. A broker replies within one business day.',
 			'If two names suit you equally, ask about both in one message. The broker can tell you which has more room on price and which works better on a monthly plan.',
-			'Plans run from 3 to 12 months by card through Stripe, so a stronger name can fit a smaller monthly budget. Shorter plans carry no interest; 9 months adds 5% and 12 months adds 10%. Compare our 4 letter domains for sale with <a href="/numeric-domains-for-sale/">numeric names</a> if letters and digits both suit your brand.',
+			'Plans run from 3 to 12 months by card through Stripe, so a stronger name can fit a smaller monthly budget. The 3-month plan carries no interest; 6 months adds 5%, 9 months adds 8% and 12 months adds 10%. Compare our 4 letter domains for sale with <a href="/numeric-domains-for-sale/">numeric names</a> if letters and digits both suit your brand.',
 		),
 		'5-character-domains' => array(
 			array( 'h3' => 'Coined words and real words in 5 letter domains' ),

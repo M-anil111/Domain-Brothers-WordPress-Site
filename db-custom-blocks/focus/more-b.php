@@ -83,7 +83,7 @@ return array(
 			),
 			array( 'h3' => 'Setting a budget' ),
 			'Decide your ceiling before you browse, and include the yearly renewal fee at your registrar. People who buy premium domains without a ceiling tend to stretch for one name and regret it.',
-			'A monthly plan spreads the cost. A 9-month plan adds 5% interest and a 12-month plan adds 10%, so a shorter plan or payment in full costs less overall.',
+			'A monthly plan spreads the cost. A 3-month plan adds no interest, a 6-month plan adds 5%, a 9-month plan adds 8% and a 12-month plan adds 10%, so a shorter plan or payment in full costs less overall.',
 			array( 'h3' => 'Trademark checks' ),
 			'Before you buy premium domains, search the official trademark register in each country where you sell, using the name with and without the extension. A match in your own industry is a serious risk; a match in an unrelated field may not be. If in doubt, ask a trademark lawyer before you pay.',
 			'Also search the name in app stores and on the main social platforms. An active company with the same name in your market can confuse customers even without a registered mark.',

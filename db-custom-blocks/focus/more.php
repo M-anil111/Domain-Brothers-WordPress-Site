@@ -19,7 +19,7 @@ return array(
 			array( 'h3' => 'Questions to ask before you buy premium domains' ),
 			'Most people who buy premium domains ask the same few questions. Is the name easy to say and spell? Does it suit the business for years, not just this launch? Is anyone else using a similar brand in the same market?',
 			'When you buy premium domains here, each listing shows the price, the payment options and the name&rsquo;s history. If the price is open, send an offer and a broker replies within one business day.',
-			'Card payments run through Stripe, in full or on a monthly plan of 3 to 12 months. Plans up to 6 months carry no interest; a 9-month plan adds 5% and a 12-month plan adds 10%.',
+			'Card payments run through Stripe, in full or on a monthly plan of 3 to 12 months. The 3-month plan carries no interest; a 6-month plan adds 5%, a 9-month plan adds 8% and a 12-month plan adds 10%.',
 			'Teams that buy premium domains for a launch often shortlist three names and decide together. <a href="/find-a-domain/">The domain finder</a> and <a href="/collections/">curated collections</a> help you build that shortlist faster.',
 		),
 		'sold'                      => array(

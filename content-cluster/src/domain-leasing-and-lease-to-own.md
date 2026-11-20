@@ -121,7 +121,7 @@ Domain Brothers does not lease domains. If your goal is to spread the cost of a 
 Here is how our plans work:
 
 - You choose a plan of 3 to 12 months and pay by card through Stripe.
-- Plans of 9 months add 5% interest and plans of 12 months add 10%. Shorter plans add no interest.
+- Plans of 6 months add 5% interest, plans of 9 months add 8% and plans of 12 months add 10%. The 3-month plan adds no interest.
 - The name stays with Domain Brothers until the final payment clears, and then transfers to your registrar account.
 - Every instalment is non-refundable. If you stop paying, the plan can end, and you can lose both the domain and the payments already made.
 

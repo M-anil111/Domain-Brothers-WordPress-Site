@@ -96,7 +96,7 @@ if ( ! function_exists( 'db_plan_schedule' ) ) {
 			$rows[] = array(
 				'n'       => $i,
 				'due'     => 1 === $i ? $start : (int) strtotime( '+' . ( $i - 1 ) . ' months', $start ),
-				'amount'  => db_stripe_installment_cents( $price, $months, $i ) / 100,
+				'amount'  => db_stripe_installment_cents( $price, $months, $i, db_plan_rate_of( $plan ) ) / 100,
 				'state'   => $state,
 				'paid_ts' => (int) ( $hist[ $i - 1 ]['ts'] ?? 0 ),
 			);
@@ -267,9 +267,9 @@ if ( ! function_exists( 'db_plan_message' ) ) {
 		$months   = (int) ( $plan['total_months'] ?? 0 );
 		$n        = (int) ( $plan['next_installment'] ?? 1 );
 		$price    = (float) ( $plan['price_usd'] ?? 0 );
-		$amount   = isset( $x['amount'] ) ? (float) $x['amount'] : db_stripe_installment_cents( $price, max( 1, $months ), max( 1, $n ) ) / 100;
+		$amount   = isset( $x['amount'] ) ? (float) $x['amount'] : db_stripe_installment_cents( $price, max( 1, $months ), max( 1, $n ), db_plan_rate_of( $plan ) ) / 100;
 		$paid     = db_plan_paid_so_far( $plan );
-		$total    = db_plan_total_cents( $price, max( 1, $months ) ) / 100;
+		$total    = db_plan_total_cents( $price, max( 1, $months ), db_plan_rate_of( $plan ) ) / 100;
 		$remain   = max( 0, $total - $paid );
 		$d        = $domain;
 		$fmt      = function ( $ts ) { return wp_date( 'F j, Y', (int) $ts ); };

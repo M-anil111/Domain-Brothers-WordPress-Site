@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.115.1
+ * Version:     3.116.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.115.1' );
+define( 'DB_BLOCKS_LOADED', '3.116.0' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -772,23 +772,45 @@ if ( ! function_exists( 'db_plan_terms' ) ) {
 	}
 }
 
-if ( ! function_exists( 'db_plan_rate' ) ) {
+if ( ! function_exists( 'db_plan_rate_legacy' ) ) {
 	/**
-	 * Interest rate (percent) per plan term — the live site's published
-	 * schedule: 3 and 6 months are interest-free, 9 months carries 5%, 12
-	 * months 10%. Single source of truth for the plan chooser (JS), the
-	 * Stripe charges (PHP) and every piece of copy that quotes a rate.
+	 * The schedule in force before 2026-11-20: 3 and 6 months interest-free, 9 months 5%, 12 months 10%.
+	 * A plan record without a stored rate_pct was started under it, so it keeps these rates.
 	 */
-	function db_plan_rate( $months ) {
+	function db_plan_rate_legacy( $months ) {
 		$rates = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 );
 		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
 	}
 }
 
+if ( ! function_exists( 'db_plan_rate' ) ) {
+	/**
+	 * Interest rate (percent) a NEW plan pays for its term: 3 months interest-free, 6 months 5%,
+	 * 9 months 8%, 12 months 10%. Single source of truth for the plan chooser (JS), the first
+	 * Stripe charge (PHP) and every piece of copy that quotes a rate. A plan keeps the rate it
+	 * started with (see db_plan_rate_of()), so changing this never reprices a plan in progress.
+	 */
+	function db_plan_rate( $months ) {
+		$rates = array( 3 => 0, 6 => 5, 9 => 8, 12 => 10 );
+		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
+	}
+}
+
+if ( ! function_exists( 'db_plan_rate_of' ) ) {
+	/** The rate a stored plan was started with: its rate_pct, or the legacy schedule for plans that predate it. */
+	function db_plan_rate_of( array $plan ) {
+		if ( isset( $plan['rate_pct'] ) && is_numeric( $plan['rate_pct'] ) ) {
+			return (float) $plan['rate_pct'];
+		}
+		return db_plan_rate_legacy( (int) ( $plan['total_months'] ?? 0 ) );
+	}
+}
+
 if ( ! function_exists( 'db_plan_total_cents' ) ) {
-	/** Total owed in cents for a plan: listing price plus the term's interest. */
-	function db_plan_total_cents( $price_usd, $months ) {
-		return (int) round( (float) $price_usd * ( 100 + db_plan_rate( $months ) ) );
+	/** Total owed in cents for a plan: listing price plus interest. $rate defaults to a new plan's rate for the term. */
+	function db_plan_total_cents( $price_usd, $months, $rate = null ) {
+		$rate = null === $rate ? db_plan_rate( $months ) : (float) $rate;
+		return (int) round( (float) $price_usd * ( 100 + $rate ) );
 	}
 }
 

@@ -92,7 +92,7 @@ Part of knowing how to buy a domain name for a website is knowing how money and 
 Common ways to pay:
 
 - **Card payment in full.** On our site card payments run through Stripe.
-- **Payment plan.** We offer monthly plans of 3 to 12 months. Plans up to 6 months add no interest; 9-month plans add 5% and 12-month plans add 10%. Details are in [premium domain payment plans and financing](/premium-domain-payment-plans-and-financing/).
+- **Payment plan.** We offer monthly plans of 3 to 12 months. The 3-month plan adds no interest; 6-month plans add 5%, 9-month plans add 8% and 12-month plans add 10%. Details are in [premium domain payment plans and financing](/premium-domain-payment-plans-and-financing/).
 - **Escrow.** In private sales between strangers, a neutral escrow company can hold the money until the name arrives. Read [domain escrow explained](/domain-escrow-explained/) for how it works. Domain Brothers does not offer escrow.
 - **Lease or lease-to-own.** Some sellers rent a name or let you pay over time while they keep ownership. See [domain leasing and lease-to-own](/domain-leasing-and-lease-to-own/) to compare it with a payment plan.
 
@@ -120,6 +120,6 @@ Once the move is complete, you may decide you no longer need some names you hold
 !details:Do I own a domain name forever once I buy it?|You hold the registration for as long as you keep renewing it. Each registration runs for a term of one to ten years, and you pay the registrar's renewal fee at the end of each term. Turn on auto-renew, keep a valid card on file and keep the contact email current, because a lapsed name can be deleted and registered by someone else.
 !details:Can I buy a domain name that someone else already owns?|Yes, if the owner is willing to sell. Look up the registration record, contact the owner through the listed contact method or a privacy relay, and make an offer. Many buyers use a broker to stay anonymous and to avoid paying too much. Agree the price and transfer steps in writing before you pay.
 !details:Should I buy the .com if my name is available in another extension?|Usually yes, if the .com is affordable and your audience is international. Many people type .com by habit, so another business on the .com can receive your email and visitors. If your customers are in one country, the local country code can be a strong choice. Check for trademark conflicts on any extension.
-!details:Can I pay for a premium domain name in instalments?|Yes. Domain Brothers offers monthly payment plans of 3 to 12 months through Stripe. Plans of up to 6 months add no interest, 9-month plans add 5% and 12-month plans add 10%. The plan terms set out when ownership moves to you, so read them before you choose a length.
+!details:Can I pay for a premium domain name in instalments?|Yes. Domain Brothers offers monthly payment plans of 3 to 12 months through Stripe. The 3-month plan adds no interest, 6-month plans add 5%, 9-month plans add 8% and 12-month plans add 10%. The plan terms set out when ownership moves to you, so read them before you choose a length.
 
 !related

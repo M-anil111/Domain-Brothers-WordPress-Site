@@ -326,6 +326,31 @@ add_action( 'template_redirect', static function () {
 
 // ─── Installment math (must match the payment-plan widget exactly) ────────────
 
+if ( ! function_exists( 'db_stripe_checkout_schedule' ) ) {
+	/**
+	 * Dates and amounts a new plan would charge, for the checkout sidebar. Payment 1 is today; each later
+	 * payment is one month after the previous, as the charge routine schedules them. Pure given its inputs.
+	 *
+	 * @param float $price  Listing price in USD.
+	 * @param int   $months Plan length.
+	 * @param int   $now    Start time (unix).
+	 * @return array<int, array{label:string,amount:string}>
+	 */
+	function db_stripe_checkout_schedule( $price, $months, $now ) {
+		$rows   = array();
+		$months = (int) $months;
+		for ( $i = 1; $i <= $months; $i++ ) {
+			$ts     = 1 === $i ? (int) $now : (int) strtotime( '+' . ( $i - 1 ) . ' months', (int) $now );
+			$when   = function_exists( 'wp_date' ) ? wp_date( 'M j, Y', $ts ) : gmdate( 'M j, Y', $ts );
+			$rows[] = array(
+				'label'  => $when . ( 1 === $i ? ' (today)' : '' ),
+				'amount' => '$' . number_format( db_stripe_installment_cents( (float) $price, $months, $i ) / 100, 2 ),
+			);
+		}
+		return $rows;
+	}
+}
+
 if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
 	/**
 	 * Cents for installment $n (1-indexed) of a $months-month plan (interest per db_plan_rate()).
@@ -333,10 +358,10 @@ if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
 	 * installment is round(total/months) in cents except the last, which absorbs
 	 * the rounding remainder so the sum always equals price + the term's interest.
 	 */
-	function db_stripe_installment_cents( float $price_usd, int $months, int $n ) : int {
-		// Total includes the term's interest (db_plan_rate(): 0% for 3/6
-		// months, 5% for 9, 10% for 12) — same figure the plan chooser shows.
-		$total_cents   = db_plan_total_cents( $price_usd, $months );
+	function db_stripe_installment_cents( float $price_usd, int $months, int $n, ?float $rate = null ) : int {
+		// Total includes the plan's interest. $rate is the rate a stored plan was started with
+		// (db_plan_rate_of()); null means a new plan, which pays db_plan_rate() for its term.
+		$total_cents   = db_plan_total_cents( $price_usd, $months, $rate );
 		$monthly_cents = (int) round( $total_cents / $months );
 		if ( $n < $months ) {
 			return $monthly_cents;
@@ -411,6 +436,7 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 			$body['setup_future_usage']           = 'off_session';
 			$body['metadata[total_months]']       = (string) $months;
 			$body['metadata[installment_number]'] = '1';
+			$body['metadata[rate_pct]']           = (string) db_plan_rate( $months ); // Frozen on the plan record when payment 1 succeeds.
 		}
 
 		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents', [
@@ -653,6 +679,13 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 #db-co .co-sum-amt{font-size:22px;color:var(--co-green-text);letter-spacing:.02em}
 #db-co .co-sum-note{font-size:15px;color:var(--co-ink);margin-left:auto;padding-right:24px}
 #db-co .co-sum-plan{font-size:13px;color:var(--co-muted);margin-top:10px;line-height:1.5}
+#db-co .co-sched{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(15,34,48,.08);padding:16px 14px;margin-top:14px}
+#db-co .co-sched h2{font-size:16px;margin:0 0 10px}
+#db-co .co-sched ol{list-style:none;margin:0;padding:0}
+#db-co .co-sched li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eef1f4;font-size:14px}
+#db-co .co-sched li:last-child{border-bottom:0}
+#db-co .co-sched-amt{font-weight:700;font-variant-numeric:tabular-nums}
+#db-co .co-sched p{font-size:13px;color:var(--co-muted);margin:10px 0 0;line-height:1.5}
 #db-co .co-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 #db-co .co-cards svg{width:46px;height:32px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 /* Next steps */
@@ -829,12 +862,22 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<div class="co-sum-price">
 							<svg class="co-ico" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2l4 3.5 5-1 1.5 5 5 1.5-1 5L38 20l-3.5 4 1 5-5 1.5-1.5 5-5-1L20 38l-4-3.5-5 1-1.5-5-5-1.5 1-5L2 20l3.5-4-1-5 5-1.5 1.5-5 5 1z" fill="#5cb531"/><circle cx="20" cy="20" r="11" fill="#fff"/><circle cx="20" cy="20" r="9" fill="none" stroke="#2f8a17" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#2f8a17">$</text></svg>
 							<span class="co-sum-amt"><?php echo esc_html( $price_display ); ?></span>
-							<span class="co-sum-note">(Excl. GST)</span>
 						</div>
 <?php if ( $is_plan ) : ?>
 						<p class="co-sum-plan"><?php echo esc_html( sprintf( '%d monthly payments, %s. %s due today, plan total $%s.', $months, $rate_label, $due_today_display, number_format( $alt_total, 2 ) ) ); ?></p>
 <?php endif; ?>
 					</div>
+<?php if ( $is_plan ) : ?>
+					<div class="co-sched" aria-labelledby="co-sched-h">
+						<h2 id="co-sched-h">When you will be charged</h2>
+						<ol>
+<?php foreach ( db_stripe_checkout_schedule( $price, $months, time() ) as $row ) : ?>
+							<li><span class="co-sched-date"><?php echo esc_html( $row['label'] ); ?></span><span class="co-sched-amt"><?php echo esc_html( $row['amount'] ); ?></span></li>
+<?php endforeach; ?>
+						</ol>
+						<p>Your first payment is taken today. Each later payment is charged <strong>automatically</strong> to the card you enter, on the date shown. We email you before each one.</p>
+					</div>
+<?php endif; ?>
 					<div class="co-cards" aria-label="Accepted cards">
 						<svg viewBox="0 0 46 32" role="img" aria-label="Mastercard"><rect width="46" height="32" fill="#1a4a8c"/><circle cx="19" cy="16" r="8" fill="#eb001b"/><circle cx="27" cy="16" r="8" fill="#f79e1b" fill-opacity=".9"/></svg>
 						<svg viewBox="0 0 46 32" role="img" aria-label="Visa"><rect width="46" height="32" fill="#fff"/><text x="23" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" font-style="italic" fill="#1a1f71">VISA</text></svg>
@@ -1475,6 +1518,10 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['mode']              = db_stripe_mode();
 		$plan['price_usd']         = $total_price;
 		$plan['total_months']      = $total_months;
+		if ( 1 === $installment_num && ! isset( $plan['rate_pct'] ) ) {
+			// The rate the buyer saw and paid for. A payment created before rates were stored has no meta: it used the legacy schedule.
+			$plan['rate_pct'] = isset( $meta['rate_pct'] ) && is_numeric( $meta['rate_pct'] ) ? (float) $meta['rate_pct'] : db_plan_rate_legacy( $total_months );
+		}
 		$plan['customer_email']    = $customer_email ?: ( $plan['customer_email'] ?? '' );
 		$plan['customer_id']       = $customer ?: (string) ( $plan['customer_id'] ?? '' );
 		$plan['payment_method']    = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
@@ -1524,7 +1571,7 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		if ( $was_past_due && function_exists( 'db_plan_on_recovered' ) ) {
 			db_plan_on_recovered( $domain, $amount_usd );
 		} else {
-			db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email );
+			db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email, db_plan_rate_of( $plan ) );
 		}
 	}
 }
@@ -1627,7 +1674,7 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 					'Idempotency-Key' => 'db-plan-' . md5( $domain . '|' . ( $plan['customer_id'] ?? '' ) ) . '-' . $n . '-' . gmdate( 'Ymd' ),
 				],
 				'body'      => [
-					'amount'                       => db_stripe_installment_cents( $price, $months, $n ),
+					'amount'                       => db_stripe_installment_cents( $price, $months, $n, db_plan_rate_of( $plan ) ),
 					'currency'                     => 'usd',
 					'customer'                     => $plan['customer_id'],
 					'payment_method'               => db_stripe_current_payment_method( $plan ),
@@ -1807,11 +1854,11 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 	 * anything), and the team was never told a plan had started. Installment
 	 * 1 sends the full schedule; later ones send a short receipt.
 	 */
-	function db_stripe_on_plan_payment( string $domain, float $price, int $months, int $n, float $amount_usd, string $customer_email ) : void {
+	function db_stripe_on_plan_payment( string $domain, float $price, int $months, int $n, float $amount_usd, string $customer_email, ?float $plan_rate = null ) : void {
 		$admin_email = (string) get_option( 'admin_email' );
-		$rate        = db_plan_rate( $months );
+		$rate        = null === $plan_rate ? db_plan_rate( $months ) : $plan_rate;
 		$rate_label  = rtrim( rtrim( number_format( $rate, 1 ), '0' ), '.' ) . '% interest';
-		$total       = db_plan_total_cents( $price, $months ) / 100;
+		$total       = db_plan_total_cents( $price, $months, $rate ) / 100;
 		$d           = esc_html( $domain );
 		$paid_fmt    = '$' . number_format( $amount_usd, 2 );
 

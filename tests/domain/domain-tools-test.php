@@ -12,9 +12,13 @@ function add_filter() {}
 function wp_strip_all_tags( $s ) { return strip_tags( (string) $s ); }
 function current_time() { return '2026-11-14 10:00:00'; }
 function db_plan_terms() { return array( 3, 6, 9, 12 ); }
-function db_plan_rate( $m ) { $r = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 ); return (float) ( $r[ (int) $m ] ?? 0 ); }
-function db_plan_total_cents( $p, $m ) { return (int) round( (float) $p * ( 100 + db_plan_rate( $m ) ) ); }
-function db_stripe_installment_cents( $p, $m, $n ) { $t = db_plan_total_cents( $p, $m ); $mc = (int) round( $t / $m ); return $n < $m ? $mc : $t - $mc * ( $m - 1 ); }
+// The real rate functions from the plugin, not copies, so this test follows the live schedule.
+$real = file_get_contents( __DIR__ . '/../../db-custom-blocks/db-custom-blocks.php' );
+$ra   = strpos( $real, "if ( ! function_exists( 'db_plan_rate_legacy' ) )" );
+$rb   = strpos( $real, "if ( ! function_exists( 'db_is_plan_page' ) )" );
+if ( false === $ra || $rb <= $ra ) { echo "FAIL could not locate the plan rate code\n"; exit( 1 ); }
+eval( substr( $real, $ra, $rb - $ra ) );
+function db_stripe_installment_cents( $p, $m, $n, $rate = null ) { $t = db_plan_total_cents( $p, $m, $rate ); $mc = (int) round( $t / $m ); return $n < $m ? $mc : $t - $mc * ( $m - 1 ); }
 class WP_Post { public $ID; public $post_type = 'domain'; public $post_status = 'publish'; public $post_title = ''; }
 $GLOBALS['POSTS'] = array();
 function get_post( $id ) { return $GLOBALS['POSTS'][ (int) $id ] ?? null; }
@@ -30,7 +34,8 @@ function ok( $c, $l ) { global $fails; echo ( $c ? 'PASS ' : 'FAIL ' ) . $l . "\
 $rows = db_tools_pay_rows( 2500 );
 ok( 5 === count( $rows ) && 0 === $rows[0]['months'], 'pay in full plus four plan terms' );
 ok( abs( $rows[1]['total'] - 2500 ) < 0.001 && 0.0 === $rows[1]['extra'], 'the 3-month plan costs nothing extra' );
-ok( abs( $rows[3]['total'] - 2625 ) < 0.001 && abs( $rows[3]['extra'] - 125 ) < 0.001, 'the 9-month plan adds 5% ($125 on $2,500)' );
+ok( abs( $rows[2]['total'] - 2625 ) < 0.001 && abs( $rows[2]['extra'] - 125 ) < 0.001, 'the 6-month plan adds 5% ($125 on $2,500)' );
+ok( abs( $rows[3]['total'] - 2700 ) < 0.001 && abs( $rows[3]['extra'] - 200 ) < 0.001, 'the 9-month plan adds 8% ($200 on $2,500)' );
 ok( abs( $rows[4]['total'] - 2750 ) < 0.001 && abs( $rows[4]['monthly'] - 229.17 ) < 0.001, 'the 12-month plan adds 10% and charges $229.17 a month' );
 ok( array() === db_tools_pay_rows( 0 ), 'no table without a price' );
 foreach ( $rows as $r ) {

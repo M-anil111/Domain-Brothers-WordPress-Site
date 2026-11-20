@@ -103,7 +103,7 @@ Numeric names, made only of digits, have their own market. They suit sectors and
 
 Because short domain names are costly and in demand, they attract fraud as well as genuine sellers. Confirm that the seller controls the name before you pay, agree the price and transfer steps in writing, and use a payment route you can trace.
 
-On our site you can pay the listed price, send an offer, or spread the cost on a monthly payment plan of 3 to 12 months through Stripe. Plans of up to 6 months add no interest; 9-month plans add 5% and 12-month plans add 10%. All sales are final, so check the exact letters and extension before you pay. If the name you want belongs to someone else, our brokerage team can approach the owner confidentially.
+On our site you can pay the listed price, send an offer, or spread the cost on a monthly payment plan of 3 to 12 months through Stripe. The 3-month plan adds no interest; 6-month plans add 5%, 9-month plans add 8% and 12-month plans add 10%. All sales are final, so check the exact letters and extension before you pay. If the name you want belongs to someone else, our brokerage team can approach the owner confidentially.
 
 ## Frequently asked questions
 
@@ -111,6 +111,6 @@ On our site you can pay the listed price, send an offer, or spread the cost on a
 !details:Are any two letter .com domains still available to register?|No. All 676 letter-only two letter .com names are registered, and most have been for many years. To get one you must buy it from its current owner, usually through a broker. The same is true of every three letter .com, so these names are bought on the aftermarket rather than registered new.
 !details:Why do some 4 letter domains cost far more than others?|Pronounceability, meaning and letter choice. A four letter name that reads as a word or a real brand can serve many businesses, so more buyers compete for it. A random string mostly appeals to companies with matching initials. Extension, comparable sales and the name's history also move the price.
 !details:Is a short domain always better than a longer one?|Not always. A short name is easier to type and remember, but a slightly longer name that clearly says what you do can serve a business better and cost far less. Judge the name on how customers will hear, spell and recall it, not on character count alone, and compare the total cost.
-!details:Can I pay for a short domain name in instalments?|Yes. Domain Brothers offers monthly payment plans of 3 to 12 months through Stripe on listed names. Plans of up to 6 months add no interest, 9-month plans add 5% and 12-month plans add 10%. Compare the total cost of each plan with the full price before you choose.
+!details:Can I pay for a short domain name in instalments?|Yes. Domain Brothers offers monthly payment plans of 3 to 12 months through Stripe on listed names. The 3-month plan adds no interest, 6-month plans add 5%, 9-month plans add 8% and 12-month plans add 10%. Compare the total cost of each plan with the full price before you choose.
 
 !related

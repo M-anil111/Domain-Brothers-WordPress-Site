@@ -91,7 +91,7 @@ The price is only the first cost. A realistic budget includes:
 | Broker commission | When you sell through a broker |
 | Time | Months or years before a sale or a return from use |
 
-When you buy from us, you can pay in full by card through Stripe or spread the cost over a monthly plan of 3 to 12 months. Plans shorter than 9 months add no interest; 9-month plans add 5% and 12-month plans add 10%. The domain stays with us until the final payment clears and then transfers to you. Every instalment is non-refundable, and stopping payments can mean losing the domain and the payments already made, so choose a plan length you can sustain.
+When you buy from us, you can pay in full by card through Stripe or spread the cost over a monthly plan of 3 to 12 months. The 3-month plan adds no interest; 6-month plans add 5%, 9-month plans add 8% and 12-month plans add 10%. The domain stays with us until the final payment clears and then transfers to you. Every instalment is non-refundable, and stopping payments can mean losing the domain and the payments already made, so choose a plan length you can sustain.
 
 ## Using a domain as a business asset
 
@@ -132,7 +132,7 @@ Write the decision down with the reason, so next year's review starts from facts
 !details:Is premium domain investment a good idea for beginners?|It can be, with care. Start with one or two names in a field you understand, set a budget that includes several years of renewals, and only use money you can leave tied up. Domains earn nothing until they are used or sold, and good names can take years to find the right buyer.
 !details:How do I value a premium domain investment?|Look at length, clarity, extension, the number of businesses that could use the name, comparable sales and legal clarity. Our guide to valuing a premium domain explains each factor. Be wary of automated values, which cannot judge who would actually pay.
 !details:What are the main risks of premium domain investment?|The main risks are holding a name that earns nothing, renewal costs that add up, slow sales, trademark claims and changes in which names and extensions are in demand. Fraud is another risk when buying privately. Research each name, check trademarks and buy only from sellers you can verify.
-!details:Can I spread the cost of a premium domain?|Yes. We offer monthly plans of 3 to 12 months by card. Nine-month plans add 5% interest and 12-month plans add 10%; shorter plans add none. The domain stays with us until the final payment clears. Instalments are non-refundable, and missed payments can lose the domain.
+!details:Can I spread the cost of a premium domain?|Yes. We offer monthly plans of 3 to 12 months by card. Six-month plans add 5% interest, nine-month plans add 8% and 12-month plans add 10%; the three-month plan adds none. The domain stays with us until the final payment clears. Instalments are non-refundable, and missed payments can lose the domain.
 
 ## Where to go next
 

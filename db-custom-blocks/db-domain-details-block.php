@@ -109,7 +109,7 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 		if ( $f['cats'] ) { $rows['Category'] = implode( ', ', $f['cats'] ); }
 		if ( $f['price'] > 0 ) {
 			$rows['Price']    = '$' . number_format( $f['price'], 0 );
-			$rows['Payments'] = 'From ' . db_dd_monthly( $f['price'] ) . '/month over 12 months (3 and 6 month plans are interest-free)';
+			$rows['Payments'] = 'From ' . db_dd_monthly( $f['price'] ) . '/month over 12 months (the 3-month plan is interest-free)';
 		} else {
 			$rows['Price'] = 'Make an offer';
 		}

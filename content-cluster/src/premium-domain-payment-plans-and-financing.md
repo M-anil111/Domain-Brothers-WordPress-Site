@@ -24,7 +24,7 @@ Most buyers who use a plan are not short of money. They are keeping cash for the
 The details differ by seller, so here is how ours works as an example.
 
 1. You pick the domain and a plan of **3, 6, 9 or 12 months**, paid by card through Stripe.
-2. The first monthly payment starts the plan. The three and six month plans carry no interest; nine-month plans add 5% and twelve-month plans add 10%, and the figures are shown before you pay.
+2. The first monthly payment starts the plan. The three-month plan carries no interest; six-month plans add 5%, nine-month plans add 8% and twelve-month plans add 10%, and the figures are shown before you pay.
 3. The domain stays with Domain Brothers until your final payment clears.
 4. You can already **use the name**: tell us where your website is hosted and we point the name to it.
 5. After the **final payment clears**, ownership transfers to you and we send the transfer details.
@@ -47,7 +47,7 @@ If the price is within your budget and you want the name outright, paying in ful
 ## What to compare in any domain financing offer
 
 - **Term and total cost.** Add up every payment. If a seller advertises a low monthly figure, check the total.
-- **Interest.** A zero-interest option on shorter terms is a good sign.
+- **Interest.** A zero-interest option on the shortest term is a good sign.
 - **Ownership during the plan.** Who is the registered owner until the last payment? Ownership held back is normal, but the arrangement should be in writing, and the terms should say who holds the name and what happens if a payment is missed.
 - **Use of the name.** Can you point it at your site now? You should be able to.
 - **Missed payments.** Find out how many days you have, how many retries there are, and what happens at the end. On our plans a failed card payment is retried for a set number of days with reminders, and after that the plan ends and the domain returns to our inventory. Payments already made are non-refundable. Read the terms before you start, and tell us early if you expect a problem.
@@ -73,20 +73,20 @@ If the name will help you win customers within the plan, it usually is. A strong
 
 The listed price is the same whichever term you pick. What changes is the interest and the size of each payment.
 
-### Domain financing interest on longer plans
+### Domain financing interest by plan length
 
-Plans of three and six months add nothing to the price. A nine-month plan adds 5% and a twelve-month plan adds 10%. The table shows what that means as a share of the listed price, assuming the total is split into equal monthly payments; the exact amounts are shown before you confirm.
+The three-month plan adds nothing to the price. A six-month plan adds 5%, a nine-month plan adds 8% and a twelve-month plan adds 10%. The table shows what that means as a share of the listed price, assuming the total is split into equal monthly payments; the exact amounts are shown before you confirm.
 
 | Plan | Interest | Total paid | Each payment |
 |---|---|---|---|
 | 3 months | None | 100% of the price | About 33.3% of the price |
-| 6 months | None | 100% of the price | About 16.7% of the price |
-| 9 months | 5% | 105% of the price | About 11.7% of the price |
+| 6 months | 5% | 105% of the price | About 17.5% of the price |
+| 9 months | 8% | 108% of the price | About 12% of the price |
 | 12 months | 10% | 110% of the price | About 9.2% of the price |
 
 ### Choosing between the terms
 
-The six-month plan is often the sweet spot: no interest, and each payment is a sixth of the price. Choose nine or twelve months only when the lower monthly figure matters more to your cash flow than the extra cost. Whatever the term, every instalment is non-refundable, so pick a payment you can keep up for the whole plan.
+The three-month plan is the cheapest way to spread the cost: no interest, and each payment is a third of the price. Choose six, nine or twelve months only when the lower monthly figure matters more to your cash flow than the extra cost. Whatever the term, every instalment is non-refundable, so pick a payment you can keep up for the whole plan.
 
 ## What happens when the plan ends
 
@@ -105,7 +105,7 @@ Seller payment plans are one form of domain financing and one of several ways th
 ## Questions we hear most
 
 !details:Can I use the domain before I finish paying?|Yes. You can point it at your website and email as soon as the first payment clears. The registered owner changes after the last payment.
-!details:Is there interest?|Our three and six month plans have no interest. Nine-month plans add 5% and twelve-month plans add 10%, shown before you confirm.
+!details:Is there interest?|Our three-month plan has no interest. Six-month plans add 5%, nine-month plans add 8% and twelve-month plans add 10%, shown before you confirm.
 !details:What if I miss a payment?|We email you and retry the card for a set period. If it is still unpaid at the end, the plan ends and the domain returns to our inventory. Payments already made are not refunded, so contact us before that happens if you need help.
 !details:Is domain financing refundable?|No. Every instalment is non-refundable, and all sales are final. If you stop paying, the plan ends and you can lose both the domain and the payments already made. Choose the shortest term you can comfortably afford, and contact us early if you expect a problem with a payment.
 !details:How do I pay for domain financing?|Plans are paid by card through Stripe. The first payment starts the plan and the rest are charged automatically each month. Keep the card details current, because an expired card makes the next payment fail.

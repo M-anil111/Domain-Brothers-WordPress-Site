@@ -375,7 +375,7 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 			'plan_started'     => array(
 				'group' => 'Payments', 'label' => 'Payment plan started (to the buyer)', 'to' => 'customer', 'critical' => true,
 				'when'  => 'The first payment of a payment plan clears.',
-				'vars'  => $dom + array( 'amount' => array( 'First payment', '$733.00' ), 'months' => array( 'Number of payments', '12' ), 'rate' => array( 'Interest', '0% interest' ), 'total' => array( 'Total of the plan', '$8,800.00' ), 'schedule_html' => array( 'The payment schedule', '<p>1. Today, $733.00</p>' ), 'terms_html' => array( 'The plan terms', '<p>The domain stays with Domain Brothers until the final payment.</p>' ), 'reminder_days' => array( 'Days before each payment we remind', '3' ) ),
+				'vars'  => $dom + array( 'amount' => array( 'First payment', '$733.00' ), 'months' => array( 'Number of payments', '12' ), 'rate' => array( 'Interest', '10% interest' ), 'total' => array( 'Total of the plan', '$8,800.00' ), 'schedule_html' => array( 'The payment schedule', '<p>1. Today, $733.00</p>' ), 'terms_html' => array( 'The plan terms', '<p>The domain stays with Domain Brothers until the final payment.</p>' ), 'reminder_days' => array( 'Days before each payment we remind', '3' ) ),
 				'subject' => 'Your payment plan for {{domain}} has started', 'eyebrow' => 'Payment plan active', 'heading' => 'Your plan for {{domain}} is active',
 				'body'  => '<p>We received your first payment of <strong>{{amount}}</strong>. Your plan is <strong>{{months}} monthly payments</strong>, {{rate}}.</p>{{schedule_html}}<p>The remaining payments are charged to the card you used. You can use the domain during the plan: reply to this email and we will point its DNS to your hosting. Ownership transfers after the final payment; until then it stays with Domain Brothers.</p>{{terms_html}}<p style="font-size:14px">We email a reminder {{reminder_days}} days before each payment.</p>',
 				'details' => "Domain|{{domain}}\nPlan total|{{total}}", 'cta' => '', 'cta_var' => '', 'tone' => 'good',
@@ -423,7 +423,7 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 			'admin_plan_payment' => array(
 				'group' => 'Team notices', 'label' => 'Plan payment (to the team)', 'to' => 'team', 'critical' => false,
 				'when'  => 'A payment plan starts or an instalment is paid.',
-				'vars'  => $dom + array( 'headline' => array( 'Plan started / Payment 3 of 12', 'Plan started' ), 'amount' => array( 'Amount', '$733.00' ), 'plan' => array( 'Plan summary', '12 months, 0% interest, total $8,800.00' ), 'customer' => array( 'Customer', 'buyer@example.com' ), 'time' => array( 'When', 'March 3, 2026 10:15' ), 'subject_line' => array( 'Subject line', 'PLAN STARTED: brandable.com' ) ),
+				'vars'  => $dom + array( 'headline' => array( 'Plan started / Payment 3 of 12', 'Plan started' ), 'amount' => array( 'Amount', '$733.00' ), 'plan' => array( 'Plan summary', '12 months, 10% interest, total $8,800.00' ), 'customer' => array( 'Customer', 'buyer@example.com' ), 'time' => array( 'When', 'March 3, 2026 10:15' ), 'subject_line' => array( 'Subject line', 'PLAN STARTED: brandable.com' ) ),
 				'subject' => '{{subject_line}}', 'eyebrow' => 'Payment plan', 'heading' => '{{headline}}: {{domain}}',
 				'body'  => '<p>A payment plan payment was received.</p>',
 				'details' => "Domain|{{domain}}\nPayment|{{amount}}\nPlan|{{plan}}\nCustomer|{{customer}}\nTime|{{time}}", 'cta' => '', 'cta_var' => '', 'tone' => 'good',

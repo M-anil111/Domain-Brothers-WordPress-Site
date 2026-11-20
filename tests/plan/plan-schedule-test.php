@@ -18,11 +18,18 @@ function esc_url( $s ) { return (string) $s; }
 function wp_date( $format, $ts = null ) { return date( $format, null === $ts ? time() : (int) $ts ); }
 function wp_salt() { return 'test-salt'; }
 function db_stripe_store_key( $kind, $domain ) { return 'db_' . $kind . '_' . md5( $domain ); }
-function db_stripe_installment_cents( $price, $months, $n ) {
-	$cents = (int) round( $price * 100 / $months );
-	return $n === $months ? (int) round( $price * 100 ) - $cents * ( $months - 1 ) : $cents;
+// The REAL rate functions (schedule, legacy schedule, frozen rate, total) from db-custom-blocks.php, not copies.
+$real = file_get_contents( dirname( __DIR__, 2 ) . '/db-custom-blocks/db-custom-blocks.php' );
+$ra   = strpos( $real, "if ( ! function_exists( 'db_plan_rate_legacy' ) )" );
+$rb   = strpos( $real, "if ( ! function_exists( 'db_is_plan_page' ) )" );
+if ( false === $ra || $rb <= $ra ) { echo "FAIL could not locate the plan rate code\n"; exit( 1 ); }
+eval( substr( $real, $ra, $rb - $ra ) );
+// Same split as db-stripe-block.php: equal monthly payments, the last one absorbs the rounding.
+function db_stripe_installment_cents( $price, $months, $n, $rate = null ) {
+	$total = db_plan_total_cents( $price, $months, $rate );
+	$mc    = (int) round( $total / $months );
+	return $n < $months ? $mc : $total - $mc * ( $months - 1 );
 }
-function db_plan_total_cents( $price, $months ) { return (int) round( $price * 100 ); }
 function db_plan_update_card_url() { return 'https://example.test/card'; }
 function db_send_branded_email() { return true; }
 function db_mail_compose() { return null; }
@@ -74,6 +81,19 @@ $msg = db_plan_message( 'failed_1', $plan + array( 'past_due_since' => $start ),
 ok( false !== strpos( $msg[1], 'Failed payment notice 1 of 4' ), 'the failure email body includes the notice block' );
 ok( false !== strpos( $msg[1], 'Questions or need more time?' ), 'the footer is still last in the email body' );
 ok( strpos( $msg[1], 'Failed payment notice 1 of 4' ) < strpos( $msg[1], 'Questions or need more time?' ), 'the notice block sits above the footer' );
+
+// Plans with interest: a stored plan uses its own rate, a plan without one uses the legacy rate for its term.
+$hist = array( array( 'installment' => 1, 'amount_usd' => 1, 'ts' => $start ) );
+$new6 = array( 'domain' => 'a.com', 'total_months' => 6, 'price_usd' => 6000.0, 'rate_pct' => 5, 'paid_installments' => 1, 'next_installment' => 2, 'status' => 'active', 'history' => $hist );
+$r = db_plan_schedule( $new6 );
+ok( 6 === count( $r ) && abs( array_sum( array_column( $r, 'amount' ) ) - 6300.0 ) < 0.001, 'a 6-month plan stored at 5% schedules $6,300 in total' );
+$leg6 = $new6; unset( $leg6['rate_pct'] );
+$r = db_plan_schedule( $leg6 );
+ok( abs( array_sum( array_column( $r, 'amount' ) ) - 6000.0 ) < 0.001, 'the same plan without a stored rate keeps the old 0% total ($6,000)' );
+$leg9 = array( 'domain' => 'b.com', 'total_months' => 9, 'price_usd' => 2500.0, 'paid_installments' => 1, 'next_installment' => 2, 'status' => 'active', 'history' => $hist );
+ok( abs( array_sum( array_column( db_plan_schedule( $leg9 ), 'amount' ) ) - 2625.0 ) < 0.001, 'a 9-month plan without a stored rate keeps the old 5% total ($2,625), not the new 8%' );
+$new9 = $leg9; $new9['rate_pct'] = 8;
+ok( abs( array_sum( array_column( db_plan_schedule( $new9 ), 'amount' ) ) - 2700.0 ) < 0.001, 'a 9-month plan stored at 8% schedules $2,700' );
 
 echo $fails ? "\n$fails FAILED\n" : "\nALL PASSED\n";
 exit( $fails ? 1 : 0 );

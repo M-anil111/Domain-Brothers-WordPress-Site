@@ -101,7 +101,7 @@ Once you know what is a premium domain and have found one that fits, the purchas
 
 1. Pick the name from the [domain list](/all-domains/), or ask us to [find one](/find-a-domain/) for you.
 2. Pay the listed price, or send an offer. A broker replies within one business day, and you can accept, counter or walk away.
-3. Pay by card through Stripe, in full or on a monthly plan of 3 to 12 months. Shorter plans carry no interest; nine-month plans add 5% and twelve-month plans add 10%.
+3. Pay by card through Stripe, in full or on a monthly plan of 3 to 12 months. The three-month plan carries no interest; six-month plans add 5%, nine-month plans add 8% and twelve-month plans add 10%.
 4. When the payment, or the final instalment, clears, the transfer to your registrar starts. Our [domain transfer](/domain-transfer/) service handles the technical steps.
 
 All sales are final and every instalment is non-refundable, so check the name, the extension and any trademark conflicts before you commit. If the name you want belongs to someone else and is not listed, our [brokerage service](/domain-brokerage-services/) can approach the owner confidentially.
