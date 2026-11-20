@@ -659,12 +659,15 @@ html body.db-ui-active .db-pr-card h2 { margin: 0 0 6px; text-align: center; fon
 .db-pr-price small { font-size: .38em; font-weight: 600; letter-spacing: 0; color: var(--m-muted); }
 .db-pr-price--text { font-size: clamp(26px, 3vw, 34px); padding: 7px 0; }
 .db-pr-note { margin: 0 0 18px; text-align: center; font-size: 15px; color: var(--m-muted); }
-.db-pr-list { margin: 0 0 22px; padding: 18px 0 0; list-style: none; border-top: 1px solid var(--m-line); display: grid; gap: 12px; flex: 1 1 auto; }
+html body.db-ui-active .db-pr-card .db-pr-price { margin: 2px 0 0 !important; padding-bottom: 0; }
+html body.db-ui-active .db-pr-card .db-pr-price--text { padding: 4px 0 0; }
+html body.db-ui-active .db-pr-card .db-pr-note { margin: 6px 0 16px !important; }
+.db-pr-list { margin: 0 0 22px; padding: 18px 0 0; list-style: none; border-top: 1px solid var(--m-line); display: grid; gap: 12px; flex: 0 0 auto; align-content: start; }
+.db-pr-list + * { margin-top: auto; } /* buttons sit at the bottom; spare height never stretches the bullets */
 .db-pr-list li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 15px; line-height: 1.5; }
 .db-pr-list svg { width: 22px; height: 22px; }
 .db-pr-list svg circle { fill: #0b7a75; }
 .db-pr-list svg path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.db-pr-card--offer .db-pr-list svg circle { fill: #1d4f9c; }
 html body.db-ui-active .db-pr-list a { color: var(--m-accent-dk); font-weight: 600; }
 html body.db-ui-active a.db-pr-btn, html body.db-ui-active button.db-pr-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; padding: 0 22px; border: 1.5px solid #111827; border-radius: 999px; background: #fff; color: #111827 !important; font: inherit; font-size: 16px; font-weight: 700; text-decoration: none !important; text-transform: none; letter-spacing: 0; cursor: pointer; box-shadow: none; transition: background .15s; }
 html body.db-ui-active a.db-pr-btn:hover, html body.db-ui-active button.db-pr-btn:hover { background: var(--m-soft); }
