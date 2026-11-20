@@ -90,4 +90,12 @@ check( 'chips: Deals is not offered while no deal is running', false === strpos(
 check( 'chips: the facts row follows the chips', false !== strpos( $t_chips, '<ul class="dbl-trust">' ) );
 check( 'chips: the current list stays even when empty', false !== strpos( $t_chips, '/5-character-domains/" aria-current="page"' ) );
 
+// Site map: duplicate entries and old slugs are removed.
+function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
+$sm = '<ul><li><a href="https://e.test/">Home</a></li><li><a href="https://e.test/digital-marketing-services/">Digital Marketing</a></li><li><a href="https://e.test/digital-marketing/">Digital Marketing</a></li><li><a href="https://e.test/digital-marketing-services/">Digital Marketing</a></li><li><a href="https://e.test/contact-us/">Contact Us</a></li></ul>';
+$smo = db_pages_sitemap_dedupe( $sm );
+check( 'site map keeps one entry per address', 1 === substr_count( $smo, 'digital-marketing-services/' ) );
+check( 'site map drops the old slug', false === strpos( $smo, 'href="https://e.test/digital-marketing/"' ) );
+check( 'site map keeps the other entries', false !== strpos( $smo, 'Home' ) && false !== strpos( $smo, 'Contact Us' ) && substr_count( $smo, '<li>' ) === substr_count( $smo, '</li>' ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

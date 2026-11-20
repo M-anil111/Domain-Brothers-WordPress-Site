@@ -311,3 +311,7 @@ body.dbp-all .dbl-head { margin-bottom: 18px; }
 body.dbp .dbl-chips + .dbp-actions, body.dbp .dbp-lead + .dbp-actions, body.dbp .dbl-intro + .dbp-actions { margin-top: 22px; }
 body.dbp .dbp-actions { row-gap: 12px; }
 html body.dbp #primary #main.site-main, html body.db-ui-active #primary #main.db-wl-page { padding-top: 26px !important; }
+
+/* ---- designer layer for the last plain templates (acquire, news) ------------- */
+/* Lime eyebrow above the acquire title, hidden from screen readers (alt text is empty). */
+body.dbp-form.page-id-5423 article > .entry-title::before { content: "Acquisition" / ""; display: block; width: max-content; margin: 0 0 14px; padding: 7px 14px; border-radius: 999px; background: #e9f6c3; color: #3d5a00; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }

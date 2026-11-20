@@ -97,6 +97,36 @@ add_action( 'wp_enqueue_scripts', function () {
 	}
 }, 111 );
 
+
+if ( ! function_exists( 'db_pages_sitemap_dedupe' ) ) {
+	/**
+	 * The generated /site-map/ lists some pages twice and still lists three old slugs that
+	 * 301 to a service page. Keep the first <li> per address and drop the old slugs. Pure.
+	 *
+	 * @param string $html Page content.
+	 * @return string
+	 */
+	function db_pages_sitemap_dedupe( $html ) {
+		$old  = array( 'digital-marketing', 'mobile-app-development', 'software-development', 'sell-your-domain' );
+		$seen = array();
+		return (string) preg_replace_callback(
+			'#<li>\s*(<a href="([^"]+)"[^>]*>[^<]*</a>)\s*</li>#i',
+			function ( $m ) use ( &$seen, $old ) {
+				$path = trim( (string) wp_parse_url( $m[2], PHP_URL_PATH ), '/' );
+				if ( in_array( $path, $old, true ) || isset( $seen[ $path ] ) ) {
+					return '';
+				}
+				$seen[ $path ] = true;
+				return $m[0];
+			},
+			(string) $html
+		);
+	}
+}
+add_filter( 'the_content', function ( $html ) {
+	return is_page( 'site-map' ) && in_the_loop() ? db_pages_sitemap_dedupe( $html ) : $html;
+}, 99 );
+
 /* ------------------------------------------------------------ transforms */
 
 if ( ! function_exists( 'db_pages_faq_details' ) ) {
