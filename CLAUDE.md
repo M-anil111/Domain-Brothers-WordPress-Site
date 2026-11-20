@@ -18,7 +18,7 @@ theme) is not edited.
 | Accounts, wishlist, alerts | `db-account-block.php`, `db-wishlist-block.php` |
 | Service pages and forms | `db-service-art-block.php`, `db-handles-block.php` (social handle pages), `db-transfer-block.php` (EPP codes, encrypted), `db-form-entries-block.php` (copy of every form submission) |
 | Blog and news | `db-article-block.php` (post layout, TOC, CTAs), `db-news-block.php`, `db-index-policy-block.php` |
-| Domain tools (free lookups, one SEO page per tool) | `db-domain-lookup-block.php` (hub and lookup API), `db-tool-pages-block.php` + `db-tool-pages-data.php` (14 pages under `/domain-tools/`), `assets/domain-lookup.js`; keyword research in `tools/seo-tools-keywords.json` |
+| Domain tools (free lookups, one SEO page per tool) | `db-domain-lookup-block.php` (hub and lookup API), `db-tool-pages-block.php` + `db-tool-pages-data.php` (17 pages under `/domain-tools/`), `assets/domain-lookup.js`; keyword research in `tools/seo-tools-keywords.json` |
 | Site hygiene and ops | `db-site-hygiene-block.php` (image attributes, 404 page, llms.txt, security.txt, IndexNow, entry purge), `db-search-log-block.php`, `db-alerts-block.php` (fatal error email), `db-resolve-tools-block.php`, `db-learn-pages-block.php` (glossary, price index); CI in `.github/workflows/ci.yml` |
 | SEO | `db-rankmath-block.php` (Rank Math integration and head ownership switch), `db-seo-meta-block.php`, `db-focus-block.php` + `tools/seo-focus.json` (researched focus keywords), `db-seo-audit-block.php`, `db-onpage-seo-block.php` |
 | Speed | `db-pagecache-block.php` + `pagecache/`, `db-perf-block.php`, `db-delay-block.php` (inline scripts wait for the first interaction), `db-cache-block.php` |

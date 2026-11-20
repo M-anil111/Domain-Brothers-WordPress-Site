@@ -410,6 +410,7 @@ if ( ! function_exists( 'db_tools_css' ) ) {
 			. '.db-tools-btn{display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid #0a1628;border-radius:10px;background:#fff;color:#0a1628;font:inherit;font-weight:700;cursor:pointer;text-decoration:none}'
 			. '.db-tools-btn[aria-pressed="true"]{background:#0a1628;color:#fff}a.db-sales-btn,a.db-sales-btn:visited,a.db-sales-btn:hover{color:#fff!important}'
 			. '.db-tools-rv{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}'
+			. '.db-tools-sim{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}.db-tools-sim li{border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.db-tools-sim a{font-weight:700;color:#0a1628;overflow-wrap:anywhere}'
 			. '.db-tools-rv a{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;border:1px solid #cbd5e1;border-radius:999px;color:#0a1628;text-decoration:none;overflow-wrap:anywhere}'
 			. '.db-pay-pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}'
 			. '.db-pay-opt{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;min-width:92px;padding:6px 14px;border:1.5px solid #cbd5e1;border-radius:14px;background:#fff;color:#0a1628;font:inherit;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}'
@@ -449,6 +450,79 @@ if ( ! function_exists( 'db_tools_sticky_html' ) ) {
 	}
 }
 
+/* ------------------------------------------------------ similar names */
+
+if ( ! function_exists( 'db_sim_score' ) ) {
+	/**
+	 * How alike two names are for a buyer: same extension, close length, close price, shared category.
+	 * Pure function. Both arguments use the db_dd_facts() shape (name, ext, len, price, cats).
+	 */
+	function db_sim_score( array $a, array $b ) {
+		if ( strtolower( (string) $a['name'] ) === strtolower( (string) $b['name'] ) ) {
+			return -1.0;
+		}
+		$score  = ( $a['ext'] === $b['ext'] ) ? 3.0 : 0.0;
+		$score += max( 0.0, 2.0 - abs( (int) $a['len'] - (int) $b['len'] ) * 0.5 );
+		if ( (float) $a['price'] > 0 && (float) $b['price'] > 0 ) {
+			$ratio  = max( (float) $a['price'], (float) $b['price'] ) / min( (float) $a['price'], (float) $b['price'] );
+			$score += max( 0.0, 3.0 - ( $ratio - 1.0 ) * 1.5 );
+		}
+		$shared = array_intersect( array_map( 'strtolower', (array) $a['cats'] ), array_map( 'strtolower', (array) $b['cats'] ) );
+		return $score + min( 3.0, count( $shared ) * 1.5 );
+	}
+}
+
+if ( ! function_exists( 'db_sim_pick' ) ) {
+	/** Best $n candidates by score; ties break alphabetically so output is stable. Scores of 3 or less are dropped. */
+	function db_sim_pick( array $cur, array $cands, $n = 6 ) {
+		$scored = array();
+		foreach ( $cands as $c ) {
+			$s = db_sim_score( $cur, $c );
+			if ( $s > 3.0 ) {
+				$scored[] = array( 's' => $s, 'c' => $c );
+			}
+		}
+		usort( $scored, function ( $x, $y ) {
+			return $y['s'] <=> $x['s'] ?: strcmp( (string) $x['c']['name'], (string) $y['c']['name'] );
+		} );
+		return array_slice( wp_list_pluck( $scored, 'c' ), 0, max( 0, (int) $n ) );
+	}
+}
+
+if ( ! function_exists( 'db_sim_html' ) ) {
+	function db_sim_html( $post, array $f ) {
+		$ids = get_posts( array(
+			'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => 80, 'fields' => 'ids',
+			'no_found_rows' => true, 'post__not_in' => array( $post->ID ), 'orderby' => 'ID', 'order' => 'DESC',
+		) );
+		$cands = array();
+		foreach ( $ids as $id ) {
+			$p = get_post( $id );
+			if ( ! $p || 'standard' !== db_listing_state( $p ) ) {
+				continue;
+			}
+			$c         = db_dd_facts( $p );
+			$c['id']   = (int) $id;
+			$cands[]   = $c;
+		}
+		$pick = db_sim_pick( $f, $cands, 6 );
+		if ( count( $pick ) < 3 ) {
+			return '';
+		}
+		$h = '<section class="db-tools-block" aria-labelledby="db-sim-h"><h2 id="db-sim-h">Similar names</h2><ul class="db-tools-sim">';
+		foreach ( $pick as $c ) {
+			$rows = db_tools_pay_rows( $c['price'] );
+			$last = $rows ? end( $rows ) : null;
+			$cost = '$' . number_format( (float) $c['price'] );
+			if ( $last && $last['months'] > 0 ) {
+				$cost .= ' · from $' . number_format( $last['monthly'] ) . '/mo';
+			}
+			$h .= '<li><a href="' . esc_url( get_permalink( $c['id'] ) ) . '">' . esc_html( $c['name'] ) . '</a> <span class="db-tools-small">' . esc_html( $cost ) . '</span></li>';
+		}
+		return $h . '</ul></section>';
+	}
+}
+
 if ( ! function_exists( 'db_tools_domain_html' ) ) {
 	/** Everything the domain page gets from this module, in reading order. */
 	function db_tools_domain_html( $post ) {
@@ -463,6 +537,7 @@ if ( ! function_exists( 'db_tools_domain_html' ) ) {
 		$h   .= db_tools_sticky_html( $post, $f );
 		$h   .= db_tools_price_history_html( $post );
 		$h   .= db_tools_rdap_html( $post );
+		$h   .= db_sim_html( $post, $f );
 		$h   .= '<section class="db-tools-block" id="db-rv" aria-labelledby="db-rv-h" hidden><h2 id="db-rv-h">Recently viewed</h2><ul class="db-tools-rv" id="db-rv-list"></ul></section>';
 		return $h;
 	}
