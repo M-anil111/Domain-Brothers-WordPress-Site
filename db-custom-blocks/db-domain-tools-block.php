@@ -631,34 +631,59 @@ if ( ! function_exists( 'db_rsold_pick' ) ) {
 	}
 }
 
-if ( ! function_exists( 'db_rsold_html' ) ) {
-	function db_rsold_html( $post ) {
-		$ids = get_posts( array(
+if ( ! function_exists( 'db_rsold_rows' ) ) {
+	/** Sold listings (newest first) as db_rsold_pick() rows. @param int $exclude Listing to leave out. */
+	function db_rsold_rows( $exclude = 0 ) {
+		$args = array(
 			'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => 40, 'fields' => 'ids',
-			'no_found_rows' => true, 'post__not_in' => array( $post->ID ), 'orderby' => 'ID', 'order' => 'DESC',
+			'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'DESC',
 			'meta_query' => array( 'relation' => 'OR',
 				array( 'key' => 'db_listing_state', 'value' => 'sold' ),
 				array( 'key' => 'domain_status', 'value' => 'sold', 'compare' => 'LIKE' ),
 			),
-		) );
+		);
+		if ( $exclude ) {
+			$args['post__not_in'] = array( (int) $exclude );
+		}
 		$rows = array();
-		foreach ( $ids as $id ) {
+		foreach ( get_posts( $args ) as $id ) {
 			$p = get_post( $id );
 			if ( $p && 'sold' === db_listing_state( $p ) ) {
 				$rows[] = array( 'id' => (int) $id, 'name' => strtolower( trim( wp_strip_all_tags( $p->post_title ) ) ), 'at' => (int) get_post_meta( $id, 'db_sold_at', true ) );
 			}
 		}
-		$pick = db_rsold_pick( $rows, 6 );
+		return $rows;
+	}
+}
+
+if ( ! function_exists( 'db_rsold_section' ) ) {
+	/** The strip's markup for picked rows, or '' when fewer than three. */
+	function db_rsold_section( array $pick, $heading_id = 'db-rsold-h' ) {
 		if ( count( $pick ) < 3 ) {
 			return '';
 		}
-		$h = '<section class="db-tools-block" aria-labelledby="db-rsold-h"><h2 id="db-rsold-h">Recently sold</h2><ul class="db-tools-sim">';
+		$h = '<section class="db-tools-block" aria-labelledby="' . esc_attr( $heading_id ) . '"><h2 id="' . esc_attr( $heading_id ) . '">Recently sold</h2><ul class="db-tools-sim">';
 		foreach ( $pick as $r ) {
 			$h .= '<li><span>' . esc_html( $r['name'] ) . '</span> <span class="db-tools-small">Sold</span></li>';
 		}
 		return $h . '</ul><p class="db-tools-links"><a href="' . esc_url( home_url( '/sold/' ) ) . '">See every sale</a></p></section>';
 	}
 }
+
+if ( ! function_exists( 'db_rsold_html' ) ) {
+	function db_rsold_html( $post ) {
+		return db_rsold_section( db_rsold_pick( db_rsold_rows( $post->ID ), 6 ) );
+	}
+}
+
+// Home page: a centred strip before the "easy steps" band (db_hp_sections is applied by db-custom-blocks.php).
+add_filter( 'db_hp_sections', function ( $html ) {
+	$strip = db_rsold_section( db_rsold_pick( db_rsold_rows(), 6 ), 'db-rsold-home-h' );
+	if ( '' === $strip ) {
+		return $html;
+	}
+	return $html . db_tools_css() . '<div class="db-rsold-home" style="max-width:1100px;margin:0 auto;padding:8px 20px 24px">' . $strip . '</div>';
+} );
 
 if ( ! function_exists( 'db_tools_domain_html' ) ) {
 	/** Everything the domain page gets from this module, in reading order. */

@@ -28,7 +28,7 @@ $node = trim( (string) shell_exec( 'command -v node' ) );
 if ( $node ) {
 	check( 'script is valid JavaScript', 0 === (int) shell_exec( 'node --check ' . escapeshellarg( $file ) . ' >/dev/null 2>&1; echo $?' ) );
 	$harness = <<<JS
-const L = []; global.window = { dataLayer: L }; const handlers = {};
+const L = []; global.window = { dataLayer: L }; const handlers = {}; global.location = { pathname: '/offer/' }; const store = {}; global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
 global.document = { addEventListener: (t, f) => { handlers[t] = f; } };
 require(process.argv[2]);
 const out = [];
@@ -48,8 +48,21 @@ JS;
 	$res = trim( (string) shell_exec( 'node ' . escapeshellarg( $dir . '/h.js' ) . ' ' . escapeshellarg( $file ) . ' 2>&1' ) );
 	$parts = explode( '|', $res );
 	check( 'view_item fires on load', 'view_item' === ( $parts[0] ?? '' ) );
-	check( 'clicks and lead map to the right events', 'view_item,begin_checkout:pay_in_full,begin_checkout:payment_plan,offer_click,generate_lead,search' === ( $parts[1] ?? '' ) );
+	check( 'clicks and lead map to the right events', 'view_item,begin_checkout:pay_in_full,begin_checkout:payment_plan,offer_click,generate_lead,offer_sent,search' === ( $parts[1] ?? '' ) );
 	check( 'search pushes length only, never the text', 'no-leak' === ( $parts[2] ?? '' ) );
+	file_put_contents( $dir . '/other.js', db_ev_script( db_ev_config( array( 'type' => 'other' ) ) ) );
+	$paid = <<<JS
+const L = []; global.window = { dataLayer: L }; global.location = { pathname: process.argv[3] }; const store = {};
+global.sessionStorage = { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } };
+global.document = { addEventListener: () => {} };
+const f = process.argv[2];
+require(f); delete require.cache[require.resolve(f)]; require(f);
+console.log(L.map(e => e.event).join(','));
+JS;
+	file_put_contents( $dir . '/p.js', $paid );
+	$run = function ( $path ) use ( $dir ) { return trim( (string) shell_exec( 'node ' . escapeshellarg( $dir . '/p.js' ) . ' ' . escapeshellarg( $dir . '/other.js' ) . ' ' . escapeshellarg( $path ) . ' 2>&1' ) ); };
+	check( 'purchase_complete fires once per session on the success page', 'purchase_complete' === $run( '/payment-successful/' ) );
+	check( 'purchase_complete does not fire on other pages', '' === $run( '/payment-successful-fake-page/' ) && '' === $run( '/' ) );
 } else {
 	echo "SKIP node not installed\n";
 }

@@ -277,7 +277,7 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 | B12 | "Similar names" block on domain pages (extension, length, price, category). | 3.107.0 |
 | D5 | "from $X/mo" on each similar name. The All Domains and home cards already showed "or from $X/mo" before this work (checked live: 54 and 8 cards). | 3.107.0 |
 | D6 | "Recently sold" strip on domain pages (names only, links to `/sold/`). Not yet on the home page. | 3.107.1 |
-| D12 | Six dataLayer events (`view_item`, `begin_checkout`, `offer_click`, `search`, `generate_lead`, `tool_use`). Offer sent, plan start and payment events are not yet covered. | 3.108.0 |
+| D12 | Six dataLayer events (`view_item`, `begin_checkout`, `offer_click`, `search`, `generate_lead`, `tool_use`). Added `offer_sent` (offer form on `/offer/`) and `purchase_complete` (the `/payment-successful/` page, once per session, no amount because that page belongs to the theme) in 3.111.0. Plan start is `begin_checkout` with method `payment_plan`. | 3.108.0, 3.111.0 |
 | E10 | Download my data and self-service account deletion. Purchase records and sent enquiries are kept. | 3.109.0 |
 | E2 | Price history chart above the existing table. | 3.110.1 |
 | H1 | axe-core run on 12 templates at desktop and phone width: fixed zoom blocking on virtual pages, the Sold badge contrast and keyboard access to three sideways-scrolling tables. The audit is the script `tests/qa/axe-audit.js`; it needs the live site, so it runs by hand after a deploy, not in CI. | 3.109.1, 3.110.2 |
@@ -292,6 +292,8 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 | Larger builds not started | D1, D7, D8, E1, E4 to E8, E11, E15, E16, K1 to K7, J1, J3 | Each needs its own design and live testing with real email and payments. I did not want to ship them untested. |
 | Content writing | B8, B16, B29, B30, C1 to C4, C7 to C10, C15, C16, C19, C23 | Large volumes of copy that should be read by a person before publishing. |
 | Not touched | F, H and the rest of B | Need measuring on the live theme first. |
+
+**Found while verifying (3.111.0):** the home page loads Google Tag Manager container `GTM-W7B64D4` twice and the GA4 tag `G-56DWCMLT8V` twice (two `noscript` copies too). One copy comes from the theme header and one from a plugin, not from `db-custom-blocks`. That can double-count visits and events. Remove one source in WP Admin (check Site Kit and any GTM plugin) and re-check with the browser console: `dataLayer.filter(e=>e.event=='gtm.js').length` should be 1.
 
 **Found while building:** Rank Math is set to redirect unknown URLs to the home page on beta. That behaves like a soft 404, which Google discourages. Turn it off under Rank Math > Redirections > Settings so the new 404 page can show.
 
