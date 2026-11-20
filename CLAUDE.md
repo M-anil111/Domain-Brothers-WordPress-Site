@@ -1,7 +1,7 @@
 # Domain Brothers website: working notes
 
 Domain Brothers is a premium domain marketplace on WordPress. Staging is
-`https://beta.domainbrothers.com` (HTTP Basic Auth, always `noindex`);
+`https://beta.domainbrothers.com` (always `noindex`; its HTTP Basic Auth was removed on 2026-11-20 so Stripe webhooks can reach it);
 production is `https://www.domainbrothers.com`. All custom behaviour lives in
 one plugin, `db-custom-blocks/` (the designer's All Domains redesign is bundled in
 `db-custom-blocks/designer/`; the old `db_*.php` snippets are archived in `legacy/snippets/`). The theme (DomainFolio, commercial, no child
@@ -102,4 +102,15 @@ secret is ever committed, rotate it at the provider first, then remove it.
 - Rank Math owns the `<head>` when option `db_rankmath_owns_head` is `1`
   (`/wp-json/db/v1/seo-mode`); the plugin then only supplies fallbacks and
   staging `noindex`.
+- Payment plans: `db_plan_rate()` is the rate a NEW plan pays (3 months 0%, 6 months 5%,
+  9 months 8%, 12 months 10%). Each plan stores the rate it was sold at (`rate_pct`, from the
+  PaymentIntent metadata); plans without one use `db_plan_rate_legacy()` (0, 0, 5, 10). Never
+  recompute a stored plan from `db_plan_rate()`: use `db_plan_rate_of( $plan )`.
+- Automatic charging: the daily event `db_stripe_charge_due_installments` calls
+  `db_plan_run_daily()`. The site sets `DISABLE_WP_CRON`, so a server cron must call
+  `wp-cron.php`. Stripe tells the site about payments at `/wp-json/db/v1/stripe-webhook`; create
+  the endpoint in each Stripe mode with the admin action `/?db_create_webhook=1&_wpnonce=...`
+  (it saves the signing secret). Without an endpoint a paid plan is never recorded or charged.
+- Beta's old Basic Auth block was removed from `wp-config.php`; the removed text is kept in the
+  option `db_wpconfig_basic_auth_block` (not autoloaded) if it must be restored.
 - One commit per fix, clear messages, no force-push.
