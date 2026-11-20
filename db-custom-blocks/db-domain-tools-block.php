@@ -685,6 +685,84 @@ add_filter( 'db_hp_sections', function ( $html ) {
 	return $html . db_tools_css() . '<div class="db-rsold-home" style="max-width:1100px;margin:0 auto;padding:8px 20px 24px">' . $strip . '</div>';
 } );
 
+/* ------------------------------------------------------ see it in use */
+
+if ( ! function_exists( 'db_vis_parts' ) ) {
+	/**
+	 * What the preview shows for a domain name. Pure: tested offline.
+	 *
+	 * @return array{name:string,label:string,word:string,ext:string,email:string,handle:string,initial:string,url:string}|null
+	 */
+	function db_vis_parts( $name ) {
+		$name = strtolower( trim( (string) $name ) );
+		if ( ! preg_match( '/^[a-z0-9][a-z0-9\-]{0,60}(\.[a-z0-9\-]{2,24}){1,2}$/', $name ) ) {
+			return null;
+		}
+		$dot   = strpos( $name, '.' );
+		$label = substr( $name, 0, $dot );
+		$word  = ucfirst( str_replace( '-', ' ', $label ) );
+		return array(
+			'name'    => $name,
+			'label'   => $label,
+			'word'    => $word,
+			'ext'     => substr( $name, $dot ),
+			'email'   => 'hello@' . $name,
+			'handle'  => '@' . substr( str_replace( '-', '', $label ), 0, 30 ),
+			'initial' => strtoupper( substr( $label, 0, 1 ) ),
+			'url'     => 'www.' . $name,
+		);
+	}
+}
+
+if ( ! function_exists( 'db_vis_css' ) ) {
+	function db_vis_css() {
+		return '<style>.db-vis{margin:36px 0}section.db-vis h2#db-vis-h{font-size:22px;margin:0 0 6px;color:#0a1628!important;text-align:left!important}section.db-vis .db-vis-lede,section.db-vis .db-vis-note,section.db-vis .db-vis-cap{text-align:left!important}.db-vis-lede{margin:0 0 18px;color:#4b5563}'
+			. '.db-vis-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}'
+			. '.db-vis-card{background:#f1f5f2;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;min-height:210px;animation:db-vis-rise .7s cubic-bezier(.2,.7,.2,1) both}'
+			. '.db-vis-card:nth-child(2){animation-delay:.08s}.db-vis-card:nth-child(3){animation-delay:.16s}.db-vis-card:nth-child(4){animation-delay:.24s}'
+			. '.db-vis-cap{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#4b5563}'
+			. '.db-vis-win{background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(10,22,40,.12);overflow:hidden;flex:1;display:flex;flex-direction:column}'
+			. '.db-vis-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#e8ece9}'
+			. '.db-vis-dots{display:flex;gap:5px}.db-vis-dots i{width:9px;height:9px;border-radius:50%;background:#c3cbc6;display:block}'
+			. '.db-vis-url{flex:1;min-width:0;background:#fff;border-radius:999px;padding:5px 12px;font:600 13px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#0a1628;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+			. '.db-vis-url b{font-weight:600;animation:db-vis-type 1.8s steps(var(--n)) .4s both}'
+			. '.db-vis-page{padding:18px 16px;display:flex;flex-direction:column;gap:8px;flex:1}.db-vis-page strong{font-size:22px;line-height:1.15;color:#0a1628;overflow-wrap:anywhere}'
+			. '.db-vis-skel{height:8px;border-radius:4px;background:#e5e9e6}.db-vis-skel:nth-of-type(2){width:80%}.db-vis-btn{margin-top:auto;align-self:flex-start;background:#137a3e;color:#fff;font-size:12px;font-weight:700;border-radius:8px;padding:7px 12px}'
+			. '.db-vis-mail{padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:#374151;flex:1}.db-vis-mail div{overflow-wrap:anywhere}.db-vis-mail strong{color:#0a1628}'
+			. '.db-vis-id{margin-top:auto;display:flex;align-items:center;gap:10px}.db-vis-av{width:34px;height:34px;border-radius:50%;background:#0a1628;color:#b5e61d;font-weight:800;display:grid;place-items:center}'
+			. '.db-vis-biz{background:linear-gradient(135deg,#0a1628,#0e3b3a);color:#fff;border-radius:12px;padding:20px;flex:1;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 8px 24px rgba(10,22,40,.25);transform:rotate(-1.5deg)}'
+			. '.db-vis-biz strong{font-size:22px;letter-spacing:.04em;overflow-wrap:anywhere}.db-vis-biz span{font-size:13px;color:#cfe9d6;overflow-wrap:anywhere;display:block}'
+			. '.db-vis-note{font-size:13px;color:#4b5563;margin:14px 0 0}'
+			. '@keyframes db-vis-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes db-vis-type{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}'
+			. '@media (prefers-reduced-motion:reduce){.db-vis-card,.db-vis-url b{animation:none!important}}</style>';
+	}
+}
+
+if ( ! function_exists( 'db_vis_html' ) ) {
+	/** The "See it in use" section for a domain name, or '' when the name is not a plain domain. Pure. */
+	function db_vis_html( $name ) {
+		$p = db_vis_parts( $name );
+		if ( ! $p ) {
+			return '';
+		}
+		$e   = function ( $v ) { return htmlspecialchars( $v, ENT_QUOTES ); };
+		$n   = strlen( $p['url'] );
+		$h   = db_vis_css() . '<section class="db-vis" aria-labelledby="db-vis-h"><h2 id="db-vis-h">See ' . $e( $p['name'] ) . ' in use</h2>'
+			. '<p class="db-vis-lede">A name is easier to value when you can picture it. Here is how it would look on your website, in your inbox and on your card.</p><div class="db-vis-grid">';
+		$h  .= '<div class="db-vis-card"><span class="db-vis-cap">Your website</span><div class="db-vis-win" role="img" aria-label="A browser window showing ' . $e( $p['url'] ) . '"><div class="db-vis-bar" aria-hidden="true"><span class="db-vis-dots"><i></i><i></i><i></i></span>'
+			. '<span class="db-vis-url"><span aria-hidden="true">&#128274; </span><b style="--n:' . (int) $n . '">' . $e( $p['url'] ) . '</b></span></div>'
+			. '<div class="db-vis-page" aria-hidden="true"><strong>' . $e( $p['word'] ) . '</strong><span class="db-vis-skel"></span><span class="db-vis-skel"></span><span class="db-vis-btn">Get started</span></div></div></div>';
+		$h  .= '<div class="db-vis-card"><span class="db-vis-cap">Your email</span><div class="db-vis-win" role="img" aria-label="An email from ' . $e( $p['email'] ) . '"><div class="db-vis-mail" aria-hidden="true">'
+			. '<div><strong>From</strong> ' . $e( $p['email'] ) . '</div><div><strong>Subject</strong> Welcome to ' . $e( $p['word'] ) . '</div><span class="db-vis-skel"></span><span class="db-vis-skel"></span>'
+			. '<div class="db-vis-id"><span class="db-vis-av">' . $e( $p['initial'] ) . '</span><span>' . $e( $p['word'] ) . ' team</span></div></div></div></div>';
+		$h  .= '<div class="db-vis-card"><span class="db-vis-cap">Your business card</span><div class="db-vis-biz" role="img" aria-label="A business card for ' . $e( $p['word'] ) . ' with ' . $e( $p['email'] ) . '"><strong aria-hidden="true">' . $e( strtoupper( $p['label'] ) ) . '</strong>'
+			. '<div aria-hidden="true"><span>' . $e( $p['url'] ) . '</span><span>' . $e( $p['email'] ) . '</span></div></div></div>';
+		$h  .= '<div class="db-vis-card"><span class="db-vis-cap">Your social handle</span><div class="db-vis-win" role="img" aria-label="A profile with the handle ' . $e( $p['handle'] ) . '"><div class="db-vis-mail" aria-hidden="true">'
+			. '<div class="db-vis-id"><span class="db-vis-av">' . $e( $p['initial'] ) . '</span><span><strong>' . $e( $p['word'] ) . '</strong><br>' . $e( $p['handle'] ) . '</span></div><span class="db-vis-skel"></span><span class="db-vis-skel"></span></div></div></div>';
+		return $h . '</div><p class="db-vis-note">Illustration only. Handle availability on each social network is not checked here.</p></section>';
+	}
+}
+
 if ( ! function_exists( 'db_tools_domain_html' ) ) {
 	/** Everything the domain page gets from this module, in reading order. */
 	function db_tools_domain_html( $post ) {
@@ -696,6 +774,7 @@ if ( ! function_exists( 'db_tools_domain_html' ) ) {
 			. '<a class="db-tools-btn" id="db-cmp-open" href="' . esc_url( home_url( '/compare-domains/' ) ) . '" hidden>Open comparison</a>'
 			. '<span id="db-cmp-status" role="status" class="db-tools-small"></span></div>';
 		$h   .= db_tools_pay_html( $post, $f );
+		$h   .= db_vis_html( $f['name'] );
 		$h   .= db_tools_sticky_html( $post, $f );
 		$h   .= db_tools_price_history_html( $post );
 		$h   .= db_tools_rdap_html( $post );

@@ -8,6 +8,8 @@ $start = strpos( $src, "if ( ! function_exists( 'db_sim_score' ) )" );
 $end   = strpos( $src, "if ( ! function_exists( 'db_sim_html' ) )" );
 $ps    = strpos( $src, "if ( ! function_exists( 'db_ph_points' ) )" );
 $pe    = strpos( $src, "if ( ! function_exists( 'db_tools_price_history_html' ) )" );
+$vs    = strpos( $src, "if ( ! function_exists( 'db_vis_parts' ) )" );
+$ve    = strpos( $src, "if ( ! function_exists( 'db_tools_domain_html' ) )" );
 $rs    = strpos( $src, "if ( ! function_exists( 'db_rsold_pick' ) )" );
 $re    = strpos( $src, "if ( ! function_exists( 'db_rsold_html' ) )" );
 if ( false === $start || false === $end || $end <= $start ) {
@@ -26,6 +28,11 @@ if ( false === $ps || $pe <= $ps ) {
 }
 if ( ! defined( 'DAY_IN_SECONDS' ) ) { define( 'DAY_IN_SECONDS', 86400 ); }
 eval( substr( $src, $ps, $pe - $ps ) );
+if ( false === $vs || $ve <= $vs ) {
+	echo "FAIL could not locate preview code\n";
+	exit( 1 );
+}
+eval( substr( $src, $vs, $ve - $vs ) );
 
 $pass = 0;
 $fail = 0;
@@ -79,6 +86,16 @@ check( 'chart: svg has role, label and a path', false !== strpos( $svg, 'role="i
 check( 'chart: no chart when the price never moved', '' === db_ph_svg( array( array( 1, 100.0 ), array( 2, 100.0 ) ) ) );
 check( 'chart: no chart with fewer than two points', '' === db_ph_svg( array( array( 1, 100.0 ) ) ) && array() === db_ph_points( array(), $now ) );
 check( 'chart: open-to-offers rows are skipped', array() === db_ph_points( array( (object) array( 'old_price' => '0', 'new_price' => '0', 'changed_at' => '2026-11-01 00:00:00' ) ), $now ) );
+
+// ---- "see it in use" preview
+$vp = db_vis_parts( 'Blue-Sky.com' );
+check( 'preview: parts derive email, handle and word', 'hello@blue-sky.com' === $vp['email'] && '@bluesky' === $vp['handle'] && 'Blue sky' === $vp['word'] && 'B' === $vp['initial'] );
+check( 'preview: two-level extensions work', null !== db_vis_parts( 'shop.co.uk' ) && '.co.uk' === db_vis_parts( 'shop.co.uk' )['ext'] );
+check( 'preview: junk names produce nothing', null === db_vis_parts( '<script>.com' ) && null === db_vis_parts( 'nodot' ) && null === db_vis_parts( '' ) && '' === db_vis_html( 'a b.com' ) );
+$vh = db_vis_html( 'bluesky.com' );
+check( 'preview: renders the four scenes with labels', 4 === substr_count( $vh, 'class="db-vis-card"' ) && false === strpos( $vh, '<script' ) && false !== strpos( $vh, 'hello@bluesky.com' ) );
+check( 'preview: decorative mock content is hidden from screen readers but labelled', substr_count( $vh, 'role="img"' ) === 4 && substr_count( $vh, 'aria-hidden="true"' ) >= 4 );
+check( 'preview: typing animation respects reduced motion', false !== strpos( $vh, 'prefers-reduced-motion:reduce' ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
