@@ -42,6 +42,10 @@ php tests/seo/html-hygiene-test.php
 
 # Live staging QA (Playwright; sequential, the host returns 508 under parallel load)
 BETA_USER=<user> BETA_PASS=<password> node tests/qa/run-qa.js ./qa-report
+
+# Accessibility audit (axe-core, WCAG 2.1 A and AA; add VIEWPORT=phone for phone width)
+npm install --prefix /tmp/axe axe-core@4.10.2
+BETA_USER=<user> BETA_PASS=<password> AXE_DIR=/tmp/axe node tests/qa/axe-audit.js
 ```
 
 To try the plugin on a local WordPress (6.9+, PHP 8.2+), copy `db-custom-blocks/`

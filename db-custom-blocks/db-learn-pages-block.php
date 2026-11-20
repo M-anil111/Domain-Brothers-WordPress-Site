@@ -153,7 +153,7 @@ if ( ! function_exists( 'db_pi_body' ) ) {
 			if ( ! $groups ) {
 				return '<p>Not enough names listed yet to show this table.</p>';
 			}
-			$t = '<div class="dbgl-wrap"><table><thead><tr><th>' . esc_html( $label ) . '</th><th class="num">Names</th><th class="num">Median asking price</th><th class="num">Lowest</th><th class="num">Highest</th></tr></thead><tbody>';
+			$t = '<div class="dbgl-wrap" role="region" tabindex="0" aria-label="' . esc_attr( $label ) . ' prices table, scrolls sideways on small screens"><table><thead><tr><th>' . esc_html( $label ) . '</th><th class="num">Names</th><th class="num">Median asking price</th><th class="num">Lowest</th><th class="num">Highest</th></tr></thead><tbody>';
 			foreach ( $groups as $k => $g ) {
 				$t .= '<tr><th scope="row">' . esc_html( $fmt( $k ) ) . '</th><td class="num">' . (int) $g['n'] . '</td><td class="num">' . esc_html( db_pi_money( $g['median'] ) ) . '</td><td class="num">' . esc_html( db_pi_money( $g['low'] ) ) . '</td><td class="num">' . esc_html( db_pi_money( $g['high'] ) ) . '</td></tr>';
 			}

@@ -267,7 +267,7 @@ if ( ! function_exists( 'db_tools_pay_html' ) ) {
 		}
 		$first = $rows[0];
 		$h   .= '</div><div class="db-pay-sum" aria-live="polite"><p><span class="db-pay-each">' . esc_html( $m2( $first['monthly'] ) ) . '</span> <span class="db-pay-unit">today</span></p><p class="db-pay-meta">Total <strong class="db-pay-total">' . esc_html( $m2( $first['total'] ) ) . '</strong> · Extra over paying in full <strong class="db-pay-extra">None</strong></p><a class="db-sales-btn db-pay-go" href="' . esc_url( $urls['buy'] ) . '">Continue to checkout</a></div>';
-		$h   .= '<details class="db-pay-table"><summary>Compare every option</summary><div class="db-tools-scroll"><table class="db-tools-table"><thead><tr><th scope="col">Option</th><th scope="col">Each payment</th><th scope="col">Interest</th><th scope="col">Total</th><th scope="col">Extra over paying in full</th></tr></thead><tbody>';
+		$h   .= '<details class="db-pay-table"><summary>Compare every option</summary><div class="db-tools-scroll" role="region" tabindex="0" aria-label="Payment options table, scrolls sideways on small screens"><table class="db-tools-table"><thead><tr><th scope="col">Option</th><th scope="col">Each payment</th><th scope="col">Interest</th><th scope="col">Total</th><th scope="col">Extra over paying in full</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
 			$label = 0 === $r['months'] ? 'Pay in full' : $r['months'] . ' monthly payments';
 			$h    .= '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( $m2( $r['monthly'] ) ) . '</td><td>' . esc_html( 0 === $r['months'] ? 'None' : rtrim( rtrim( number_format( $r['rate'], 1 ), '0' ), '.' ) . '%' ) . '</td><td>' . esc_html( $m2( $r['total'] ) ) . '</td><td>' . esc_html( $r['extra'] > 0 ? $m2( $r['extra'] ) : 'None' ) . '</td></tr>';
@@ -444,7 +444,7 @@ if ( ! function_exists( 'db_tools_compare_body' ) ) {
 			}
 			return $r . '</tr>';
 		};
-		$h .= '<div class="db-tools-scroll"><table class="db-tools-table db-tools-compare"><thead><tr><th scope="col">Domain</th>';
+		$h .= '<div class="db-tools-scroll" role="region" tabindex="0" aria-label="Domain comparison table, scrolls sideways on small screens"><table class="db-tools-table db-tools-compare"><thead><tr><th scope="col">Domain</th>';
 		foreach ( $cols as $c ) {
 			$h .= '<th scope="col"><a href="' . esc_url( get_permalink( $c['post'] ) ) . '">' . esc_html( $c['f']['name'] ) . '</a></th>';
 		}

@@ -275,12 +275,12 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 | Item | What shipped | Version |
 |---|---|---|
 | B12 | "Similar names" block on domain pages (extension, length, price, category). | 3.107.0 |
-| D5 | "from $X/mo" on each similar name. The main listing cards are not changed yet. | 3.107.0 |
+| D5 | "from $X/mo" on each similar name. The All Domains and home cards already showed "or from $X/mo" before this work (checked live: 54 and 8 cards). | 3.107.0 |
 | D6 | "Recently sold" strip on domain pages (names only, links to `/sold/`). Not yet on the home page. | 3.107.1 |
 | D12 | Six dataLayer events (`view_item`, `begin_checkout`, `offer_click`, `search`, `generate_lead`, `tool_use`). Offer sent, plan start and payment events are not yet covered. | 3.108.0 |
 | E10 | Download my data and self-service account deletion. Purchase records and sent enquiries are kept. | 3.109.0 |
 | E2 | Price history chart above the existing table. | 3.110.1 |
-| H1 | axe-core run on 12 templates: fixed zoom blocking on virtual pages and the Sold badge contrast. It is not yet part of the automated test suite. | 3.109.1 |
+| H1 | axe-core run on 12 templates at desktop and phone width: fixed zoom blocking on virtual pages, the Sold badge contrast and keyboard access to three sideways-scrolling tables. The audit is the script `tests/qa/axe-audit.js`; it needs the live site, so it runs by hand after a deploy, not in CI. | 3.109.1, 3.110.2 |
 
 **Not built, and why:**
 
