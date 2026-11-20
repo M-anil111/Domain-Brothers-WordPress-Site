@@ -10,6 +10,7 @@ $ps    = strpos( $src, "if ( ! function_exists( 'db_ph_points' ) )" );
 $pe    = strpos( $src, "if ( ! function_exists( 'db_tools_price_history_html' ) )" );
 $vs    = strpos( $src, "if ( ! function_exists( 'db_vis_parts' ) )" );
 $ve    = strpos( $src, "if ( ! function_exists( 'db_tools_domain_html' ) )" );
+$cs    = strpos( file_get_contents( __DIR__ . '/../../db-custom-blocks/db-domain-lookup-block.php' ), "if ( ! function_exists( 'db_lk_chips_html' ) )" );
 $rs    = strpos( $src, "if ( ! function_exists( 'db_rsold_pick' ) )" );
 $re    = strpos( $src, "if ( ! function_exists( 'db_rsold_html' ) )" );
 if ( false === $start || false === $end || $end <= $start ) {
@@ -33,6 +34,13 @@ if ( false === $vs || $ve <= $vs ) {
 	exit( 1 );
 }
 eval( substr( $src, $vs, $ve - $vs ) );
+$lk = file_get_contents( __DIR__ . '/../../db-custom-blocks/db-domain-lookup-block.php' );
+$ce = strpos( $lk, "if ( ! function_exists( 'db_lk_widget' ) )" );
+if ( false === $cs || $ce <= $cs ) {
+	echo "FAIL could not locate chips code\n";
+	exit( 1 );
+}
+eval( substr( $lk, $cs, $ce - $cs ) );
 
 $pass = 0;
 $fail = 0;
@@ -96,6 +104,12 @@ $vh = db_vis_html( 'bluesky.com' );
 check( 'preview: renders the four scenes with labels', 4 === substr_count( $vh, 'class="db-vis-card"' ) && false === strpos( $vh, '<script' ) && false !== strpos( $vh, 'hello@bluesky.com' ) );
 check( 'preview: decorative mock content is hidden from screen readers but labelled', substr_count( $vh, 'role="img"' ) === 4 && substr_count( $vh, 'aria-hidden="true"' ) >= 4 );
 check( 'preview: typing animation respects reduced motion', false !== strpos( $vh, 'prefers-reduced-motion:reduce' ) );
+
+// ---- try-an-example chips
+$ch = db_lk_chips_html( array( 'Google.com', 'bad name.com', '<b>x</b>.com', 'a.co.uk' ) );
+check( 'chips: valid names become links to ?d=name', false !== strpos( $ch, 'href="?d=google.com"' ) && false !== strpos( $ch, 'href="?d=a.co.uk"' ) );
+check( 'chips: names with spaces or markup are skipped', false === strpos( $ch, 'bad' ) && false === strpos( $ch, '<b>' ) && 2 === substr_count( $ch, '<a ' ) );
+check( 'chips: nothing valid gives nothing', '' === db_lk_chips_html( array( 'nodot', '' ) ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

@@ -667,6 +667,7 @@ if ( ! function_exists( 'db_lk_css' ) ) {
 			. '.dblk-err{grid-column:1/-1;padding:16px 18px;border-radius:12px;background:#fdeceb;color:#8a1c14}'
 			. '.dblk-src{margin:44px 0 0;padding:26px;border-radius:16px;background:var(--panel)}.dblk-src h2{margin:0 0 12px;font-size:22px;color:var(--ink)}.dblk-src ul{margin:0 0 14px;padding-left:20px}.dblk-src li{margin:0 0 8px;line-height:1.55}'
 			. '.dblk-src a:not(.dblk-cta){color:var(--navy);font-weight:600;text-decoration:underline}'
+			. '.dblk-try{margin:14px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:#5a6475}.dblk-try a{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid #cfd5de;border-radius:999px;background:#fff;color:var(--navy);font-weight:600;text-decoration:none;transition:background .15s,border-color .15s}.dblk-try a:hover,.dblk-try a:focus-visible{background:var(--soft);border-color:var(--navy)}'
 			. '@media (max-width:700px){.dblk-out{grid-template-columns:minmax(0,1fr)}.dblk-row{flex-direction:column}.dblk-row button{width:100%}}';
 	}
 }
@@ -688,6 +689,26 @@ if ( ! function_exists( 'db_lk_js' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_chips_html' ) ) {
+	/**
+	 * "Try an example" links under the lookup box. Each is a plain link: the page script runs a
+	 * lookup for ?d=name, so no extra JavaScript is needed. Names that are not plain domains are skipped. Pure.
+	 *
+	 * @param string[] $names Domain names.
+	 */
+	function db_lk_chips_html( array $names ) {
+		$links = '';
+		foreach ( $names as $n ) {
+			$n = strtolower( trim( (string) $n ) );
+			if ( ! preg_match( '/^[a-z0-9][a-z0-9\-]{0,60}(\.[a-z0-9\-]{2,24}){1,2}$/', $n ) ) {
+				continue;
+			}
+			$links .= '<a href="?d=' . rawurlencode( $n ) . '">' . htmlspecialchars( $n, ENT_QUOTES ) . '</a>';
+		}
+		return '' === $links ? '' : '<p class="dblk-try"><span>Try an example:</span>' . $links . '</p>';
+	}
+}
+
 if ( ! function_exists( 'db_lk_widget' ) ) {
 	/**
 	 * The lookup form, result area and script.
@@ -699,7 +720,7 @@ if ( ! function_exists( 'db_lk_widget' ) ) {
 	function db_lk_widget( array $cfg = array(), $label = 'Domain name', $hint = 'example.com' ) {
 		$cfg += array( 'button' => 'Look up' );
 		return '<style>' . db_lk_css() . '</style><div class="dblk" id="dblk">'
-			. '<form class="dblk-form" id="dblk-form" novalidate><label for="dblk-in">' . esc_html( $label ) . '</label><div class="dblk-row"><input id="dblk-in" name="d" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' . esc_attr( $hint ) . '" required><button type="submit">' . esc_html( $cfg['button'] ) . '</button></div><p class="dblk-hint">Free. Results come from public sources and are cached for a few hours.</p></form>'
+			. '<form class="dblk-form" id="dblk-form" novalidate><label for="dblk-in">' . esc_html( $label ) . '</label><div class="dblk-row"><input id="dblk-in" name="d" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' . esc_attr( $hint ) . '" required><button type="submit">' . esc_html( $cfg['button'] ) . '</button></div><p class="dblk-hint">Free. Results come from public sources and are cached for a few hours.</p>' . db_lk_chips_html( (array) ( $cfg['chips'] ?? array( 'google.com', 'wikipedia.org', 'domainbrothers.com' ) ) ) . '</form>'
 			. '<div id="dblk-out" class="dblk-out" aria-live="polite"></div></div>'
 			. '<script data-no-delay>' . db_lk_js( $cfg ) . '</script>';
 	}
