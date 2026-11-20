@@ -51,6 +51,12 @@ async function http(p, opts = {}) {
 	return { status: res.status, headers: res.headers, body, ms: Date.now() - t0 };
 }
 
+// The page's own content without the header, so site-wide menu copy cannot trigger a content check.
+function mainContent(html) {
+	const m = html.match(/<main[\s\S]*?<\/main>/i);
+	return m ? m[0] : html;
+}
+
 // Representative page per template.
 const PAGES = [
 	['home', '/'],
@@ -61,7 +67,7 @@ const PAGES = [
 	['news', '/news/'],
 	['post', '/centr-tld-market-report-2024/'],
 	['services', '/our-services/'],
-	['service', '/digital-marketing/'],
+	['service', '/digital-marketing-services/'],
 	['about', '/about-us/'],
 	['faqs', '/faqs/'],
 	['contact', '/contact-us/'],
@@ -82,12 +88,13 @@ const PAGES = [
 		record(`SEO-${name}-title`, 'SEO', `${p} title 25–65 chars`, title.length >= 25 && title.length <= 65, `${title.length}: ${title}`);
 		const desc = (h.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
 		record(`SEO-${name}-desc`, 'SEO', `${p} meta description 70–160 chars`, desc.length >= 70 && desc.length <= 160, desc.length);
-		const canon = (h.match(/<link rel="canonical" href="([^"]+)"/) || [])[1] || '';
-		record(`SEO-${name}-canonical`, 'SEO', `${p} canonical is self`, canon === BASE + p, canon);
+		const canon = (h.match(/<link[^>]*\brel=["']canonical["'][^>]*\bhref=["']([^"']+)["']/i) || [])[1] || '';
+		// Rank Math deliberately prints no canonical on noindex pages, and every staging page is noindex; production does print it.
+		record(`SEO-${name}-canonical`, 'SEO', `${p} canonical is self${STAGING ? ' (or absent: staging is noindex)' : ''}`, canon === BASE + p || (STAGING && canon === ''), canon);
 		const live = h.replace(/<!--[\s\S]*?-->/g, '');
 		const h1 = (live.match(/<h1[\s>]/g) || []).length;
 		record(`SEO-${name}-h1`, 'SEO', `${p} has exactly one <h1>`, h1 === 1, h1);
-		const ld = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+		const ld = [...h.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
 		let ldOk = ld.length > 0;
 		const types = [];
 		for (const m of ld) { try { const j = JSON.parse(m[1]); types.push(j['@type']); } catch (e) { ldOk = false; types.push('INVALID'); } }
@@ -150,7 +157,7 @@ const PAGES = [
 		const r7 = await http('/thank-you/?type=full&d=fatality.ca&amt=2500');
 		record('FN-08', 'Checkout', 'thank-you page renders', r7.status === 200, r7.status);
 		const fake = await http('/thank-you/?type=full&d=google.com&amt=250000');
-		record('SEC-ty-unsigned', 'Security', 'unsigned thank-you link makes no payment/ownership claim', fake.status === 200 && !/new owner|250,000|has been confirmed/i.test(fake.body), fake.status);
+		record('SEC-ty-unsigned', 'Security', 'unsigned thank-you link makes no payment/ownership claim', fake.status === 200 && !/new owner|250,000|has been confirmed/i.test(mainContent(fake.body)), fake.status);
 		const offer = await http('/thank-you/?type=offer&d=' + encodeURIComponent('URGENT: verify at evil.example'));
 		record('SEC-ty-offer', 'Security', 'offer thank-you shows only real listing names', offer.status === 200 && !/evil\.example/.test(offer.body), offer.status);
 		const planFake = await http(`/payment-plan-setup/?d=${encodeURIComponent(b64('evil.example'))}&p=${encodeURIComponent(b64('1'))}`);
@@ -172,15 +179,17 @@ const PAGES = [
 	{
 		const r = await http('/this-page-does-not-exist-qa/');
 		record('FN-14', '404', 'unknown URL returns 404', r.status === 404, r.status);
-		record('FN-15', '404', '404 page offers search + links', /db-404-helper/.test(r.body));
+		record('FN-15', '404', '404 page offers search + links', /db-404-helper|class="db-404"/.test(r.body) && /search/i.test(r.body));
 		const s = await http('/?s=ca');
 		record('FN-16', 'Search', 'site search returns 200', s.status === 200, s.status);
 		for (const o of ['index', 'domains/index', 'domains/fatality-ca', 'categories/index', 'business/index']) {
 			const m = await http(`/okf/${o}.md`);
 			record(`FN-OKF-${o}`, 'OKF', `/okf/${o}.md is markdown with frontmatter`, m.status === 200 && /^---\ntype:/.test(m.body) && /text\/markdown/.test(m.headers.get('content-type') || ''), m.status);
 		}
-		const sm = await http('/wp-sitemap.xml');
-		record('FN-17', 'SEO', 'wp-sitemap.xml is valid XML', sm.status === 200 && /<sitemapindex/.test(sm.body), sm.status);
+		// Rank Math replaces the core sitemap: the old URL redirects to its index.
+		const sm0 = await http('/wp-sitemap.xml');
+		const sm = sm0.status === 301 || sm0.status === 302 ? await http((sm0.headers.get('location') || '').replace(BASE, '') || '/sitemap_index.xml') : sm0;
+		record('FN-17', 'SEO', 'sitemap index is valid XML (core URL may redirect to Rank Math)', sm.status === 200 && /<sitemapindex/.test(sm.body), `${sm0.status} -> ${sm.status}`);
 		const un = await http('/?db_update_card=1&d=fatality.ca&t=forged');
 		record('FN-18', 'Plans', 'forged "update my card" link is rejected', un.status === 200 && /could not open the card update page/.test(un.body), un.status);
 	}
@@ -188,7 +197,7 @@ const PAGES = [
 	{
 		// The checkout redirects here with a signed link; the signature must not be a WordPress query var.
 		const ty = await http('/thank-you/?type=full&d=fatality.ca&amt=2%2C500&sig=not-a-real-signature');
-		record('FN-43', 'Plans', 'thank-you page renders (neutral) for a link with a bad signature', ty.status === 200 && !/new owner|has been confirmed/i.test(ty.body), ty.status);
+		record('FN-43', 'Plans', 'thank-you page renders (neutral) for a link with a bad signature', ty.status === 200 && !/new owner|has been confirmed/i.test(mainContent(ty.body)), ty.status);
 	}
 
 	{
