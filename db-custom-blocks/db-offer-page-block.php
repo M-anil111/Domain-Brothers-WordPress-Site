@@ -92,6 +92,11 @@ add_filter( 'wpcf7_form_tag', static function ( $tag ) {
 	} elseif ( 'your-offer' === $tag['name'] && $ctx['amount'] > 0 ) {
 		$tag['values']     = array( (string) $ctx['amount'] );
 		$tag['raw_values'] = array( (string) $ctx['amount'] );
+		// With a placeholder option Contact Form 7 shows the first value as grey placeholder text
+		// and submits an empty field. Drop it so the amount is a real value.
+		$tag['options'] = array_values( array_filter( (array) $tag['options'], static function ( $o ) {
+			return ! in_array( preg_replace( '/[:\s].*$/', '', (string) $o ), array( 'placeholder', 'watermark' ), true );
+		} ) );
 	}
 	return $tag;
 }, 20 );
