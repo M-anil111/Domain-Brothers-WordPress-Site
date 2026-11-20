@@ -523,6 +523,62 @@ if ( ! function_exists( 'db_sim_html' ) ) {
 	}
 }
 
+/* ------------------------------------------------------ recently sold */
+
+if ( ! function_exists( 'db_rsold_pick' ) ) {
+	/**
+	 * Newest sales first (sale date, then ID), unique by name. Names only: prices and buyers stay private.
+	 *
+	 * @param array<int, array{id:int, name:string, at:int}> $rows
+	 * @return array<int, array{id:int, name:string, at:int}>
+	 */
+	function db_rsold_pick( array $rows, $n = 6 ) {
+		usort( $rows, function ( $a, $b ) {
+			return ( (int) $b['at'] <=> (int) $a['at'] ) ?: ( (int) $b['id'] <=> (int) $a['id'] );
+		} );
+		$seen = array();
+		$out  = array();
+		foreach ( $rows as $r ) {
+			$k = strtolower( trim( (string) $r['name'] ) );
+			if ( '' === $k || isset( $seen[ $k ] ) ) {
+				continue;
+			}
+			$seen[ $k ] = true;
+			$out[]      = $r;
+		}
+		return array_slice( $out, 0, max( 0, (int) $n ) );
+	}
+}
+
+if ( ! function_exists( 'db_rsold_html' ) ) {
+	function db_rsold_html( $post ) {
+		$ids = get_posts( array(
+			'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => 40, 'fields' => 'ids',
+			'no_found_rows' => true, 'post__not_in' => array( $post->ID ), 'orderby' => 'ID', 'order' => 'DESC',
+			'meta_query' => array( 'relation' => 'OR',
+				array( 'key' => 'db_listing_state', 'value' => 'sold' ),
+				array( 'key' => 'domain_status', 'value' => 'sold', 'compare' => 'LIKE' ),
+			),
+		) );
+		$rows = array();
+		foreach ( $ids as $id ) {
+			$p = get_post( $id );
+			if ( $p && 'sold' === db_listing_state( $p ) ) {
+				$rows[] = array( 'id' => (int) $id, 'name' => strtolower( trim( wp_strip_all_tags( $p->post_title ) ) ), 'at' => (int) get_post_meta( $id, 'db_sold_at', true ) );
+			}
+		}
+		$pick = db_rsold_pick( $rows, 6 );
+		if ( count( $pick ) < 3 ) {
+			return '';
+		}
+		$h = '<section class="db-tools-block" aria-labelledby="db-rsold-h"><h2 id="db-rsold-h">Recently sold</h2><ul class="db-tools-sim">';
+		foreach ( $pick as $r ) {
+			$h .= '<li><span>' . esc_html( $r['name'] ) . '</span> <span class="db-tools-small">Sold</span></li>';
+		}
+		return $h . '</ul><p class="db-tools-links"><a href="' . esc_url( home_url( '/sold/' ) ) . '">See every sale</a></p></section>';
+	}
+}
+
 if ( ! function_exists( 'db_tools_domain_html' ) ) {
 	/** Everything the domain page gets from this module, in reading order. */
 	function db_tools_domain_html( $post ) {
@@ -538,6 +594,7 @@ if ( ! function_exists( 'db_tools_domain_html' ) ) {
 		$h   .= db_tools_price_history_html( $post );
 		$h   .= db_tools_rdap_html( $post );
 		$h   .= db_sim_html( $post, $f );
+		$h   .= db_rsold_html( $post );
 		$h   .= '<section class="db-tools-block" id="db-rv" aria-labelledby="db-rv-h" hidden><h2 id="db-rv-h">Recently viewed</h2><ul class="db-tools-rv" id="db-rv-list"></ul></section>';
 		return $h;
 	}
