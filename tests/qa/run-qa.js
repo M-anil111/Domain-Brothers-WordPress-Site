@@ -24,13 +24,9 @@ const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const USER = process.env.BETA_USER;
 const PASS = process.env.BETA_PASS;
 const OUT = process.argv[2] || path.join(process.cwd(), 'qa-report');
-// Staging is behind Basic Auth and must be noindex; production (QA_BASE set
+// Staging (Basic Auth removed 2026-11-20; set BETA_USER/BETA_PASS only if it is restored) must be noindex; production (QA_BASE set
 // to the live site) has no password and must be indexable.
 const STAGING = /\/\/beta\./i.test(BASE);
-if (STAGING && (!USER || !PASS)) {
-	console.error('Set BETA_USER and BETA_PASS (staging Basic Auth).');
-	process.exit(2);
-}
 fs.mkdirSync(OUT, { recursive: true });
 
 const b64 = (s) => Buffer.from(String(s)).toString('base64');
@@ -323,65 +319,22 @@ const PAGES = [
 		await page.goto(`${BASE}/domains/fatality-ca/`, { waitUntil: 'load' });
 		await trigger(page);
 		await page.waitForTimeout(300);
-		record('FN-30', 'Exit offer', 'does not appear within the first 6 seconds', await page.$eval('#db-exit', (e) => e.hidden));
+		record('FN-30', 'Exit offer', 'no exit-intent popup exists on the domain page (popups were replaced by pages)', (await page.$$('#db-exit, .db-exit-card')).length === 0);
 		const recs = await page.$$eval('.db-dd .db-rec-card .db-rec-name', (n) => n.map((x) => x.textContent));
 		record('FN-31', 'Recommendations', 'domain page lists 6 recommended names, not itself', recs.length === 6 && !recs.includes('fatality.ca'), recs.join(','));
 		await page.goto(`${BASE}/domains/mississaugahomefinder-ca/`, { waitUntil: 'load' }); // mississaugacontractors.ca was unpublished (not registered)
 		const sim = await page.$$eval('.db-dd .db-rec-card', (c) => c.map((x) => x.querySelector('.db-rec-name').textContent + ' ' + x.querySelector('.db-rec-why').textContent));
 		record('FN-32', 'Recommendations', 'a similar name outranks a same-category-only name', /mississauga.*Similar name/.test(sim.slice(0, 3).join('|')), sim.slice(0, 3).join(' | '));
 
-		await page.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
-		await trigger(page);
-		await page.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
-		const opened = await page.$eval('#db-exit', (e) => !e.hidden);
-		record('FN-33', 'Exit offer', 'opens when the pointer leaves through the top', opened);
-		const info = await page.evaluate(() => ({
-			focusIn: !!document.activeElement.closest('.db-exit-card'),
-			role: document.querySelector('.db-exit-card').getAttribute('role'),
-			modal: document.querySelector('.db-exit-card').getAttribute('aria-modal'),
-			buy: (document.querySelector('.db-exit-btn--solid') || {}).href || '',
-			plan: (document.querySelector('[data-db-exit-evt=plan]') || {}).href || '',
-			recs: document.querySelectorAll('.db-exit-recs .db-rec-card').length,
-			bodyLocked: document.body.classList.contains('db-exit-open'),
-		}));
-		record('FN-34', 'Exit offer', 'dialog semantics, focus inside, page scroll locked', info.focusIn && info.role === 'dialog' && info.modal === 'true' && info.bodyLocked, JSON.stringify(info));
-		record('FN-35', 'Exit offer', 'buy and plan links carry this domain; 3 recommendations', /buy-now\/\?d=/.test(info.buy) && /payment-plan-setup\/\?d=/.test(info.plan) && info.recs === 3, `${info.buy} ${info.plan} recs=${info.recs}`);
-		await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
-		const trapped = await page.evaluate(() => !!document.activeElement.closest('.db-exit-card'));
-		record('FN-36', 'Exit offer', 'Tab stays inside the dialog', trapped);
-		await page.keyboard.press('Escape');
-		record('FN-37', 'Exit offer', 'Escape closes it', await page.$eval('#db-exit', (e) => e.hidden));
-		await trigger(page);
-		await page.waitForTimeout(200);
-		record('FN-38', 'Exit offer', 'does not reopen on the same page view', await page.$eval('#db-exit', (e) => e.hidden));
-
-		await page.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
-		await trigger(page);
-		await page.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
-		await page.click('.db-exit-go');
-		const bad = await page.$eval('#db-exit-err', (e) => !e.hidden);
-		record('FN-39', 'Exit offer', 'empty offer shows an error, stays open', bad && !(await page.$eval('#db-exit', (e) => e.hidden)));
-		await page.fill('#db-exit-amount', '$2,400');
-		await page.click('.db-exit-go');
-		await page.waitForTimeout(600);
-		const hand = await page.evaluate(() => ({ field: document.getElementById('number-99').value, popup: (document.getElementById('offer_popup') || {}).value, modal: !!document.querySelector('.modal.in'), exitHidden: document.getElementById('db-exit').hidden }));
-		record('FN-40', 'Exit offer', 'amount is handed to the page offer form and its confirmation opens', hand.field === '2400' && hand.popup === '2400' && hand.modal && hand.exitHidden, JSON.stringify(hand));
-		record('FN-41', 'Exit offer', 'no JS errors', errs.length === 0, errs.join('|'));
+		await page.goto(`${BASE}/domains/fatality-ca/`, { waitUntil: 'load' });
+		const oform = await page.$eval('form.db-pr-offer', (f) => f.getAttribute('action')).catch(() => '');
+		record('FN-33', 'Offer page', 'option card 3 form posts to the offer page', /\/make-an-offer\/?$/.test(oform), oform);
+		await page.fill('#number-99', '$2,400').catch(() => {});
+		await Promise.all([page.waitForURL(/make-an-offer/, { timeout: 30000 }).catch(() => {}), page.click('form.db-pr-offer button[type=submit]')]);
+		const op = await page.evaluate(() => ({ url: location.search, amt: (document.getElementById('db-op-amt') || {}).innerText, dom: (document.querySelector('[name=hide_domainname]') || {}).value, back: !!document.querySelector('.db-pa-back'), share: !!document.querySelector('.db-pa-share'), modal: document.querySelectorAll('.modal.in').length }));
+		record('FN-34', 'Offer page', 'offer page carries domain and amount, has Back and Share, no modal', /amt=2400/.test(op.url) && op.dom === 'fatality.ca' && op.back && op.share && op.modal === 0, JSON.stringify(op));
+		record('FN-41', 'Offer page', 'no JS errors', errs.length === 0, errs.join('|'));
 		await ctx.close();
-
-		for (const dev of [['phone', { width: 390, height: 844 }], ['fold-cover', { width: 344, height: 882 }], ['fold-open', { width: 673, height: 841 }], ['landscape', { width: 844, height: 390 }]]) {
-			const c = await browser.newContext({ ...CREDS, viewport: dev[1], isMobile: true, hasTouch: true });
-			const pg = await c.newPage();
-			await pg.goto(`${BASE}/domains/fatality-ca/?db_exit_test=1`, { waitUntil: 'load' });
-			await trigger(pg);
-			await pg.waitForSelector('#db-exit:not([hidden])', { timeout: 3000 }).catch(() => {});
-			await pg.waitForTimeout(500); // let the entrance animation finish before measuring
-			const g = await pg.evaluate(() => { if (!document.querySelector('.db-exit-card') || !document.querySelector('.db-exit-go')) { return null; } const r = document.querySelector('.db-exit-card').getBoundingClientRect(); const go = document.querySelector('.db-exit-go').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: innerWidth, h: innerHeight, goH: go.height, scrollW: document.documentElement.scrollWidth }; });
-			if (!g) { record(`FN-42-${dev[0]}`, 'Exit offer', `fits the screen with 44px+ buttons (${dev[0]} ${dev[1].width}x${dev[1].height})`, false, 'the exit offer did not render (page error or host 5xx)'); await c.close(); continue; }
-			record(`FN-42-${dev[0]}`, 'Exit offer', `fits the screen with 44px+ buttons (${dev[0]} ${dev[1].width}x${dev[1].height})`, g.l >= -1 && g.r <= g.w + 1 && g.t >= -1 && g.b <= g.h + 1 && g.goH >= 44 && g.scrollW <= g.w + 1, JSON.stringify(g));
-			await pg.screenshot({ path: path.join(OUT, `exit-${dev[0]}.png`) });
-			await c.close();
-		}
 	}
 	await browser.close();
 
