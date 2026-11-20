@@ -579,7 +579,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 #db-co :is(input,select,textarea){min-height:0;max-width:none;box-shadow:none}
 #db-co .co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
 /* The theme's content column is boxed and padded; the checkout runs full width. */
-body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#e7edf0 !important}
+body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#f4f7f5 !important}
 #db-co .co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Stepper */
 #db-co .co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
@@ -729,6 +729,34 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 @media (prefers-reduced-motion:reduce){
 	#db-co *{transition:none!important;scroll-behavior:auto!important}
 }
+/* New design layer: matches the rest of the site (navy, green, large radii). Visual only. */
+#db-co{--co-navy:#0a1628;--co-green:#16a34a;--co-green-btn:#0a1628;--co-green-text:#0b6b36;--co-green-soft:#eaf6ee;--co-line:#cfd8d3;--co-bg:#f4f7f5;--co-panel:#f4f7f5;font-size:16px}
+#db-co .co-card{border-radius:24px;box-shadow:0 12px 40px rgba(10,22,40,.08);border:1px solid #e1e8e4}
+#db-co .co-right{border-left:1px solid #e6ece8}
+#db-co .co-opt{border:1.5px solid #cfd8d3;border-radius:14px}
+#db-co .co-opt.is-on{border-color:var(--co-green);background:var(--co-green-soft)}
+#db-co .co-pill{border-radius:999px;box-shadow:none;border:1.5px solid #cfd8d3;font-size:16px;letter-spacing:0}
+#db-co .co-input{height:46px;min-height:46px;border:1.5px solid #cfd8d3;border-radius:14px}
+#db-co .co-input:focus{border-color:var(--co-navy);box-shadow:0 0 0 4px rgba(22,163,74,.2)}
+#db-co .co-btn{min-height:50px;border-radius:999px;letter-spacing:.04em;background:var(--co-navy);box-shadow:0 8px 20px rgba(10,22,40,.18)}
+#db-co .co-btn:hover:not(:disabled){background:#16324f}
+#db-co .co-btn:focus-visible{outline-color:var(--co-green)}
+#db-co .co-review,#db-co .co-pe{border:1.5px solid #e1e8e4;border-radius:16px}
+#db-co .co-terms{border-radius:14px}
+#db-co .co-sum,#db-co .co-sched{border-radius:20px;border:1px solid #e1e8e4;box-shadow:0 6px 20px rgba(10,22,40,.06)}
+#db-co .co-sum h2,#db-co .co-sched h2{font-weight:800;letter-spacing:0}
+#db-co .co-sum-domain{font-weight:800}
+#db-co .co-sum-amt{font-weight:800;color:var(--co-navy)}
+#db-co .co-step-label{font-size:15px;letter-spacing:0}
+#db-co .co-step-num{border-color:#9aa8a1}
+#db-co .co-next h2{font-weight:800}
+#db-co .co-next h2::after{background:var(--co-green);height:3px;border-radius:2px}
+#db-co .co-next .co-bubble{box-shadow:0 6px 18px rgba(10,22,40,.08)}
+#db-co .co-topbar{max-width:1290px;margin:28px auto -20px;padding:0 24px}
+#db-co .co-topbar .db-pa{margin:0}
+#db-co .co-topbar .db-pa{display:flex;gap:10px;align-items:center}
+#db-co .co-topbar .db-pa-btn{padding:0 18px;gap:8px;background:#fff}
+#db-co .co-topbar .db-pa-note{padding:0 4px}
 </style>
 			<?php
 		}, 120 );
@@ -736,6 +764,13 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 		get_header();
 		?>
 <div id="db-co" class="db-co">
+	<?php
+	if ( function_exists( 'db_pa_html' ) ) {
+		$co_dom  = get_page_by_title( $domain, OBJECT, 'domain' );
+		$co_page = $co_dom ? get_permalink( $co_dom ) : home_url( '/' );
+		echo '<div class="co-topbar">' . db_pa_html( array( 'back_url' => $co_page, 'back_label' => 'Back to ' . $domain, 'share_url' => $co_page, 'share_title' => $domain . ' is for sale at Domain Brothers' ) ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	?>
 	<nav class="co-steps-wrap" aria-label="Checkout progress"><ol class="co-steps" id="co-steps">
 		<li class="co-step is-active" data-step="1"><button type="button" class="co-step-btn" aria-current="step" disabled><span class="co-step-num">1</span><span class="co-step-label">Billing Information</span></button></li>
 		<li class="co-step" data-step="2"><button type="button" class="co-step-btn" disabled><span class="co-step-num">2</span><span class="co-step-label">Order Confirmation</span></button></li>
