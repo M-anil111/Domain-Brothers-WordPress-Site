@@ -18,34 +18,9 @@ get_header();
 			the_post();
 			$db_post = get_post();
 			echo db_priced_html( $db_post ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside.
-			$db_form = function_exists( 'db_offer_resolved_form_id' ) ? (int) db_offer_resolved_form_id() : 0;
 			?>
-			<div class="loginpopup modal fade popup_buy" id="firs1t" tabindex="-1" role="dialog" aria-labelledby="first" aria-hidden="true" style="display: none;">
-				<div class="modal-dialog" role="document">
-					<div class="close_btn"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
-					<div class="modal-content clearfix">
-						<div class="confirm_Offer" style="display: none;"></div>
-						<?php
-						if ( $db_form > 0 ) {
-							echo do_shortcode( '[contact-form-7 id="' . $db_form . '"]' ); // phpcs:ignore WordPress.Security.EscapeOutput
-						}
-						?>
-					</div>
-				</div>
-			</div>
 			<script>
-			/* Same helpers the theme's own domain page defines (its header prints them only for that template). */
-			function checkoffervalue() {
-				var $ = window.jQuery;
-				if (!$) { return true; }
-				var v = String($('#number-99').val() || '').replace(/[$\s,]/g, '');
-				$('#number-99').val(v);
-				if (v === '') { $('#number-99').css('border', '1px solid red'); $('.loginpopup').prop('id', 'firs1t'); return false; }
-				$('#number-99').css('border', '');
-				$('.loginpopup').prop('id', 'first');
-				$('#offer_popup').val(v);
-				$('#offer_popup').prop('readonly', true);
-			}
+			/* The key filter the amount box uses (the theme's own domain page defines it; its header prints it only for that template). */
 			function KeycheckOnlyPhonenumber(e) {
 				var k = e.which || e.keyCode || e.charCode;
 				return !((k >= 65 && k <= 90) || (k >= 97 && k <= 122) || (k >= 33 && k <= 39) || k === 42 || k === 44 || (k >= 46 && k <= 47) || (k >= 58 && k <= 64) || (k >= 91 && k <= 96) || (k >= 123 && k <= 126));
@@ -85,14 +60,6 @@ get_header();
 				}
 				guard(document.getElementById('number-99'));
 				document.addEventListener('DOMContentLoaded', function () { guard(document.getElementById('number-99')); });
-			})();
-			</script>
-			<script>
-			(function () {
-				var domain = <?php echo wp_json_encode( strtolower( wp_strip_all_tags( $db_post->post_title ) ) ); ?>;
-				function fill() { var f = document.getElementById('hide_domainname'); if (f) { f.value = domain; } }
-				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fill); } else { fill(); }
-				window.addEventListener('load', fill);
 			})();
 			</script>
 			<?php

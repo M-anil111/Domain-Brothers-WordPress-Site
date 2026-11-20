@@ -6,7 +6,7 @@
  * Consent Mode (db-consent-block.php) decides what GTM/GA4 may do with them.
  *
  * Events: view_item (domain page), begin_checkout (buy or payment plan link),
- * offer_click (make-an-offer control), offer_sent (offer form sent on /offer/),
+ * offer_click (make-an-offer control), offer_sent (offer form sent on /offer/ or /make-an-offer/),
  * search (site search form), generate_lead (Contact Form 7 sent), tool_use (domain tool
  * form submitted), purchase_complete (the /payment-successful/ page opened, once per
  * browser session; it carries no amount, because that page belongs to the theme).
@@ -61,7 +61,7 @@ if ( ! function_exists( 'db_ev_script' ) ) {
 			. 'if(C.type==="tool"&&f.matches("form.dblk-form")){p({event:"tool_use",tool:C.tool});}'
 			. '},true);'
 			. 'var path=location.pathname;'
-			. 'document.addEventListener("wpcf7mailsent",function(){p({event:"generate_lead",lead_type:"contact_form"});if(/^\\/offer(\\/|$)/.test(path)){p({event:"offer_sent"});}},false);'
+			. 'document.addEventListener("wpcf7mailsent",function(){p({event:"generate_lead",lead_type:"contact_form"});if(/^\\/(make-an-)?offer(\\/|$)/.test(path)){p({event:"offer_sent"});}},false);'
 			. 'if(/^\\/payment-successful(\\/|$)/.test(path)){var k="db_ev_paid",seen="";try{seen=sessionStorage.getItem(k)||"";}catch(e){}if(!seen){try{sessionStorage.setItem(k,"1");}catch(e){}p({event:"purchase_complete"});}}'
 			. '})();';
 	}

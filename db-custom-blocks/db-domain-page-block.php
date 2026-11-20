@@ -213,9 +213,18 @@ if ( ! function_exists( 'db_domain_page_modal_shim_js' ) ) {
 	 * without pulling in the whole library for a single trigger.
 	 */
 	function db_domain_page_modal_shim_js() {
+		$offer_page = wp_json_encode( home_url( '/make-an-offer/' ) );
 		return <<<JS
 jQuery(function (\$) {
 	'use strict';
+	// The offer popup is gone: the offer button opens the offer page for this domain instead.
+	var OFFER_PAGE = {$offer_page};
+	function offerUrl() {
+		var d = String(\$('#hide_domainname').val() || '').toLowerCase();
+		if (!d) { var m = document.title.match(/^\\s*([a-z0-9][a-z0-9.\\-]*\\.[a-z0-9\\-]{2,})/i); d = m ? m[1].toLowerCase() : ''; }
+		var a = String(\$('#number-99').val() || '').replace(/[^0-9]/g, '');
+		return OFFER_PAGE + '?d=' + encodeURIComponent(d) + (a ? '&amt=' + encodeURIComponent(a) : '');
+	}
 	function closeModal(\$modal) {
 		\$modal.removeClass('in');
 		var \$backdrop = \$modal.data('db-backdrop');
@@ -229,6 +238,7 @@ jQuery(function (\$) {
 	\$(document).on('click', '[data-toggle="modal"]', function (e) {
 		e.preventDefault();
 		var target = \$(this).data('target') || \$(this).attr('href');
+		if (target === '#first' || target === '#firs1t') { window.location.href = offerUrl(); return; }
 		var \$modal = target ? \$(target) : \$();
 		if (!\$modal.length) { return; }
 		var \$backdrop = \$('<div class="modal-backdrop fade"></div>').appendTo('body');

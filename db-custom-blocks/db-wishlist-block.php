@@ -477,7 +477,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 (function () {
 	'use strict';
 	var C = <?php echo wp_json_encode( $cfg ); ?>;
-	var state = { signedIn: false, saved: [] }, dlg, pendingPost = 0;
+	var state = { signedIn: false, saved: [] };
 
 	function api(path, method, body) {
 		return fetch(C.api + path, { method: method, credentials: 'same-origin', headers: body ? { 'Content-Type': 'text/plain' } : {}, body: body ? JSON.stringify(body) : undefined })
@@ -486,49 +486,15 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 	function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
 	function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-	/* ---- dialog ---- */
-	function ensureDialog() {
-		if (dlg) { return dlg; }
-		dlg = el('<dialog class="db-wl-dialog" aria-labelledby="db-wl-title">' +
-			'<form method="dialog" class="db-wl-x"><button aria-label="Close">&times;</button></form>' +
-			'<h2 id="db-wl-title">Save to your wishlist</h2>' +
-			'<p class="db-wl-lead">We email you a 6-digit code. No password needed.</p>' +
-			'<form class="db-wl-step" data-step="email"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="190" placeholder="you@example.com"></label><div class="db-ts"></div><button type="submit" class="db-wl-primary">Email me a code</button></form>' +
-			'<form class="db-wl-step" data-step="code" hidden><label>6-digit code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button type="submit" class="db-wl-primary">Sign in</button><button type="button" class="db-wl-link" data-back>Use a different email</button></form>' +
-			'<p class="db-wl-msg" role="status" aria-live="polite"></p></dialog>');
-		document.body.appendChild(dlg);
-		var emailForm = dlg.querySelector('[data-step=email]'), codeForm = dlg.querySelector('[data-step=code]'), msg = dlg.querySelector('.db-wl-msg'), email = '';
-		function say(t, bad) { msg.textContent = t; msg.className = 'db-wl-msg' + (bad ? ' is-bad' : ''); }
-		emailForm.addEventListener('submit', function (e) {
-			e.preventDefault(); email = emailForm.email.value.trim(); say('Sending…');
-			api('code', 'POST', { email: email, ts: window.dbTsToken ? window.dbTsToken(emailForm) : '' }).then(function (j) {
-				if (j.ok) { emailForm.hidden = true; codeForm.hidden = false; codeForm.code.focus(); say(j.message); } else { say(j.message || 'Something went wrong.', true); }
-			}).catch(function () { say('Could not reach the server. Try again.', true); });
-		});
-		codeForm.addEventListener('submit', function (e) {
-			e.preventDefault(); say('Checking…');
-			api('verify', 'POST', { email: email, code: codeForm.code.value, post: pendingPost || 0 }).then(function (j) {
-				if (j.ok) { state.signedIn = true; state.saved = j.saved || []; dlg.close(); refresh(); toast(j.added === 'added' ? 'Saved to your wishlist.' : 'You are signed in.'); if (onSignedIn) { onSignedIn(); } }
-				else { say(j.message || 'That code did not work.', true); }
-			}).catch(function () { say('Could not reach the server. Try again.', true); });
-		});
-		codeForm.querySelector('[data-back]').addEventListener('click', function () { codeForm.hidden = true; emailForm.hidden = false; emailForm.email.focus(); say(''); });
-		dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); } });
-		return dlg;
-	}
+	/* ---- sign in is a page, not a popup ---- */
 	var onSignedIn = null;
-	function openSignIn(post, mode) {
-		pendingPost = post || 0;
-		var d = ensureDialog();
-		d.querySelector('#db-wl-title').textContent = pendingPost ? 'Save to your wishlist' : (mode === 'register' ? 'Create your account' : 'Sign in');
-		d.querySelector('.db-wl-lead').textContent = mode === 'register'
-			? 'Enter your email and we send you a 6-digit code. Your account is created when you enter it. No password needed.'
-			: 'We email you a 6-digit code. No password needed. New here? The same code creates your account.';
-		d.querySelector('[data-step=email]').hidden = false; d.querySelector('[data-step=code]').hidden = true; d.querySelector('.db-wl-msg').textContent = '';
-		if (d.showModal) { d.showModal(); } else { d.setAttribute('open', ''); }
-			if (window.dbTsRender) { window.dbTsRender(d); }
-		d.querySelector('input[name=email]').focus();
+	function signInUrl(post, mode) {
+		if (mode === 'register') { return C.home + 'register/'; }
+		var q = '?auth=signin';
+		if (post) { q += '&add=' + encodeURIComponent(post) + '&name=' + encodeURIComponent(C.title || '') + '&next=' + encodeURIComponent(location.href.split('#')[0]); }
+		return C.page + q;
 	}
+	function openSignIn(post, mode) { window.location.href = signInUrl(post, mode); }
 
 	/* ---- toast ---- */
 	function toast(t) {
@@ -569,7 +535,14 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 	/* ---- wishlist page ---- */
 	function mountPage() {
 		var box = document.getElementById('db-au');
+		var qs = new URLSearchParams(location.search), addId = parseInt(qs.get('add') || '0', 10) || 0, nextUrl = qs.get('next') || '';
+		if (nextUrl.indexOf(C.home) !== 0) { nextUrl = ''; }
 		if (box) {
+			if (addId) {
+				var note = document.createElement('p'); note.className = 'db-au-note'; note.setAttribute('role', 'status');
+				note.textContent = 'Sign in to save ' + (qs.get('name') || 'this domain') + ' to your wishlist. New here? The same code creates your account.';
+				var first = box.querySelector('form'); if (first) { first.parentNode.insertBefore(note, first); }
+			}
 			var ef = box.querySelector('[data-step=email]'), cf = box.querySelector('[data-step=code]'), m = box.querySelector('.db-au-msg'), mail = '';
 			var tell = function (t, bad) { m.textContent = t; m.className = 'db-au-msg' + (bad ? ' is-bad' : ''); };
 			if (window.dbTsRender) { window.dbTsRender(box); }
@@ -581,8 +554,8 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			});
 			cf.addEventListener('submit', function (e) {
 				e.preventDefault(); tell('Checking…');
-				api('verify', 'POST', { email: mail, code: cf.code.value, post: 0 }).then(function (j) {
-					if (j.ok) { tell('You are signed in.'); window.location.href = C.page; } else { tell(j.message || 'That code did not work.', true); }
+				api('verify', 'POST', { email: mail, code: cf.code.value, post: addId }).then(function (j) {
+					if (j.ok) { tell(addId ? 'You are signed in and the domain is saved.' : 'You are signed in.'); window.location.href = nextUrl || C.page; } else { tell(j.message || 'That code did not work.', true); }
 				}).catch(function () { tell('Could not reach the server. Try again.', true); });
 			});
 			cf.querySelector('[data-back]').addEventListener('click', function () { cf.hidden = true; ef.hidden = false; ef.email.focus(); tell(''); });

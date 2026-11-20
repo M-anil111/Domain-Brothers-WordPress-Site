@@ -98,8 +98,8 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 			. $li( 'No offer is too big or too small.' )
 			. $li( 'Our team negotiates on your behalf and replies personally.' )
 			. $li( 'Expect a reply within one business day.' )
-			. '</ul><div class="db-pr-offer"><label for="number-99">My offer (USD)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div></div>'
-			. '<div id="buy_now" class="db-pr-offerbtn"><button type="button" class="db-pr-btn" data-toggle="modal" data-target="#first" onclick="checkoffervalue();">Make a custom offer</button></div><p class="db-pr-fine">Free to ask. No obligation until we agree a price.</p></article>';
+			. '</ul><form class="db-pr-offer" method="get" action="' . esc_url( home_url( '/make-an-offer/' ) ) . '"><input type="hidden" name="d" value="' . esc_attr( strtolower( $name ) ) . '"><label for="number-99">My offer (USD)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" name="amt" required inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div>'
+			. '<div id="buy_now" class="db-pr-offerbtn"><button type="submit" class="db-pr-btn">Make a custom offer</button></div></form><p class="db-pr-fine">Free to ask. No obligation until we agree a price.</p></article>';
 		$h .= '</section>';
 
 		$tld = strrchr( $name, '.' );

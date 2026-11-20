@@ -28,7 +28,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/*
+ * OFF by default since 2026-11-20: the owner does not want popups, and offers now go to their own
+ * page (/make-an-offer/). The code is kept; set the option db_exit_offer_on to 1, or return true
+ * from the filter db_exit_offer_enabled, to bring the popup back.
+ */
 add_action( 'wp_footer', function () {
+	if ( ! apply_filters( 'db_exit_offer_enabled', (bool) get_option( 'db_exit_offer_on', false ) ) ) {
+		return;
+	}
 	if ( ! is_singular( 'domain' ) ) {
 		return;
 	}

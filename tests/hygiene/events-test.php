@@ -62,6 +62,22 @@ JS;
 	file_put_contents( $dir . '/p.js', $paid );
 	$run = function ( $path ) use ( $dir ) { return trim( (string) shell_exec( 'node ' . escapeshellarg( $dir . '/p.js' ) . ' ' . escapeshellarg( $dir . '/other.js' ) . ' ' . escapeshellarg( $path ) . ' 2>&1' ) ); };
 	check( 'purchase_complete fires once per session on the success page', 'purchase_complete' === $run( '/payment-successful/' ) );
+	$offer_harness = <<<JS
+const f = process.argv[2]; const out = [];
+for (const path of ['/make-an-offer/', '/offer/', '/offer-fake/', '/']) {
+  const L = []; let mail = null;
+  global.window = { dataLayer: L }; global.location = { pathname: path };
+  Object.defineProperty(global, 'sessionStorage', { value: { getItem: () => null, setItem() {} }, configurable: true });
+  global.document = { addEventListener: (t, fn) => { if (t === 'wpcf7mailsent') { mail = fn; } } };
+  delete require.cache[require.resolve(f)]; require(f);
+  if (mail) { mail(); }
+  out.push(path + ':' + L.map(e => e.event).join(','));
+}
+console.log(out.join('|'));
+JS;
+	file_put_contents( $dir . '/o.js', $offer_harness );
+	$offers = trim( (string) shell_exec( 'node ' . escapeshellarg( $dir . '/o.js' ) . ' ' . escapeshellarg( $dir . '/other.js' ) . ' 2>&1' ) );
+	check( 'offer_sent fires after the form is sent on /offer/ and /make-an-offer/, not elsewhere', '/make-an-offer/:generate_lead,offer_sent|/offer/:generate_lead,offer_sent|/offer-fake/:generate_lead|/:generate_lead' === $offers );
 	check( 'purchase_complete does not fire on other pages', '' === $run( '/payment-successful-fake-page/' ) && '' === $run( '/' ) );
 } else {
 	echo "SKIP node not installed\n";
