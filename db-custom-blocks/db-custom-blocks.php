@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.118.3
+ * Version:     3.118.6
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.118.3' );
+define( 'DB_BLOCKS_LOADED', '3.118.6' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4094,7 +4094,11 @@ add_action( 'wp_footer', function () {
 			}
 			document.addEventListener('click', function (e) {
 				var trigger = e.target.closest && e.target.closest('.db-news-card__trigger');
-				if (trigger) { openNewsPreview(trigger); }
+				if (trigger) {
+						/* No popup: open the publisher's article in a new tab. */
+						var href = trigger.getAttribute('data-link') || '';
+						if (/^https?:\/\//i.test(href)) { window.open(href, '_blank', 'noopener,noreferrer'); } else { openNewsPreview(trigger); }
+					}
 			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();

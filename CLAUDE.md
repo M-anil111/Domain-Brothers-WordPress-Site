@@ -14,6 +14,7 @@ theme) is not edited.
 | Loader, shared helpers, version | `db-custom-blocks.php` (header `Version:` and `DB_BLOCKS_LOADED` must match) |
 | Header, mega menus, breadcrumbs bar | `db-header-block.php`, `db-mobilenav-block.php`, `db-breadcrumbs-block.php` |
 | Domain listings, list pages, filters, finder, collections | `db-domain-*.php`, `db-listing-*.php`, `db-pages-block.php`, `db-sales-block.php`, `db-priced-*.php`, `db-sold-block.php` |
+| Offer page and shared page actions (no popups: offers, wishlist sign-in and exit offer are pages or off) | `db-offer-page-block.php` (`/make-an-offer/`), `db-page-actions-block.php` (Back and Share bar, real proof lines), `db-hero-showcase-block.php` (home hero cards) |
 | Offers, checkout, payment plans | `db-offers-block.php`, `db-offer-template.php`, `db-stripe-block.php`, `db-plan-lifecycle-block.php`, `db-orders-block.php` |
 | Accounts, wishlist, alerts | `db-account-block.php`, `db-wishlist-block.php` |
 | Service pages and forms | `db-service-art-block.php`, `db-handles-block.php` (social handle pages), `db-transfer-block.php` (EPP codes, encrypted), `db-form-entries-block.php` (copy of every form submission) |
@@ -95,6 +96,7 @@ secret is ever committed, rotate it at the provider first, then remove it.
 
 ## Conventions
 
+- No popups: the offer form lives on `/make-an-offer/`, signed-out wishlist clicks go to `/my-wishlist/?auth=signin`, the exit offer is off unless option `db_exit_offer_on` is set, and news cards open the article in a new tab. Add Back/Share with `db_pa_html()`. Social proof comes only from `db_proof_html()` (real counts, never invented).
 - Inline scripts are delayed until the first user interaction. Anything a
   visitor must see on load (selected form options, pre-filled fields) is set
   in the server-rendered HTML.

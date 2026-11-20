@@ -269,6 +269,24 @@ if ( ! function_exists( 'db_pc_purge_all' ) ) {
 }
 add_action( 'db_page_cache_purge_all', 'db_pc_purge_all' );
 
+/*
+ * The host runs LiteSpeed Cache, which keeps its own saved pages and does not hear about our
+ * plugin updates: a deployed fix can stay invisible on pages it cached earlier. Clear it
+ * whenever we purge, and once after every plugin version change.
+ */
+add_action( 'db_pc_purged_all', function () {
+	do_action( 'litespeed_purge_all' );
+} );
+add_action( 'init', function () {
+	if ( defined( 'DB_BLOCKS_LOADED' ) && get_option( 'db_ls_purged_ver' ) !== DB_BLOCKS_LOADED ) {
+		update_option( 'db_ls_purged_ver', DB_BLOCKS_LOADED, false );
+		do_action( 'litespeed_purge_all' );
+		if ( ! headers_sent() ) {
+			header( 'X-LiteSpeed-Purge: *' ); // server-level purge, works even if the LiteSpeed Cache plugin ignores the action
+		}
+	}
+}, 99 );
+
 if ( ! function_exists( 'db_pc_purge_url' ) ) {
 	/** Clears every saved variant of one URL. */
 	function db_pc_purge_url( $url ) {
