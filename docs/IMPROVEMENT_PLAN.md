@@ -270,6 +270,18 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 
 **Built and tested in 3.106.0** (15 items): B15, B17, B18, B24, B25, B27, C5, C11, C21, C22, E9, G6, G7, I5, J2. They add seven modules, three more tool pages (17 in all), a glossary, a price index and a CI workflow. Every item has an automated test, and I ran the plugin on a throwaway local WordPress to confirm the pages, the lookups and the error handling work for real.
 
+**Built and tested in 3.107.0 to 3.110.1** (6 items), each deployed to beta and checked live:
+
+| Item | What shipped | Version |
+|---|---|---|
+| B12 | "Similar names" block on domain pages (extension, length, price, category). | 3.107.0 |
+| D5 | "from $X/mo" on each similar name. The main listing cards are not changed yet. | 3.107.0 |
+| D6 | "Recently sold" strip on domain pages (names only, links to `/sold/`). Not yet on the home page. | 3.107.1 |
+| D12 | Six dataLayer events (`view_item`, `begin_checkout`, `offer_click`, `search`, `generate_lead`, `tool_use`). Offer sent, plan start and payment events are not yet covered. | 3.108.0 |
+| E10 | Download my data and self-service account deletion. Purchase records and sent enquiries are kept. | 3.109.0 |
+| E2 | Price history chart above the existing table. | 3.110.1 |
+| H1 | axe-core run on 12 templates: fixed zoom blocking on virtual pages and the Sold badge contrast. It is not yet part of the automated test suite. | 3.109.1 |
+
 **Not built, and why:**
 
 | Group | Items | Reason |
@@ -277,7 +289,7 @@ Counts: A 13, B 33, C 23, D 16, E 17, F 8, G 10, H 8, I 8, J 11, K 7 = **154 rec
 | Needs deploying to production | A1 to A13 | Production is not in the connected hosting account. |
 | Needs an account, key or DNS access | B22, B23, B28, B33, G1, G2, G4, G5, G9, I1 to I4, I6, J5, J6 | Cloudflare, Bing, DNS, Wordfence, backups and monitoring all sit outside the repository. |
 | Needs a decision or facts from you | C3, C6, C12 to C14, C17, C18, D3, D4, D14, E12 to E14 | Prices, claims, case studies and partner accounts are yours to confirm. |
-| Larger builds not started | D1, D7, D8, E1, E4 to E8, E10, E11, E15, E16, K1 to K7, J1, J3 | Each needs its own design and live testing with real email and payments. I did not want to ship them untested. |
+| Larger builds not started | D1, D7, D8, E1, E4 to E8, E11, E15, E16, K1 to K7, J1, J3 | Each needs its own design and live testing with real email and payments. I did not want to ship them untested. |
 | Content writing | B8, B16, B29, B30, C1 to C4, C7 to C10, C15, C16, C19, C23 | Large volumes of copy that should be read by a person before publishing. |
 | Not touched | F, H and the rest of B | Need measuring on the live theme first. |
 
