@@ -148,7 +148,11 @@ if ( ! function_exists( 'db_acct_profile_html' ) ) {
 		}
 		$h .= '<button type="submit" class="db-wl-primary">Save profile</button><p class="db-ac-msg" id="db-ac-profilemsg" role="status" aria-live="polite"></p></form>'
 			. '<div class="db-wl-card db-ac-danger"><h2>Your data</h2><p>Signed up on ' . esc_html( ! empty( $row['created_at'] ) ? wp_date( 'F j, Y', strtotime( $row['created_at'] . ' UTC' ) ) : 'an earlier date' ) . '. You agreed to policy version ' . esc_html( (string) ( $row['consent_version'] ?? 'on file' ) ) . '. Read our <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">Privacy Policy</a>.</p>'
-			. '<p><a class="db-ac-btn db-ac-btn--ghost" href="' . esc_url( 'mailto:sales@domainbrothers.com?subject=' . rawurlencode( 'Delete my account' ) . '&body=' . rawurlencode( 'Please delete my account and personal data. My sign-in email is ' . $email . '.' ) ) . '">Ask us to delete my account</a></p></div>';
+			. '<p><button type="button" class="db-ac-btn db-ac-btn--ghost" id="db-ad-export">Download my data</button></p>'
+			. '<form class="db-ac-form" id="db-ad-delete" novalidate><label>To delete your account, type your sign-in email<input type="email" name="confirm" autocomplete="off" placeholder="' . esc_attr( $email ) . '" required></label>'
+			. '<button type="submit" class="db-ac-btn db-ac-btn--ghost">Delete my account</button></form>'
+			. '<p class="db-ac-note">Deleting removes your account, saved domains and sign-in sessions. We keep purchase and payment-plan records, which we must retain for tax and payment-dispute reasons, and any enquiry you sent us. Email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> to have those reviewed.</p>'
+			. '<p class="db-ac-msg" id="db-ad-msg" role="status" aria-live="polite"></p></div>';
 		return $h;
 	}
 }

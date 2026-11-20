@@ -52,7 +52,7 @@ jobs:
                    tests/consent/consent-test.php tests/consent/footer-links-test.php \
                    tests/security/forms-test.php tests/security/test-data-test.php \
                    tests/hygiene/hygiene-test.php tests/hygiene/learn-test.php \
-                   tests/hygiene/resolve-test.php tests/hygiene/alert-test.php tests/hygiene/similar-test.php tests/hygiene/events-test.php; do
+                   tests/hygiene/resolve-test.php tests/hygiene/alert-test.php tests/hygiene/similar-test.php tests/hygiene/events-test.php tests/hygiene/account-data-test.php; do
             echo "== $t"
             php "$t" || fail=1
           done
