@@ -6,6 +6,8 @@ function wp_list_pluck( array $list, $field ) { return array_map( function ( $i 
 $src   = file_get_contents( __DIR__ . '/../../db-custom-blocks/db-domain-tools-block.php' );
 $start = strpos( $src, "if ( ! function_exists( 'db_sim_score' ) )" );
 $end   = strpos( $src, "if ( ! function_exists( 'db_sim_html' ) )" );
+$ps    = strpos( $src, "if ( ! function_exists( 'db_ph_points' ) )" );
+$pe    = strpos( $src, "if ( ! function_exists( 'db_tools_price_history_html' ) )" );
 $rs    = strpos( $src, "if ( ! function_exists( 'db_rsold_pick' ) )" );
 $re    = strpos( $src, "if ( ! function_exists( 'db_rsold_html' ) )" );
 if ( false === $start || false === $end || $end <= $start ) {
@@ -18,6 +20,12 @@ if ( false === $rs || $re <= $rs ) {
 	exit( 1 );
 }
 eval( substr( $src, $rs, $re - $rs ) );
+if ( false === $ps || $pe <= $ps ) {
+	echo "FAIL could not locate chart code\n";
+	exit( 1 );
+}
+if ( ! defined( 'DAY_IN_SECONDS' ) ) { define( 'DAY_IN_SECONDS', 86400 ); }
+eval( substr( $src, $ps, $pe - $ps ) );
 
 $pass = 0;
 $fail = 0;
@@ -56,6 +64,21 @@ check( 'sold strip: duplicate names collapse', 4 === count( $r ) && 1 === count(
 check( 'sold strip: undated sort by id desc after dated', 'undated2.com' === $r[2]['name'] || 'old.com' === $r[1]['name'] );
 check( 'sold strip: limit respected', 2 === count( db_rsold_pick( $rows, 2 ) ) && array() === db_rsold_pick( $rows, 0 ) );
 check( 'sold strip: blank names skipped', array() === db_rsold_pick( array( array( 'id' => 1, 'name' => ' ', 'at' => 1 ) ), 3 ) );
+
+// ---- price history chart
+$hist = array(
+	(object) array( 'old_price' => '30000', 'new_price' => '20000', 'changed_at' => '2026-11-10 00:00:00' ),
+	(object) array( 'old_price' => '50000', 'new_price' => '30000', 'changed_at' => '2026-11-01 00:00:00' ),
+);
+$now = strtotime( '2026-11-20 00:00:00 UTC' );
+$pts = db_ph_points( $hist, $now );
+check( 'chart: points are chronological', 4 === count( $pts ) && $pts[0][0] < $pts[1][0] && $pts[1][0] < $pts[2][0] && $pts[2][0] < $pts[3][0] );
+check( 'chart: starts at the oldest from-price and ends at the current price', 50000.0 === $pts[0][1] && 20000.0 === $pts[3][1] );
+$svg = db_ph_svg( $pts );
+check( 'chart: svg has role, label and a path', false !== strpos( $svg, 'role="img"' ) && false !== strpos( $svg, 'from $50,000' ) && false !== strpos( $svg, '<path' ) );
+check( 'chart: no chart when the price never moved', '' === db_ph_svg( array( array( 1, 100.0 ), array( 2, 100.0 ) ) ) );
+check( 'chart: no chart with fewer than two points', '' === db_ph_svg( array( array( 1, 100.0 ) ) ) && array() === db_ph_points( array(), $now ) );
+check( 'chart: open-to-offers rows are skipped', array() === db_ph_points( array( (object) array( 'old_price' => '0', 'new_price' => '0', 'changed_at' => '2026-11-01 00:00:00' ) ), $now ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

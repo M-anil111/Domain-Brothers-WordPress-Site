@@ -116,6 +116,86 @@ if ( ! function_exists( 'db_tools_drop_percent' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ph_points' ) ) {
+	/**
+	 * Chronological [timestamp, price] points from history rows (newest first, as db_tools_price_rows
+	 * returns them). The first point is the oldest "from" price, held for a week before the first
+	 * change; the last repeats the current price at $now. Rows without a real price are skipped. Pure.
+	 *
+	 * @param array<int, object|array> $rows
+	 * @return array<int, array{0:int, 1:float}>
+	 */
+	function db_ph_points( array $rows, $now ) {
+		$rows = array_reverse( $rows );
+		$pts  = array();
+		foreach ( $rows as $i => $r ) {
+			$r   = (array) $r;
+			$at  = (int) strtotime( (string) $r['changed_at'] . ' UTC' );
+			$old = (float) $r['old_price'];
+			$new = (float) $r['new_price'];
+			if ( 0 === $i && $old > 0 ) {
+				$pts[] = array( $at - 7 * DAY_IN_SECONDS, $old );
+			}
+			if ( $new > 0 ) {
+				$pts[] = array( $at, $new );
+			}
+		}
+		if ( $pts ) {
+			$last = end( $pts );
+			if ( (int) $now > $last[0] ) {
+				$pts[] = array( (int) $now, $last[1] );
+			}
+		}
+		return $pts;
+	}
+}
+
+if ( ! function_exists( 'db_ph_svg' ) ) {
+	/**
+	 * Step-line chart of a price over time as inline SVG. Empty unless the price really moved. Pure.
+	 *
+	 * @param array<int, array{0:int, 1:float}> $pts From db_ph_points().
+	 */
+	function db_ph_svg( array $pts ) {
+		if ( count( $pts ) < 2 ) {
+			return '';
+		}
+		$prices = array_column( $pts, 1 );
+		$min    = min( $prices );
+		$max    = max( $prices );
+		if ( $max <= $min ) {
+			return '';
+		}
+		$t0 = $pts[0][0];
+		$t1 = $pts[ count( $pts ) - 1 ][0];
+		if ( $t1 <= $t0 ) {
+			return '';
+		}
+		$w = 600; $h = 220; $l = 96; $r = 16; $top = 18; $bot = 44;
+		$x = function ( $t ) use ( $t0, $t1, $w, $l, $r ) { return round( $l + ( $t - $t0 ) / ( $t1 - $t0 ) * ( $w - $l - $r ), 1 ); };
+		$y = function ( $p ) use ( $min, $max, $h, $top, $bot ) { return round( $top + ( 1 - ( $p - $min ) / ( $max - $min ) ) * ( $h - $top - $bot ), 1 ); };
+		$d = 'M' . $x( $pts[0][0] ) . ' ' . $y( $pts[0][1] );
+		for ( $i = 1; $i < count( $pts ); $i++ ) {
+			$d .= ' H' . $x( $pts[ $i ][0] ) . ' V' . $y( $pts[ $i ][1] );
+		}
+		$money = function ( $n ) { return '$' . number_format( $n ); };
+		$first = $pts[0][1];
+		$last  = $pts[ count( $pts ) - 1 ][1];
+		$label = 'Price history chart: from ' . $money( $first ) . ' on ' . gmdate( 'M j, Y', $t0 ) . ' to ' . $money( $last ) . ' on ' . gmdate( 'M j, Y', $t1 ) . '; lowest ' . $money( $min ) . ', highest ' . $money( $max ) . '.';
+		$svg   = '<svg class="db-ph-chart" viewBox="0 0 ' . $w . ' ' . $h . '" role="img" aria-label="' . htmlspecialchars( $label, ENT_QUOTES ) . '" style="width:100%;height:auto;max-width:640px;display:block">'
+			. '<line x1="' . $l . '" x2="' . ( $w - $r ) . '" y1="' . $y( $max ) . '" y2="' . $y( $max ) . '" stroke="#e5e7eb"/>'
+			. '<line x1="' . $l . '" x2="' . ( $w - $r ) . '" y1="' . $y( $min ) . '" y2="' . $y( $min ) . '" stroke="#e5e7eb"/>'
+			. '<text x="' . ( $l - 10 ) . '" y="' . ( $y( $max ) + 7 ) . '" text-anchor="end" font-size="22" fill="#4b5563">' . $money( $max ) . '</text>'
+			. '<text x="' . ( $l - 10 ) . '" y="' . ( $y( $min ) + 7 ) . '" text-anchor="end" font-size="22" fill="#4b5563">' . $money( $min ) . '</text>'
+			. '<path d="' . $d . '" fill="none" stroke="#137a3e" stroke-width="2.5" stroke-linejoin="round"/>'
+			. '<circle cx="' . $x( $t1 ) . '" cy="' . $y( $last ) . '" r="4.5" fill="#137a3e"/>'
+			. '<text x="' . $l . '" y="' . ( $h - 12 ) . '" font-size="22" fill="#4b5563">' . gmdate( 'M j', $t0 ) . '</text>'
+			. '<text x="' . ( $w - $r ) . '" y="' . ( $h - 12 ) . '" text-anchor="end" font-size="22" fill="#4b5563">' . gmdate( 'M j, Y', $t1 ) . '</text>'
+			. '</svg>';
+		return $svg;
+	}
+}
+
 if ( ! function_exists( 'db_tools_price_history_html' ) ) {
 	function db_tools_price_history_html( $post ) {
 		$rows = db_tools_price_rows( $post->ID );
@@ -128,6 +208,7 @@ if ( ! function_exists( 'db_tools_price_history_html' ) ) {
 		if ( $drop > 0 && db_listing_is_sellable( $post ) ) {
 			$h .= '<p class="db-tools-note"><strong>Price reduced ' . (int) $drop . '%</strong> on ' . esc_html( wp_date( 'F j, Y', strtotime( $rows[0]->changed_at . ' UTC' ) ) ) . ': from ' . esc_html( $money( $rows[0]->old_price ) ) . ' to ' . esc_html( $money( $rows[0]->new_price ) ) . '.</p>';
 		}
+		$h .= db_ph_svg( db_ph_points( $rows, time() ) );
 		$h .= '<table class="db-tools-table"><thead><tr><th scope="col">Date</th><th scope="col">From</th><th scope="col">To</th></tr></thead><tbody>';
 		foreach ( $rows as $r ) {
 			$h .= '<tr><td>' . esc_html( wp_date( 'M j, Y', strtotime( $r->changed_at . ' UTC' ) ) ) . '</td><td>' . esc_html( $money( $r->old_price ) ) . '</td><td>' . esc_html( $money( $r->new_price ) ) . '</td></tr>';
