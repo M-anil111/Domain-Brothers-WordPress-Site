@@ -110,7 +110,7 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 					),
 					array(
 						'q' => 'What sort of payment methods do you accept?',
-						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3- and 6-month plans are interest-free, the 9-month plan carries 5% interest and the 12-month plan 10%.',
+						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3-month plan is interest-free, the 6-month plan carries 5% interest, the 9-month plan 8% and the 12-month plan 10%.',
 					),
 					array(
 						'q' => 'How long does the domain transfer take?',

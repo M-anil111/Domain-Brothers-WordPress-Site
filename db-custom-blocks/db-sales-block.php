@@ -119,7 +119,8 @@ if ( ! function_exists( 'db_funnel_track' ) ) {
 }
 
 add_action( 'template_redirect', function () {
-	if ( ! is_admin() && is_singular( 'domain' ) ) {
+	// With the page cache on, a beacon counts the view (db-pagecache-block.php).
+	if ( ! is_admin() && is_singular( 'domain' ) && ! ( function_exists( 'db_pc_beacon_mode' ) && db_pc_beacon_mode() ) ) {
 		db_funnel_track( 'listing_view', get_queried_object_id() );
 	}
 }, 4 );
@@ -314,7 +315,36 @@ if ( ! function_exists( 'db_finder_match' ) ) {
 if ( ! function_exists( 'db_sales_css' ) ) {
 	/** Styles for the sales pages. Printed once per page that uses them. */
 	function db_sales_css() {
-		return '<style>.db-sales-page{max-width:880px;margin:0 auto;padding:0 16px}'
+		return '<style>.db-sales-page{max-width:1120px;margin:0 auto;padding:0 16px}'
+			. '.dbs2-hero{margin:0 0 26px;padding:clamp(28px,4.4vw,52px);border-radius:28px;color:#fff;background:radial-gradient(900px 420px at 100% 0%,rgba(25,179,166,.45) 0%,rgba(25,179,166,0) 62%),#0c1424}'
+			. 'html body.db-ui-active .dbs2-eyebrow{margin:0 0 14px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#b6f0ea}'
+			. 'html body.db-ui-active .dbs2-title{margin:0 0 12px;font-size:clamp(32px,5vw,54px)!important;line-height:1.05;letter-spacing:-.03em;font-weight:800;color:#fff!important;text-align:left}'
+			. 'html body.db-ui-active .dbs2-lead{margin:0;max-width:62ch;font-size:clamp(16.5px,1.5vw,18.5px);line-height:1.6;color:rgba(255,255,255,.84)}'
+			. '.dbs2-cols{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin:0;padding:0;list-style:none}'
+			. '.dbs2-col{margin:0}html body.db-ui-active .dbs2-col a{display:flex;flex-direction:column;gap:10px;height:100%;padding:24px;border:1px solid #e5e7eb;border-radius:22px;background:#fff;color:#111827!important;text-decoration:none!important;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}'
+			. 'html body.db-ui-active .dbs2-col a:hover{transform:translateY(-2px);border-color:#b9dcd8;box-shadow:0 18px 36px -22px rgba(17,24,39,.4)}'
+			. '.dbs2-col-n{align-self:flex-start;padding:5px 11px;border-radius:999px;background:#e8f4f3;color:#0b7a75;font-size:13px;font-weight:800}'
+			. '.dbs2-col strong{font-size:20px;line-height:1.25;letter-spacing:-.015em}.dbs2-col-i{font-size:15px;line-height:1.55;color:#4b5563}'
+			. '.dbs2-col-s{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}.dbs2-col-s span{padding:5px 10px;border-radius:8px;background:#f6f7f9;font-size:14px;font-weight:700;color:#111827}'
+			. '.dbs2-col-go{font-size:15px;font-weight:800;color:#0b7a75}'
+			. '.db-sales-quiz{display:grid;gap:14px}'
+			. 'html body.db-ui-active .db-sales-form fieldset{margin:0!important;padding:20px 22px 22px!important;border:1px solid #e5e7eb!important;border-radius:20px!important;background:#fff}'
+			. 'html body.db-ui-active .db-sales-form legend{float:left;width:100%;margin:0 0 14px;padding:0!important;font-size:19px;font-weight:800;color:#111827}'
+			. 'html body.db-ui-active .db-sales-form legend+*{clear:both}'
+			. 'html body.db-ui-active .db-sales-step{display:block;margin:0 0 4px;font-size:12px;font-weight:800;color:#0b7a75}'
+			. 'html body.db-ui-active .db-sales-choices label{position:relative;min-height:46px;padding:10px 18px!important;border:1.5px solid #d1d5db!important;border-radius:999px!important;background:#fff;font-size:15px;font-weight:600;color:#111827;transition:border-color .15s ease,background .15s ease}'
+			. 'html body.db-ui-active .db-sales-choices label input{position:absolute;opacity:0;width:1px;height:1px;margin:0}'
+			. 'html body.db-ui-active .db-sales-choices label:hover{border-color:#111827!important}'
+			. 'html body.db-ui-active .db-sales-choices label:has(input:checked){border-color:#111827!important;background:#111827;color:#fff}'
+			. 'html body.db-ui-active .db-sales-choices label:has(input:focus-visible){outline:3px solid #0b7a75;outline-offset:2px}'
+			. 'html body.db-ui-active .db-sales-quiz>.db-sales-btn{justify-self:start;min-height:52px;padding:0 28px;border-radius:999px;font-size:16px}'
+			. 'html body.db-ui-active #db-broker{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px 40px;align-items:start;margin:28px 0 8px;padding:clamp(22px,3.4vw,40px);border:0;border-radius:26px;background:#f6f7f9}'
+			. 'html body.db-ui-active #db-broker>h2{grid-column:1;margin:0;font-size:clamp(24px,3vw,32px);line-height:1.15;letter-spacing:-.02em;font-weight:800;color:#111827}'
+			. 'html body.db-ui-active #db-broker>p{grid-column:1;margin:0;font-size:16px;line-height:1.6;color:#4b5563}'
+			. 'html body.db-ui-active #db-broker>form{grid-column:2;grid-row:1 / span 3;margin:0;padding:22px;border-radius:20px;background:#fff}'
+			. 'html body.db-ui-active #db-broker input,html body.db-ui-active #db-broker textarea{width:100%;min-height:48px;border:1.5px solid #c3c9d2;border-radius:12px;font-size:16px}'
+			. 'html body.db-ui-active #db-broker .db-sales-btn{min-height:50px;padding:0 26px;border-radius:999px}'
+			. '@media (max-width:860px){html body.db-ui-active #db-broker{grid-template-columns:minmax(0,1fr)}html body.db-ui-active #db-broker>form{grid-column:1;grid-row:auto}}'
 			. '.db-sales-lead{font-size:17px;line-height:1.6;color:#334155;max-width:65ch}'
 			. '.db-sales-form fieldset{border:1px solid #d7dee8;border-radius:12px;padding:14px 16px;margin:14px 0;min-width:0}'
 			. '.db-sales-form legend{font-weight:700;padding:0 6px;color:#0a1628}'
@@ -322,7 +352,7 @@ if ( ! function_exists( 'db_sales_css' ) ) {
 			. '.db-sales-choices{display:flex;flex-wrap:wrap;gap:8px}'
 			. '.db-sales-choices label{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border:1px solid #cbd5e1;border-radius:999px;cursor:pointer}'
 			. '.db-sales-choices label:has(input:checked){border-color:#0a1628;background:#eef3f9}'
-			. '.db-sales-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 20px;border-radius:10px;background:#0a1628;color:#fff;border:0;font-weight:700;cursor:pointer;text-decoration:none}'
+			. '.db-sales-btn{display:inline-flex;align-items:center;min-height:44px;padding:10px 20px;border-radius:10px;background:#0a1628;color:#fff;border:0;font-weight:700;cursor:pointer;text-decoration:none}a.db-sales-btn,a.db-sales-btn:visited,a.db-sales-btn:hover{color:#fff!important}'
 			. '.db-sales-card{background:#fff;border:1px solid #d7dee8;border-radius:12px;padding:16px 18px;margin:14px 0}'
 			. '.db-sales-results{list-style:none;padding:0;margin:0;display:grid;gap:10px}'
 			. '.db-sales-result{border:1px solid #d7dee8;border-radius:12px;padding:14px 16px;background:#fff}'
@@ -677,7 +707,16 @@ if ( ! function_exists( 'db_sales_render' ) ) {
 		get_header();
 		echo '<div id="primary" class="content-area"><main id="main" class="site-main db-sales-page">';
 		echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">' . esc_html( $crumb ) . '</span></li></ol></nav>';
-		echo '<h1 class="page-title">' . esc_html( $title ) . '</h1>';
+		// The first lead paragraph moves into a hero header with the title.
+		$lead = '';
+		if ( preg_match( '#^(.*?)<p class="db-sales-lead">(.*?)</p>#s', $body, $lm ) && strlen( $lm[1] ) < 2000 && false === strpos( $lm[1], '<form' ) ) {
+			$lead = $lm[2];
+			$body = $lm[1] . substr( $body, strlen( $lm[0] ) );
+		}
+		$eyebrow = array( 'Find a domain' => 'Domain finder', 'Collections' => 'Curated lists', 'Trust center' => 'Security and payments', 'Payment plans' => 'Pay over time' );
+		if ( 'Trust center' === $crumb ) { // has its own illustrated header
+			echo '<h1 class="page-title">' . esc_html( $title ) . '</h1>';
+		} else echo '<header class="dbs2-hero"><p class="dbs2-eyebrow">' . esc_html( isset( $eyebrow[ $crumb ] ) ? $eyebrow[ $crumb ] : 'Domain Brothers' ) . '</p><h1 class="dbs2-title">' . esc_html( $title ) . '</h1>' . ( '' !== $lead ? '<p class="dbs2-lead">' . wp_kses( $lead, array( 'a' => array( 'href' => array() ), 'strong' => array() ) ) . '</p>' : '' ) . '</header>';
 		echo db_sales_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
 		echo '</main></div>';
@@ -699,15 +738,19 @@ add_action( 'template_redirect', function () {
 		db_sales_render( 'Trust center', 'Trust center', db_trust_center_body() );
 	}
 	if ( 'collections' === $path ) {
-		$links = '<ul class="db-sales-collections">';
+		$links = '<ul class="db-sales-collections dbs2-cols">';
 		$any   = false;
 		foreach ( db_sales_collections() as $slug => $col ) {
 			$hit = db_sales_collection_rows( $slug );
 			if ( null === $hit ) {
 				continue;
 			}
-			$any    = true;
-			$links .= '<li><a href="' . esc_url( home_url( '/collections/' . $slug . '/' ) ) . '">' . esc_html( $col['title'] ) . '</a> <span>' . count( $hit[1] ) . ' names</span></li>';
+			$any     = true;
+			$samples = array();
+			foreach ( array_slice( $hit[1], 0, 4 ) as $r ) {
+				$samples[] = '<span>' . esc_html( $r['facts']['name'] ) . '</span>';
+			}
+			$links .= '<li class="dbs2-col"><a href="' . esc_url( home_url( '/collections/' . $slug . '/' ) ) . '"><span class="dbs2-col-n">' . count( $hit[1] ) . ' names</span><strong>' . esc_html( $col['title'] ) . '</strong><span class="dbs2-col-i">' . esc_html( $col['intro'] ) . '</span><span class="dbs2-col-s">' . implode( '', $samples ) . '</span><span class="dbs2-col-go">View collection &rarr;</span></a></li>';
 		}
 		$links .= '</ul>';
 		$body   = $any ? '<p class="db-sales-lead">Curated searches. Each one lists names we have for sale right now.</p>' . $links
@@ -744,12 +787,32 @@ if ( ! function_exists( 'db_trust_center_body' ) ) {
 			array( 'Transfers', 'Your account shows each transfer stage, from payment through to completion, with notes from our team.' ),
 			array( 'Alerts and email', 'We email you only about domains and searches you chose to follow. Each alert email has a one-click stop link, and you can turn all alert emails off in your account.' ),
 		);
-		$h = '<p class="db-sales-lead">What we do, stated as the site enforces it. Questions go to our contact page.</p><dl class="db-sales-trust">';
+		$ico = function ( $path ) {
+			return '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+		};
+		$icons = array(
+			'Payments'         => '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>',
+			'Receipts'         => '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+			'Payment plans'    => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M8 15l2.200 2.200L15 13"/>',
+			'Transfer codes'   => '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+			'Offers'           => '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+			'Transfers'        => '<path d="M4 9h15M15 5l4 4-4 4M20 15H5M9 11l-4 4 4 4"/>',
+			'Alerts and email' => '<path d="M6 16V11a6 6 0 1112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>',
+		);
+		$art = '<svg class="db-tc-art" viewBox="0 0 420 320" role="img" aria-label="A shield protecting a payment and a domain transfer"><defs><linearGradient id="db-tc-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#19b3a6"/><stop offset="1" stop-color="#0b7a75"/></linearGradient></defs>'
+			. '<circle cx="210" cy="160" r="150" fill="#e8f4f3"/><circle cx="210" cy="160" r="108" fill="#d3ecea"/>'
+			. '<path d="M210 62l84 30v62c0 56-36 90-84 108-48-18-84-52-84-108V92z" fill="url(#db-tc-g)"/><path d="M172 162l26 26 52-56" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>'
+			. '<g transform="translate(38 196)"><rect width="128" height="80" rx="14" fill="#fff" stroke="#cfe3e1" stroke-width="2"/><rect x="14" y="16" width="34" height="24" rx="5" fill="#fbbf24"/><rect x="14" y="52" width="70" height="8" rx="4" fill="#cbd5e1"/><rect x="92" y="52" width="22" height="8" rx="4" fill="#cbd5e1"/></g>'
+			. '<g transform="translate(262 40)"><rect width="128" height="56" rx="28" fill="#fff" stroke="#cfe3e1" stroke-width="2"/><circle cx="30" cy="28" r="12" fill="#0b7a75"/><rect x="52" y="22" width="60" height="12" rx="6" fill="#cbd5e1"/></g></svg>';
+		$h = '<section class="db-tc-hero"><div><p class="db-tc-eyebrow">Security, payments and transfers</p><p class="db-tc-lead">Buying a domain means trusting a stranger with money and a transfer. Here is what protects you, stated only as the site enforces it.</p>'
+			. '<p class="db-tc-actions"><a class="db-tc-btn" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains</a><a class="db-tc-btn db-tc-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Ask a question</a></p></div>' . $art . '</section>';
+		$h .= '<ul class="db-tc-pillars"><li><strong>Card data stays with Stripe</strong><span>We never see or store your card number.</span></li><li><strong>Codes are encrypted</strong><span>Transfer codes are shown only to the buyer.</span></li><li><strong>Every step is recorded</strong><span>Offers, payments and transfer stages sit in your account.</span></li></ul>';
+		$h .= '<h2 class="db-tc-h2">How each part of a purchase is protected</h2><dl class="db-sales-trust db-tc-grid">';
 		foreach ( $items as $it ) {
-			$h .= '<div class="db-sales-card"><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
+			$h .= '<div class="db-sales-card db-tc-card"><span class="db-tc-ico">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
 		}
-		$h .= '</dl>';
-		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-plan-setup/' ) ) . '">Payment plan terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
+		$h .= '</dl><h2 class="db-tc-h2">Policies and guides</h2>';
+		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-terms/' ) ) . '">Payment terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
 		return $h;
 	}
 }
@@ -1075,3 +1138,54 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_copy_fix_claims' );
 }, 1000 );
+
+/*
+ * Titles and descriptions for the routes this file renders itself (they are not
+ * WordPress pages, so neither this plugin's SEO table nor Rank Math knew them).
+ */
+if ( ! function_exists( 'db_sales_route_meta' ) ) {
+	/**
+	 * @return array{0:string,1:string}|null Title and description for the current route.
+	 */
+	function db_sales_route_meta() {
+		$path = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : '';
+		$map  = array(
+			'find-a-domain' => array( 'Domain Finder: Find the Right Name in 3 Easy Steps | Domain Brothers', 'Describe your business and budget, and the domain finder lists premium names that fit, with prices and monthly payment plans. Free to use.' ),
+			'trust-center'  => array( 'Trust Center: How Payments and Transfers Are Protected | Domain Brothers', 'How Domain Brothers protects a domain purchase: Stripe card payments, encrypted transfer codes, recorded offers and tracked transfer stages.' ),
+			'collections'   => array( 'Domain Collections: Curated Premium Names by Industry | Domain Brothers', 'Curated collections of premium domains for sale, grouped by industry and use. Each list shows names available today, with prices and payment plans.' ),
+		);
+		if ( isset( $map[ $path ] ) ) {
+			return $map[ $path ];
+		}
+		if ( preg_match( '#^collections/([a-z0-9-]+)$#', $path, $m ) && function_exists( 'db_sales_collections' ) ) {
+			$cols = db_sales_collections();
+			if ( isset( $cols[ $m[1] ] ) ) {
+				$t = $cols[ $m[1] ]['title'];
+				return array( $t . ': Premium Domains for Sale | Domain Brothers', wp_trim_words( (string) $cols[ $m[1] ]['intro'], 26, '' ) . '. Prices and payment plans on every name.' );
+			}
+		}
+		return null;
+	}
+}
+add_filter( 'pre_get_document_title', function ( $title ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[0] : $title;
+}, 30 );
+add_filter( 'rank_math/frontend/title', function ( $title ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[0] : $title;
+}, 30 );
+add_filter( 'rank_math/frontend/description', function ( $desc ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[1] : $desc;
+}, 30 );
+add_filter( 'db_aeo_description', function ( $desc ) {
+	$m = db_sales_route_meta();
+	return $m ? $m[1] : $desc;
+}, 30 );
+add_action( 'wp_head', function () {
+	$m = db_sales_route_meta();
+	if ( $m && ! ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) ) {
+		echo '<meta name="description" content="' . esc_attr( $m[1] ) . '">' . "\n";
+	}
+}, 2 );

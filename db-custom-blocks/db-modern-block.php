@@ -117,9 +117,16 @@ add_action( 'wp_head', function () {
 	if ( ! $post instanceof WP_Post ) {
 		return;
 	}
-	$url = plugins_url( 'assets/hero/' . db_hero_slug( $post ) . '.webp', __FILE__ );
-	echo '<style id="db-hero-var">:root{--db-hero:url("' . esc_url( $url ) . '")}</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
-	echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" fetchpriority="high">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	// Phones get a 900px version (a third of the bytes); wider screens the full photo.
+	// Each preload carries the same media query as the CSS, so only one is fetched.
+	$slug = db_hero_slug( $post );
+	$url  = plugins_url( 'assets/hero/' . $slug . '.webp', __FILE__ );
+	$mob  = file_exists( __DIR__ . '/assets/hero/' . $slug . '-m.webp' ) ? plugins_url( 'assets/hero/' . $slug . '-m.webp', __FILE__ ) : $url;
+	echo '<style id="db-hero-var">:root{--db-hero:url("' . esc_url( $mob ) . '")}@media (min-width:768px){:root{--db-hero:url("' . esc_url( $url ) . '")}}'
+		// The theme paints these white (banner wrapper) or green (#67bd3c, .about_cnt h2); both sit on white cards.
+		. 'body.single-domain aside.db-ad>span{color:#4b5563!important}body.single-domain :is(.db-tools-block,.db-sales-value)>h2{color:#0f172a!important}</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<link rel="preload" as="image" href="' . esc_url( $mob ) . '" media="(max-width: 767px)" fetchpriority="high">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<link rel="preload" as="image" href="' . esc_url( $url ) . '" media="(min-width: 768px)" fetchpriority="high">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 }, 5 );
 
 // Recommended domains: one scrolling row with arrows.

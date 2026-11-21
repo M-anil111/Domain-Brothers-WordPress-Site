@@ -540,6 +540,7 @@ if ( ! function_exists( 'db_acct_tabs' ) ) {
 			'offers'    => 'My offers',
 			'transfers' => 'Transfers',
 			'discover'  => 'Discover',
+			'profile'   => 'Profile',
 		);
 	}
 }
@@ -591,8 +592,14 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 		}
 		$unread = db_acct_unread( $email );
 		$deals  = db_acct_deals( $email );
-		$h      = '<h1 class="page-title">My account</h1>';
-		$h     .= '<p class="db-wl-who">Signed in as <strong>' . esc_html( $email ) . '</strong> <button type="button" class="db-wl-link" id="db-wl-signout">Sign out</button></p>';
+		$row    = function_exists( 'db_acct_row' ) ? db_acct_row( $email ) : null;
+		if ( function_exists( 'db_acct_head_html' ) ) {
+			$h  = db_acct_head_html( $email, $row );
+			$h .= db_acct_guide_html( $email, $row, (int) $saved_count, (array) $deals );
+		} else {
+			$h  = '<h1 class="page-title">My account</h1>';
+			$h .= '<p class="db-wl-who">Signed in as <strong>' . esc_html( $email ) . '</strong> <button type="button" class="db-wl-link" id="db-wl-signout">Sign out</button></p>';
+		}
 		$h     .= '<nav class="db-ac-tabs" aria-label="Account sections">';
 		foreach ( $tabs as $key => $label ) {
 			$extra = '';
@@ -607,6 +614,7 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			$h  .= '<a href="' . esc_url( $url ) . '" class="db-ac-tab' . ( $tab === $key ? ' is-on' : '' ) . '"' . ( $tab === $key ? ' aria-current="page"' : '' ) . '>' . esc_html( $label ) . $extra . '</a>';
 		}
 		$h .= '</nav>';
+		$h .= function_exists( 'db_acct_intro' ) ? db_acct_intro( $tab ) : '';
 
 		if ( 'saved' === $tab ) {
 			$h .= '<h2 class="db-ac-h">Saved domains <span class="db-ac-sub">(<span id="db-wl-count">' . (int) $saved_count . '</span>)</span></h2>';
@@ -660,6 +668,8 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			$h .= '</datalist><label>Your offer (USD)<input type="text" name="amount" inputmode="numeric" required autocomplete="off" placeholder="1500" maxlength="12"></label>'
 				. '<label>Message <span class="db-ac-opt">(optional)</span><textarea name="message" rows="3" maxlength="1000" placeholder="Tell us how you plan to use the name."></textarea></label>'
 				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary">Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>';
+		} elseif ( 'profile' === $tab && function_exists( 'db_acct_profile_html' ) ) {
+			$h .= db_acct_profile_html( $email, $row );
 		} else {
 			$ids    = db_wl_ids( $email );
 			$recent = db_acct_recent( 12 );

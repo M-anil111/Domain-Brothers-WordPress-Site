@@ -78,13 +78,28 @@ if ( ! function_exists( 'db_onpage_lazy_load_images' ) ) {
 		if ( ! is_string( $html ) || false === stripos( $html, '<img' ) ) {
 			return $html;
 		}
-		return preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) {
-			$tag = $m[0];
+		// The first image in the main content area is usually the largest thing on
+		// screen (a team photo, a post's lead image): it must not wait for lazy loading.
+		$main  = preg_match( '/<main\b|\bid=["\'](?:primary|content|main)["\']/i', $html, $mm, PREG_OFFSET_CAPTURE ) ? (int) $mm[0][1] : -1;
+		$first = true;
+		return preg_replace_callback( '/<img\b[^>]*>/i', function ( $m ) use ( $main, &$first ) {
+			$tag = $m[0][0];
+			if ( $main >= 0 && $first && $m[0][1] > $main ) {
+				$first = false;
+				if ( false === stripos( $tag, 'loading=' ) ) {
+					return $tag;
+				}
+			}
 			if ( false !== stripos( $tag, 'loading=' ) ) {
 				return $tag;
 			}
+			// The main image of a page (marked high priority) must load at once: lazy loading
+			// it delays the largest paint the page is judged on.
+			if ( preg_match( '/\bfetchpriority\s*=\s*["\']?high/i', $tag ) ) {
+				return $tag;
+			}
 			return substr_replace( $tag, ' loading="lazy"', 4, 0 );
-		}, $html );
+		}, $html, -1, $count, PREG_OFFSET_CAPTURE );
 	}
 }
 
@@ -245,8 +260,10 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 			$html = preg_replace( '/(<a\b[^>]*\s(?:rel|target))=”([^"<>]*?)”/', '$1="$2"', $html );
 		}
 		if ( false !== stripos( $html, 'target=' ) ) {
-			$html = preg_replace_callback( '/<a\b[^>]*\btarget\s*=\s*["\']?_blank\b[^>]*>/i', function ( $m ) {
-				return db_onpage_set_rel( $m[0], array( 'noopener' ) );
+			// Links written inside scripts (the theme's site-map appends <a> tags from a
+			// JavaScript string) are left alone: adding rel="..." there broke the string.
+			$html = preg_replace_callback( '/<script\b.*?<\/script>|<a\b[^>]*\btarget\s*=\s*["\']?_blank\b[^>]*>/is', function ( $m ) {
+				return 0 === stripos( $m[0], '<script' ) ? $m[0] : db_onpage_set_rel( $m[0], array( 'noopener' ) );
 			}, $html );
 		}
 
@@ -363,7 +380,10 @@ if ( ! function_exists( 'db_onpage_html_hygiene' ) ) {
 
 		// The domain-page banner is a CSS background (and on another host),
 		// so the browser found it late: LCP 8.3 s on mobile. Preload it.
-		if ( false !== strpos( $html, 'banner_bg' ) && preg_match( '#class="banner_bg[^"]*"[^>]*style="background-image:\s*url\([\'"]?(https?://[^\'")\s]+)#', $html, $bg ) ) {
+		// Not with the redesign: it hides that banner image (modern.css) and the
+		// domain page preloads its own hero (db-modern-block.php), so this
+		// preload only fetched an unused image from the production host.
+		if ( ! preg_match( '#<body[^>]*class="[^"]*\bdb-ui-active\b#', $html ) && false !== strpos( $html, 'banner_bg' ) && preg_match( '#class="banner_bg[^"]*"[^>]*style="background-image:\s*url\([\'"]?(https?://[^\'")\s]+)#', $html, $bg ) ) {
 			$pre = '<link rel="preload" as="image" href="' . esc_url( $bg[1] ) . '" fetchpriority="high">';
 			$pos = stripos( $html, '</head>' );
 			if ( false !== $pos ) {
@@ -457,6 +477,13 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 		$ctx = isset( $GLOBALS['db_onpage_ctx'] ) ? $GLOBALS['db_onpage_ctx'] : array( 'singular' => false, 'title' => '' );
 		// Heading/comment checks run on a copy with script bodies blanked,
 		// so "<!--" or "<h1" inside a JS string is not read as markup.
+		// A page whose content brings its own <h1> (the About and Contact heroes)
+		// also gets the theme's <h1 class="entry-title">: two <h1>s. The page's
+		// own heading stays the <h1>; the theme title keeps its class and look.
+		$mask = db_onpage_mask_scripts( $html );
+		if ( substr_count( strtolower( $mask ), '<h1' ) > 1 && preg_match( '#<h1(\s+class="entry-title")>([^<]*)</h1>#i', $mask, $m, PREG_OFFSET_CAPTURE ) && ! db_onpage_in_comment( $mask, $m[0][1] ) ) {
+			$html = substr_replace( $html, '<div' . $m[1][0] . '>' . $m[2][0] . '</div>', $m[0][1], strlen( $m[0][0] ) );
+		}
 		$mask = db_onpage_mask_scripts( $html );
 		if ( $ctx['singular'] && ! db_onpage_has_live_h1( $mask ) ) {
 			$done = false;
@@ -499,11 +526,107 @@ if ( ! function_exists( 'db_onpage_fix_h1_and_alt' ) ) {
 				return substr_replace( $tag, ' alt="' . esc_attr( $alt ) . '"', 4, 0 );
 			}, $html );
 		}
+		// The theme's footer logo is marked 200x70; the file is 200x54 (Lighthouse image-aspect-ratio).
+		if ( is_string( $html ) && false !== strpos( $html, 'logo1.png' ) ) {
+			$html = preg_replace( '#(<img\b[^>]*?\bwidth="200"\s+height=")70("[^>]*?/uploads/2016/11/logo1\.png)#i', '${1}54$2', $html );
+		}
+		// Premium domain deals: the theme's two filter selects have no label (Lighthouse select-name).
+		if ( is_string( $html ) && false !== strpos( $html, 'tld_info' ) ) {
+			$html = preg_replace( '#<select(?![^>]*\baria-label=)([^>]*\bid="charlen")#', '<select aria-label="Name length"$1', $html );
+			$html = preg_replace( '#<select(?![^>]*\baria-label=)([^>]*\bid="tld")#', '<select aria-label="Extension"$1', $html );
+		}
+		if ( is_string( $html ) ) {
+			$html = db_onpage_heading_levels( $html );
+		}
 		// Never send an empty page: if a rewrite failed (PCRE errors return
 		// null), fall back to the original markup.
 		return ( is_string( $html ) && '' !== $html ) ? $html : $orig;
 	}
 }
+
+if ( ! function_exists( 'db_onpage_heading_levels' ) ) {
+	/**
+	 * Headings that skip a level (an <h4> straight under an <h2>, as in page
+	 * content and accordion titles) get an aria-level that follows the outline,
+	 * so screen readers (and Lighthouse heading-order) see a proper hierarchy.
+	 * The tag, and so its look, stays the same. Siblings keep one level: the
+	 * outline is tracked with a stack of (original level, announced level).
+	 * Pure function: tested offline in tests/seo/html-hygiene-test.php.
+	 */
+	function db_onpage_heading_levels( $html ) {
+		$body = stripos( $html, '<body' );
+		if ( false === $body || false === stripos( $html, '<h', $body ) ) {
+			return $html;
+		}
+		$stack = array();
+		// Comments and scripts are passed through untouched.
+		$out   = preg_replace_callback( '#<!--.*?-->|<script\b.*?</script>|<h([1-6])\b([^>]*)>#is', function ( $m ) use ( &$stack ) {
+			if ( empty( $m[1] ) ) {
+				return $m[0];
+			}
+			$lvl = (int) $m[1];
+			if ( preg_match( '#\baria-level\s*=\s*["\']?(\d)#i', $m[2], $al ) ) {
+				$lvl = (int) $al[1];
+				while ( $stack && $stack[ count( $stack ) - 1 ][0] >= $lvl ) {
+					array_pop( $stack );
+				}
+				$stack[] = array( $lvl, $lvl );
+				return $m[0];
+			}
+			while ( $stack && $stack[ count( $stack ) - 1 ][0] >= $lvl ) {
+				array_pop( $stack );
+			}
+			// The first heading of an outline may be any level; later ones step down by one at most.
+			$said    = $stack ? min( $lvl, $stack[ count( $stack ) - 1 ][1] + 1 ) : $lvl;
+			$stack[] = array( $lvl, $said );
+			return $said === $lvl ? $m[0] : '<h' . $m[1] . $m[2] . ' aria-level="' . $said . '">';
+		}, substr( $html, $body ) );
+		return is_string( $out ) ? substr( $html, 0, $body ) . $out : $html;
+	}
+}
+
+// Contact Form 7 fields whose visible text is not tied to them (Domain transfer form).
+add_filter( 'wpcf7_form_elements', function ( $form ) {
+	$names = array(
+		'EPPDomainName'  => 'Domain name',
+		'OrderNumber'    => 'Order number',
+		'EPPCode'        => 'EPP code',
+		'DomainEPPCode'  => 'EPP code',
+		'BuyerName'      => 'Buyer name',
+		'Buyer_EmailID'  => 'Buyer email',
+		'BuyerReceiptNo' => 'Receipt number',
+	);
+	foreach ( $names as $name => $label ) {
+		$form = preg_replace( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="' . preg_quote( $name, '#' ) . '")#', '<input aria-label="' . esc_attr( $label ) . '"$1', $form );
+	}
+	// Unlock the domain? Yes / No radios.
+	$form = preg_replace_callback( '#<input\b(?![^>]*\baria-label=)([^>]*\bname="unlock_domain"[^>]*\bvalue="(Yes|No)")#', function ( $m ) {
+		return '<input aria-label="Unlock the domain: ' . $m[2] . '"' . $m[1];
+	}, $form );
+	// Any other visible field with no label at all gets a name made from its field name
+	// (EPPDomainPrice -> "EPP domain price"), so it is never announced as just "edit text".
+	$labelled = array();
+	if ( preg_match_all( '#<label\b[^>]*\bfor="([^"]+)"#i', $form, $lm ) ) {
+		$labelled = array_flip( $lm[1] );
+	}
+	$form = preg_replace_callback( '#<(input|select|textarea)\b(?![^>]*\b(?:aria-label|aria-labelledby|placeholder)=)(?![^>]*\btype="(?:hidden|submit|button|radio|checkbox)")([^>]*)>#i', function ( $m ) use ( $labelled ) {
+		if ( preg_match( '#\bid="([^"]+)"#', $m[2], $id ) && isset( $labelled[ $id[1] ] ) ) {
+			return $m[0];
+		}
+		// Only the theme's own fields (capitalised names such as EPPDomainPrice); standard
+		// CF7 fields (your-name, ...) are usually wrapped in a visible <label>, which wins.
+		if ( ! preg_match( '#\bname="([A-Z][^"\[]*)#', $m[2], $n ) ) {
+			return $m[0];
+		}
+		$words = trim( preg_replace( '/\s+/', ' ', preg_replace( '/([a-z])([A-Z])|([A-Z])([A-Z][a-z])|[_-]+/', '$1$3 $2$4', $n[1] ) ) );
+		$words = preg_replace_callback( '/\b([A-Z][a-z]+)\b/', function ( $w ) {
+			return strtolower( $w[1] );
+		}, $words );
+		$words = ucfirst( $words );
+		return '' === $words ? $m[0] : '<' . $m[1] . ' aria-label="' . esc_attr( $words ) . '"' . $m[2] . '>';
+	}, $form );
+	return $form;
+} );
 
 add_action( 'template_redirect', function () {
 	if ( is_admin() || is_feed() || is_robots() ) {
@@ -581,3 +704,23 @@ add_filter( 'the_content', function ( $content ) {
 	}
 	return db_onpage_clean_imported_content( $content );
 }, 30 );
+
+// Accessibility (axe colour-contrast, 2026-11-14): the About page's eyebrows on
+// white sections use the brand lime (#94bf1e, 2.2:1 on white). The page keeps
+// the lime on dark sections; on white the eyebrow uses a darker lime (5.8:1).
+add_action( 'wp_head', function () {
+	if ( is_page( 'about-us' ) ) {
+		echo '<style id="db-a11y-about">#dba-about .dba-story-copy>.dba-eyebrow,#dba-about .dba-beyond>.dba-eyebrow{color:#4f6f0f}</style>' . "\n";
+	}
+	// Breadcrumb links on the About and Contact pages were 23px tall (WCAG 2.2 target size is 24px).
+	if ( is_page( array( 'about-us', 'contact-us' ) ) ) {
+		echo '<style id="db-a11y-crumbs">.dba-crumbs a,.dbc-crumbs a{display:inline-flex;align-items:center;min-height:24px}</style>' . "\n";
+	}
+	// Older news posts colour words with inline color:red (#f00 is 3.5:1 on the light quote
+	// background); a deeper red keeps the emphasis and reads at 6:1 or better.
+	if ( is_singular( 'post' ) ) {
+		// Bootstrap's label colours in older market reports are 2.5-3.9:1 with white text.
+		echo '<style id="db-a11y-labels">.entry-content .label-success{background:#2e7d32!important}.entry-content .label-danger{background:#c62828!important}.entry-content .label-warning{background:#8a5a00!important}.entry-content .label-info{background:#0b6e8a!important}</style>' . "\n";
+		echo '<style id="db-a11y-red">.entry-content [style*="color:red"],.entry-content [style*="color: red"],.entry-content [style*="#ff0000"],.entry-content [style*="#FF0000"]{color:#b00000!important}</style>' . "\n";
+	}
+}, 99 );

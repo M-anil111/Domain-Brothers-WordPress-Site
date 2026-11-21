@@ -43,14 +43,37 @@ add_action( 'init', function () {
 
 if ( ! function_exists( 'db_pwa_serve_manifest' ) ) {
 	function db_pwa_serve_manifest() {
-		$icon = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
+		// Declare each icon at its real pixel size: Chrome rejects (and logs an error for)
+		// an icon whose file does not match the size the manifest claims. The site icon on
+		// staging is a 100x100 favicon, so claiming 512x512 / 192x192 was an error.
 		$icons = array();
-		if ( $icon ) {
-			$icons[] = array( 'src' => $icon, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' );
-			$icon192 = get_site_icon_url( 192 );
-			if ( $icon192 ) {
-				$icons[] = array( 'src' => $icon192, 'sizes' => '192x192', 'type' => 'image/png' );
+		$seen  = array();
+		foreach ( array( 512, 192 ) as $want ) {
+			$url = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( $want ) : '';
+			if ( ! $url || isset( $seen[ $url ] ) ) {
+				continue;
 			}
+			$seen[ $url ] = true;
+			$id   = attachment_url_to_postid( $url );
+			$meta = $id ? wp_get_attachment_metadata( $id ) : array();
+			$w    = 0;
+			$h    = 0;
+			if ( is_array( $meta ) && ! empty( $meta['width'] ) ) {
+				// A cropped site icon has generated sizes; pick the one this URL points at.
+				$w = (int) $meta['width'];
+				$h = (int) $meta['height'];
+				foreach ( (array) ( $meta['sizes'] ?? array() ) as $sz ) {
+					if ( ! empty( $sz['file'] ) && basename( $url ) === $sz['file'] ) {
+						$w = (int) $sz['width'];
+						$h = (int) $sz['height'];
+					}
+				}
+			}
+			if ( $w < 1 || $h < 1 ) {
+				continue;
+			}
+			$type    = wp_check_filetype( $url );
+			$icons[] = array( 'src' => $url, 'sizes' => $w . 'x' . $h, 'type' => $type['type'] ? $type['type'] : 'image/png', 'purpose' => 'any' );
 		}
 
 		$manifest = array(

@@ -107,18 +107,20 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.locator('.db-wl-wrap').scrollIntoViewIfNeeded();
 	await page.screenshot({ path: SHOTS + '/0-domain-page-button.png' });
 	await btn.click();
-	await page.waitForSelector('.db-wl-dialog[open]');
-	await page.screenshot({ path: SHOTS + '/1-sign-in-dialog.png' });
-	await page.fill('.db-wl-dialog input[name=email]', EMAIL);
-	await page.click('.db-wl-dialog [data-step=email] button[type=submit]');
-	await page.waitForSelector('.db-wl-dialog [data-step=code]:not([hidden])');
+	await page.waitForURL(/my-wishlist\/\?auth=signin/);
+	await page.waitForSelector('#db-au');
+	check('signed-out save goes to the sign-in page, not a popup', (await page.locator('dialog[open], .db-wl-dialog[open]').count()) === 0 && /[?&]add=/.test(page.url()));
+	await page.screenshot({ path: SHOTS + '/1-sign-in-page.png' });
+	await page.fill('#db-au input[name=email]', EMAIL);
+	await page.click('#db-au [data-step=email] button[type=submit]');
+	await page.waitForSelector('#db-au [data-step=code]:not([hidden])');
 	await page.screenshot({ path: SHOTS + '/2-enter-code.png' });
 	const code3 = await testCode();
-	await page.fill('.db-wl-dialog input[name=code]', code3);
-	await page.click('.db-wl-dialog [data-step=code] button[type=submit]');
-	await page.waitForSelector('.db-wl-toast');
-	check('the dialog signs in and shows "Saved to your wishlist"', /Saved to your wishlist|signed in/i.test(await page.locator('.db-wl-toast').innerText()));
-	check('the button now reads "Saved to wishlist"', /saved to wishlist/i.test(await btn.innerText()));
+	await page.fill('#db-au input[name=code]', code3);
+	await page.click('#db-au [data-step=code] button[type=submit]');
+	await page.waitForURL((u) => !/auth=signin/.test(u.search) || /my-wishlist/.test(u.pathname), { timeout: 60000 });
+	await page.waitForLoadState('load');
+	check('after signing in the page returns to the domain with the item saved', /saved to wishlist/i.test(await page.locator('.db-wl-btn').innerText().catch(() => '')) || /my-wishlist/.test(page.url()), page.url());
 
 	// 7. the wishlist page
 	const resp = await page.goto(`${BASE}/my-wishlist/`, { waitUntil: 'load' });

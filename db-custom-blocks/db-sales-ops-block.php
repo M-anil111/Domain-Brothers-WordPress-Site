@@ -439,6 +439,15 @@ add_action( 'rest_api_init', static function () {
 		'methods'             => WP_REST_Server::CREATABLE,
 		'callback'            => function ( WP_REST_Request $r ) {
 			$ev = sanitize_text_field( (string) $r->get_param( 'ev' ) ); // Exact names only: sanitize_key would lowercase them.
+			if ( 'listing_view' === $ev ) {
+				// Sent by the page-cache beacon; only for a published listing.
+				$post = get_post( (int) $r->get_param( 'post' ) );
+				if ( ! $post || 'domain' !== $post->post_type || 'publish' !== $post->post_status ) {
+					return new WP_REST_Response( array( 'error' => 'unknown listing' ), 400 );
+				}
+				db_funnel_track( 'listing_view', (int) $post->ID );
+				return new WP_REST_Response( array( 'ok' => true ), 200 );
+			}
 			if ( ! in_array( $ev, array( 'exp_view_A', 'exp_view_B', 'exp_click_A', 'exp_click_B' ), true ) ) {
 				return new WP_REST_Response( array( 'error' => 'unknown event' ), 400 );
 			}
@@ -468,7 +477,9 @@ add_action( 'template_redirect', function () {
 		setcookie( 'db_exp_cta', $v, array( 'expires' => time() + 30 * DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => false, 'samesite' => 'Lax' ) );
 		$_COOKIE['db_exp_cta'] = $v;
 	}
-	db_funnel_track( 'exp_view_' . db_exp_variant(), 0 );
+	if ( ! ( function_exists( 'db_pc_beacon_mode' ) && db_pc_beacon_mode() ) ) {
+		db_funnel_track( 'exp_view_' . db_exp_variant(), 0 );
+	}
 }, 5 );
 
 if ( ! function_exists( 'db_exp_cta_label' ) ) {

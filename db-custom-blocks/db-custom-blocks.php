@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.73.1
+ * Version:     3.119.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.73.1' );
+
+/*
+ * The designer's "DB All Domains Redesign" now ships inside this plugin
+ * (designer/). If the standalone copy is still active it has already loaded
+ * (plugins load alphabetically) and defined DBR_ADR_VERSION, so this is skipped.
+ */
+if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
+	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
+}
+define( 'DB_BLOCKS_LOADED', '3.119.1' );
+$GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
+
+/*
+ * Who writes the SEO tags in <head>. When Rank Math is active and the site is
+ * switched to it (option db_rankmath_owns_head = 1, set from the bridge in
+ * db-rankmath-block.php), Rank Math emits title, description, robots,
+ * canonical, Open Graph and schema, and this plugin supplies its built-in copy
+ * as the fallback for URLs with no Rank Math fields. Otherwise this plugin
+ * emits the tags itself. Read from the options here because Rank Math loads
+ * after this file.
+ */
+if ( ! defined( 'DB_RANKMATH_OWNS_HEAD' ) ) {
+	define( 'DB_RANKMATH_OWNS_HEAD', in_array( 'seo-by-rank-math/rank-math.php', (array) get_option( 'active_plugins', array() ), true ) && '1' === (string) get_option( 'db_rankmath_owns_head', '0' ) );
+}
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -66,8 +89,10 @@ if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	 * RankMath, so they were double-emitting meta alongside Yoast.
 	 */
 	function db_seo_other_plugin() {
-		return class_exists( 'RankMath' )
-			|| defined( 'RANK_MATH_VERSION' )
+		// Rank Math runs here as an editor-side analysis tool only (see
+		// db-rankmath-block.php): its front-end output is switched off and this
+		// plugin keeps emitting the tags, unless DB_RANKMATH_OWNS_HEAD is true.
+		return ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD )
 			|| defined( 'WPSEO_VERSION' )
 			|| class_exists( 'WPSEO_Options' );
 	}
@@ -424,7 +449,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Burger menu links (no WP nav menu is registered on this theme).
 		$menu = array(
 			'Browse Domains' => $browse_href,
-			'Payment Plans'  => esc_url( home_url( '/payment-plan-setup/' ) ),
+			'Payment Terms'  => esc_url( home_url( '/payment-terms/' ) ),
 			'Services'       => esc_url( home_url( '/website-design-development/' ) ),
 			'News'           => esc_url( home_url( '/news/' ) ),
 			'Contact'        => $offer_href,
@@ -443,7 +468,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Brand bar at the top of the hero: logo left, burger right.
 		$html .= '<div class="db-hp-nav">';
 		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
-		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
+		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="54" decoding="async">';
 		$html .= '</a>';
 		if ( $show_burger ) {
 			$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
@@ -456,7 +481,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		}
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
-		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
+		$html .= '<h1 class="db-hp-h1">The right domain<br>changes <span class="db-hp-mark">everything</span>.</h1>';
 		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase includes a step-by-step transfer and is eligible for flexible payment plans.</p>';
 		// A search-first hero: one big search box, then the extensions people actually browse.
 		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
@@ -479,6 +504,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 		}
 		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
+		$html .= (string) apply_filters( 'db_hp_hero_showcase', '' ); // Real listings under the search box (db-hero-showcase-block.php).
 		$html .= '<div class="db-hp-trust db-hp-marquee" role="group" aria-label="Why buyers choose Domain Brothers"><div class="db-hp-viewport">' . $trust_html . '</div><button type="button" class="db-hp-pause" aria-pressed="false" aria-label="Pause scrolling"><span aria-hidden="true">&#10074;&#10074;</span></button></div>';
 		$html .= '<script>(function(){var b=document.querySelector(".db-hp-pause");if(!b){return;}b.addEventListener("click",function(){var m=b.closest(".db-hp-marquee"),p=m.classList.toggle("is-paused");b.setAttribute("aria-pressed",p?"true":"false");b.setAttribute("aria-label",p?"Resume scrolling":"Pause scrolling");b.firstChild.innerHTML=p?"&#9654;":"&#10074;&#10074;";});})();</script>';
 		$html .= '</div></section>';
@@ -746,23 +772,45 @@ if ( ! function_exists( 'db_plan_terms' ) ) {
 	}
 }
 
-if ( ! function_exists( 'db_plan_rate' ) ) {
+if ( ! function_exists( 'db_plan_rate_legacy' ) ) {
 	/**
-	 * Interest rate (percent) per plan term — the live site's published
-	 * schedule: 3 and 6 months are interest-free, 9 months carries 5%, 12
-	 * months 10%. Single source of truth for the plan chooser (JS), the
-	 * Stripe charges (PHP) and every piece of copy that quotes a rate.
+	 * The schedule in force before 2026-11-20: 3 and 6 months interest-free, 9 months 5%, 12 months 10%.
+	 * A plan record without a stored rate_pct was started under it, so it keeps these rates.
 	 */
-	function db_plan_rate( $months ) {
+	function db_plan_rate_legacy( $months ) {
 		$rates = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 );
 		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
 	}
 }
 
+if ( ! function_exists( 'db_plan_rate' ) ) {
+	/**
+	 * Interest rate (percent) a NEW plan pays for its term: 3 months interest-free, 6 months 5%,
+	 * 9 months 8%, 12 months 10%. Single source of truth for the plan chooser (JS), the first
+	 * Stripe charge (PHP) and every piece of copy that quotes a rate. A plan keeps the rate it
+	 * started with (see db_plan_rate_of()), so changing this never reprices a plan in progress.
+	 */
+	function db_plan_rate( $months ) {
+		$rates = array( 3 => 0, 6 => 5, 9 => 8, 12 => 10 );
+		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
+	}
+}
+
+if ( ! function_exists( 'db_plan_rate_of' ) ) {
+	/** The rate a stored plan was started with: its rate_pct, or the legacy schedule for plans that predate it. */
+	function db_plan_rate_of( array $plan ) {
+		if ( isset( $plan['rate_pct'] ) && is_numeric( $plan['rate_pct'] ) ) {
+			return (float) $plan['rate_pct'];
+		}
+		return db_plan_rate_legacy( (int) ( $plan['total_months'] ?? 0 ) );
+	}
+}
+
 if ( ! function_exists( 'db_plan_total_cents' ) ) {
-	/** Total owed in cents for a plan: listing price plus the term's interest. */
-	function db_plan_total_cents( $price_usd, $months ) {
-		return (int) round( (float) $price_usd * ( 100 + db_plan_rate( $months ) ) );
+	/** Total owed in cents for a plan: listing price plus interest. $rate defaults to a new plan's rate for the term. */
+	function db_plan_total_cents( $price_usd, $months, $rate = null ) {
+		$rate = null === $rate ? db_plan_rate( $months ) : (float) $rate;
+		return (int) round( (float) $price_usd * ( 100 + $rate ) );
 	}
 }
 
@@ -811,7 +859,19 @@ function db_plan_widget_html() {
 	$d_b64 = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$p_b64 = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : '';
 
+	$pa_bar = '';
+	$proof  = '';
+	if ( function_exists( 'db_pa_html' ) ) {
+		$dp_post = get_page_by_title( $domain, OBJECT, 'domain' );
+		$dp_url  = $dp_post ? get_permalink( $dp_post ) : home_url( '/' );
+		$pa_bar  = db_pa_html( array( 'back_url' => $dp_url, 'back_label' => 'Back to ' . $domain, 'share_url' => $dp_url, 'share_title' => $domain . ' is for sale at Domain Brothers' ) );
+		if ( function_exists( 'db_proof_html' ) ) {
+			$proof = db_proof_html( $dp_post ? $dp_post->ID : 0, $domain );
+		}
+	}
+
 	ob_start();
+	echo '<div class="db-plan-bar">' . $pa_bar . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	?>
 	<div class="db-plan" id="db-plan"
 		data-price="<?php echo esc_attr( $price ); ?>"
@@ -827,6 +887,7 @@ function db_plan_widget_html() {
 			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
 			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
+		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
 		<div class="db-plan-summary">
 			<div class="db-plan-monthly">
@@ -852,7 +913,7 @@ function db_plan_widget_html() {
 	<style>
 		.db-plan{max-width:760px;margin:32px auto;padding:0 4px;font-family:inherit;color:#1a1a1a;}
 		.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
-		.db-plan-domain{color:#0a6ed1;}
+		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-bar{max-width:760px;margin:24px auto 0;padding:0 4px}.db-plan-bar .db-pa{margin-bottom:0}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
 		.db-plan-total{font-size:15px;color:#444;margin:0 0 20px;}
 		.db-plan-zero{display:inline-block;background:#e7f6ec;color:#137a3e;font-weight:600;padding:2px 10px;border-radius:999px;font-size:13px;}
 		.db-plan-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 24px;}
@@ -1334,7 +1395,7 @@ add_shortcode( 'db_sitemap', function ( $atts ) {
 		echo '</ul>';
 	}
 	?>
-	<style>.db-sitemap{max-width:820px;margin:0 auto;}.db-sitemap-h2{font-size:20px;font-weight:700;margin:36px 0 12px;border-bottom:2px solid #e6e6e6;padding-bottom:8px;}.db-sitemap-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 24px;}.db-sitemap-list li{padding:4px 0;}.db-sitemap-list a{color:#0b3d91;text-decoration:none;font-size:15px;}.db-sitemap-list a:hover{text-decoration:underline;}.db-sitemap-date{font-size:12px;color:#888;margin-left:8px;}</style>
+	<style>.db-sitemap{max-width:820px;margin:0 auto;}.db-sitemap-h2{font-size:20px;font-weight:700;margin:36px 0 12px;border-bottom:2px solid #e6e6e6;padding-bottom:8px;}.db-sitemap-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 24px;}.db-sitemap-list li{padding:4px 0;}.db-sitemap-list a{color:#0b3d91;text-decoration:none;font-size:15px;}.db-sitemap-list a:hover{text-decoration:underline;}.db-sitemap-date{font-size:12px;color:#5b6472;margin-left:8px;}</style>
 	</div>
 	<?php
 	return ob_get_clean();
@@ -1494,7 +1555,7 @@ add_action( 'init', function () {
    BLOCK 9 — DB AEO & structured data
    ============================================================ */
 
-if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       get_bloginfo( 'name' ) );
+if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       'Domain Brothers' );
 if ( ! defined( 'DB_AEO_CONTACT_EMAIL' ) )   define( 'DB_AEO_CONTACT_EMAIL',  'sales@domainbrothers.com' );
 if ( ! defined( 'DB_AEO_TWITTER_HANDLE' ) )  define( 'DB_AEO_TWITTER_HANDLE', '' );
 if ( ! defined( 'DB_AEO_PRICE_META' ) )      define( 'DB_AEO_PRICE_META',     'domain_price' );
@@ -1516,6 +1577,13 @@ if ( ! function_exists( 'db_aeo_og_image' ) ) {
 
 if ( ! function_exists( 'db_aeo_emit' ) ) {
 	function db_aeo_emit( $graph_node ) {
+		// When Rank Math writes the <head> it already describes the organisation,
+		// the website, the page, the article and the breadcrumb trail; emitting
+		// them here too would give search engines each entity twice.
+		if ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD && isset( $graph_node['@type'] )
+			&& in_array( $graph_node['@type'], (array) apply_filters( 'db_aeo_rankmath_types', array( 'Organization', 'WebSite', 'WebPage', 'Article', 'BlogPosting', 'NewsArticle', 'BreadcrumbList', 'Service' ) ), true ) ) {
+			return;
+		}
 		$json = wp_json_encode( array_merge( array( '@context' => 'https://schema.org' ), $graph_node ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 		echo '<script type="application/ld+json">' . "\n" . $json . "\n" . '</script>' . "\n";
 	}
@@ -2425,7 +2493,7 @@ body.db-ui-active { padding-top: 70px !important; }
 @media (min-width: 992px) {
 	.db-ui-active .site-header .domain-search { padding-right: var(--db-sp-5); justify-content: flex-start; }
 	.db-ui-active .site-header .domain-search .custom-logo-link { display: flex; }
-	.db-ui-active .site-header .domain-search .custom-logo-link img { height: 38px; width: auto; }
+	.db-ui-active .site-header .domain-search .custom-logo-link img { height: auto; max-height: 38px; width: auto; }
 	.db-ui-active .site-header .domain-search .widget { flex: 0 1 320px; max-width: 320px; margin-left: auto; }
 	.db-ui-active .db-desktop-nav {
 		display: flex; flex: 1 1 auto; justify-content: center;
@@ -4026,7 +4094,11 @@ add_action( 'wp_footer', function () {
 			}
 			document.addEventListener('click', function (e) {
 				var trigger = e.target.closest && e.target.closest('.db-news-card__trigger');
-				if (trigger) { openNewsPreview(trigger); }
+				if (trigger) {
+						/* No popup: open the publisher's article in a new tab. */
+						var href = trigger.getAttribute('data-link') || '';
+						if (/^https?:\/\//i.test(href)) { window.open(href, '_blank', 'noopener,noreferrer'); } else { openNewsPreview(trigger); }
+					}
 			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
@@ -4607,12 +4679,16 @@ require_once __DIR__ . '/db-onpage-seo-block.php';
    /all-domains/ FILTER + SORT BAR
    ============================================================ */
 require_once __DIR__ . '/db-domain-filter-block.php';
+require_once __DIR__ . '/db-hero-showcase-block.php';
 
 /* ============================================================
    RECOMMENDED DOMAINS + EXIT OFFER ON DOMAIN PAGES
    ============================================================ */
 require_once __DIR__ . '/db-recommend-block.php';
 require_once __DIR__ . '/db-exit-offer-block.php';
+require_once __DIR__ . '/db-events-block.php';
+require_once __DIR__ . '/db-page-actions-block.php';
+require_once __DIR__ . '/db-offer-page-block.php';
 
 /* ============================================================
    DESIGN REFRESH — the exit-offer popup's look, site-wide
@@ -4633,10 +4709,47 @@ require_once __DIR__ . '/db-turnstile-block.php';
 require_once __DIR__ . '/db-launch-block.php';
 require_once __DIR__ . '/db-sales-block.php';
 require_once __DIR__ . '/db-sales-ops-block.php';
+require_once __DIR__ . '/db-domain-tools-block.php';
+require_once __DIR__ . '/db-platform-block.php';
+require_once __DIR__ . '/db-pagecache-block.php';
+require_once __DIR__ . '/db-delay-block.php';
+require_once __DIR__ . '/db-pages-block.php';
 require_once __DIR__ . '/db-sections-block.php';
 require_once __DIR__ . '/db-priced-block.php';
+require_once __DIR__ . '/db-seo-audit-block.php';
+require_once __DIR__ . '/db-rankmath-block.php';
+require_once __DIR__ . '/db-focus-block.php';
+require_once __DIR__ . '/db-header-block.php';
+require_once __DIR__ . '/db-index-policy-block.php';
+require_once __DIR__ . '/db-transfer-block.php';
+require_once __DIR__ . '/db-form-entries-block.php';
+require_once __DIR__ . '/db-service-art-block.php';
+require_once __DIR__ . '/db-handles-block.php';
+require_once __DIR__ . '/db-offer-page-block.php';
+require_once __DIR__ . '/db-designer-bridge-block.php';
+require_once __DIR__ . '/db-payment-plans-block.php';
+require_once __DIR__ . '/db-wishlist-intro-block.php';
+require_once __DIR__ . '/db-spamguard-block.php';
+require_once __DIR__ . '/db-image-guard-block.php';
+require_once __DIR__ . '/db-register-block.php';
+require_once __DIR__ . '/db-account-ui-block.php';
+require_once __DIR__ . '/db-account-data-block.php';
+require_once __DIR__ . '/db-policies-block.php';
+require_once __DIR__ . '/db-service-template-block.php';
+require_once __DIR__ . '/db-domain-lookup-block.php';
+require_once __DIR__ . '/db-tool-pages-block.php';
+require_once __DIR__ . '/db-resolve-tools-block.php';
+require_once __DIR__ . '/db-learn-pages-block.php';
+require_once __DIR__ . '/db-site-hygiene-block.php';
+require_once __DIR__ . '/db-search-log-block.php';
+require_once __DIR__ . '/db-alerts-block.php';
+require_once __DIR__ . '/db-article-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
+// The designer's UI fixes (bundled from the standalone add-on; stands down while the add-on is active).
+if ( is_readable( __DIR__ . '/db-ui-fixes-block.php' ) && is_readable( __DIR__ . '/designer/ui-fixes/includes/html-filters.php' ) ) {
+	require_once __DIR__ . '/db-ui-fixes-block.php';
+}
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {
 	require_once __DIR__ . '/db-faq-block.php';
 }
@@ -4646,3 +4759,9 @@ if ( is_readable( __DIR__ . '/db-team-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-forms-block.php' ) ) {
 	require_once __DIR__ . '/db-forms-block.php';
 }
+foreach ( array( 'db-consent-block.php', 'db-footer-links-block.php', 'db-service-redirects-block.php', 'db-test-data-block.php' ) as $db_optional_block ) {
+	if ( is_readable( __DIR__ . '/' . $db_optional_block ) ) {
+		require_once __DIR__ . '/' . $db_optional_block;
+	}
+}
+unset( $db_optional_block );

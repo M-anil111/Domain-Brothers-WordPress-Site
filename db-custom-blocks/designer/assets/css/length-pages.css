@@ -1,0 +1,609 @@
+/*!
+ * Domain Brothers – "browse by length" pages redesign
+ * (/4-character-domains/, /5-character-domains/).
+ * Presentation only. Loaded on those pages alone (see the plugin's PHP) and
+ * scoped to body.dbp-listing. Page-specific values (banner image, its aspect
+ * ratio, the toolbar heading) come from four-character.css / five-character.css
+ * through the --dbl-* custom properties below. Relies on the existing markup:
+ *   section.dbl-head  – banner (eyebrow, title, lede, intro, chips, trust list)
+ *   div.dbl-tools     – #dbl-q search, #dbl-sort select, #dbl-count live region
+ *   ul#dbl-grid       – li.dbl-card > a.dbl-link > .dbl-name/.dbl-cat/.dbl-foot
+ * No element is added, moved or removed, so the existing search/sort script
+ * keeps working unchanged.
+ *
+ * Declarations carry !important because the theme's db-ui / combo layers
+ * style these components with !important.
+ */
+
+html body.dbp-listing.dbp-listing {
+	--d4-navy: #0f1b2d;
+	--d4-navy-deep: #0c1424;
+	--d4-ink: #0f172a;
+	--d4-text: #374151;
+	--d4-muted: #4b5563;
+	--d4-line: #e4e7ec;
+	--d4-lime: #b5e61d;
+	--d4-lime-strong: #a3d016;
+	--d4-lime-soft: #eef8d2;
+	--d4-focus: 0 0 0 3px rgba(181, 230, 29, 0.55);
+}
+
+/* =========================================================================
+   1. Banner
+   ========================================================================= */
+
+html body.dbp-listing.dbp-listing .dbl-head {
+	position: relative !important;
+	isolation: isolate !important;
+	overflow: hidden !important;
+	padding: 48px 56px 40px !important;
+	border-radius: 24px !important;
+	background-color: var(--d4-navy-deep) !important;
+	background-image:
+		radial-gradient(560px 360px at 82% 40%, rgba(25, 179, 166, 0.30) 0%, rgba(25, 179, 166, 0) 70%),
+		radial-gradient(700px 380px at 0% 100%, rgba(37, 99, 235, 0.20) 0%, rgba(37, 99, 235, 0) 60%) !important;
+	box-shadow: 0 18px 40px rgba(12, 20, 36, 0.16) !important;
+}
+
+/* "ABCD .ca" illustration. Uses ::before; the theme's ::after grid overlay stays. */
+html body.dbp-listing.dbp-listing .dbl-head::before {
+	content: "" !important;
+	position: absolute !important;
+	z-index: 0 !important;
+	top: 50% !important;
+	right: 3% !important;
+	left: auto !important;
+	bottom: auto !important;
+	width: min(44%, 500px) !important;
+	aspect-ratio: var(--dbl-hero-ratio, 2 / 1) !important;
+	background: var(--dbl-hero-img, none) center / contain no-repeat !important;
+	transform: translateY(-62%) !important;
+	filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.4)) !important;
+	pointer-events: none !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head > * {
+	position: relative !important;
+	z-index: 1 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head > .dbp-eyebrow,
+html body.dbp-listing.dbp-listing .dbl-head > .dbl-title,
+html body.dbp-listing.dbp-listing .dbl-head > .dbx-lede,
+html body.dbp-listing.dbp-listing .dbl-head > .dbl-intro {
+	max-width: 56% !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head > .dbl-chips {
+	max-width: 66% !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbp-eyebrow {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 0 !important;
+	margin: 0 0 18px !important;
+	padding: 8px 16px !important;
+	border: 0 !important;
+	border-radius: 999px !important;
+	background: var(--d4-lime) !important;
+	box-shadow: none !important;
+	color: var(--d4-navy) !important;
+	font-size: 12px !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+	letter-spacing: 0.1em !important;
+	text-transform: uppercase !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbp-eyebrow::before {
+	display: none !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-title {
+	margin: 0 0 14px !important;
+	color: #fff !important;
+	font-size: clamp(32px, 4vw, 48px) !important;
+	font-weight: 900 !important;
+	line-height: 1.08 !important;
+	letter-spacing: -0.025em !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbx-lede {
+	margin: 0 0 10px !important;
+	color: rgba(255, 255, 255, 0.86) !important;
+	font-size: 17px !important;
+	line-height: 1.5 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-intro {
+	margin: 0 0 22px !important;
+	color: rgba(255, 255, 255, 0.72) !important;
+	font-size: 15.5px !important;
+	line-height: 1.5 !important;
+}
+
+/* "4 names available." shown as the pill from the reference. */
+html body.dbp-listing.dbp-listing .dbl-head .dbl-intro strong {
+	display: table !important;
+	margin: 14px 0 0 !important;
+	padding: 10px 18px !important;
+	border-radius: 999px !important;
+	background: rgba(255, 255, 255, 0.14) !important;
+	color: #fff !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-chips {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 10px !important;
+	margin: 0 0 26px !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-chips a {
+	display: inline-flex !important;
+	align-items: center !important;
+	min-height: 40px !important;
+	padding: 0 18px !important;
+	border: 1px solid rgba(255, 255, 255, 0.32) !important;
+	border-radius: 999px !important;
+	background: transparent !important;
+	backdrop-filter: none !important;
+	box-shadow: none !important;
+	color: #fff !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	text-decoration: none !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-chips a:hover {
+	border-color: rgba(255, 255, 255, 0.7) !important;
+	background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-chips a[aria-current] {
+	border-color: var(--d4-lime) !important;
+	background: var(--d4-lime) !important;
+	color: var(--d4-navy) !important;
+	font-weight: 700 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-chips a:focus-visible {
+	outline: none !important;
+	box-shadow: var(--d4-focus) !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-head .dbl-trust {
+	margin: 0 !important;
+	padding: 18px 0 0 !important;
+	border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+	color: rgba(255, 255, 255, 0.78) !important;
+	font-size: 14px !important;
+}
+
+/* =========================================================================
+   2. Toolbar: heading + search + sort
+   ========================================================================= */
+
+html body.dbp-listing.dbp-listing .dbl-tools {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	align-items: center !important;
+	gap: 14px 18px !important;
+	margin: 36px 0 22px !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools::before {
+	content: var(--dbl-tools-title, "Available domains") !important;
+	flex: 1 1 auto !important;
+	color: var(--d4-ink) !important;
+	font-size: clamp(22px, 2.4vw, 28px) !important;
+	font-weight: 900 !important;
+	line-height: 1.2 !important;
+	letter-spacing: -0.015em !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools .dbl-search {
+	flex: 0 1 300px !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	position: relative !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-q {
+	box-sizing: border-box !important;
+	width: 100% !important;
+	height: 44px !important;
+	margin: 0 !important;
+	padding: 0 46px 0 18px !important;
+	border: 1px solid #d6dbe2 !important;
+	border-radius: 999px !important;
+	background-color: #fff !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: right 16px center !important;
+	background-size: 18px 18px !important;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04) !important;
+	color: var(--d4-ink) !important;
+	font-size: 15px !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-q::placeholder {
+	color: #6b7280 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools .dbl-sort {
+	display: flex !important;
+	flex: 0 0 auto !important;
+	align-items: center !important;
+	gap: 10px !important;
+	margin: 0 !important;
+	color: var(--d4-text) !important;
+	font-size: 14.5px !important;
+	font-weight: 600 !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools .dbl-sort > span::after {
+	content: ":" !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-sort {
+	box-sizing: border-box !important;
+	width: auto !important;
+	min-width: 180px !important;
+	height: 44px !important;
+	margin: 0 !important;
+	padding: 0 40px 0 18px !important;
+	border: 1px solid #d6dbe2 !important;
+	border-radius: 999px !important;
+	background-color: #fff !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 12 8'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: right 16px center !important;
+	background-size: 12px 8px !important;
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	color: var(--d4-ink) !important;
+	font-size: 15px !important;
+	font-weight: 600 !important;
+	cursor: pointer !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-q:focus,
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-sort:focus {
+	outline: none !important;
+	border-color: var(--d4-navy) !important;
+	box-shadow: var(--d4-focus) !important;
+}
+
+/* Live result count ("2 of 4 names") sits on its own line under the toolbar. */
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-count {
+	flex: 1 0 100% !important;
+	order: 10 !important;
+	margin: 0 !important;
+	color: #6b7280 !important;
+	font-size: 14px !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-count:empty {
+	display: none !important;
+}
+
+/* =========================================================================
+   3. Domain cards
+   ========================================================================= */
+
+html body.dbp-listing.dbp-listing #dbl-grid {
+	display: grid !important;
+	grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+	gap: 20px !important;
+	margin: 0 0 8px !important;
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-card {
+	display: block !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-card[hidden] {
+	display: none !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-link {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 0 !important;
+	height: 100% !important;
+	box-sizing: border-box !important;
+	padding: 0 0 18px !important;
+	overflow: hidden !important;
+	border: 1px solid var(--d4-line) !important;
+	border-top: 5px solid var(--d4-lime) !important;
+	border-radius: 16px !important;
+	background: #fff !important;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 22px rgba(16, 24, 40, 0.06) !important;
+	color: var(--d4-ink) !important;
+	text-align: center !important;
+	text-decoration: none !important;
+	transform: none !important;
+	transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:hover {
+	border-color: var(--d4-lime) !important;
+	box-shadow: 0 0 0 1px var(--d4-lime), 0 14px 30px rgba(16, 24, 40, 0.10) !important;
+	transform: translateY(-2px) !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:focus-visible {
+	outline: none !important;
+	box-shadow: var(--d4-focus) !important;
+}
+
+/* Lime header band: name + category */
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-name {
+	display: block !important;
+	align-self: stretch !important;
+	width: auto !important;
+	max-width: none !important;
+	text-align: center !important;
+	margin: 0 !important;
+	padding: 24px 16px 4px !important;
+	background: var(--d4-lime-soft) !important;
+	color: var(--d4-ink) !important;
+	font-size: clamp(20px, 2.1vw, 30px) !important;
+	font-weight: 900 !important;
+	line-height: 1.1 !important;
+	letter-spacing: -0.02em !important;
+	overflow-wrap: anywhere !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-ext {
+	color: inherit !important;
+	font-size: inherit !important;
+	font-weight: inherit !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-cat {
+	display: block !important;
+	align-self: stretch !important;
+	width: auto !important;
+	max-width: none !important;
+	text-align: center !important;
+	margin: 0 !important;
+	padding: 2px 16px 22px !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: var(--d4-lime-soft) !important;
+	color: var(--d4-text) !important;
+	font-size: 15px !important;
+	font-weight: 500 !important;
+	line-height: 1.3 !important;
+	text-transform: none !important;
+	letter-spacing: 0 !important;
+}
+
+/* Price + payment line + button */
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-foot {
+	display: flex !important;
+	flex: 1 1 auto !important;
+	flex-direction: column !important;
+	align-items: stretch !important;
+	justify-content: space-between !important;
+	gap: 18px !important;
+	margin: 0 !important;
+	padding: 22px 16px 0 !important;
+	border: 0 !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-price {
+	display: block !important;
+	margin: 0 !important;
+	color: var(--d4-ink) !important;
+	font-size: clamp(22px, 2.2vw, 30px) !important;
+	font-weight: 900 !important;
+	line-height: 1.1 !important;
+	letter-spacing: -0.02em !important;
+	text-align: center !important;
+}
+
+/* Offer-only names ("Open to offers"): smaller text, vertically centred in the price area. */
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-price.dbl-price--offer {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-height: 58px !important;
+	font-size: clamp(19px, 1.8vw, 22px) !important;
+	font-weight: 800 !important;
+	letter-spacing: -0.01em !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-price small {
+	display: block !important;
+	margin: 8px 0 0 !important;
+	color: var(--d4-text) !important;
+	font-size: 14px !important;
+	font-weight: 500 !important;
+	letter-spacing: 0 !important;
+	line-height: 1.3 !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-go {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 10px !important;
+	width: 100% !important;
+	height: 46px !important;
+	margin: 0 !important;
+	padding: 0 16px !important;
+	border-radius: 9px !important;
+	background: var(--d4-navy) !important;
+	color: #fff !important;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	transition: background-color 0.15s ease !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-go::after {
+	content: "\2192" !important;
+	font-size: 18px !important;
+	line-height: 1 !important;
+	transition: transform 0.15s ease !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:hover .dbl-go {
+	background: #1c2c46 !important;
+}
+
+html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:hover .dbl-go::after {
+	transform: translateX(3px) !important;
+}
+
+/* =========================================================================
+   4. Responsive
+   ========================================================================= */
+
+@media (max-width: 1199.98px) {
+	html body.dbp-listing.dbp-listing .dbl-head {
+		padding: 44px 44px 34px !important;
+	}
+}
+
+@media (max-width: 991.98px) {
+	html body.dbp-listing.dbp-listing .dbl-head {
+		padding: 38px 32px 30px !important;
+		border-radius: 20px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head::before {
+		width: 36% !important;
+		right: 2% !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head > .dbp-eyebrow,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-title,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbx-lede,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-intro {
+		max-width: 62% !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-chips {
+		max-width: none !important;
+	}
+
+	html body.dbp-listing.dbp-listing #dbl-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 18px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-tools::before {
+		flex: 1 0 100% !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-tools .dbl-search {
+		flex: 1 1 260px !important;
+	}
+}
+
+@media (max-width: 767.98px) {
+	html body.dbp-listing.dbp-listing .dbl-head {
+		padding: 28px 22px 24px !important;
+		border-radius: 18px !important;
+	}
+
+	/* Illustration sits above the copy on phones. */
+	html body.dbp-listing.dbp-listing .dbl-head::before {
+		position: relative !important;
+		display: block !important;
+		top: auto !important;
+		right: auto !important;
+		width: min(82%, 340px) !important;
+		margin: 0 auto 18px !important;
+		transform: none !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head > .dbp-eyebrow,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-title,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbx-lede,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-intro,
+	html body.dbp-listing.dbp-listing .dbl-head > .dbl-chips {
+		max-width: none !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head .dbx-lede { font-size: 15.5px !important; }
+
+	html body.dbp-listing.dbp-listing .dbl-head .dbl-chips {
+		gap: 8px !important;
+		margin-bottom: 22px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head .dbl-chips a {
+		min-height: 36px !important;
+		padding: 0 14px !important;
+		font-size: 13.5px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-head .dbl-trust {
+		flex-direction: column !important;
+		gap: 8px !important;
+		font-size: 13.5px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-tools {
+		margin-top: 28px !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-tools .dbl-search,
+	html body.dbp-listing.dbp-listing .dbl-tools .dbl-sort {
+		flex: 1 1 100% !important;
+	}
+
+	html body.dbp-listing.dbp-listing .dbl-tools #dbl-sort {
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+}
+
+@media (max-width: 539.98px) {
+	html body.dbp-listing.dbp-listing #dbl-grid {
+		grid-template-columns: minmax(0, 1fr) !important;
+		gap: 16px !important;
+	}
+
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-name {
+		font-size: 28px !important;
+	}
+
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-price {
+		font-size: 28px !important;
+	}
+
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-price.dbl-price--offer {
+		font-size: 21px !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-link,
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-go,
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-go::after {
+		transition: none !important;
+	}
+
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:hover,
+	html body.dbp-listing.dbp-listing #dbl-grid .dbl-link:hover .dbl-go::after {
+		transform: none !important;
+	}
+}

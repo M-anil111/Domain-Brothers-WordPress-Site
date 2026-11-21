@@ -1,11 +1,11 @@
 ---
-title: How to Value a Premium Domain Name: A Practical Method
+title: How to Value a Premium Domain: A Domain Valuation Method
 slug: how-to-value-a-premium-domain-name
 role: spoke
-excerpt: A step-by-step method for valuing a premium domain: score the name on six factors, check comparable sales, estimate what the name is worth to your business, and set a fair offer.
+excerpt: A practical domain valuation method: score a premium name on six factors, check comparable sales, estimate what it is worth to your business, set a fair offer.
 tags: premium domains, domain valuation, domain appraisal
 ---
-A premium domain has no sticker price. Two buyers can look at the same name and honestly disagree by a factor of ten, because the name is worth different things to each of them. That is why valuation is a method, not a lookup. This guide gives you a method you can repeat, and shows where it can go wrong. It belongs to our [complete guide to premium domain names](/premium-domain-names-complete-guide/).
+Domain valuation starts from one fact: a premium domain has no sticker price. Two buyers can look at the same name and honestly disagree by a factor of ten, because the name is worth different things to each of them. That is why domain valuation is a method, not a lookup. This guide gives you a method you can repeat, and shows where it can go wrong. It belongs to our [complete guide to premium domain names](/premium-domain-names-complete-guide/).
 
 !takeaways In short
 - Score the name on six factors, then check what similar names really sold for.
@@ -15,7 +15,7 @@ A premium domain has no sticker price. Two buyers can look at the same name and 
 
 ## Step 1: Score the name on six factors
 
-!img:infographic-i1|Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors used in this method.
+!img:infographic-i1|Infographic of six factors used in domain valuation: length, extension, keyword fit, brandability, comparable sales and clean history|The six factors used in this method.
 
 Give the name a score from one to five on each of these.
 
@@ -30,7 +30,7 @@ A name with high scores on most factors is premium. A name that scores five on l
 
 ## Step 2: Check comparable sales
 
-Comparable sales are the closest thing the market has to a price list. Public sales databases, auction results and broker reports show what names of similar length, extension and meaning have actually sold for.
+Comparable sales are the closest thing the market has to a price list. Public sales databases, auction results and broker reports show what names of similar length, extension and meaning have actually sold for. Comparable sales are the most reliable evidence in any domain valuation.
 
 - Compare like with like: same extension, similar length, similar type of word.
 - Look at **recent** sales. Markets move.
@@ -43,7 +43,7 @@ The [overview of domain name resale](https://en.wikipedia.org/wiki/Domain_name_r
 
 ## Step 3: Estimate what the name is worth to you
 
-A name is worth what it earns or saves your business. Try this arithmetic.
+A name is worth what it earns or saves your business. Try this arithmetic. This step turns a market domain valuation into a personal one.
 
 - **Cost per customer today.** What do you spend on marketing for each new customer?
 - **Improvement from a better name.** Even a small gain in click-through, direct visits or referral is valuable when repeated across thousands of visitors.
@@ -54,6 +54,8 @@ You are estimating, not predicting. The point is to find out whether the price i
 ## Step 4: Adjust for risk and fit
 
 Move the price up or down for these things.
+
+!img:ib-value-a|Domain valuation factors that move the price down or up|Domain valuation: the factors that move the price.
 
 | Factor | Moves the price |
 |---|---|
@@ -66,32 +68,62 @@ Move the price up or down for these things.
 
 ## Step 5: Set your range and make an offer
 
-Decide two numbers before you speak to the seller: the price you would be glad to pay and the price at which you walk away. Start below the first number, leave room to move, and do not tell the seller your top figure.
+Decide two numbers before you speak to the seller: the price you would be glad to pay and the price at which you walk away. Start below the first number, leave room to move, and do not tell the seller your top figure. Write your domain valuation range down before you contact the seller.
 
-Many of the names on our site have a clear price. Others are open to offers, and we reply to each offer personally. If you would like help setting a number, our [domain brokerage](/domain-brokerage-services/) and [appraisal](/domain-appraisal-services/) teams do this every day.
+Many of the names on our site have a clear price. Others are open to offers, and we reply to each offer personally. If you would like help setting a number, our [domain brokerage](/domain-brokerage-services/) team does this every day.
+
+## Automated domain valuation tools versus a professional appraisal
+
+Free online appraisal tools return an instant figure, and they are a reasonable first look. They are not a domain valuation you should agree a price on.
+
+### What an automated domain valuation can and cannot tell you
+
+Automated tools compare a name's length, extension and keywords with patterns in past sales data. That makes them quick at showing whether a name sits in a high or a low price band. They cannot check trademark conflicts in your market, judge how the name sounds when spoken, read the name's history, or know what the name is worth to your particular business. Different tools often return very different numbers for the same name, which shows how much judgement the figure leaves out.
+
+### When a professional appraisal is worth it
+
+Ask for a human appraisal when the price matters to your plan, when there are few comparable sales, or when you are about to make or accept a large offer. A good appraiser applies the same steps as this guide, adds knowledge from live negotiations, and explains the reasoning, so you can use the figure in a negotiation instead of quoting a number nobody can defend.
+
+## Domain valuation when you are selling
+
+The same method works in reverse. If you own a name and want to sell it, score it honestly on the six factors, gather comparable sales, and think about who would gain the most from owning it. A name is worth most to the buyer whose business it describes, so finding the right buyer matters as much as setting the right price.
+
+- Set an asking price you can justify with evidence, and a lowest price you would accept.
+- Expect serious buyers to run their own domain valuation and to ask which sales support your figure.
+- Decide in advance whether you will take offers or sell only at a fixed price.
+- Keep the name renewed and its records clean while it is on sale, because a lapse or a spam history lowers every estimate.
+
+Our guide on [how to sell a domain name](/sell-my-domain/) covers listing, negotiation and transfer, and our [sold domains](/sold/) page shows the kind of names that find buyers.
 
 ## A worked example
 
-Imagine two names for a new accounting firm.
+Imagine two names for a new accounting firm. The same domain valuation steps give very different answers for these two names.
 
 - **Name A:** a short, real-word .com, no hyphens, with several similar names sold in the last two years.
 - **Name B:** a long phrase on a rarely used extension, no sales history.
 
 Name A scores high on length, extension, keyword fit, brandability and evidence. Name B scores high on keyword fit only. Even if Name B is cheaper, it is a weaker asset, and its price should reflect that. If the firm expects each new client to be worth several thousand dollars over time, even a modest improvement in the number of leads can repay Name A quickly. The illustration is simple on purpose: the method works the same way with real numbers.
 
-## Mistakes to avoid
+## Domain valuation mistakes to avoid
 
 - **Valuing by registration fee.** The fee measures the registry's cost, not the name's value.
 - **Trusting automated estimates alone.** Free calculators are fine as a starting point, but they cannot see trademark risk or brand fit.
 - **Falling for urgency.** "Another buyer is interested" is sometimes true and often a tactic. Ask for proof or take your time.
 - **Forgetting the cost to switch later.** Changing names later costs far more than paying for the right one now.
 
+!img:ib-value-b|Six domain valuation mistakes to avoid|Six domain valuation mistakes to avoid.
+
 ## Where to go next
 
 - Compare prices on [short names](/4-character-domains/) and [numeric names](/numeric-domains-for-sale/).
 - Understand the buying steps in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/).
-- See how value connects to returns in [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/).
+- See how value connects to returns in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 
-!cta Want a second opinion on a price?|Send us the name and what you plan to do with it. We will tell you what we think it is worth.|Request an appraisal|/domain-appraisal-services/|Browse listed prices|/all-domains/
+## Frequently asked questions
+
+!details:What is domain valuation?|Domain valuation is the process of estimating what a domain name is worth, based on its length, extension, meaning, brandability, comparable sales and history, plus what the name can earn or save for a specific business. The result is a sensible price range, not a single exact figure.
+!details:How accurate are free domain valuation tools?|They are useful for a rough price band, but they often disagree with each other by a wide margin. They cannot see trademark risk, brand fit or a name's past use, so treat the number as a starting point and check it against real comparable sales.
+!details:Does a domain valuation guarantee a sale price?|No. A valuation is an informed estimate. The final price is whatever a buyer and a seller agree, and it can sit above or below any appraisal depending on how much a particular buyer needs the name and how many buyers want it.
+!details:How much should I offer on a listed domain?|If a name shows a fixed price, that is what the owner will accept today. If it invites offers, set your range first, make a reasonable opening offer and leave room to move. On Domain Brothers a broker replies to every offer within one business day.
 
 !related

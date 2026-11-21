@@ -1,0 +1,200 @@
+<!-- wp:html -->
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
+body.page-id-__ID__{overflow-x:clip}
+body.page-id-__ID__ #page .db-breadcrumbs,body.page-id-__ID__ #page article.post-__ID__>.entry-title,body.page-id-__ID__ #page .db-ad{display:none!important}
+body.page-id-__ID__ #page #content{padding-bottom:0!important}
+body.page-id-__ID__ #page #content #main.site-main,body.page-id-__ID__ #page #content article.post-__ID__{margin-top:0!important;padding-top:0!important;margin-bottom:0!important;padding-bottom:0!important}
+body.page-id-__ID__ .entry-content{margin:0;padding:0}
+#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:'Figtree',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
+#dbr *,#dbr *::before,#dbr *::after{box-sizing:border-box}
+#dbr h1,#dbr h2,#dbr p,#dbr ul,#dbr ol,#dbr li{margin:0;padding:0;font-family:inherit;text-transform:none;border:0;background:none;letter-spacing:normal}
+#dbr .dbr-bleed{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+#dbr .dbr-wrap{width:100%;max-width:1224px;margin:0 auto;padding:0 20px}
+#dbr a{text-decoration:none;box-shadow:none}
+/* Banner */
+#dbr .dbr-hero{background:linear-gradient(180deg,#eef2f7 0%,#f1f4f8 100%);border-top:1px solid #e6eaf0;border-bottom:1px solid #e6eaf0}
+#dbr .dbr-hero .dbr-wrap{padding-top:34px;padding-bottom:36px}
+#dbr .dbr-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:9px;list-style:none;font-size:16px;line-height:1.4;margin:0 0 30px}
+#dbr .dbr-crumbs li{display:flex;align-items:center;gap:9px;color:var(--muted);list-style:none}
+#dbr .dbr-crumbs li+li::before{content:"/";color:#8a93a1}
+#dbr .dbr-crumbs a{color:var(--muted)!important;transition:color .2s}
+#dbr .dbr-crumbs a:hover{color:var(--navy)!important}
+#dbr .dbr-crumbs [aria-current]{color:var(--navy);font-weight:700}
+#dbr .dbr-title{position:relative;padding-left:30px}
+#dbr .dbr-title::before{content:"";position:absolute;left:0;top:0;width:6px;height:clamp(40px,3.6vw,52px);background:var(--lime);border-radius:1px}
+#dbr .dbr-h1{font-size:clamp(36px,3.9vw,54px);line-height:1;font-weight:800;letter-spacing:-.025em;color:var(--navy);margin:0 0 18px}
+#dbr .dbr-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.5;color:var(--text)}
+/* Layout */
+#dbr .dbr-body{padding:50px 0 68px;background:#fff}
+#dbr .dbr-grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:46px;align-items:stretch}
+#dbr .dbr-aside{border-right:1px solid var(--line);padding-right:34px}
+#dbr .dbr-toc{position:sticky;top:110px}
+#dbr .dbr-toc-title{font-size:22px;font-weight:800;letter-spacing:-.01em;color:var(--navy);margin:0 0 20px;line-height:1.3}
+#dbr .dbr-toc ul{list-style:none;border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:24px}
+#dbr .dbr-toc li{list-style:none;margin:0 0 2px}
+#dbr .dbr-toc li a{display:block;padding:9px 20px;border-left:4px solid transparent;border-radius:0 4px 4px 0;font-size:17px;line-height:1.3;font-weight:500;color:var(--text)!important;transition:background .2s,color .2s}
+#dbr .dbr-toc li a:hover{color:var(--navy)!important;background:#f5f7fa}
+#dbr .dbr-toc li a.is-active{background:var(--lime-soft);border-left-color:var(--navy);color:var(--navy)!important;font-weight:700}
+#dbr .dbr-top{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:500;color:var(--navy)!important;transition:color .2s}
+#dbr .dbr-top svg{width:15px;height:15px}
+#dbr .dbr-top:hover{color:var(--lime-ink)!important}
+/* Content */
+#dbr .dbr-content{max-width:790px;min-width:0}
+#dbr .dbr-sec{padding:0 0 26px;margin:0 0 26px;border-bottom:1px solid #d9dee6;scroll-margin-top:110px}
+#dbr .dbr-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+#dbr .dbr-sec h2{font-size:clamp(25px,2.25vw,32px);line-height:1.2;font-weight:800;letter-spacing:-.015em;color:var(--navy);margin:0 0 10px}
+#dbr .dbr-sec p{font-size:17px;line-height:1.42;color:var(--text);margin:0 0 14px;text-wrap:pretty}
+#dbr .dbr-sec p:last-child{margin-bottom:0}
+#dbr .dbr-mail{font-weight:700;color:var(--navy)!important;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere;transition:color .2s}
+#dbr .dbr-mail:hover{color:var(--lime-ink)!important}
+/* Responsive */
+@media (max-width:1199px){#dbr .dbr-grid{grid-template-columns:230px minmax(0,1fr);gap:40px}#dbr .dbr-aside{padding-right:28px}#dbr .dbr-toc li a{padding:8px 16px;font-size:16px}}
+@media (max-width:991px){
+#dbr .dbr-hero .dbr-wrap{padding-top:30px;padding-bottom:32px}
+#dbr .dbr-crumbs{font-size:15px;margin-bottom:22px}
+#dbr .dbr-body{padding:32px 0 56px}
+#dbr .dbr-grid{grid-template-columns:minmax(0,1fr);gap:32px}
+#dbr .dbr-aside{border-right:0;padding-right:0}
+#dbr .dbr-toc{position:static;background:var(--tint);border:1px solid var(--line);border-radius:12px;padding:20px 20px 16px}
+#dbr .dbr-toc-title{font-size:19px;margin-bottom:12px}
+#dbr .dbr-toc ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;border-bottom:0;padding-bottom:0;margin-bottom:0}
+#dbr .dbr-toc li a{padding:8px 14px;font-size:15.5px}
+#dbr .dbr-toc li a:hover{background:#fff}
+#dbr .dbr-top{display:none}
+#dbr .dbr-content{max-width:none}
+#dbr .dbr-sec{scroll-margin-top:90px}
+}
+@media (max-width:640px){
+#dbr .dbr-title{padding-left:20px}
+#dbr .dbr-title::before{width:5px}
+#dbr .dbr-h1{margin-bottom:14px}
+#dbr .dbr-toc ul{grid-template-columns:minmax(0,1fr)}
+#dbr .dbr-sec{padding-bottom:22px;margin-bottom:22px}
+#dbr .dbr-sec p{font-size:16px;line-height:1.55}
+}
+
+
+#dbr .dbr-sec ul,#dbr .dbr-sec ol{margin:0 0 14px 0;padding-left:22px;list-style:disc}
+#dbr .dbr-sec ol{list-style:decimal}
+#dbr .dbr-sec li{font-size:17px;line-height:1.5;color:var(--text);margin:0 0 6px;padding:0;list-style:inherit;text-wrap:pretty}
+#dbr .dbr-sec strong{color:var(--navy);font-weight:700}
+#dbr .dbr-sec p a,#dbr .dbr-sec li a{color:var(--navy)!important;font-weight:600;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere}
+#dbr .dbr-sec p a:hover,#dbr .dbr-sec li a:hover{color:var(--lime-ink)!important}
+#dbr .dbr-tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+#dbr .dbr-sec table{border-collapse:collapse;width:100%;min-width:520px;font-size:16px;line-height:1.45}
+#dbr .dbr-sec th,#dbr .dbr-sec td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+#dbr .dbr-sec th{background:var(--tint);color:var(--navy);font-weight:700}
+#dbr .dbr-sec tr:last-child td{border-bottom:0}
+#dbr .dbr-meta{font-size:15px;color:var(--muted);margin:0 0 22px}
+@media (max-width:640px){#dbr .dbr-sec li{font-size:16px}}
+
+</style>
+<div id="dbr">
+<section class="dbr-hero dbr-bleed"><div class="dbr-wrap">
+<ol class="dbr-crumbs" aria-label="Breadcrumb"><li><a href="/">Home</a></li><li><span aria-current="page">Terms of Use</span></li></ol>
+<div class="dbr-title"><h1 class="dbr-h1">Terms of Use</h1>
+<p class="dbr-sub">The rules for using Domain Brothers and buying from us. Please read them before you use the site.</p></div>
+</div></section>
+<section class="dbr-body dbr-bleed"><div class="dbr-wrap dbr-grid">
+<aside class="dbr-aside" aria-label="On this page"><div class="dbr-toc" id="dbr-toc">
+<p class="dbr-toc-title">On this page</p>
+<ul>
+<li><a href="#dbr-agreement" class="is-active">Agreement</a></li>
+<li><a href="#dbr-who-can-use-the-site">Who can use the site</a></li>
+<li><a href="#dbr-your-account">Your account</a></li>
+<li><a href="#dbr-our-services">Our services</a></li>
+<li><a href="#dbr-listings-prices-and-availability">Listings, prices and availability</a></li>
+<li><a href="#dbr-offers-and-orders">Offers and orders</a></li>
+<li><a href="#dbr-payment">Payment</a></li>
+<li><a href="#dbr-payment-plans">Payment plans</a></li>
+<li><a href="#dbr-no-refunds">No refunds</a></li>
+<li><a href="#dbr-transfer-and-delivery">Transfer and delivery</a></li>
+<li><a href="#dbr-your-own-checks">Your own checks</a></li>
+<li><a href="#dbr-no-guarantees-about-results">No guarantees about results</a></li>
+<li><a href="#dbr-intellectual-property">Intellectual property</a></li>
+<li><a href="#dbr-acceptable-use">Acceptable use</a></li>
+<li><a href="#dbr-messages-and-enquiries">Messages and enquiries</a></li>
+<li><a href="#dbr-third-party-services-and-links">Third-party services and links</a></li>
+<li><a href="#dbr-disclaimer-of-warranties">Disclaimer of warranties</a></li>
+<li><a href="#dbr-limit-of-liability">Limit of liability</a></li>
+<li><a href="#dbr-indemnity">Indemnity</a></li>
+<li><a href="#dbr-fraud-chargebacks-and-enforcement">Fraud, chargebacks and enforcement</a></li>
+<li><a href="#dbr-ending-your-use">Ending your use</a></li>
+<li><a href="#dbr-privacy-and-cookies">Privacy and cookies</a></li>
+<li><a href="#dbr-governing-law-and-disputes">Governing law and disputes</a></li>
+<li><a href="#dbr-international-use">International use</a></li>
+<li><a href="#dbr-changes">Changes</a></li>
+<li><a href="#dbr-general">General</a></li>
+<li><a href="#dbr-contact">Contact</a></li>
+</ul>
+<a class="dbr-top" href="#page">Back to top <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13.5V2.5M3.5 7 8 2.5 12.5 7"/></svg></a>
+</div></aside>
+<div class="dbr-content">
+<div class="dbr-sec" id="dbr-agreement"><h2>1. Agreement</h2>
+<p>These Terms of Use ("Terms") are an agreement between you and Domain Brothers ("we", "us"), a Mindshare Consulting Inc. company, for DomainBrothers.com and our services. By using the site, creating an account, sending us an enquiry, making an offer or paying, you agree to these Terms and to the policies they refer to: the <a href="/privacy-policy/">Privacy Policy</a>, <a href="/refund-policy/">Refund Policy</a>, <a href="/payment-terms/">Payment Terms</a>, <a href="/cookie-policy/">Cookie Policy</a>, <a href="/acceptable-use-policy/">Acceptable Use Policy</a> and <a href="/trademark-and-copyright-notices/">Trademark and Copyright Notices</a>. If you do not agree, do not use the site.</p></div>
+<div class="dbr-sec" id="dbr-who-can-use-the-site"><h2>2. Who can use the site</h2>
+<p>You must be at least 18, or the age of majority where you live, and able to enter a binding contract. If you act for a business, you confirm that you have authority to bind it. You must give accurate information and keep it up to date.</p></div>
+<div class="dbr-sec" id="dbr-your-account"><h2>3. Your account</h2>
+<p>Signing in uses a one-time 6-digit code sent to your email address. Anyone with access to that email can sign in, so keep it secure. You are responsible for everything done through your account. Tell us at once if you think someone else has used it. We may suspend or close an account that is misused, that breaks these Terms or that we reasonably believe is fraudulent.</p></div>
+<div class="dbr-sec" id="dbr-our-services"><h2>4. Our services</h2>
+<p>We list domain names for sale, and we offer brokerage, domain management, transfer help, social media handle services and website, software, mobile and marketing services. Each service is described on its page. Information on the site is general and is not legal, tax, financial or investment advice.</p></div>
+<div class="dbr-sec" id="dbr-listings-prices-and-availability"><h2>5. Listings, prices and availability</h2>
+<p>Prices are in US dollars. A listing is an invitation to buy, not a promise that the name is still available. A name is yours only when we have confirmed your payment and the transfer is complete. We may correct a price that is clearly wrong, or withdraw a listing, before you pay. We will not change the price of an order you have already paid for.</p></div>
+<div class="dbr-sec" id="dbr-offers-and-orders"><h2>6. Offers and orders</h2>
+<p>You may make an offer on a name. An offer that we accept in writing is a commitment to buy at that price. An order is accepted when your payment is confirmed. We may decline or cancel an order before the domain is transferred, for example if a payment fails a security check, and we will return the payment for an order we decline.</p></div>
+<div class="dbr-sec" id="dbr-payment"><h2>7. Payment</h2>
+<p>Card payments are processed by Stripe. We do not receive or store your card number. You are responsible for taxes, duties and bank or currency charges that apply to you. The <a href="/payment-terms/">Payment Terms</a> explain prices, card payments, payment plans, missed payments, chargebacks and what happens after the final payment.</p></div>
+<div class="dbr-sec" id="dbr-payment-plans"><h2>8. Payment plans</h2>
+<p>A payment plan spreads the price over equal monthly instalments. The terms you accept when the plan begins, and the schedule shown to you, apply for the whole plan. We hold the domain until the final payment clears, and ownership transfers to you only then. If an instalment is not paid within the grace period shown in the Payment Terms, the plan ends, the domain returns to our inventory, and payments already made are kept and are not credited toward any other purchase.</p></div>
+<div class="dbr-sec" id="dbr-no-refunds"><h2>9. No refunds</h2>
+<p>All sales are final. There are no refunds, returns, exchanges or credits after payment. Our <a href="/refund-policy/">Refund Policy</a> sets out the rule, the narrow corrections we make for our own errors, and how we treat chargebacks.</p></div>
+<div class="dbr-sec" id="dbr-transfer-and-delivery"><h2>10. Transfer and delivery</h2>
+<p>After payment, we transfer the domain to the registrar account you choose. You must give correct details and follow our <a href="/epp-guidelines/">transfer guidelines</a>. We provide the authorisation (EPP) code through a private link, not in an email, and your account shows each stage of the transfer. Timing depends on registries and registrars, and rules such as ICANN's waiting periods and registrar locks apply. Delivery is complete when the domain has been transferred to your account or the authorisation code has been made available to you.</p></div>
+<div class="dbr-sec" id="dbr-your-own-checks"><h2>11. Your own checks</h2>
+<p>Before you buy, you are responsible for checking that the name is right for you and that you may lawfully use it. This includes searching the trademark register in each country where you will use it, and checking spelling, extension, history and renewal cost. We do not review names for trademark or other third-party rights, and we do not give a guarantee that a name is free of claims.</p></div>
+<div class="dbr-sec" id="dbr-no-guarantees-about-results"><h2>12. No guarantees about results</h2>
+<p>We do not promise that a name will bring traffic, search ranking, customers, income or resale value, or that any estimate of value is correct. Any value, price range or comparison we give is an opinion, not a guarantee.</p></div>
+<div class="dbr-sec" id="dbr-intellectual-property"><h2>13. Intellectual property</h2>
+<p>The site, its design, text, images and software belong to us or our licensors and are protected by law. You may use them to browse, buy and contact us, and not for any other purpose without our written permission. Domain names can contain or resemble third-party trademarks; naming a brand on the site does not mean we own or endorse it.</p></div>
+<div class="dbr-sec" id="dbr-acceptable-use"><h2>14. Acceptable use</h2>
+<p>You must follow our <a href="/acceptable-use-policy/">Acceptable Use Policy</a>. In particular, do not use our forms, accounts or email to send unsolicited commercial messages, including offers of web development, design, marketing, search engine optimisation, link building, guest posts or sponsored content, or pharmacy, gambling or adult material. We block these messages and may report them.</p></div>
+<div class="dbr-sec" id="dbr-messages-and-enquiries"><h2>15. Messages and enquiries</h2>
+<p>When you send us an enquiry, make an offer or ask for a callback, you agree that we may contact you about it. We keep a copy of every form you send, so an enquiry is not lost if an email fails. Marketing email is sent only if you have agreed to it, and you can unsubscribe at any time.</p></div>
+<div class="dbr-sec" id="dbr-third-party-services-and-links"><h2>16. Third-party services and links</h2>
+<p>The site uses services from others, such as Stripe for payments, and links to sites we do not control. We are not responsible for their content or practices, and their terms apply to your use of them.</p></div>
+<div class="dbr-sec" id="dbr-disclaimer-of-warranties"><h2>17. Disclaimer of warranties</h2>
+<p>The site and services are provided "as is" and "as available". To the fullest extent the law allows, we give no warranties of any kind, express or implied, including about uninterrupted or error-free service, the accuracy of information, or that a domain is fit for a particular purpose or free from third-party claims.</p></div>
+<div class="dbr-sec" id="dbr-limit-of-liability"><h2>18. Limit of liability</h2>
+<p>To the fullest extent the law allows, we are not liable for indirect, incidental, special, consequential or punitive losses, or for lost profit, revenue, data, goodwill or business opportunity, even if we were told they were possible. Our total liability to you for any claim about a purchase is limited to the amount you paid us for that purchase, or $100, whichever is greater. Nothing in these Terms limits liability that cannot be limited by law.</p></div>
+<div class="dbr-sec" id="dbr-indemnity"><h2>19. Indemnity</h2>
+<p>You agree to defend and compensate us and our officers, employees and partners against claims, losses and costs, including reasonable legal fees, that arise from your use of the site or a domain, your breach of these Terms, or your breach of another person's rights, including how you use a domain after it is transferred to you.</p></div>
+<div class="dbr-sec" id="dbr-fraud-chargebacks-and-enforcement"><h2>20. Fraud, chargebacks and enforcement</h2>
+<p>We may suspend or cancel an account, an order or a domain, refuse future sales, and report suspected fraud or misuse to payment providers, registrars and the authorities. If you dispute a valid payment, we may contest it and recover the costs as described in the Refund Policy.</p></div>
+<div class="dbr-sec" id="dbr-ending-your-use"><h2>21. Ending your use</h2>
+<p>You may stop using the site at any time. We may suspend or end your access if you break these Terms or the law. Sections that by their nature should continue, including payment, no refunds, liability and governing law, continue after your access ends.</p></div>
+<div class="dbr-sec" id="dbr-privacy-and-cookies"><h2>22. Privacy and cookies</h2>
+<p>How we handle personal information is explained in our <a href="/privacy-policy/">Privacy Policy</a> and <a href="/cookie-policy/">Cookie Policy</a>.</p></div>
+<div class="dbr-sec" id="dbr-governing-law-and-disputes"><h2>23. Governing law and disputes</h2>
+<p>These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada that apply there, without regard to conflict-of-law rules. The courts of Ontario have jurisdiction over disputes, unless the law where you live gives you the right to bring a claim elsewhere. Before starting a claim, please write to us and give us 30 days to try to resolve it.</p></div>
+<div class="dbr-sec" id="dbr-international-use"><h2>24. International use</h2>
+<p>The site can be reached from many countries. You are responsible for following the laws where you live and where you use a domain. You confirm that you are not barred from doing business with us under any sanctions or export law.</p></div>
+<div class="dbr-sec" id="dbr-changes"><h2>25. Changes</h2>
+<p>We may update these Terms. The updated version applies from the date shown at the top of this page, and to purchases made after that date. A payment plan keeps the terms you accepted when it began. If you keep using the site after a change, you accept the new Terms.</p></div>
+<div class="dbr-sec" id="dbr-general"><h2>26. General</h2>
+<p>These Terms, with the policies they refer to, are the whole agreement between you and us about the site. If a part is found unenforceable, the rest continues. Our failure to enforce a right is not a waiver of it. You may not transfer your rights under these Terms; we may transfer ours as part of a sale of the business. We may send notices to the email address on your account or enquiry. We are not liable for delay or failure caused by events beyond our reasonable control.</p></div>
+<div class="dbr-sec" id="dbr-contact"><h2>27. Contact</h2>
+<p>Questions about these Terms: <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> or our <a href="/contact-us/">contact page</a>.</p></div>
+</div>
+</div></section>
+</div>
+<script>
+(function(){var toc=document.getElementById('dbr-toc');if(!toc)return;var links=[].slice.call(toc.querySelectorAll('ul a'));var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+function setActive(id){links.forEach(function(a){a.classList.toggle('is-active',a.getAttribute('href')==='#'+id)})}
+function onScroll(){var y=window.scrollY+140,cur=secs[0];secs.forEach(function(s){if(s.getBoundingClientRect().top+window.scrollY<=y)cur=s});if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4)cur=secs[secs.length-1];if(cur)setActive(cur.id)}
+links.forEach(function(a){a.addEventListener('click',function(e){var t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();var off=window.innerWidth<992?90:110;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off+2,behavior:'smooth'});history.replaceState(null,'',a.getAttribute('href'))})});
+var top=toc.querySelector('.dbr-top');if(top)top.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();})();
+</script>
+<!-- /wp:html -->

@@ -106,5 +106,31 @@ ok( false === strpos( $out, 'iframe' ) && false === strpos( $out, 'fallback' ), 
 ok( false !== strpos( $out, 'id="page"' ), 'id kept when the post links to it' );
 ok( 1 === substr_count( $out, 'rel=' ) - substr_count( $out, 'amzn' ) && false !== strpos( $out, 'rel="nofollow sponsored"' ), 'unquoted rel on affiliate link merged, not duplicated' );
 
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">About Us</h1><section><h1 id="dba-title"><span>Great</span> names</h1></section></main></body>' );
+ok( 1 === substr_count( $out, '<h1' ) && false !== strpos( $out, '<div class="entry-title">About Us</div>' ) && false !== strpos( $out, 'id="dba-title"' ), 'theme title steps down when the page content has its own <h1>' );
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1 class="entry-title">FAQs</h1><p>x</p></main></body>' );
+ok( false !== strpos( $out, '<h1 class="entry-title">FAQs</h1>' ), 'a lone theme title stays the <h1>' );
+
+// Lazy loading skips the first image of the main content.
+$out = db_onpage_lazy_load_images( '<header><img src="logo.png" loading="eager"></header><div id="primary"><img class="lazy-loaded" src="team.jpg"><img src="two.jpg"></div>' );
+ok( false !== strpos( $out, '<img class="lazy-loaded" src="team.jpg">' ) && false !== strpos( $out, '<img loading="lazy" src="two.jpg">' ), 'first main image loads at once; later images are lazy' );
+
+// target=_blank links inside scripts are not touched.
+$js  = '<body><script>jQuery(".page-list").append("<li><a href=\'https://ex.test/\' target=\'_blank\'>Blog</a></li>");</script><a href="https://ex.test/x" target="_blank">x</a></body>';
+$out = db_onpage_html_hygiene( $js );
+ok( false !== strpos( $out, "<a href='https://ex.test/' target='_blank'>Blog</a>" ) && 1 === substr_count( $out, 'noopener' ), 'links inside scripts keep their markup; real links get noopener' );
+
+// Heading levels and the footer logo.
+$out = db_onpage_heading_levels( '<html><head><title>x</title></head><body><h1>T</h1><h2>A</h2><h4 class="wp-block-heading">a1</h4><h4>a2</h4><h5>a2x</h5><h2>B</h2><h3>b1</h3><h4 aria-level="3">c</h4></body></html>' );
+ok( false !== strpos( $out, '<h4 class="wp-block-heading" aria-level="3">a1</h4>' ) && false !== strpos( $out, '<h4 aria-level="3">a2</h4>' ), 'skipped level announced one below its section; siblings share it' );
+ok( false !== strpos( $out, '<h5 aria-level="4">a2x</h5>' ), 'a child of a corrected heading follows it' );
+ok( false !== strpos( $out, '<h2>B</h2><h3>b1</h3>' ), 'a correct outline is untouched' );
+ok( 1 === substr_count( $out, 'aria-level="3">c' ), 'an existing aria-level is kept' );
+ok( '<p>no body</p>' === db_onpage_heading_levels( '<p>no body</p>' ), 'fragments without <body> are untouched' );
+$out = db_onpage_heading_levels( '<body><h2>A</h2><!--<h5>old</h5>--><script>var t="<h6>x</h6>";</script><h3>B</h3></body>' );
+ok( false !== strpos( $out, '<!--<h5>old</h5>-->' ) && false !== strpos( $out, '"<h6>x</h6>"' ) && false !== strpos( $out, '<h3>B</h3>' ), 'headings in comments and scripts are ignored' );
+$out = db_onpage_fix_h1_and_alt( '<body><main><h1>X</h1></main><footer><img loading="lazy" width="200" height="70" src="https://ex.test/wp-content/uploads/2016/11/logo1.png" alt="Domain Brothers"></footer></body>' );
+ok( false !== strpos( $out, 'width="200" height="54" src="https://ex.test/wp-content/uploads/2016/11/logo1.png"' ), 'footer logo gets its real height' );
+
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );

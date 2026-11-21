@@ -1,11 +1,11 @@
 <!-- wp:paragraph -->
-<p>The moment you buy a premium domain, the next question is how it actually gets to you. Transfers have their own words (registrar, EPP code, lock, nameserver) and a few traps. This guide explains the whole process in plain English so you know what is happening at each step. It is part of our <a href="__HOME__/premium-domain-names-complete-guide/">complete guide to premium domain names</a>.</p>
+<p>The moment you buy a premium domain, the next question is how to transfer a domain from the seller's account to your own. Transfers have their own words (registrar, EPP code, lock, nameserver) and a few traps. This guide explains the whole process in plain English so you know what is happening at each step. It is part of our <a href="__HOME__/premium-domain-names-complete-guide/">complete guide to premium domain names</a>.</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:group {"className":"db-takeaways","layout":{"type":"constrained"}} -->
 <div class="wp-block-group db-takeaways">
 <!-- wp:heading -->
-<h2 class="wp-block-heading" id="in-short-domain">In short</h2>
+<h2 class="wp-block-heading" id="in-short-how-to">In short</h2>
 <!-- /wp:heading -->
 <!-- wp:list -->
 <ul class="wp-block-list"><!-- wp:list-item -->
@@ -22,7 +22,7 @@
 <!-- /wp:group -->
 
 <!-- wp:image {"id":__IMGID:infographic-i7__,"sizeSlug":"large","linkDestination":"none"} -->
-<figure class="wp-block-image size-large"><img src="__IMGURL:infographic-i7__" alt="Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain" class="wp-image-__IMGID:infographic-i7__"/><figcaption class="wp-element-caption">The five steps of a change of registrar.</figcaption></figure>
+<figure class="wp-block-image size-large"><img src="__IMGURL:infographic-i7__" alt="How to transfer a domain in five steps: unlock, share the EPP code, request the transfer, approve it, then secure the domain" class="wp-image-__IMGID:infographic-i7__"/><figcaption class="wp-element-caption">The five steps of a change of registrar.</figcaption></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading -->
@@ -50,18 +50,54 @@
 <!-- /wp:list -->
 
 <!-- wp:paragraph -->
-<p>A sale uses one or the other, depending on where the seller and buyer hold their accounts. Your registrar's help pages will say which options it supports.</p>
+<p>A sale uses one or the other, depending on where the seller and buyer hold their accounts, so the first step in working out how to transfer a domain is to ask where each side holds it. Your registrar's help pages will say which options it supports.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3 class="wp-block-heading">How to transfer a domain between accounts at the same registrar</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>If you and the seller use the same registrar, an account move is usually the simplest route. You give the seller the account name or email address that identifies you at that registrar. The seller starts the push from their account, and you accept it in yours. There is no EPP code and no registry step, so the move often completes within a day. It does not normally add a year to the registration, and if the domain uses the registrar's DNS, the records usually move with it.</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:heading -->
-<h2 class="wp-block-heading" id="step-by-step-a-change-of-registrar">Step by step: a change of registrar</h2>
+<h2 class="wp-block-heading" id="before-you-start-how-to-transfer-a-domain-without-delays">Before you start: how to transfer a domain without delays</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Most failed or slow transfers come from something that could have been checked in five minutes. Before anyone requests a code, run through this list with the seller.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:image {"id":__IMGID:ib-transfer-a__,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="__IMGURL:ib-transfer-a__" alt="Checks before you transfer a domain: recent changes, expiry date, contact email, account, DNS records and extension rules" class="wp-image-__IMGID:ib-transfer-a__"/><figcaption class="wp-element-caption">What to check before you transfer a domain.</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:list -->
+<ul class="wp-block-list"><!-- wp:list-item -->
+<li><strong>Recent changes.</strong> ICANN policy lets a registrar refuse a transfer within 60 days of the initial registration or a previous change of registrar. If the name was registered or moved recently, plan around that date.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Expiry date.</strong> If the domain expires within the next few weeks, agree who renews it first. A name that lapses during the move can get stuck or cost more to recover.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Contact details.</strong> The registrant email address must be one the seller can still read, because confirmation messages go there.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Your account.</strong> Open an account at your chosen registrar, turn on two-factor sign-in, and check that it supports the extension you are buying.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>DNS records.</strong> Export or screenshot every record so you can rebuild it if anything is lost.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>The extension's rules.</strong> Some country-code extensions use their own process. For example, .uk names move by changing a registrar tag rather than with an EPP code.</li>
+<!-- /wp:list-item --></ul>
+<!-- /wp:list -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="step-by-step-how-to-transfer-a-domain-to-a-new-registrar">Step by step: how to transfer a domain to a new registrar</h2>
 <!-- /wp:heading -->
 
 <!-- wp:list {"ordered":true} -->
 <ol class="wp-block-list"><!-- wp:list-item -->
 <li><strong>The seller unlocks the domain</strong> at their registrar. Domains are locked by default so nobody can steal them.</li>
 <!-- /wp:list-item --><!-- wp:list-item -->
-<li><strong>The seller gets the EPP code</strong> from their registrar and shares it with you through a secure channel, ideally through the escrow service or a private link. On our side we send buyers a private page that shows the code, and you can read more on our <a href="__HOME__/epp-guidelines/">EPP guidelines</a>.</li>
+<li><strong>The seller gets the EPP code</strong> from their registrar and shares it with you through a secure channel, such as a private link, never in a public message. On our side we send buyers a private page that shows the code, and you can read more on our <a href="__HOME__/epp-guidelines/">EPP guidelines</a>.</li>
 <!-- /wp:list-item --><!-- wp:list-item -->
 <li><strong>You start the transfer</strong> at your registrar: enter the domain and the code.</li>
 <!-- /wp:list-item --><!-- wp:list-item -->
@@ -78,7 +114,11 @@
 <!-- /wp:heading -->
 
 <!-- wp:paragraph -->
-<p>Many registrars apply a <strong>lock of about sixty days</strong> after a new registration or a change of the registrant's details, and registrars follow the <a href="https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en" target="_blank" rel="noopener noreferrer">ICANN transfer policy</a> in different ways. Ask the seller's registrar about locks before you agree a delivery date. A transfer also usually renews the domain for a year, which the buyer pays at the registrar.</p>
+<p>Many registrars apply a <strong>lock of about sixty days</strong> after a new registration or a change of the registrant's details, and registrars follow the <a href="https://www.icann.org/resources/pages/transfer-policy-2016-06-01-en" target="_blank" rel="noopener noreferrer">ICANN transfer policy</a> in different ways. Ask the seller's registrar about locks before you agree a delivery date, because no amount of knowing how to transfer a domain gets around a lock that is still running. A transfer also usually renews the domain for a year, which the buyer pays at the registrar.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Once your registrar submits the request, the current registrar has a short window, normally five days, to approve or reject it. If it does nothing, the transfer usually goes through automatically at the end of that window. The seller can often approve it sooner from their account, which is the easiest way to save time.</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:heading -->
@@ -102,6 +142,10 @@
 <!-- /wp:list -->
 
 <!-- wp:paragraph -->
+<p>Watch for one common trap. If the seller used the old registrar's free DNS service, those records can disappear when the domain leaves that registrar. Set up DNS at your new host before the transfer completes, then point the nameservers there.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
 <p>Our <a href="__HOME__/website-launch-checklist-after-buying-a-domain/">website launch checklist</a> shows which records to add on a new site.</p>
 <!-- /wp:paragraph -->
 
@@ -109,17 +153,78 @@
 <h2 class="wp-block-heading" id="common-problems-and-fixes">Common problems and fixes</h2>
 <!-- /wp:heading -->
 
+<!-- wp:paragraph -->
+<p>Even when both sides know how to transfer a domain, small details cause most delays. These are the ones we see most often.</p>
+<!-- /wp:paragraph -->
+
 <!-- wp:table -->
 <figure class="wp-block-table"><table class="has-fixed-layout"><thead><tr><th>Problem</th><th>Likely cause</th><th>What to do</th></tr></thead><tbody><tr><td>"Domain is locked"</td><td>Seller has not unlocked it</td><td>Ask the seller to unlock at their registrar</td></tr><tr><td>"Invalid authorisation code"</td><td>Code mistyped, expired or for another domain</td><td>Ask for a fresh code and paste it without spaces</td></tr><tr><td>No confirmation email</td><td>Old contact address or spam filter</td><td>Check spam; update contacts before the transfer</td></tr><tr><td>Transfer pending for days</td><td>Waiting for the approval step</td><td>Approve the request or ask the registrar to push it</td></tr><tr><td>Website down after the move</td><td>Nameservers changed with missing records</td><td>Restore the records at the new DNS host</td></tr><tr><td>Email stopped</td><td>MX records missing</td><td>Add MX and TXT records again</td></tr></tbody></table></figure>
 <!-- /wp:table -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="after-the-transfer-secure-the-domain">After the transfer: secure the domain</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Knowing how to transfer a domain is half the job; the other half is keeping it. On the day the transfer completes:</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:image {"id":__IMGID:ib-transfer-b__,"sizeSlug":"large","linkDestination":"none"} -->
+<figure class="wp-block-image size-large"><img src="__IMGURL:ib-transfer-b__" alt="After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and save records" class="wp-image-__IMGID:ib-transfer-b__"/><figcaption class="wp-element-caption">How to secure the name the day you transfer a domain.</figcaption></figure>
+<!-- /wp:image -->
+
+<!-- wp:list {"ordered":true} -->
+<ol class="wp-block-list"><!-- wp:list-item -->
+<li><strong>Check the record.</strong> Look up the domain and confirm that your registrar is now listed.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Turn the lock back on</strong> so nobody can move the name without your approval.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Turn on two-factor sign-in</strong> for the registrar account and for the email address it uses.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Set auto-renew</strong> and add a payment card that will not expire soon.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Update your contact details</strong> if anything is out of date.</li>
+<!-- /wp:list-item --><!-- wp:list-item -->
+<li><strong>Save your records:</strong> the purchase confirmation, the transfer confirmation and the date.</li>
+<!-- /wp:list-item --></ol>
+<!-- /wp:list -->
 
 <!-- wp:heading -->
 <h2 class="wp-block-heading" id="how-we-handle-transfers">How we handle transfers</h2>
 <!-- /wp:heading -->
 
 <!-- wp:paragraph -->
-<p>For names bought from us: after payment clears, we start the transfer within the agreed time and send you what you need. For payment plans, the plan terms set out that the domain stays with us until the final payment clears. Read more on the <a href="__HOME__/epp-guidelines/">EPP guidelines</a> page, in the <a href="__HOME__/faqs/">FAQs</a>, or ask our <a href="__HOME__/contact-us/">team</a>.</p>
+<p>For names bought from us: after payment clears, we start the transfer within the agreed time and send you what you need. Payment is confirmed before the transfer starts, so there is no third party in the middle. For payment plans, the plan terms set out that the domain stays with us until the final payment clears. EPP codes submitted on our site are encrypted and erased after 30 days. Read more on the <a href="__HOME__/epp-guidelines/">EPP guidelines</a> page, on our <a href="__HOME__/domain-transfer/">domain transfer</a> page, in the <a href="__HOME__/faqs/">FAQs</a>, or ask our <a href="__HOME__/contact-us/">team</a>.</p>
 <!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2 class="wp-block-heading" id="frequently-asked-questions">Frequently asked questions</h2>
+<!-- /wp:heading -->
+
+<!-- wp:details -->
+<details class="wp-block-details"><summary>How long does it take to transfer a domain?</summary>
+<!-- wp:paragraph -->
+<p>A change of registrar usually takes a few days, because the current registrar has a short window, normally five days, to respond. The seller can often approve the request sooner, which shortens it. A move between two accounts at the same registrar is usually faster and often finishes within a day.</p>
+<!-- /wp:paragraph --></details>
+<!-- /wp:details -->
+<!-- wp:details -->
+<details class="wp-block-details"><summary>Will my website go down while I transfer a domain?</summary>
+<!-- wp:paragraph -->
+<p>Not if you plan it. If the nameservers stay the same, visitors notice nothing. If you change nameservers, copy every DNS record to the new host first and lower the TTL a day before. Then test the website and send a test email as soon as the move completes.</p>
+<!-- /wp:paragraph --></details>
+<!-- /wp:details -->
+<!-- wp:details -->
+<details class="wp-block-details"><summary>Can I transfer a domain that was registered last month?</summary>
+<!-- wp:paragraph -->
+<p>Often not yet. ICANN policy lets a registrar refuse a transfer within 60 days of the initial registration or a previous change of registrar. An account move at the same registrar can still be possible. Ask the registrar which options apply before you agree a delivery date.</p>
+<!-- /wp:paragraph --></details>
+<!-- /wp:details -->
+<!-- wp:details -->
+<details class="wp-block-details"><summary>What do I need to know about how to transfer a domain bought from Domain Brothers?</summary>
+<!-- wp:paragraph -->
+<p>After your payment clears, we start the transfer within the agreed time and send you what you need. On a payment plan, the domain stays with us until the final payment clears and then transfers. Codes submitted on our site are encrypted and erased after 30 days.</p>
+<!-- /wp:paragraph --></details>
+<!-- /wp:details -->
 
 <!-- wp:heading -->
 <h2 class="wp-block-heading" id="where-to-go-next">Where to go next</h2>
@@ -135,41 +240,20 @@
 <!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 
-<!-- wp:group {"className":"db-cta","layout":{"type":"constrained"}} -->
-<div class="wp-block-group db-cta">
-<!-- wp:heading -->
-<h2 class="wp-block-heading">Want us to handle the transfer?</h2>
-<!-- /wp:heading -->
-<!-- wp:paragraph -->
-<p>We guide every buyer through the process, from the authorisation code to the first day on your own account.</p>
-<!-- /wp:paragraph -->
-<!-- wp:buttons -->
-<div class="wp-block-buttons">
-<!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="__HOME__/buy-domains-service/">Buy a domain</a></div>
-<!-- /wp:button -->
-<!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="__HOME__/epp-guidelines/">Read our EPP guidelines</a></div>
-<!-- /wp:button -->
-</div>
-<!-- /wp:buttons -->
-</div>
-<!-- /wp:group -->
-
 <!-- wp:group {"className":"db-related","layout":{"type":"constrained"}} -->
 <div class="wp-block-group db-related">
 <!-- wp:heading -->
-<h2 class="wp-block-heading" id="keep-reading-domain">Keep reading</h2>
+<h2 class="wp-block-heading" id="keep-reading-how-to">Keep reading</h2>
 <!-- /wp:heading -->
 <!-- wp:list -->
 <ul class="wp-block-list"><!-- wp:list-item -->
-<li><a href="__HOME__/premium-domain-names-complete-guide/">The Complete Guide to Premium Domain Names</a>: the complete guide</li>
+<li><a href="__HOME__/premium-domain-names-complete-guide/">Premium Domains</a>: the complete guide</li>
 <!-- /wp:list-item --><!-- wp:list-item -->
-<li><a href="__HOME__/how-to-buy-a-premium-domain-safely/">How to Buy a Premium Domain Safely, Step by Step</a></li>
+<li><a href="__HOME__/how-to-value-a-premium-domain-name/">How to Value a Premium Domain</a></li>
 <!-- /wp:list-item --><!-- wp:list-item -->
-<li><a href="__HOME__/how-to-pick-a-brand-name-and-domain-that-lasts/">How to Pick a Brand Name and Domain That Lasts</a></li>
+<li><a href="__HOME__/premium-domain-investment/">Premium Domain Investment</a></li>
 <!-- /wp:list-item --><!-- wp:list-item -->
-<li><a href="__HOME__/how-to-value-a-premium-domain-name/">How to Value a Premium Domain Name</a></li>
+<li><a href="__HOME__/premium-domain-payment-plans-and-financing/">Domain Financing</a></li>
 <!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 </div>

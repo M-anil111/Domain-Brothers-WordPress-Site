@@ -1,13 +1,13 @@
 ---
-title: The Complete Guide to Premium Domain Names
+title: Premium Domains: The Complete Guide to Value, Buying and Use
 slug: premium-domain-names-complete-guide
 role: pillar
-excerpt: Everything you need to know about premium domain names: what they are, how to value one, how to buy it safely, how to pay for it, and how to turn it into traffic, trust and sales.
+excerpt: Premium domains explained: what they are, how to value one, how to buy safely, how to pay over time, and how to turn a great name into traffic and trust.
 tags: premium domains, domain names, domain buying guide
 ---
-Your domain name is the one piece of your business that appears in every email, ad, business card, search result and conversation. A strong one saves you money on every click and every introduction. A weak one quietly costs you for as long as you use it. This guide is for founders, marketers and investors who want to understand **premium domain names** properly: what they are, what they are worth, how to buy one without being burned, and how to get real business results from it afterwards.
+Premium domains matter because your domain name is the one piece of your business that appears in every email, ad, business card, search result and conversation. A strong one saves you money on every click and every introduction. A weak one quietly costs you for as long as you use it. This guide is for founders, marketers and investors who want to understand **premium domains** properly: what they are, what they are worth, how to buy one without being burned, and how to get real business results from it afterwards.
 
-It is the hub of a series. Each section links to a deeper article, so you can read straight through or jump to the part you need.
+It is the hub of our series on premium domains. Each section links to a deeper article, so you can read straight through or jump to the part you need.
 
 !toc
 
@@ -22,17 +22,17 @@ It is the hub of a series. Each section links to a deeper article, so you can re
 
 A premium domain name is a name that is **valuable in its own right**, apart from the small annual fee any registry charges to register it. People use the term in two overlapping ways.
 
-The first is the **aftermarket premium domain**: a name somebody already owns and is willing to sell. Think of a one-word .com, a short brandable name, or a clear two-word phrase that describes a whole industry. These are bought and sold privately, through brokers, at auction, or in a marketplace like ours.
+The first is the **aftermarket premium domain**: a name somebody already owns and is willing to sell. Think of a one-word .com, a short brandable name, or a clear two-word phrase that describes a whole industry. Aftermarket premium domains are bought and sold privately, through brokers, at auction, or in a marketplace like ours.
 
 The second is the **registry premium name**. Some registries mark certain unregistered names as premium and charge a higher first-year price for them. You pay that price once to register the name, and then the normal renewal rate or a higher one, depending on the registry.
 
-This guide is mostly about the first kind, because that is where the big decisions and the big savings are. If you want the definition in detail, with examples, read [What Is a Premium Domain Name?](/what-is-a-premium-domain-name/).
+This guide is mostly about aftermarket premium domains, because that is where the big decisions and the big savings are. If you want the definition in detail, with examples, read [What Is a Premium Domain Name?](/what-is-a-premium-domain-name/).
 
-!img:infographic-i1|Infographic listing six factors that decide the value of a premium domain: length, extension, keyword fit, brandability, comparable sales and clean history|The six things that decide what a premium domain is worth.
+!img:infographic-i1|Infographic listing six factors that decide the value of premium domains: length, extension, keyword fit, brandability, comparable sales and clean history|The six things that decide what a premium domain is worth.
 
-## The main types of premium domain
+## The main types of premium domains
 
-Not every premium name is premium for the same reason. Knowing the type tells you how to value it and how to use it.
+Not all premium domains are premium for the same reason. Knowing the type tells you how to value it and how to use it.
 
 | Type | What it is | Typical buyer | Main value |
 |---|---|---|---|
@@ -47,7 +47,7 @@ Look at examples of each in our collections of [3 character](/3-character-domain
 
 ## Premium domains by industry
 
-The same name can mean different things in different fields. Browse by theme to see how names fit a market:
+The same name can mean different things in different fields. Browse by theme to see how premium domains fit a market:
 
 - [Business](/domain-category/business/) and [finance and legal](/domain-category/finance-legal/) names suit firms that depend on trust.
 - [Technology](/domain-category/technology/) names suit software, hardware and online services.
@@ -55,7 +55,7 @@ The same name can mean different things in different fields. Browse by theme to 
 - [Shopping](/domain-category/shopping/), [automobile](/domain-category/automobile/) and [travel](/domain-category/travel/) names suit retail and bookings.
 - [Entertainment](/domain-category/entertainment/), [education and non-profit](/domain-category/education-non-profit/) and [international](/domain-category/international/) names suit media, learning and global brands.
 
-## A buyer's checklist
+## A checklist for buying premium domains
 
 Print this list and tick every line before you pay.
 
@@ -66,16 +66,16 @@ Print this list and tick every line before you pay.
 - [ ] I compared at least three similar sales.
 - [ ] I know the renewal price and the transfer steps.
 - [ ] The seller has proved control of the name.
-- [ ] Payment will be through escrow, with the terms in writing.
+- [ ] Payment goes through escrow (for an unknown private seller) or a marketplace's own checkout, with the terms in writing.
 - [ ] I have a plan for DNS, email and the website on day one.
 - [ ] I will lock the domain and turn on two-factor sign-in on arrival.
 
-## Red flags
+## Red flags when buying premium domains
 
 Stop and ask questions if you see any of these.
 
 - Pressure to pay immediately, or a story about another buyer you cannot verify.
-- Refusal to use escrow, or an escrow link on a site you cannot check.
+- A private seller who refuses escrow, or an escrow link on a site you cannot check.
 - A seller who will not confirm control of the domain.
 - A price far from comparable sales with no reason.
 - A name that is a small spelling change on a famous brand.
@@ -89,21 +89,21 @@ The first scores high on length, extension, meaning, brandability and evidence. 
 
 ## Why premium domains are worth more than they cost
 
-It is easy to look at a four-figure price and compare it with a ten-dollar registration. That comparison misses what you are buying. A premium domain is closer to a shop on a busy street than to a sign on the door.
+It is easy to look at a four-figure price and compare it with a ten-dollar registration. That comparison misses what you are buying. Premium domains are closer to a shop on a busy street than to a sign on the door.
 
 - **Memory.** People remember short, real words. A name you only have to hear once is a name that gets typed correctly, shared and searched for.
 - **Trust.** A clean, professional address makes a new company look established. People judge a business by its web address before they read a single word.
 - **Lower cost of attention.** A clear name raises the share of people who click your ad or your listing, and the share who return directly, which lowers what each customer costs you over time.
 - **Ownership of a scarce thing.** There is only one of each name. If your rival owns the obvious one, you fight them every day for the same customers.
-- **A resale asset.** A strong name that fits your brand can hold or gain value. We cover this side in [Premium Domains as Business Assets and Investments](/premium-domains-as-business-assets-and-investments/).
+- **A resale asset.** A strong name that fits your brand can hold or gain value. We cover this side in [Premium Domains as Business Assets and Investments](/premium-domain-investment/).
 
 None of this guarantees success. A great name on a poor business is still a poor business. But a great name removes a handicap that most small companies never realise they carry.
 
 ## How to value a premium domain name
 
-There is no list price for a domain. The right price is the one a well-informed buyer and a well-informed seller agree on, and the useful question is what information pushes that price up or down.
+There is no universal price list for premium domains. The right price is the one a well-informed buyer and a well-informed seller agree on, and the useful question is what information pushes that price up or down.
 
-### The five factors that move the price
+### The five factors that move the price of premium domains
 
 1. **Length.** Shorter is rarer and easier to use. Three, four and five character names sit at the top of the market, and one real word is worth more than two.
 2. **Extension.** .com carries the most trust everywhere. A country code such as .ca can be worth as much as a .com inside its own country, and a good new extension can suit a clear niche.
@@ -113,29 +113,29 @@ There is no list price for a domain. The right price is the one a well-informed 
 
 ### Checking a price before you negotiate
 
-Use at least three sources. Look at sales databases for comparable names, see what the same name might earn as a brand (what a customer is worth to you), and consider a professional appraisal for any purchase that matters to your plan. We offer [domain appraisal services](/domain-appraisal-services/) if you want an independent view.
+Use at least three sources. Look at sales databases for comparable names, see what the same name might earn as a brand (what a customer is worth to you), and consider a professional appraisal for any purchase that matters to your plan.
 
 Our full method, with worked examples, is in [How to Value a Premium Domain Name](/how-to-value-a-premium-domain-name/).
 
 ## How to buy a premium domain safely
 
-Buying a valuable name from a stranger on the internet is a classic risk. The rules that keep you safe are simple, and they are the same whether the name costs a few hundred dollars or a few hundred thousand.
+Buying a valuable name from a stranger on the internet is a classic risk. The rules that keep you safe are simple, and they apply to premium domains costing a few hundred dollars or a few hundred thousand.
 
 !img:infographic-i2|Five step infographic: find the domain, check it, agree the price, pay safely through escrow, then transfer it|From search to ownership: the five steps of a safe domain purchase.
 
 1. **Find the right name.** Start with the idea, not the budget. Search by keyword, length and category in our [domain list](/all-domains/), or by theme: [business](/domain-category/business/), [technology](/domain-category/technology/), [finance and legal](/domain-category/finance-legal/), [travel](/domain-category/travel/) and more.
 2. **Check it.** Look for trademarks that match the name, look at the name's history on archive sites, and make sure the seller is the registered owner or an authorised broker.
 3. **Agree the price.** Some names have a fixed price you can pay today. Others are open to offers, and a good seller or broker will reply personally and negotiate.
-4. **Pay through escrow.** An escrow service holds your money until the transfer is complete. Neither side can run away with the other's property. The [Escrow.com guide](https://www.escrow.com/what-is-escrow) explains the idea in plain language.
+4. **Pay safely.** With an unknown private seller, use an escrow service, which holds your money until the transfer is complete, so neither side can run away with the other's property. A marketplace that confirms payment before it starts the transfer, as we do, removes the need for escrow. The [Escrow.com guide](https://www.escrow.com/what-is-escrow) explains the idea in plain language.
 5. **Transfer and secure.** The seller releases the name with an authorisation code, you accept it at your registrar, and you turn on a registrar lock and two-factor sign-in at once.
 
-The long version, with checklists for each stage, is in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/). The technical side of the final step is covered in [Domain Transfers, EPP Codes and DNS Explained](/domain-transfers-epp-codes-and-dns-explained/), and we describe our own process on the [EPP guidelines](/epp-guidelines/) page.
+The long version, with checklists for each stage, is in [How to Buy a Premium Domain Safely](/how-to-buy-a-premium-domain-safely/). The technical side of the final step is covered in [Domain Transfers, EPP Codes and DNS Explained](/how-to-transfer-a-domain/), and we describe our own process on the [EPP guidelines](/epp-guidelines/) page.
 
-## Paying for a premium domain
+## Paying for premium domains
 
 You do not have to find the whole price on day one. A good payment plan spreads the cost over months while the name works for your business.
 
-Here is how our plans work. You choose a three, six, nine or twelve month plan; the three and six month plans carry no interest. The first payment starts the plan. While you pay, the domain is held for you in escrow, and you can already point it at your website. Ownership transfers to you after the final payment clears. If a payment fails, we email you and retry for a set period before the plan ends, so read the terms before you start.
+Here is how our plans work. You choose a three, six, nine or twelve month plan; the three-month plan carries no interest, six-month plans add 5%, nine-month plans add 8% and twelve-month plans add 10%. The first payment starts the plan. While you pay, the domain stays with Domain Brothers, and you can already point it at your website. Ownership transfers to you after the final payment clears. If a payment fails, we email you and retry for a set period before the plan ends, Every instalment is non-refundable, and stopping payments can lose the domain and the payments made, so read the terms before you start.
 
 For help choosing between paying in full and paying over time, see [Premium Domain Payment Plans and Financing](/premium-domain-payment-plans-and-financing/).
 
@@ -154,7 +154,7 @@ The [IANA root zone database](https://www.iana.org/domains/root/db) lists every 
 
 ## Premium domains and SEO
 
-The most common question we hear is whether a premium domain makes a site rank. The honest answer is **not directly**. Google's own [SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) concentrates on helpful content, clear structure and a good experience, not on keywords in the domain.
+The most common question we hear is whether premium domains make a site rank. The honest answer is **not directly**. Google's own [SEO Starter Guide](https://developers.google.com/search/docs/fundamentals/seo-starter-guide) concentrates on helpful content, clear structure and a good experience, not on keywords in the domain.
 
 What a great domain does is improve the signals around ranking: more people click your result, more people remember you and search for you by name, more sites link to you naturally, and fewer people mistype or forget you. Those effects are real and they compound.
 
@@ -164,7 +164,7 @@ If you are moving an existing site to a new name, follow Google's [site move gui
 
 A domain is part of a brand, not a substitute for one. The names that last are easy to say, easy to spell, specific enough to mean something and open enough to grow into. Say the name out loud, spell it to a friend over the phone, and imagine it on a van. If any of those goes wrong, keep looking.
 
-The [Nielsen Norman Group](https://www.nngroup.com/articles/url-as-ui/) has long argued that a web address is part of the user interface, and the [W3C's guide to URIs](https://www.w3.org/Provider/Style/URI) makes the same point from the engineering side: good addresses are simple, stable and readable. Our naming method is in [How to Pick a Brand Name and Domain That Lasts](/how-to-pick-a-brand-name-and-domain-that-lasts/).
+The [Nielsen Norman Group](https://www.nngroup.com/articles/url-as-ui/) has long argued that a web address is part of the user interface, and the [W3C's guide to URIs](https://www.w3.org/Provider/Style/URI) makes the same point from the engineering side: good addresses are simple, stable and readable. Our naming method is in [How to Pick a Brand Name and Domain That Lasts](/how-to-choose-a-domain-name/).
 
 ## After you buy: launch the website properly
 
@@ -176,7 +176,7 @@ Useful references: [Google Search Console](https://search.google.com/search-cons
 
 ## Marketing with a premium domain
 
-A short, clear name makes every marketing channel a little cheaper. It is easier to say on a call, easier to read off a slide, easier to remember after seeing an ad once, and easier to defend when a competitor tries to copy you.
+Short, clear premium domains make every marketing channel a little cheaper. It is easier to say on a call, easier to read off a slide, easier to remember after seeing an ad once, and easier to defend when a competitor tries to copy you.
 
 !img:infographic-i5|Infographic showing six marketing channels where a short memorable domain helps: email, paid ads, print and QR codes, social profiles, word of mouth and search|Where a short, memorable name earns its keep.
 
@@ -203,15 +203,13 @@ Before you buy, check that the name does not clash with a registered trademark i
 
 ## Frequently asked questions
 
-!details:How much does a premium domain cost?|Prices run from a few hundred dollars to six figures and beyond. The range depends on length, extension, meaning and comparable sales. A fixed price on a listing is what the owner will accept today; names marked "make an offer" are negotiated.
-!details:Is it safe to buy a domain from a marketplace or broker?|Yes, if you use escrow, confirm the seller controls the name, and keep records of the agreement and payment. Never pay by a method that cannot be reversed to someone you cannot verify.
+!details:How much do premium domains cost?|Prices run from a few hundred dollars to six figures and beyond. The range depends on length, extension, meaning and comparable sales. A fixed price on a listing is what the owner will accept today; names marked "make an offer" are negotiated.
+!details:Is it safe to buy premium domains from a marketplace or broker?|Yes, if the seller proves control of the name, payment is confirmed before the transfer starts, and you keep records of the agreement and payment. With an unknown private seller, use escrow. Never pay by a method that cannot be reversed to someone you cannot verify.
 !details:How long does a domain transfer take?|Many transfers finish in a few days once you have the authorisation code and unlock. Some country codes are faster; some registries add waiting periods. Allow up to a week.
 !details:Can I pay for a premium domain in instalments?|Yes. Our plans run three, six, nine or twelve months. You can use the name while you pay, and ownership transfers after the final payment.
 !details:Will a premium domain improve my Google ranking?|Not by itself. It can raise click-through, trust and direct visits, which help your marketing, but ranking depends mostly on helpful content and a good site.
 !details:What happens if I make an offer?|We read it personally and reply by email. You can accept, counter or walk away, and the conversation stays on a private page.
 !details:Do I have to renew a premium domain?|Yes. You pay the registrar's renewal fee each year or multi-year term. Turn on auto-renew and keep your contact details up to date.
-
-!cta Ready to find your name?|Browse premium domains by length, keyword and category, or tell us what you are building and we will suggest names.|Browse premium domains|/all-domains/|Talk to a domain broker|/domain-brokerage-services/
 
 !related
 

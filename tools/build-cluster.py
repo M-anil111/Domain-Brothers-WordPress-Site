@@ -116,8 +116,16 @@ def build():
             fm['body'] = body
             arts.append(fm)
     arts.sort(key=lambda a: (a['role'] != 'pillar', a['slug']))
-    pillar = [a for a in arts if a['role'] == 'pillar'][0]
-    spokes = [a for a in arts if a['role'] != 'pillar']
+    # Several clusters can share the folder: front matter "cluster:" (default
+    # "premium"). Each cluster has one pillar; "keep reading" stays inside it.
+    # "key:" is the article's permanent identity (post lookup, HTML file and
+    # cover image). It defaults to the slug, so a slug can change later and the
+    # importer updates the same post; WordPress then redirects the old URL.
+    for a in arts:
+        a.setdefault('cluster', 'premium')
+        a.setdefault('key', a['slug'])
+    pillars = {a['cluster']: a for a in arts if a['role'] == 'pillar'}
+    spokes_of = {c: [a for a in arts if a['cluster'] == c and a['role'] != 'pillar'] for c in set(x['cluster'] for x in arts)}
     alts_all = {}
     manifest = {'category': {'slug': 'domain-guides', 'name': 'Domain Guides', 'description': 'Guides to premium domain names, websites and marketing from the Domain Brothers team.'}, 'images': {}, 'articles': []}
     stats = {}
@@ -200,27 +208,29 @@ def build():
                 continue
             i += 1
         toc = group('db-toc', heading(2, 'In this guide', 'in-this-guide') + '\n' + lst(['[%s](#%s)' % (t, slugify(t)) for t in h2s if t not in ('Frequently asked questions',) or True]).replace('href="__HOME__#', 'href="#'))
+        pillar, spokes = pillars.get(a['cluster']), spokes_of[a['cluster']]
         if a['role'] == 'pillar':
             rel_items = ['[%s](/%s/)' % (s2['title'].split(':')[0], s2['slug']) for s2 in spokes]
         else:
             idx = spokes.index(a)
             sib = [spokes[(idx + k) % len(spokes)] for k in (1, 2, 3)]
-            rel_items = ['[%s](/%s/): %s' % (pillar['title'].split(':')[0], pillar['slug'], 'the complete guide')] + ['[%s](/%s/)' % (s2['title'].split(':')[0], s2['slug']) for s2 in sib]
+            head = ['[%s](/%s/): %s' % (pillar['title'].split(':')[0], pillar['slug'], 'the complete guide')] if pillar else []
+            rel_items = head + ['[%s](/%s/)' % (s2['title'].split(':')[0], s2['slug']) for s2 in sib if s2 is not a]
         related = group('db-related', heading(2, 'Keep reading', 'keep-reading-' + a['slug'][:6]) + '\n' + lst(rel_items))
         content = '\n\n'.join(out).replace('@@TOC@@', toc).replace('@@RELATED@@', related)
-        fn_out = a['slug'] + '.html'
+        fn_out = a['key'] + '.html'
         open(os.path.join(OUT, fn_out), 'w', encoding='utf-8').write(content + '\n')
         for k in used_imgs:
             manifest['images'].setdefault(k, None)
         alts_all.update(alts_this)
         manifest['articles'].append({
-            'slug': a['slug'], 'title': a['title'], 'role': a['role'], 'excerpt': a['excerpt'],
-            'tags': [t.strip() for t in a['tags'].split(',')], 'file': fn_out, 'featured': a['slug'],
+            'key': a['key'], 'slug': a['slug'], 'title': a['title'], 'role': a['role'], 'excerpt': a['excerpt'],
+            'tags': [t.strip() for t in a['tags'].split(',')], 'file': fn_out, 'featured': a['key'],
             'images': sorted(set(used_imgs)), 'words': words,
         })
         stats[a['slug']] = words
     # images: everything in the assets folder
-    titles = {a['slug']: a['title'] for a in arts}
+    titles = {a['key']: a['title'] for a in arts}
     imgs = {}
     for fnm in sorted(os.listdir(IMG)):
         key, ext = os.path.splitext(fnm)

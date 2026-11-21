@@ -56,9 +56,12 @@ function db_send_branded_email( $to, $s, $b ) { $GLOBALS['MAIL'][] = array( $to,
 class WP_REST_Request { private $p; function __construct( $p ) { $this->p = $p; } function get_param( $k ) { return $this->p[ $k ] ?? null; } }
 class WP_REST_Response { public $data; public $status; function __construct( $d, $s ) { $this->data = $d; $this->status = $s; } }
 
-// Plan maths (from db-custom-blocks.php BLOCK 5).
-function db_plan_rate( $m ) { $r = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 ); return isset( $r[ (int) $m ] ) ? (float) $r[ (int) $m ] : 0.0; }
-function db_plan_total_cents( $p, $m ) { return (int) round( (float) $p * ( 100 + db_plan_rate( $m ) ) ); }
+// Plan maths: the REAL functions from db-custom-blocks.php (rate schedule, legacy schedule, frozen rate, total), not copies.
+$real = file_get_contents( __DIR__ . '/../../db-custom-blocks/db-custom-blocks.php' );
+$ra = strpos( $real, "if ( ! function_exists( 'db_plan_rate_legacy' ) )" );
+$rb = strpos( $real, "if ( ! function_exists( 'db_is_plan_page' ) )" );
+if ( false === $ra || $rb <= $ra ) { echo "FAIL could not locate the plan rate code\n"; exit( 1 ); }
+eval( substr( $real, $ra, $rb - $ra ) );
 
 require __DIR__ . '/../../db-custom-blocks/db-stripe-block.php';
 require __DIR__ . '/../../db-custom-blocks/db-plan-lifecycle-block.php';
@@ -258,6 +261,62 @@ ok( null === db_stripe_verify_webhook_sig( $payload, 't=' . ( $t - 600 ) . ',v1=
 $GLOBALS['OPT']['db_stripe_mode'] = 'live';
 ok( ! db_stripe_domain_unavailable( 'aethereum.ca' ) && ! db_stripe_domain_unavailable( 'dup.ca' ), 'test-mode sale/plan does not block the live listing' );
 $GLOBALS['OPT']['db_stripe_mode'] = 'test';
+
+// 9. Rate change (2026-11-20): new plans 3mo 0%, 6mo 5%, 9mo 8%, 12mo 10%; plans in progress keep their rate ----------
+ok( array( 0.0, 5.0, 8.0, 10.0 ) === array_map( 'db_plan_rate', array( 3, 6, 9, 12 ) ), 'new schedule: 3 months 0%, 6 months 5%, 9 months 8%, 12 months 10%' );
+ok( array( 0.0, 0.0, 5.0, 10.0 ) === array_map( 'db_plan_rate_legacy', array( 3, 6, 9, 12 ) ), 'legacy schedule is kept: 0, 0, 5, 10' );
+ok( 0.0 === db_plan_rate( 7 ) && 0.0 === db_plan_rate( 0 ), 'unknown terms carry no interest' );
+ok( 0.0 === db_plan_rate_of( array( 'total_months' => 6 ) ) && 5.0 === db_plan_rate_of( array( 'total_months' => 9 ) ), 'a stored plan without rate_pct uses the legacy rate for its term' );
+ok( 8.0 === db_plan_rate_of( array( 'total_months' => 9, 'rate_pct' => 8 ) ) && 0.0 === db_plan_rate_of( array( 'total_months' => 6, 'rate_pct' => 0 ) ), 'a stored rate_pct wins, including zero' );
+foreach ( array( 3 => 0, 6 => 5, 9 => 8, 12 => 10 ) as $months => $pct ) {
+	$price = 12500.0;
+	$expect = (int) round( $price * ( 100 + $pct ) );
+	ok( $expect === db_plan_total_cents( $price, $months ), "new plan total for $months months = price + $pct%" );
+	$sum = 0; for ( $i = 1; $i <= $months; $i++ ) { $sum += db_stripe_installment_cents( $price, $months, $i ); }
+	ok( $sum === $expect, "installments for $months months add up to the total exactly" );
+}
+
+// 9a. A plan started under the legacy schedule is not repriced: a 6-month plan at 0% still charges price/6 after the change.
+$GLOBALS['OPT'] = array_merge( $GLOBALS['OPT'], array( 'db_stripe_mode' => 'test' ) );
+$legacy_key = db_stripe_store_key( 'plan', 'legacy6.ca' );
+update_option( $legacy_key, array(
+	'domain' => 'legacy6.ca', 'mode' => 'test', 'status' => 'active', 'price_usd' => 6000.0, 'total_months' => 6, 'next_installment' => 2, 'paid_installments' => 1,
+	'customer_id' => 'cus_l6', 'customer_email' => 'l6@example.test', 'payment_method' => 'pm_1', 'history' => array( array( 'installment' => 1, 'amount_usd' => 1000.0, 'ts' => time() - 31 * DAY_IN_SECONDS, 'pi' => 'pi_l6' ) ),
+	'last_attempt_ts' => 0, 'next_charge_ts' => time() - 60,
+) );
+$s0 = count( $GLOBALS['STRIPE'] );
+db_stripe_charge_next_installment( (array) get_option( $legacy_key ) );
+$ch = array_values( array_filter( array_slice( $GLOBALS['STRIPE'], $s0 ), function ( $c ) { return false !== strpos( $c[0], 'payment_intents' ); } ) );
+ok( isset( $ch[0] ) && 100000 === $ch[0][1]['amount'], 'legacy 6-month plan (no rate_pct) still charges $1,000.00 for payment 2, not the new 5% amount' );
+
+// 9b. A plan started after the change stores its rate and charges by it.
+$new_key = db_stripe_store_key( 'plan', 'new6.ca' );
+db_stripe_handle_pi_succeeded( array( 'id' => 'pi_n6', 'amount_received' => 17500, 'receipt_email' => 'n6@example.test', 'customer' => 'cus_n6', 'payment_method' => 'pm_1',
+	'metadata' => array( 'domain' => 'new6.ca', 'type' => 'plan', 'total_months' => 6, 'installment_number' => 1, 'total_price_usd' => '1000', 'rate_pct' => '5' ) ) );
+$np = (array) get_option( $new_key, array() );
+ok( isset( $np['rate_pct'] ) && 5.0 === (float) $np['rate_pct'], 'a new plan records the rate it was sold at (5% for 6 months)' );
+$np['last_attempt_ts'] = 0; $np['next_charge_ts'] = time() - 60; update_option( $new_key, $np );
+$s0 = count( $GLOBALS['STRIPE'] );
+db_stripe_charge_next_installment( (array) get_option( $new_key ) );
+$ch = array_values( array_filter( array_slice( $GLOBALS['STRIPE'], $s0 ), function ( $c ) { return false !== strpos( $c[0], 'payment_intents' ); } ) );
+ok( isset( $ch[0] ) && 17500 === $ch[0][1]['amount'], 'new 6-month plan charges $175.00 for payment 2 ($1,050 / 6)' );
+
+// 9c. A payment created before rates were stored (no rate_pct meta) is treated as legacy.
+$old_key = db_stripe_store_key( 'plan', 'inflight9.ca' );
+db_stripe_handle_pi_succeeded( array( 'id' => 'pi_i9', 'amount_received' => 29167, 'receipt_email' => 'i9@example.test', 'customer' => 'cus_i9', 'payment_method' => 'pm_1',
+	'metadata' => array( 'domain' => 'inflight9.ca', 'type' => 'plan', 'total_months' => 9, 'installment_number' => 1, 'total_price_usd' => '2500' ) ) );
+ok( 5.0 === (float) ( get_option( $old_key )['rate_pct'] ?? -1 ), 'in-flight 9-month payment without rate meta freezes at the legacy 5%, not the new 8%' );
+
+// 9d. Schedules and messages for a stored plan use its own rate.
+$sched = db_plan_schedule( (array) get_option( $legacy_key ) );
+ok( 6 === count( $sched ) && 100000 === (int) round( $sched[1]['amount'] * 100 ), 'schedule for the legacy 6-month plan shows $1,000.00 instalments' );
+$sched_new = db_plan_schedule( (array) get_option( $new_key ) );
+ok( 6 === count( $sched_new ) && 17500 === (int) round( $sched_new[1]['amount'] * 100 ), 'schedule for the new 6-month plan shows $175.00 instalments' );
+
+// 9e. Checkout sidebar schedule: dates and amounts, first payment today.
+$rows = db_stripe_checkout_schedule( 12500, 3, strtotime( '2026-11-20 12:00:00 UTC' ) );
+ok( 3 === count( $rows ) && false !== strpos( $rows[0]['label'], '(today)' ) && '$4,166.67' === $rows[0]['amount'] && '$4,166.66' === $rows[2]['amount'], 'checkout schedule: 3 rows, first is today, last absorbs the rounding cent' );
+ok( 6 === count( db_stripe_checkout_schedule( 12500, 6, time() ) ) && '$2,187.50' === db_stripe_checkout_schedule( 12500, 6, time() )[0]['amount'], 'checkout schedule for 6 months uses the 5% total ($13,125 / 6)' );
 
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );
