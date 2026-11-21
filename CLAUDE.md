@@ -15,6 +15,7 @@ theme) is not edited.
 | Header, mega menus, breadcrumbs bar | `db-header-block.php`, `db-mobilenav-block.php`, `db-breadcrumbs-block.php` |
 | Domain listings, list pages, filters, finder, collections | `db-domain-*.php`, `db-listing-*.php`, `db-pages-block.php`, `db-sales-block.php`, `db-priced-*.php`, `db-sold-block.php` |
 | Offer page and shared page actions (no popups: offers, wishlist sign-in and exit offer are pages or off) | `db-offer-page-block.php` (`/make-an-offer/`), `db-page-actions-block.php` (Back and Share bar, real proof lines), `db-hero-showcase-block.php` (home hero cards) |
+| Designer's UI fixes (header logo, archive buttons, availability count, filters, accessibility, checkout seal, shared 1320px layout) | `db-ui-fixes-block.php` + `designer/ui-fixes/` (bundled from the standalone add-on "Domain Brothers UI Fixes"; it does nothing while that add-on is active, so deactivate the add-on to switch over) |
 | Offers, checkout, payment plans | `db-offers-block.php`, `db-offer-template.php`, `db-stripe-block.php`, `db-plan-lifecycle-block.php`, `db-orders-block.php` |
 | Accounts, wishlist, alerts | `db-account-block.php`, `db-wishlist-block.php` |
 | Service pages and forms | `db-service-art-block.php`, `db-handles-block.php` (social handle pages), `db-transfer-block.php` (EPP codes, encrypted), `db-form-entries-block.php` (copy of every form submission) |

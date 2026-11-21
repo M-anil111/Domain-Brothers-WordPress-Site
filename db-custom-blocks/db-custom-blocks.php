@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.118.8
+ * Version:     3.119.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.118.8' );
+define( 'DB_BLOCKS_LOADED', '3.119.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -871,7 +871,7 @@ function db_plan_widget_html() {
 	}
 
 	ob_start();
-	echo $pa_bar; // phpcs:ignore WordPress.Security.EscapeOutput
+	echo '<div class="db-plan-bar">' . $pa_bar . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	?>
 	<div class="db-plan" id="db-plan"
 		data-price="<?php echo esc_attr( $price ); ?>"
@@ -913,7 +913,7 @@ function db_plan_widget_html() {
 	<style>
 		.db-plan{max-width:760px;margin:32px auto;padding:0 4px;font-family:inherit;color:#1a1a1a;}
 		.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
-		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
+		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-bar{max-width:760px;margin:24px auto 0;padding:0 4px}.db-plan-bar .db-pa{margin-bottom:0}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
 		.db-plan-total{font-size:15px;color:#444;margin:0 0 20px;}
 		.db-plan-zero{display:inline-block;background:#e7f6ec;color:#137a3e;font-weight:600;padding:2px 10px;border-radius:999px;font-size:13px;}
 		.db-plan-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 24px;}
@@ -4746,6 +4746,10 @@ require_once __DIR__ . '/db-alerts-block.php';
 require_once __DIR__ . '/db-article-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
+// The designer's UI fixes (bundled from the standalone add-on; stands down while the add-on is active).
+if ( is_readable( __DIR__ . '/db-ui-fixes-block.php' ) && is_readable( __DIR__ . '/designer/ui-fixes/includes/html-filters.php' ) ) {
+	require_once __DIR__ . '/db-ui-fixes-block.php';
+}
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {
 	require_once __DIR__ . '/db-faq-block.php';
 }

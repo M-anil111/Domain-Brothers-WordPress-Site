@@ -1,0 +1,197 @@
+/*!
+ * Domain Brothers UI Fixes – design/responsive patch for the beta audit.
+ * Scope: DB-11 header logo, DB-12 archive CTA + heading, DB-28 targets/focus.
+ */
+
+/* ------------------------------------------------------------------ *
+ * DB-11 – Header logo below 992px.
+ * Below 992px every template except single domain pages hides the logo
+ * inside the fixed 72px bar (.domain-search), leaving only the hamburger.
+ * Show it with the same size and spacing as the single-domain header.
+ * ------------------------------------------------------------------ */
+@media (max-width: 991.98px) {
+	body.db-ui-active:not(.single-domain) .site-header .domain-search {
+		display: flex !important;
+		align-items: center;
+		justify-content: flex-start !important;
+		gap: 12px;
+		padding-left: calc(var(--r-gutter, 16px) + 15px) !important; /* matches the single-domain header logo inset */
+	}
+
+	body.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo-link,
+	body.home.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo-link {
+		display: flex !important;
+		flex: 0 1 auto;
+		align-items: center;
+		min-width: 0;
+		margin: 0 auto 0 0 !important;
+		line-height: 0;
+	}
+
+	body.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo-link img,
+	body.home.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo {
+		display: block !important;
+		width: auto !important;
+		height: auto !important;
+		max-width: 100%;
+		max-height: 44px !important;
+	}
+
+	/* The bar's search widget is not used at these widths (search lives in
+	   the mobile menu); keep it from competing with the logo for space. */
+	body.db-ui-active:not(.single-domain) .site-header .domain-search > .widget {
+		display: none !important;
+	}
+
+	/* Home: the hero carried its own copy of the logo to compensate. */
+	body.home.db-ui-active .db-hp-hero .db-hp-logo {
+		display: none !important;
+	}
+}
+
+@media (max-width: 599.98px) {
+	body.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo-link img,
+	body.home.db-ui-active:not(.single-domain) .site-header .domain-search .custom-logo {
+		max-height: 35px !important;
+	}
+}
+
+/* ------------------------------------------------------------------ *
+ * DB-12 – Domain archive (/domains/): Buy Now rendered a light pill
+ * (.badge-offer) inside the dark pill (.db-act-buy). Flatten the inner
+ * badge so Buy Now matches Make an Offer's single-pill structure.
+ * ------------------------------------------------------------------ */
+/* The generic pill rule `html body.db-ui-active.db-ui-active
+   .badge-offer.badge:not(.ad-cart):not(.db-x)` (6 classes) outranks the
+   existing flattening rule for .db-act-buy (5 classes) on archive cards,
+   whose server-rendered badge lacks .ad-cart. Match it and add scope. */
+html body.db-ui-active.db-ui-active .db-domain-card a.db-act-buy.db-act-buy .badge-offer.badge:not(.ad-cart):not(.db-x) {
+	display: inline !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: inherit !important;
+	font: inherit !important;
+	line-height: inherit !important;
+	letter-spacing: inherit !important;
+}
+
+.db-domain-card .db-act-buy:focus-visible,
+.db-domain-card .db-act-offer:focus-visible,
+.db-domain-card .db-domain-card__name:focus-visible {
+	outline: 3px solid #0b2f73;
+	outline-offset: 3px;
+}
+
+/* DB-12 – archive title promoted from H2 to H1: see tuned rule below. */
+
+/* ------------------------------------------------------------------ *
+ * DB-28 – Footer link targets were 23px tall (an inline rule in the footer
+ * sets `padding:0!important; min-height:0!important` with ID specificity).
+ * Grow the hit area with vertical padding and take the same amount back from
+ * the list spacing so the footer keeps its rhythm. Result: >= 32px targets
+ * (WCAG 2.2 AA 2.5.8 asks for 24px).
+ * ------------------------------------------------------------------ */
+html body #colophon.db-ft.db-ft .db-ft__col li a,
+html body #colophon.db-ft.db-ft .db-ft__legal li a {
+	padding-top: 5px !important;
+	padding-bottom: 5px !important;
+}
+html body #colophon.db-ft.db-ft .db-ft__col.db-ft__col ul {
+	row-gap: 0 !important; /* was 10px; the 10px now sits inside each link */
+}
+html body #colophon.db-ft.db-ft .db-ft__legal.db-ft__legal {
+	row-gap: 0 !important; /* was 8px */
+}
+
+.db-ft a:focus-visible,
+.site-header .custom-logo-link:focus-visible {
+	outline: 3px solid #0b2f73;
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+/* DB-06 – results heading stays visible while filtering. */
+.resp_table .dbr-results__sub:empty {
+	display: none;
+}
+
+/* DB-12 – give both archive CTAs one width so their left edges line up too. */
+@media (min-width: 600px) {
+	html body.db-ui-active.db-ui-active .db-domain-card a.db-act-buy.db-act-buy,
+	html body.db-ui-active.db-ui-active .db-domain-card a.db-act-offer.db-act-offer {
+		min-width: 150px !important;
+		justify-content: center;
+	}
+}
+
+/* ------------------------------------------------------------------ *
+ * Tap focus ring (mobile). Bootstrap's `a:focus` / `.btn:focus` draw a
+ * 5px focus ring whenever a link receives focus, which on touch devices
+ * happens on every tap. Hide it for pointer/touch focus only; keyboard
+ * focus keeps a visible ring through :focus-visible.
+ * ------------------------------------------------------------------ */
+a:focus:not(:focus-visible),
+.btn:focus:not(:focus-visible),
+.btn:active:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible) {
+	outline: none !important;
+}
+:where(a, button, .btn, [role="button"], summary):focus-visible {
+	outline: 2px solid #0b2f73;
+	outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Breadcrumbs. The "Home" link is display:block with a 44px touch
+ * min-height, so its text sat at the top of a 44px box while the current
+ * page label sat in the middle: the two did not share a line. Centre both
+ * on one line and let long trails wrap.
+ * ------------------------------------------------------------------ */
+html body.db-ui-active nav.db-breadcrumbs ol {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	align-items: center !important;
+	row-gap: 0;
+	min-width: 0;
+}
+html body.db-ui-active nav.db-breadcrumbs li {
+	display: inline-flex !important;
+	align-items: center !important;
+	min-width: 0;
+	max-width: 100%;
+	margin-bottom: 0 !important;
+}
+html body.db-ui-active nav.db-breadcrumbs li > a,
+html body.db-ui-active nav.db-breadcrumbs li > span {
+	display: inline-flex !important;
+	align-items: center !important;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	vertical-align: middle;
+}
+
+/* ------------------------------------------------------------------ *
+ * Domain names as titles: weight 700 everywhere they are a listing or
+ * archive title, and on the domain detail page.
+ * ------------------------------------------------------------------ */
+html body.db-ui-active.db-ui-active #page#page :is(
+	.db-domain-card__name,
+	.db-hh-name,
+	.dbl-name,
+	.db-sales-name,
+	.db-rec-name,
+	.db-pr-hero h1 span,
+	.db-sticky-txt strong,
+	.db-sale-band strong
+),
+html body.db-ui-active.db-ui-active.db-ui-active .db-hp-hero .db-hh-name {
+	font-weight: 700 !important;
+}

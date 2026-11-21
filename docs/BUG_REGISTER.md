@@ -8,7 +8,7 @@ plugin PHP. Every item below was reproduced; two candidates were checked and dro
 (`/sell-domains-service/` is a 302 to `/contact-us/`, and "Coming soon" on `/domain-parking/`
 is glossary copy).
 
-**Count: 40 distinct defects. Counted per affected page they are about 400 occurrences**
+**Count: 41 distinct defects (CO-5 added later). Counted per affected page they are about 400 occurrences**
 (for example 113 pages with the duplicate style id, 59 pages without `og:image`). The static
 scan found no SQL injection, unsafe unserialize, weak randomness or open redirects: the
 interpolated SQL only inserts table names, and all 23 public REST routes are intentional.
@@ -22,6 +22,7 @@ Severity: **H** high, **M** medium, **L** low. Effort: S under 1 hour, M half a 
 | CO-1 | H | `/buy-now/` returns HTTP 500 with the raw WordPress error page for a malformed domain value, a negative price, an unlisted domain and markup in `d`. | `?d=!!!notbase64`, `?p=` of `-5`, `?d=` of `notlisted.xyz` all give 500 | S |
 | CO-2 | M | `/payment-plan-setup/` for an unlisted domain returns 200 with an empty page (soft 404). | `?d=notlisted.xyz` | S |
 | CO-3 | L | `/buy-now/?months=2`, `99` or `-3` silently falls back to pay in full with no notice; `3abc` is read as 3. | crawl | S |
+| CO-5 | L | The checkout schedule dates use the site time zone while the plan chooser computes dates in the browser, so around midnight they disagree (checkout "Nov 20 (today)", plan page "Nov 21"). | 2026-11-21 live check | S |
 | CO-4 | M | `/make-an-offer/?d=notlisted.xyz` shows a generic "Offer on a Premium Domain" form, so offers can be sent for names not for sale. | probe | S |
 
 ## Routing and SEO
