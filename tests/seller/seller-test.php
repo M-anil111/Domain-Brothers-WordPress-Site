@@ -128,4 +128,19 @@ check( 'seller move: accept only when open', '' === db_seller_offer_check( 'acce
 check( 'seller move: counter needs at least $100', '' !== db_seller_offer_check( 'counter', '50', 'open' ) && '' !== db_seller_offer_check( 'counter', 'abc', 'open' ) && '' === db_seller_offer_check( 'counter', '$4,500', 'open' ) );
 check( 'seller move: no counter on paid or accepted, no decline when closed, unknown moves refused', '' !== db_seller_offer_check( 'counter', '500', 'paid' ) && '' !== db_seller_offer_check( 'decline', '', 'expired' ) && '' !== db_seller_offer_check( 'delete', '', 'open' ) );
 
+// Phase 4: payouts.
+check( 'payout split: 15% commission, 10% when exclusive', array( 'gross' => 10000.0, 'commission' => 1500.0, 'net' => 8500.0 ) === db_seller_payout_split( 10000 ) && array( 'gross' => 10000.0, 'commission' => 1000.0, 'net' => 9000.0 ) === db_seller_payout_split( 10000, true ) );
+check( 'payout split: $100 minimum commission, never more than the sale', 400.0 === db_seller_payout_split( 500 )['net'] && 0.0 === db_seller_payout_split( 80 )['net'] );
+$t = 1800000000;
+check( 'due date: 7 days after confirmation', $t + 7 * 86400 === db_seller_payout_due_ts( 0, $t ) );
+check( 'due date: 14 days after transfer without confirmation', $t + 14 * 86400 === db_seller_payout_due_ts( $t, 0 ) );
+check( 'due date: the earlier of the two', $t + 9 * 86400 === db_seller_payout_due_ts( $t, $t + 2 * 86400 ) && 0 === db_seller_payout_due_ts( 0, 0 ) );
+check( 'payout flow: plan done, transferred, confirmed', 'waiting_transfer' === db_seller_payout_move( 'collecting', 'plan_done' ) && 'waiting_confirm' === db_seller_payout_move( 'waiting_transfer', 'transferred' ) && 'due' === db_seller_payout_move( 'waiting_confirm', 'confirmed' ) );
+check( 'payout flow: pay only when due date reached', 'paid' === db_seller_payout_move( 'due', 'pay', $t, $t - 1 ) && null === db_seller_payout_move( 'due', 'pay', $t, $t + 1 ) && null === db_seller_payout_move( 'waiting_confirm', 'pay', $t, $t - 1 ) );
+check( 'payout flow: hold and release back to the same step', 'held' === db_seller_payout_move( 'due', 'hold' ) && 'due' === db_seller_payout_move( 'held', 'release', 0, 0, 'due' ) && null === db_seller_payout_move( 'paid', 'hold' ) && null === db_seller_payout_move( 'held', 'release', 0, 0, 'paid' ) );
+check( 'payout flow: no skipping steps', null === db_seller_payout_move( 'waiting_transfer', 'confirmed' ) && null === db_seller_payout_move( 'collecting', 'transferred' ) );
+$rows = db_seller_statement_rows( array( array( 'domain' => '=cmd.ca', 'created' => $t, 'gross' => 1000, 'commission' => 150, 'net' => 850, 'state' => 'paid', 'due_ts' => $t, 'paid_ts' => $t, 'reference' => '+ref1' ) ) );
+check( 'statement: header, money with 2 decimals, status words', 'Domain' === $rows[0][0] && '850.00' === $rows[1][4] && 'Paid to you' === $rows[1][5] && 2 === count( $rows ) );
+check( 'statement: formula-looking text neutralised', "'=cmd.ca" === $rows[1][0] && "'+ref1" === $rows[1][8] );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

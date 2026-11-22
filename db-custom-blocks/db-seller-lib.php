@@ -706,3 +706,112 @@ if ( ! function_exists( 'db_seller_offer_check' ) ) {
 		return '';
 	}
 }
+
+/* Phase 4: sales and payouts. */
+
+if ( ! defined( 'DB_SELLER_PAY_AFTER_CONFIRM_DAYS' ) ) {
+	define( 'DB_SELLER_PAY_AFTER_CONFIRM_DAYS', 7 );   // payout due 7 days after the buyer confirms control
+}
+if ( ! defined( 'DB_SELLER_PAY_AFTER_TRANSFER_DAYS' ) ) {
+	define( 'DB_SELLER_PAY_AFTER_TRANSFER_DAYS', 14 ); // or 14 days after the transfer when nobody disputes it
+}
+
+if ( ! function_exists( 'db_seller_payout_states' ) ) {
+	function db_seller_payout_states() {
+		return array(
+			'collecting'       => 'Buyer paying monthly',
+			'waiting_transfer' => 'Waiting for you to transfer the name',
+			'waiting_confirm'  => 'Waiting for the buyer to confirm',
+			'due'              => 'Payout scheduled',
+			'paid'             => 'Paid to you',
+			'held'             => 'On hold',
+		);
+	}
+}
+
+if ( ! function_exists( 'db_seller_payout_split' ) ) {
+	/** Gross sale split into commission and the seller's net, in whole cents. */
+	function db_seller_payout_split( $gross, $exclusive = false ) {
+		$gross = round( max( 0, (float) $gross ), 2 );
+		$fee   = (float) db_seller_fee( (int) round( $gross ), (bool) $exclusive );
+		$fee   = min( $gross, $fee );
+		return array( 'gross' => $gross, 'commission' => round( $fee, 2 ), 'net' => round( $gross - $fee, 2 ) );
+	}
+}
+
+if ( ! function_exists( 'db_seller_payout_due_ts' ) ) {
+	/**
+	 * When the payout becomes due: 7 days after the buyer confirmed control, or
+	 * 14 days after the transfer if the buyer never confirmed or disputed; the
+	 * earlier of the two. 0 when neither has happened.
+	 */
+	function db_seller_payout_due_ts( $transferred_ts, $confirmed_ts ) {
+		$c = (int) $confirmed_ts > 0 ? (int) $confirmed_ts + DB_SELLER_PAY_AFTER_CONFIRM_DAYS * 86400 : 0;
+		$t = (int) $transferred_ts > 0 ? (int) $transferred_ts + DB_SELLER_PAY_AFTER_TRANSFER_DAYS * 86400 : 0;
+		if ( $c && $t ) {
+			return min( $c, $t );
+		}
+		return max( $c, $t );
+	}
+}
+
+if ( ! function_exists( 'db_seller_payout_move' ) ) {
+	/**
+	 * The payout state machine, as a pure function: the new state for an
+	 * action, or null when the action is not allowed from $state.
+	 *
+	 * @param string $state   Current state.
+	 * @param string $action  plan_done | transferred | confirmed | pay | hold | release
+	 * @param int    $now     Unix time.
+	 * @param int    $due_ts  When the payout is due (pay only).
+	 * @param string $held_from State before the hold (release only).
+	 */
+	function db_seller_payout_move( $state, $action, $now = 0, $due_ts = 0, $held_from = '' ) {
+		switch ( $action ) {
+			case 'plan_done':
+				return 'collecting' === $state ? 'waiting_transfer' : null;
+			case 'transferred':
+				return 'waiting_transfer' === $state ? 'waiting_confirm' : null;
+			case 'confirmed':
+				return 'waiting_confirm' === $state ? 'due' : null;
+			case 'pay':
+				return ( 'due' === $state && (int) $due_ts > 0 && (int) $now >= (int) $due_ts ) ? 'paid' : null;
+			case 'hold':
+				return in_array( $state, array( 'collecting', 'waiting_transfer', 'waiting_confirm', 'due' ), true ) ? 'held' : null;
+			case 'release':
+				return ( 'held' === $state && in_array( $held_from, array( 'collecting', 'waiting_transfer', 'waiting_confirm', 'due' ), true ) ) ? $held_from : null;
+		}
+		return null;
+	}
+}
+
+if ( ! function_exists( 'db_seller_statement_rows' ) ) {
+	/**
+	 * Rows of the seller's CSV statement (header first). Text cells that could
+	 * be read as spreadsheet formulas are prefixed with an apostrophe.
+	 *
+	 * @param array $payouts Each with domain, created, gross, commission, net, state, due_ts, paid_ts, reference.
+	 */
+	function db_seller_statement_rows( array $payouts ) {
+		$safe  = static function ( $v ) {
+			$v = (string) $v;
+			return ( '' !== $v && false !== strpos( '=+-@', $v[0] ) ) ? "'" . $v : $v;
+		};
+		$names = db_seller_payout_states();
+		$rows  = array( array( 'Domain', 'Sale date', 'Gross (USD)', 'Commission (USD)', 'Net to you (USD)', 'Status', 'Due date', 'Paid date', 'Reference' ) );
+		foreach ( $payouts as $p ) {
+			$rows[] = array(
+				$safe( $p['domain'] ?? '' ),
+				! empty( $p['created'] ) ? gmdate( 'Y-m-d', (int) $p['created'] ) : '',
+				number_format( (float) ( $p['gross'] ?? 0 ), 2, '.', '' ),
+				number_format( (float) ( $p['commission'] ?? 0 ), 2, '.', '' ),
+				number_format( (float) ( $p['net'] ?? 0 ), 2, '.', '' ),
+				$names[ $p['state'] ?? '' ] ?? (string) ( $p['state'] ?? '' ),
+				! empty( $p['due_ts'] ) ? gmdate( 'Y-m-d', (int) $p['due_ts'] ) : '',
+				! empty( $p['paid_ts'] ) ? gmdate( 'Y-m-d', (int) $p['paid_ts'] ) : '',
+				$safe( $p['reference'] ?? '' ),
+			);
+		}
+		return $rows;
+	}
+}
