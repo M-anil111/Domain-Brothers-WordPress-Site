@@ -97,6 +97,45 @@ if ( ! function_exists( 'db_news_og_image' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_render_news_cached' ) ) {
+	/**
+	 * The news block without making a visitor wait for the feeds (bug P-1): the last
+	 * rendering is served at once, and a stale one is rebuilt in the background by cron.
+	 * Only the very first rendering (nothing stored yet) is built during the request.
+	 */
+	function db_render_news_cached( $limit = 6 ) {
+		$key   = 'db_news_html_' . (int) $limit;
+		$saved = get_option( $key );
+		if ( is_array( $saved ) && isset( $saved['html'], $saved['ts'] ) ) {
+			if ( time() - (int) $saved['ts'] > DB_NEWS_TTL && ! wp_next_scheduled( 'db_news_refresh', array( (int) $limit ) ) ) {
+				wp_schedule_single_event( time(), 'db_news_refresh', array( (int) $limit ) );
+			}
+			// The stored copy may be from yesterday: the date line is always today's.
+			return (string) preg_replace_callback( '#<p class="db-an-day">[^<]*</p>#', static function () {
+				return '<p class="db-an-day">' . esc_html( date_i18n( 'l, F j' ) ) . '</p>';
+			}, (string) $saved['html'], 1 );
+		}
+		return db_news_refresh( $limit );
+	}
+}
+
+if ( ! function_exists( 'db_news_refresh' ) ) {
+	/** Builds the news block and stores it (empty results keep the previous copy). */
+	function db_news_refresh( $limit = 6 ) {
+		$html = db_render_news( (int) $limit );
+		$key  = 'db_news_html_' . (int) $limit;
+		if ( '' !== $html || ! get_option( $key ) ) {
+			update_option( $key, array( 'html' => $html, 'ts' => time() ), false );
+		}
+		if ( '' === $html ) {
+			$old = get_option( $key );
+			return is_array( $old ) ? (string) $old['html'] : '';
+		}
+		return $html;
+	}
+}
+add_action( 'db_news_refresh', 'db_news_refresh' );
+
 if ( ! function_exists( 'db_render_news' ) ) {
 	function db_render_news( $limit = 6 ) {
 		if ( ! function_exists( 'fetch_feed' ) ) {
@@ -186,7 +225,7 @@ add_action( 'template_redirect', function () {
 		if ( false !== strpos( $html, 'db-news-live' ) ) {
 			return $html; // already inserted (defensive, shouldn't recurse)
 		}
-		$news_html = db_render_news( 8 );
+		$news_html = db_render_news_cached( 8 );
 		if ( '' === $news_html ) {
 			return $html; // all feeds unreachable this request — leave the archive as-is
 		}
