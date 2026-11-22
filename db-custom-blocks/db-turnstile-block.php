@@ -27,14 +27,33 @@ if ( ! function_exists( 'db_ts_settings' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ts_test_mode' ) ) {
+	/**
+	 * Staging only (bug O-3): while option db_turnstile_test_until holds a future time, Turnstile
+	 * uses Cloudflare's published always-pass test keys so scripted QA can sign in and submit
+	 * offers. It switches itself off after the time given (at most two hours from when it was set)
+	 * and never applies on production.
+	 */
+	function db_ts_test_mode() {
+		$until = (int) get_option( 'db_turnstile_test_until', 0 );
+		return $until > time() && $until <= time() + 2 * HOUR_IN_SECONDS && function_exists( 'db_is_staging_host' ) && db_is_staging_host();
+	}
+}
+
 if ( ! function_exists( 'db_ts_site_key' ) ) {
 	function db_ts_site_key() {
+		if ( db_ts_test_mode() ) {
+			return '1x00000000000000000000AA'; // Cloudflare test site key: always passes
+		}
 		return preg_match( '/^[0-9A-Za-z_\-]{10,80}$/', (string) ( db_ts_settings()['site'] ?? '' ) ) ? (string) db_ts_settings()['site'] : '';
 	}
 }
 
 if ( ! function_exists( 'db_ts_secret' ) ) {
 	function db_ts_secret() {
+		if ( db_ts_test_mode() ) {
+			return '1x0000000000000000000000000000000AA'; // Cloudflare test secret: always passes (public, not a credential)
+		}
 		return (string) db_smtp_decrypt( db_ts_settings()['secret'] ?? '' );
 	}
 }

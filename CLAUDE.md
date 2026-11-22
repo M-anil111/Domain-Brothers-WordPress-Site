@@ -51,6 +51,13 @@ npm install --prefix /tmp/axe axe-core@4.10.2
 BETA_USER=<user> BETA_PASS=<password> AXE_DIR=/tmp/axe node tests/qa/axe-audit.js
 ```
 
+The same QA and axe audits run weekly on GitHub (`.github/workflows/live-qa.yml`, also on demand
+from the Actions tab); reports are kept as a workflow artifact.
+
+Scripted sign-in and offer tests on staging: Turnstile would block them, so set the option
+`db_turnstile_test_until` to a Unix time up to two hours ahead. Until then staging uses Cloudflare's
+always-pass test keys; it switches back by itself and never applies on production.
+
 To try the plugin on a local WordPress (6.9+, PHP 8.2+), copy `db-custom-blocks/`
 into `wp-content/plugins/` with the DomainFolio theme active.
 
