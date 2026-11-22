@@ -81,5 +81,10 @@ check( 'viewport: non-strings pass through', null === db_hyg_viewport_fix( null 
 check( 'iframe: GTM noscript frame gets a title', false !== strpos( db_hyg_iframe_titles( '<iframe src="https://www.googletagmanager.com/ns.html?id=X" height="0">' ), 'title="Google Tag Manager"' ) );
 check( 'iframe: other untitled frames get a generic title', '<iframe title="Embedded content" src="x">' === db_hyg_iframe_titles( '<iframe src="x">' ) );
 check( 'iframe: an existing title is kept', '<iframe title="Map" src="x">' === db_hyg_iframe_titles( '<iframe title="Map" src="x">' ) );
+$hl = db_hyg_heading_levels( '<header><h4>x</h4></header><main><h1>A</h1><h2>B</h2><h4>K</h4><h4>J</h4><h3>More</h3><h2>C</h2><h3>D</h3></main>' );
+check( 'headings: a skipped level gets aria-level, siblings match', false !== strpos( $hl, '<h4 aria-level="3">K</h4><h4 aria-level="3">J</h4><h3>More</h3>' ) );
+check( 'headings: correct levels and headings outside main are untouched', false !== strpos( $hl, '<header><h4>x</h4></header>' ) && false !== strpos( $hl, '<h2>C</h2><h3>D</h3>' ) && false === strpos( $hl, '<h1 aria' ) );
+check( 'headings: h1 then h3 becomes level 2', false !== strpos( db_hyg_heading_levels( '<main><h1>O</h1><h3>e</h3><h3>w</h3><h2>H</h2></main>' ), '<h3 aria-level="2">e</h3><h3 aria-level="2">w</h3><h2>H</h2>' ) );
+check( 'headings: no main, no change', '<h1>a</h1><h4>b</h4>' === db_hyg_heading_levels( '<h1>a</h1><h4>b</h4>' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

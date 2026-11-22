@@ -132,6 +132,44 @@ if ( ! function_exists( 'db_hyg_single_h1' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_hyg_heading_levels' ) ) {
+	/**
+	 * Headings inside <main> that skip a level (an h4 straight after an h2) are given the
+	 * level they should have with aria-level, so the outline reads correctly without
+	 * changing how the page looks (bug A-5). Headings of the same original level that
+	 * follow each other keep the same corrected level.
+	 */
+	function db_hyg_heading_levels( $html ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		$a = stripos( $html, '<main' );
+		$b = false === $a ? false : strripos( $html, '</main>' );
+		if ( false === $a || false === $b ) {
+			return $html;
+		}
+		$last_orig = 0;
+		$last_eff  = 0;
+		$main      = preg_replace_callback( '#<h([1-6])\b([^>]*)>#i', static function ( $m ) use ( &$last_orig, &$last_eff ) {
+			$lv = (int) $m[1];
+			if ( preg_match( '/\saria-level\s*=/i', $m[2] ) ) {
+				return $m[0];
+			}
+			if ( 0 === $last_eff ) {
+				$eff = $lv;
+			} elseif ( $lv === $last_orig ) {
+				$eff = $last_eff;
+			} else {
+				$eff = min( $lv, $last_eff + 1 );
+			}
+			$last_orig = $lv;
+			$last_eff  = $eff;
+			return $eff === $lv ? $m[0] : '<h' . $lv . ' aria-level="' . $eff . '"' . $m[2] . '>';
+		}, substr( $html, $a, $b - $a ) );
+		return substr( $html, 0, $a ) . $main . substr( $html, $b );
+	}
+}
+
 if ( ! function_exists( 'db_hyg_iframe_titles' ) ) {
 	/**
 	 * Every iframe gets a title for screen readers (bug A-6). Third-party snippets such as
@@ -159,7 +197,7 @@ add_action( 'template_redirect', function () {
 		if ( ! is_string( $html ) || false === stripos( $html, '<html' ) ) {
 			return $html;
 		}
-		return db_hyg_img_fix( db_hyg_iframe_titles( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ) ), 'db_hyg_img_dims' );
+		return db_hyg_img_fix( db_hyg_iframe_titles( db_hyg_heading_levels( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ) ) ), 'db_hyg_img_dims' );
 	} );
 }, 3 ); // Early on purpose: virtual pages that render and exit before priority 8 would skip it.
 
