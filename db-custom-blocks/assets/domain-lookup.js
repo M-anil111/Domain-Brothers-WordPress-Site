@@ -117,7 +117,9 @@
     // Archive
     var a = j.archive || {};
     if (a.state === "ok") {
-      c = add(card("Web history", "The Wayback Machine has captured this name. Latest capture near " + a.date + "."));
+      c = add(card("Web history", a.first
+        ? [["First captured", a.first], ["Latest capture", a.date], ["Years with captures", a.years + " of " + a.span]]
+        : "The Wayback Machine has captured this name. Latest capture near " + a.date + "."));
       if (c) { var l = el("p"); l.style.marginTop = "10px"; var an = el("a", "", "See every capture"); an.href = a.url; an.target = "_blank"; an.rel = "noopener"; l.appendChild(an); c.appendChild(l); }
     } else {
       add(card("Web history", a.state === "none" ? "No captures found in the Wayback Machine." : "The archive did not answer."));

@@ -129,6 +129,37 @@ if ( ! function_exists( 'db_lk_dns' ) ) {
 if ( ! function_exists( 'db_lk_archive' ) ) {
 	/** @return array<string,mixed> */
 	function db_lk_archive( $name ) {
+		// The capture index, one row per year: first and latest capture and the years with captures.
+		$r    = db_lk_http( 'https://web.archive.org/cdx/search/cdx?url=' . rawurlencode( $name ) . '&output=json&fl=timestamp&collapse=timestamp:4&filter=statuscode:200&limit=60' );
+		$rows = is_array( $r['json'] ) ? array_slice( $r['json'], 1 ) : array(); // first row is the header
+		if ( 200 === $r['code'] && $rows ) {
+			$years = array();
+			foreach ( $rows as $row ) {
+				$ts = (string) ( $row[0] ?? '' );
+				if ( preg_match( '/^\d{8}/', $ts ) ) {
+					$years[ substr( $ts, 0, 4 ) ] = $ts;
+				}
+			}
+			if ( $years ) {
+				ksort( $years );
+				$fmt   = static function ( $ts ) { return substr( $ts, 0, 4 ) . '-' . substr( $ts, 4, 2 ) . '-' . substr( $ts, 6, 2 ); };
+				$first = reset( $years );
+				$last  = end( $years );
+				$span  = (int) substr( $last, 0, 4 ) - (int) substr( $first, 0, 4 ) + 1;
+				return array(
+					'state' => 'ok',
+					'first' => $fmt( $first ),
+					'date'  => $fmt( $last ),
+					'years' => count( $years ),
+					'span'  => $span,
+					'url'   => 'https://web.archive.org/web/*/' . rawurlencode( $name ),
+				);
+			}
+		}
+		if ( 200 === $r['code'] && is_array( $r['json'] ) && ! $rows ) {
+			return array( 'state' => 'none' );
+		}
+		// Fallback: the latest capture only.
 		$r    = db_lk_http( 'https://archive.org/wayback/available?url=' . rawurlencode( $name ) );
 		$snap = $r['json']['archived_snapshots']['closest'] ?? null;
 		if ( 200 !== $r['code'] ) {
