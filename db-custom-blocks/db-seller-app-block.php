@@ -184,8 +184,11 @@ if ( ! function_exists( 'db_seller_submit_screen' ) ) {
 
 if ( ! function_exists( 'db_seller_tabs' ) ) {
 	function db_seller_tabs( $current, array $rows ) {
-		if ( ! array_filter( $rows, static function ( $r ) { return in_array( $r['review_status'], array( 'pending', 'approved' ), true ); } ) ) {
-			return ''; // first listing: the steps are the whole page
+		// The first visit (no names yet) is the step flow alone. Once a seller has any name, the
+		// tabs and "+ Add names" are on every screen, so there is always a way back to adding
+		// names (they used to appear only after a name was in review or live).
+		if ( ! $rows ) {
+			return '';
 		}
 		$tabs = array( 'overview' => 'Overview', 'names' => 'Your names', 'offers' => 'Offers', 'payouts' => 'Sales and payouts', 'point' => 'Point your names', 'account' => 'Account' );
 		$h    = '<nav class="dbsa-tabs" aria-label="Seller sections">';
@@ -239,6 +242,7 @@ if ( ! function_exists( 'db_seller_dashboard_view' ) ) {
 			}
 			$h .= '<section class="dbsl-card dbsl-sec"><h2>How selling with us works</h2><ol class="dbsa-how"><li><strong>Buyers find your names</strong> on Domain Brothers, with payment plans and our brokers promoting them.</li><li><strong>Answer offers quickly.</strong> Accept, counter or decline from the Offers tab. We remind you on day 1, 3 and 5; after 7 days without an answer the buyer is told and our broker takes over.</li><li><strong>When a name sells</strong>, we email the transfer steps. You are paid 7 days after the buyer confirms control (14 days after the transfer at the latest).</li><li><strong>Keep your DNS record.</strong> We re-check ownership every ' . DB_SELLER_RECHECK_DAYS . ' days.</li></ol></section>';
 		} elseif ( 'names' === $view ) {
+			$h .= '<p class="dbsa-addrow"><a class="dbsl-btn" href="' . esc_url( add_query_arg( 'step', 'add', home_url( '/seller/' ) ) ) . '">+ Add new names</a> <span class="dbsl-muted">Paste names or upload a spreadsheet.</span></p>';
 			$h .= ( $sec['edit'] ?? '' ) . ( $sec['names'] ?? '' );
 		} elseif ( 'offers' === $view ) {
 			$h .= $sec['offers'] ?? '';
@@ -270,6 +274,6 @@ if ( ! function_exists( 'db_seller_app_css' ) ) {
 			. '.dbsa-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:6px;border:1px solid #e4e7ec;border-radius:18px;background:#fff}.dbsa-tabs a{padding:10px 16px;border-radius:12px;color:#0a1628;font-weight:700;text-decoration:none}.dbsa-tabs a.is-on{background:#0a1628;color:#fff}.dbsa-tabs .dbsa-add{margin-left:auto;background:#b5e61d}'
 			. '.dbsa-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}@media(max-width:760px){.dbsa-stats{grid-template-columns:1fr 1fr}}'
 			. '.dbsa-stat{display:grid;gap:2px;padding:18px;border:1px solid #e4e7ec;border-radius:18px;background:#fff;text-decoration:none;color:#0a1628}.dbsa-stat strong{font-size:28px;font-weight:900}.dbsa-stat span{color:#4b5563;font-weight:600}.dbsa-stat--alert{border-color:#f3a5a5;background:#fff5f4}.dbsa-stat--alert strong{color:#b42318}'
-			. '.dbsa-alert{max-width:1100px;margin:0 auto 16px;padding:14px 18px;border-radius:14px;background:#fff1f0;border:1px solid #f3a5a5;color:#7a1610}.dbsa-alert a{color:#7a1610;font-weight:800}.dbsa-how{margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.6}</style>';
+			. '.dbsa-alert{max-width:1100px;margin:0 auto 16px;padding:14px 18px;border-radius:14px;background:#fff1f0;border:1px solid #f3a5a5;color:#7a1610}.dbsa-alert a{color:#7a1610;font-weight:800}.dbsa-how{margin:0;padding-left:20px;display:grid;gap:8px;line-height:1.6}.dbsa-addrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:0 0 16px}</style>';
 	}
 }
