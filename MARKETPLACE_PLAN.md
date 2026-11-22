@@ -31,12 +31,12 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Bulk actions: change price by %, switch to Make Offer, remove
 - [x] Price edits on live names apply to the public page at once
 - [x] Wishlist saves and offers per live name
-- [ ] Page views per live name
-- [ ] Listing detail: description, category and keywords per name
-- [ ] RDAP check that each added name is registered
-- [ ] Blocked-names check (prohibited words and famous trademarks)
-- [ ] Price guidance from Domain Brothers' own sold list (decision 10)
-- [ ] Exclusive listing option: badge on the listing, 10% commission (decision 8)
+- [x] Page views per live name
+- [x] Listing detail: description, category and keywords per name
+- [x] RDAP check that each added name is registered (.ca and most registries; .com/.net fall back to the DNS ownership check because Verisign drops not-found replies from this host)
+- [x] Blocked-names check (prohibited words and famous trademarks)
+- [x] Price guidance from Domain Brothers' own sold list (decision 10)
+- [x] Exclusive listing option: badge on the listing, 10% commission (decision 8)
 
 ### Phase 3: seller negotiations
 - [ ] Offers on a seller's names shown in their seller page

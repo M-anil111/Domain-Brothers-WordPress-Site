@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.124.3 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.125.0 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -118,28 +118,29 @@ Totals: see the summary table at the end.
 - [x] Domain index refreshed after a price change (search and filters see it)
 - [x] Wishlist saves per live name
 - [x] Offers per live name
-- [~] Page views per live name (built in 3.123.0; final browser check outstanding)
+- [x] Page views per live name (bots and headless browsers not counted)
 
 **Listing detail**
-- [~] Description per name, shown on the listing as "From the owner" (built; browser check outstanding)
-- [~] Keywords per name, up to 8, markup stripped (built; browser check outstanding)
-- [ ] Category per name (choose from the site's domain categories)
+- [x] Description per name, shown on the listing as "From the owner"
+- [x] Keywords per name, up to 8, markup stripped
+- [x] Category per name: up to 3 of the site's 17 domain categories, applied to the live listing
 
 **Checks**
-- [~] Blocked-names check: abusive terms refused, famous brands sent to broker review (built and unit tested)
-- [ ] RDAP lookup that each added name is registered (today ownership DNS check proves it indirectly)
+- [x] Blocked-names check: abusive terms refused, famous brands sent to broker review
+- [x] RDAP lookup: unregistered names refused (.ca and most registries; .com/.net rely on the DNS check, Verisign drops not-found replies from this host)
 
 **Pricing help**
-- [~] Price guide from Domain Brothers' own sold list (built and unit tested; browser check outstanding)
+- [x] Price guide from Domain Brothers' own sold list (18 sold names, e.g. .ca median $1,600)
 
 **Exclusive listings**
-- [~] Exclusive checkbox per name (built)
-- [~] "Exclusive to Domain Brothers" badge on the listing (built; browser check outstanding)
-- [~] 10% commission on exclusive names in the fee calculation (built and unit tested)
+- [x] Exclusive checkbox per name
+- [x] "Exclusive to Domain Brothers" badge on the listing
+- [x] 10% commission on exclusive names in the fee calculation
 
 **Phase 2 finish**
-- [ ] Browser test: details editor, badge, owner description, views column
-- [ ] Commit and push phase 2 extras
+- [x] Browser test: details editor, badge, owner description, views, categories, price guide, blocked names
+- [x] Fixed: dashboard crash on names with view data; empty price guide
+- [x] Commit and push phase 2 extras
 
 ### A3. Phase 3: seller negotiations
 - [ ] Offers on a seller's names listed in the seller dashboard
@@ -275,7 +276,7 @@ Totals: see the summary table at the end.
 | Area | Done | Built, check outstanding | Not started |
 |---|---|---|---|
 | A1 Phase 1 (13 features, 66 sub-tasks) | 66 | 0 | 0 |
-| A2 Phase 2 | 19 | 8 | 4 |
+| A2 Phase 2 | 33 | 0 | 0 |
 | A3 Phase 3 | 0 | 0 | 13 |
 | A4 Phase 4 | 0 | 0 | 11 |
 | A5 Phase 5 | 0 | 0 | 4 |
