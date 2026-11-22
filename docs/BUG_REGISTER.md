@@ -130,7 +130,7 @@ Re-run the crawl script after batch 2 and batch 3 and compare counts against thi
   - **O-5:** checked the certificate decoder, DNS propagation checker and nslookup pages: all work, no change needed.
 - Fixed in 3.139.x:
   - **O-1:** each Google tag now prints once. The theme header and Site Kit both printed GTM `GTM-W7B64D4`; Site Kit and Rank Math both configured GA4 `G-56DWCMLT8V`. The first copy is kept and later copies are removed (`db_hyg_dedupe_tags()`). No analytics source was turned off.
-    - Owner may still want to tidy the settings: turn off Rank Math > Analytics > "Install code", and remove the theme's hard-coded GTM.
+    - Settings tidied on beta (2026-11-22): Rank Math > Analytics > "Install code" is off, and Site Kit's GTM snippet is off, so the theme header prints the container. Previous settings are saved in the options `db_rm_ga_backup_20261122` and `db_sk_gtm_backup_20261122`. Production needs the same two changes.
     - The GTM container also sends to a second GA4 property (`G-CZV2HH7JWM`) and an old Universal Analytics id. Remove those tags in GTM if they are no longer used.
   - **P-6:** the header script, mobile menu CSS and JS, and checkout CSS are served as cached files. `/buy-now/` went from 195 KB to 136 KB.
     - The 15.5 KB footer CSS (`db-ft-css`) comes from the standalone UI Fixes add-on, so it is not changed here. Deactivating that add-on switches to the bundled copy.
