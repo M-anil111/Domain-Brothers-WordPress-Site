@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.137.0
+ * Version:     3.137.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.137.0' );
+define( 'DB_BLOCKS_LOADED', '3.137.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1694,12 +1694,24 @@ add_action( 'wp_head', function () {
 			'description' => ( 'sold' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' has been sold.' : ( 'not_for_sale' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' is not for sale.' : 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.' ) ),
 			'url' => esc_url( $domain_url ),
 			'brand' => array( '@type' => 'Brand', 'name' => $site_name ) );
-		// No offer (and so no "in stock") for a name that is sold or not for sale.
-		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
-			$price = (float) preg_replace( '/[^0-9.]/', '', $domain_price );
+		// Product rich results need an Offer with a price and an image (RS-11). Names that are
+		// offer-only, sold or not for sale have no price to state, so they get no Product markup.
+		$price = $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ? (float) preg_replace( '/[^0-9.]/', '', $domain_price ) : 0.0;
+		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $price > 0 ) {
 			$product['offers'] = array( '@type' => 'Offer', 'price' => number_format( $price, 2, '.', '' ), 'priceCurrency' => 'USD', 'availability' => 'https://schema.org/InStock', 'url' => esc_url( $domain_url ), 'seller' => array( '@type' => 'Organization', 'name' => $site_name ) );
+			$image = get_the_post_thumbnail_url( $post, 'large' );
+			if ( ! $image ) {
+				$att   = (int) get_option( 'db_og_default_attachment' );
+				$image = $att ? wp_get_attachment_url( $att ) : '';
+			}
+			if ( ! $image && $logo_url ) {
+				$image = $logo_url;
+			}
+			if ( $image ) {
+				$product['image'] = esc_url( $image );
+			}
+			db_aeo_emit( $product );
 		}
-		db_aeo_emit( $product );
 	}
 
 	$service_slugs = array( 'website-design-development' => 'Website Design & Development', 'digital-marketing' => 'Digital Marketing', 'software-development' => 'Software Development', 'mobile-app-development' => 'Mobile App Development', 'other-services' => 'Other Services' );
