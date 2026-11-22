@@ -779,9 +779,16 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			foreach ( $own as $r ) {
 				$by[ $r['domain'] ] = $r;
 			}
-			$n = array( 0, 0, 0 );
+			$n      = array( 0, 0, 0 );
+			$capped = 0;
 			foreach ( $plan['add'] as $a ) {
-				if ( ! in_array( db_seller_domain_taken( $a['domain'], $sid ), array( '', 'claim' ), true ) ) {
+				$taken = db_seller_domain_taken( $a['domain'], $sid );
+				if ( ! in_array( $taken, array( '', 'claim' ), true ) ) {
+					continue;
+				}
+				// Claims on another account's names share the daily limit with the paste box.
+				if ( 'claim' === $taken && function_exists( 'db_seller_rule' ) && ! db_wl_allow( 'seller-claim:' . $sid, (int) db_seller_rule( 'claims_per_day' ), DAY_IN_SECONDS ) ) {
+					++$capped;
 					continue;
 				}
 				$wpdb->insert( $l, array( 'seller_id' => $sid, 'domain' => $a['domain'], 'option_type' => $a['option'], 'price' => $a['price'], 'min_offer' => $a['min_offer'], 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -799,7 +806,11 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 					++$n[2];
 				}
 			}
-			return array( array( 'ok', sprintf( 'Import done: %d added, %d updated, %d removed. New names need the DNS record before you submit them.', $n[0], $n[1], $n[2] ) ) );
+			$out = array( array( 'ok', sprintf( 'Import done: %d added, %d updated, %d removed. New names need the DNS record before you submit them.', $n[0], $n[1], $n[2] ) ) );
+			if ( $capped ) {
+				$out[] = array( 'warn', sprintf( '%d names listed by another account were left out: you can start at most %d ownership claims a day.', $capped, (int) db_seller_rule( 'claims_per_day' ) ) );
+			}
+			return $out;
 		}
 
 		if ( 'bulk' === $act ) {
