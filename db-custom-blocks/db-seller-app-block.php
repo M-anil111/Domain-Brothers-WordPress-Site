@@ -188,6 +188,9 @@ if ( ! function_exists( 'db_seller_tabs' ) ) {
 			return ''; // first listing: the steps are the whole page
 		}
 		$tabs = array( 'overview' => 'Overview', 'names' => 'Your names', 'offers' => 'Offers', 'payouts' => 'Sales and payouts', 'point' => 'Point your names', 'account' => 'Account' );
+		if ( function_exists( 'db_auc_enabled' ) && db_auc_enabled() ) {
+			$tabs = array_slice( $tabs, 0, 3, true ) + array( 'auctions' => 'Auctions' ) + array_slice( $tabs, 3, null, true );
+		}
 		$h    = '<nav class="dbsa-tabs" aria-label="Seller sections">';
 		foreach ( $tabs as $k => $label ) {
 			$h .= '<a href="' . esc_url( add_query_arg( 'view', $k, home_url( '/seller/' ) ) ) . '"' . ( $current === $k ? ' class="is-on" aria-current="page"' : '' ) . '>' . esc_html( $label ) . '</a>';
@@ -214,7 +217,7 @@ if ( ! function_exists( 'db_seller_offer_banner' ) ) {
 
 if ( ! function_exists( 'db_seller_dashboard_view' ) ) {
 	function db_seller_dashboard_view( $view, array $seller, array $rows, array $sec ) {
-		$views = array( 'overview', 'names', 'offers', 'payouts', 'point', 'account' );
+		$views = array( 'overview', 'names', 'offers', 'auctions', 'payouts', 'point', 'account' );
 		$view  = in_array( $view, $views, true ) ? $view : 'overview';
 		$h     = '<div class="dbsa">' . db_seller_tabs( $view, $rows ) . $sec['head'];
 		if ( 'overview' === $view ) {
@@ -248,6 +251,8 @@ if ( ! function_exists( 'db_seller_dashboard_view' ) ) {
 			$h .= '' !== trim( (string) ( $sec['point'] ?? '' ) ) ? $sec['point'] : '<section class="dbsl-card dbsl-sec"><h2>Point your names at us</h2><p>Once a name is live, you can point it at Domain Brothers so visitors who type it see that it is for sale.</p></section>';
 		} elseif ( 'account' === $view ) {
 			$h .= function_exists( 'db_seller_account_html' ) ? db_seller_account_html( $seller ) : '';
+		} elseif ( 'auctions' === $view ) {
+			$h .= function_exists( 'db_auc_seller_html' ) && function_exists( 'db_auc_enabled' ) && db_auc_enabled() ? db_auc_seller_html( $seller ) : '<section class="dbsl-card dbsl-sec"><p>Auctions are not available right now.</p></section>';
 		}
 		return $h . ( $sec['tail'] ?? '</div>' ) . '</div>';
 	}

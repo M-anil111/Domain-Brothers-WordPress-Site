@@ -590,6 +590,10 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			$pos  = array_search( 'offers', array_keys( $tabs ), true );
 			$tabs = array_slice( $tabs, 0, $pos + 1, true ) + array( 'plans' => 'Payment plans' ) + array_slice( $tabs, $pos + 1, null, true );
 		}
+		if ( function_exists( 'db_auc_bids_for' ) && function_exists( 'db_auc_enabled' ) && db_auc_enabled() && db_auc_bids_for( $email ) ) {
+			$pos  = array_search( 'offers', array_keys( $tabs ), true );
+			$tabs = array_slice( $tabs, 0, $pos + 1, true ) + array( 'bids' => 'My bids' ) + array_slice( $tabs, $pos + 1, null, true );
+		}
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'saved'; // phpcs:ignore WordPress.Security.NonceVerification
 		if ( ! isset( $tabs[ $tab ] ) ) {
 			$tab = 'saved';
@@ -669,6 +673,8 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				. '<style>.db-ac-combo{position:relative;margin-bottom:14px}.db-ac-dl{position:absolute;z-index:30;left:0;right:0;top:100%;margin:4px 0 0;padding:6px;list-style:none;max-height:280px;overflow:auto;background:#fff;border:1px solid #cfd8d3;border-radius:14px;box-shadow:0 16px 36px rgba(10,22,40,.14)}'
 				. '.db-ac-dl li{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:15px}.db-ac-dl li[aria-selected=true],.db-ac-dl li:hover{background:#eef6ee}.db-ac-dl li b{color:#0a1628}.db-ac-dl li span{color:#4b5563;white-space:nowrap}.db-ac-dl .db-ac-none{cursor:default;color:#4b5563}'
 				. '.db-ac-pick{margin:6px 0 0;font-size:13.5px;color:#4b5563}.db-ac-pick.is-ok{color:#0b6b36;font-weight:600}.db-ac-pick.is-bad{color:#b42318;font-weight:600}#db-ac-offer input:disabled,#db-ac-offer button:disabled{opacity:.55;cursor:not-allowed}</style>';
+		} elseif ( 'bids' === $tab && function_exists( 'db_auc_account_html' ) ) {
+			$h .= db_auc_account_html( $email );
 		} elseif ( 'plans' === $tab && function_exists( 'db_acct_plans_html' ) ) {
 			$h .= db_acct_plans_html( $email );
 		} elseif ( 'profile' === $tab && function_exists( 'db_acct_profile_html' ) ) {
