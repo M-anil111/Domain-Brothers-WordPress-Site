@@ -1,5 +1,7 @@
 # Bug register and fix plan (2026-11-21, plugin 3.118.8)
 
+> Batch 2 (210 defects found on 2026-11-22, with status) is in [`BUG_REGISTER_2.md`](BUG_REGISTER_2.md).
+
 Method: a two-viewport browser crawl (desktop 1366 and phone 390) of 113 URLs, a check of
 the 431 internal links those pages contain, structured-data and social-tag checks on 78
 pages, functional tests of the 17 domain tools and the lookup API, malformed-input probes
