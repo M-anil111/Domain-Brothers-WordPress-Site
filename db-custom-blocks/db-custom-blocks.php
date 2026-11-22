@@ -1495,6 +1495,10 @@ add_action( 'send_headers', function () {
 	header( 'X-Frame-Options: SAMEORIGIN' );
 	header( 'X-XSS-Protection: 1; mode=block' );
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+	// Isolate our window from pages we open, but keep payment and sign-in popups working (S-2).
+	header( 'Cross-Origin-Opener-Policy: same-origin-allow-popups' );
+	// Only our own sites may embed what WordPress serves here (no-cors loads from other sites are refused).
+	header( 'Cross-Origin-Resource-Policy: same-site' );
 	// payment: Stripe's iframe needs it for Apple Pay / Google Pay / Link; nobody else gets it.
 	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")' );
 } );
