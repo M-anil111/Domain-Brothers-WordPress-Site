@@ -104,6 +104,12 @@ Severity: **H** high, **M** medium, **L** low. Effort: S under 1 hour, M half a 
 
 Re-run the crawl script after batch 2 and batch 3 and compare counts against this register.
 
+## Fix status (2026-11-22)
+
+- Fixed earlier (3.119 to 3.134): CO-1 to CO-4, RS-1 to RS-7, RS-9, A-1.
+- Fixed in 3.135.x: **S-3, S-4, S-5** (lookup API accepts ports, trailing dots, paths and Unicode names; unknown `parts` refused with a message), **RS-8** (descriptions kept within 160 characters; register and thank-you have one), **RS-10** (`og:url` on pages the plugin draws; register share title), **RS-12** (`favicon.ico` and `apple-touch-icon.png` written to the site root from the site icon).
+- Open: RS-11, A-2 to A-6, P-1 to P-6, S-1, S-2, S-6, O-2 to O-5, CO-5. O-1 needs the owner (which analytics source to keep).
+
 ## Price change log
 
 - **2026-11-22, beta:** every published, unsold listing priced under $10,000 was raised 35% (rounded to the dollar): 89 listings. Old prices are kept in post meta `_db_price_pre_35` and in the option `db_price_backup_20261122` (post id to old price), so the change can be reversed. Watcher price emails were not sent for this change; price history records it. Not applied to production (no access; production was returning 500).
