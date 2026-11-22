@@ -1034,34 +1034,48 @@ if ( ! function_exists( 'db_seller_css' ) ) {
 if ( ! function_exists( 'db_seller_landing_body' ) ) {
 	function db_seller_landing_body() {
 		$cta = home_url( '/seller/' );
-		$h   = '<p class="db-sales-lead">List your domain names with Domain Brothers. Listing is free, our brokers handle every buyer, and you pay a commission only when a name sells.</p>';
-		$h  .= db_seller_css() . '<div class="dbsl">';
-		$h  .= '<div class="dbsl-actions" style="margin:0 0 30px"><a class="dbsl-btn" href="' . esc_url( $cta ) . '">List your domains</a><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/contact-us/' ) ) . '">Talk to a broker</a></div>';
-		$h  .= '<section class="dbsl-sec" aria-labelledby="dbsl-how"><h2 id="dbsl-how">How it works</h2><ol class="dbsl-grid">';
-		$steps = array(
-			array( 'Create a free account', 'Sign in with your email. There is no password: we send you a 6-digit code.' ),
-			array( 'Add names and prices', 'Paste up to 50 names at a time. Choose Buy Now with a price, or Make Offer, and an optional minimum offer that buyers never see.' ),
-			array( 'Prove you own them', 'Add one DNS record at your registrar. We check it automatically, so there is nothing to upload.' ),
-			array( 'We review and list', 'A broker checks a new seller\'s first names, usually within one business day. Then they appear in our marketplace.' ),
-		);
-		foreach ( $steps as $i => $s ) {
-			$h .= '<li class="dbsl-card"><span class="dbsl-n" aria-hidden="true">' . ( $i + 1 ) . '</span><h3>' . esc_html( $s[0] ) . '</h3><p>' . esc_html( $s[1] ) . '</p></li>';
+		if ( ! function_exists( 'db_lp_css' ) ) {
+			return '<p class="db-sales-lead">List your domain names with Domain Brothers. Listing is free, and you pay a commission only when a name sells.</p><p><a href="' . esc_url( $cta ) . '">Create your seller account</a></p>';
 		}
-		$h .= '</ol></section>';
-		$h .= '<section class="dbsl-sec" aria-labelledby="dbsl-fee"><h2 id="dbsl-fee">What it costs</h2><div class="dbsl-card"><div class="dbsl-fee"><div><strong>Free</strong>to list</div><div><strong>' . DB_SELLER_COMMISSION_PCT . '%</strong>commission when it sells</div><div><strong>$' . DB_SELLER_COMMISSION_MIN . '</strong>minimum commission</div></div>'
-			. '<p class="dbsl-muted">Example: a name that sells for $5,000 pays you $' . number_format( 5000 - db_seller_commission( 5000 ) ) . '. Nothing is charged if a name does not sell.</p></div></section>';
-		$h .= '<section class="dbsl-sec" aria-labelledby="dbsl-faq"><h2 id="dbsl-faq">Questions</h2><div class="dbsl-grid">';
-		$faq = array(
+		$pct  = DB_SELLER_COMMISSION_PCT;
+		$excl = DB_SELLER_EXCLUSIVE_PCT;
+		$min  = DB_SELLER_COMMISSION_MIN;
+		$h    = '<p class="db-sales-lead">List your domain names with Domain Brothers. Listing is free, our brokers handle every buyer, and you pay a commission only when a name sells.</p>';
+		$h   .= db_lp_css() . '<div class="dblp">';
+		$h   .= '<div class="dblp-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 40px"><a class="dblp-btn" href="' . esc_url( $cta ) . '">Create your seller account</a><a class="dblp-btn dblp-btn--ghost" href="#dbsl-broker">Large portfolio? Talk to a broker</a></div>';
+		$h   .= '<section aria-labelledby="dbsl-why" style="margin:0 0 56px"><h2 id="dbsl-why">Get your domains the attention they need</h2>'
+			. db_lp_benefits( array(
+				array( 'Brokers on every sale', 'Our brokers answer buyers, negotiate the price, secure payment before you transfer, and see the transfer through.', '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>' ),
+				array( 'Marketing for your names', 'Every live name gets its own page in our marketplace, appears in search and category lists on this site, and can be shared from its page.', '<path d="M3 11l15-6v14L3 13z"/><path d="M7 13v5h3"/>' ),
+				array( 'Pages built to be found in search', 'Each listing page has its own title, description and structured data, so search engines can index it.', '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>' ),
+				array( 'Flexible commissions', $pct . '% when a name sells, or ' . $excl . '% if you list it only with us. $' . $min . ' minimum. Listing is free.', '<path d="M12 3v18M17 7H9.5a3 3 0 000 6h5a3 3 0 010 6H6"/>' ),
+			) ) . '</section>';
+		$h .= db_lp_steps( 'List for free, pay only when it sells. Five short steps.', array(
+			array( 'Your details', 'Create a free account with your email (no password: we send you a 6-digit code) and accept the seller agreement.' ),
+			array( 'Add names', 'Paste up to ' . DB_SELLER_MAX_NAMES . ' names, or upload a spreadsheet (CSV or Excel).' ),
+			array( 'Set prices', 'Choose Buy Now with a price, or Make Offer with an optional private minimum.' ),
+			array( 'Prove ownership', 'Add one DNS record at your registrar; we check it automatically.' ),
+			array( 'Submit', 'A broker reviews a new seller\'s first names, usually within one business day. Then they go live.' ),
+		), 'dbsl-how' );
+		$h .= '<p class="dblp-tip"><strong>Tip:</strong> buyers can check out straight away on a Buy Now price, so priced names are easier to sell.</p>';
+		$h .= '<section aria-labelledby="dbsl-fee" style="margin:0 0 56px"><h2 id="dbsl-fee">What it costs</h2><div class="dblp-card"><div class="dbsl-fee" style="display:flex;flex-wrap:wrap;gap:12px 32px;margin:0 0 8px"><div><strong style="display:block;font-size:26px">Free</strong>to list</div><div><strong style="display:block;font-size:26px">' . (int) $pct . '%</strong>when a name sells</div><div><strong style="display:block;font-size:26px">' . (int) $excl . '%</strong>if listed only with us</div><div><strong style="display:block;font-size:26px">$' . (int) $min . '</strong>minimum commission</div></div>'
+			. '<p style="margin:0">Example: a name that sells for $5,000 pays you $' . number_format( 5000 - db_seller_commission( 5000 ) ) . '. Nothing is charged if a name does not sell.</p></div></section>';
+		$h .= '<section aria-labelledby="dbsl-point" style="margin:0 0 56px"><h2 id="dbsl-point">Show a sales page on the name itself</h2><p class="dblp-lead">Point a live name at us (one A record and one www record, shown in your seller dashboard) and visitors who type it see that it is for sale, with a link to buy. Their visits are counted on your dashboard.</p></section>';
+		$h .= '<div class="dblp-two">'
+			. db_lp_contact_card( 'For help with selling, contact our team', 'Questions about pricing, transfers or a large portfolio? Talk to a broker.', 'Create your seller account', $cta )
+			. '<div class="dblp-card"><h3>What is my domain worth?</h3><p>See median asking prices by length and extension in our price index, read how we value names, or send your list to a broker below.</p><p style="display:flex;flex-wrap:wrap;gap:10px;margin:0"><a class="dblp-btn dblp-btn--ghost" href="' . esc_url( home_url( '/domain-price-index/' ) ) . '">Domain price index</a><a class="dblp-btn dblp-btn--ghost" href="' . esc_url( home_url( '/how-to-value-a-premium-domain-name/' ) ) . '">How we value names</a></p></div>'
+			. '</div>';
+		$h .= '<div class="dblp-split" id="dbsl-broker"><div><h2>Large portfolio? Talk to a broker</h2><p class="dblp-lead">Send your list (or a spreadsheet with prices) and a broker contacts you, usually within one business day, to agree how we list and sell it.</p></div>'
+			. '<div class="dblp-form"><h2>Send your portfolio</h2><p class="dblp-req">Fields marked * are required.</p>' . do_shortcode( '[contact-form-7 id="1906" title="Sell Your Domain"]' ) . '</div></div>';
+		$h .= db_lp_faq( 'Questions about selling', array(
 			array( 'Who negotiates with buyers?', 'Our brokers handle every offer and every sale. We contact you before we agree a price below your minimum.' ),
-			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised.' ),
-			array( 'Can I list my names elsewhere too?', 'Yes. Listing with us is not exclusive. Remove a name at any time from your seller page.' ),
+			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised. Sellers in the United States can be paid through Stripe.' ),
+			array( 'What does exclusive mean?', 'You do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and the lower ' . $excl . '% commission.' ),
+			array( 'Can I list my names elsewhere too?', 'Yes, unless you choose exclusive. Remove a name at any time from your seller page.' ),
 			array( 'Who can sell?', 'Sellers in the United States and Canada, for now. Prices are in US dollars.' ),
-		);
-		foreach ( $faq as $f ) {
-			$h .= '<div class="dbsl-card"><h3>' . esc_html( $f[0] ) . '</h3><p>' . esc_html( $f[1] ) . '</p></div>';
-		}
-		$h .= '</div></section>';
-		$h .= '<div class="dbsl-card" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between"><div><h2 style="margin:0 0 4px">Ready to list?</h2><p style="margin:0">It takes a few minutes. Read the <a href="' . esc_url( home_url( '/seller-agreement/' ) ) . '">seller agreement</a> first.</p></div><a class="dbsl-btn" href="' . esc_url( $cta ) . '">List your domains</a></div>';
+			array( 'What if a name sells somewhere else?', 'Choose "I sold it elsewhere" on that name in your seller page and it comes down at once, with no penalty.' ),
+		), 'dbsl-faq' );
+		$h .= '<div class="dblp-card" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:40px"><div><h3 style="margin:0 0 4px">Ready to list?</h3><p style="margin:0">It takes a few minutes. Read the <a href="' . esc_url( home_url( '/seller-agreement/' ) ) . '">seller agreement</a> first.</p></div><a class="dblp-btn" href="' . esc_url( $cta ) . '">Create your seller account</a></div>';
 		return $h . '</div>';
 	}
 }
@@ -1074,7 +1088,7 @@ if ( ! function_exists( 'db_seller_agreement_body' ) ) {
 			'Your names'      => 'You confirm you own each name you list, or are authorised to sell it, that it is free of liens and disputes, and that it does not infringe anyone\'s trademark.',
 			'Listing'         => 'Listing is free and not exclusive. Domain Brothers may decline or remove any listing, including names that break our listing rules.',
 			'Prices'          => 'You set a Buy Now price or ask for offers, and may set a private minimum offer. Domain Brothers may accept an offer at or above your minimum on your behalf; below it, we ask you first.',
-			'Commission'      => 'When a name sells, Domain Brothers keeps ' . DB_SELLER_COMMISSION_PCT . '% of the sale price, with a minimum of $' . DB_SELLER_COMMISSION_MIN . '. Nothing is charged if a name does not sell.',
+			'Commission'      => 'When a name sells, Domain Brothers keeps ' . DB_SELLER_COMMISSION_PCT . '% of the sale price (' . DB_SELLER_EXCLUSIVE_PCT . '% for a name you list exclusively with us, meaning you do not list it anywhere else while it is with us), with a minimum of $' . DB_SELLER_COMMISSION_MIN . '. Nothing is charged if a name does not sell.',
 			'Sale and transfer' => 'The buyer pays Domain Brothers first. Once payment is confirmed, you transfer the name as instructed within 5 business days, by authorization code or registrar push.',
 			'Payout'          => 'You are paid the sale price minus commission 7 days after the buyer confirms control of the name, or 14 days after transfer if no dispute is raised. Payments may be held while a dispute is open.',
 			'Ownership checks' => 'You add a DNS record we provide so we can confirm control of each name. Keep the record until the name sells or is removed.',
