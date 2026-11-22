@@ -70,19 +70,6 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Admin: Sellers table (status, strikes, reactivation requests, suspend, reactivate, reset strikes) and a rules box for every limit above
 - [x] Functional test over HTTP (`tests/qa/seller-e2e/`), 11 defects found and fixed (see `docs/TASKS.md` A6)
 
-### Phase 7: domain auctions (3.136, from the owner's "Auction Changes" folder)
-- [x] Start an auction on our own names (Tools > Auctions, or the Auction box on a domain's edit screen) and on live seller names (seller Auctions tab)
-- [x] Starting price, optional reserve (hidden, or shown when the owner ticks it), optional Buy It Now above the reserve, length 3 to 14 days
-- [x] Bids from signed-in accounts only; the bidder enters a maximum and the site bids for them (proxy bidding); steps grow with the price ($5 under $100 up to $500)
-- [x] A bid in the last 5 minutes extends the auction; bidders appear as "Bidder 1", "Bidder 2"; owners cannot bid on their own names
-- [x] "Ask the owner about the reserve" requests; "Reserve met" shown once reached
-- [x] Winner chosen automatically (reserve met) and emailed a pay link; pays in full or on a plan through the normal checkout; payouts work as for any sale
-- [x] Winner does not pay in 3 days: the next highest bidder is offered the name at their maximum (up to 2 times)
-- [x] Below the reserve, the owner may accept the highest bid for 7 days
-- [x] Fixed-price checkout closed while an auction is live or the winner is paying
-- [x] `/auctions/` page (ending soonest, recently sold), "My bids" account tab, outbid / won / ended emails, WP Admin on/off switch
-- [ ] Not built from the folder (not domain-related or superseded): websites and apps as assets, wallets and Plug'n Pay, classified listings, paid listing upgrades, NDA uploads, public comments
-
 ---
 
 ## 1. What the references do, and what we take from each

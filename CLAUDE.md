@@ -17,7 +17,6 @@ theme) is not edited.
 | Offer page and shared page actions (no popups: offers, wishlist sign-in and exit offer are pages or off) | `db-offer-page-block.php` (`/make-an-offer/`), `db-page-actions-block.php` (Back and Share bar, real proof lines), `db-hero-showcase-block.php` (home hero cards) |
 | Designer's UI fixes (header logo, archive buttons, availability count, filters, accessibility, checkout seal, shared 1320px layout) | `db-ui-fixes-block.php` + `designer/ui-fixes/` (bundled from the standalone add-on "Domain Brothers UI Fixes"; it does nothing while that add-on is active, so deactivate the add-on to switch over) |
 | Seller marketplace phase 1 ("list your domains with us") | `db-seller-block.php` (pages `/sell-your-domains/`, `/seller/`, `/seller-agreement/`, admin Tools > Seller listings, hourly DNS check) and `db-seller-lib.php` (rules, tested offline). On only when option `db_seller_on` is `1`, or on staging when the option is unset. Plan and status: `MARKETPLACE_PLAN.md` |
-| Domain auctions (proxy bidding, hidden or shown reserve, Buy It Now, late-bid extension, winner pays through an accepted deal, second chance) | `db-auction-block.php` (domain-page box, `/auctions/`, account "My bids", seller Auctions tab, Tools > Auctions, domain edit box) and `db-auction-lib.php` (rules, tested offline). On only when option `db_auctions_on` is `1`, or on staging when the option is unset |
 | Offers, checkout, payment plans | `db-offers-block.php`, `db-offer-template.php`, `db-stripe-block.php`, `db-plan-lifecycle-block.php`, `db-orders-block.php` |
 | Accounts, wishlist, alerts | `db-account-block.php`, `db-wishlist-block.php` |
 | Service pages and forms | `db-service-art-block.php`, `db-handles-block.php` (social handle pages), `db-transfer-block.php` (EPP codes, encrypted), `db-form-entries-block.php` (copy of every form submission) |
@@ -43,7 +42,6 @@ for f in db-custom-blocks/*.php db-custom-blocks/pagecache/*.php; do php -l "$f"
 php tests/pages/pages-test.php
 php tests/plan/plan-lifecycle-test.php
 php tests/seo/html-hygiene-test.php
-php tests/auction/auction-test.php
 
 # Live staging QA (Playwright; sequential, the host returns 508 under parallel load)
 BETA_USER=<user> BETA_PASS=<password> node tests/qa/run-qa.js ./qa-report

@@ -613,12 +613,6 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return array( array( 'bad', 'paused' === $seller['status'] ? 'Your listings are paused. Resume them to make changes.' : 'Your seller account is offline. Send a reactivation request from this page.' ) );
 		}
 		$sid = (int) $seller['id'];
-		if ( function_exists( 'db_auc_seller_post' ) ) {
-			$auc = db_auc_seller_post( $act, $seller, $p );
-			if ( null !== $auc ) {
-				return $auc;
-			}
-		}
 
 		if ( 'add' === $act ) {
 			if ( ! db_wl_allow( 'seller-add:' . $sid, 10, HOUR_IN_SECONDS ) ) {

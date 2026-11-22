@@ -295,11 +295,6 @@ add_action( 'template_redirect', static function () {
 			);
 		}
 
-		// A live auction closes fixed-price checkout for the name (db-auction-block.php).
-		if ( apply_filters( 'db_stripe_fixed_price_blocked', false, db_stripe_norm( $domain ) ) ) {
-			$bail( $domain );
-		}
-
 		// SECURITY: the URL's price is client-supplied and untrusted — it only
 		// selects WHICH domain to show. The actual charge amount always comes
 		// from the domain listing's own domain_price meta, looked up here.
