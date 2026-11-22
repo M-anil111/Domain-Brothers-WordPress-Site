@@ -60,8 +60,8 @@ $head = "<link rel='stylesheet' id='ls' href='https://ex.test/wp-content/plugins
 	. "<link rel='stylesheet' id='db-design-css' href='$B/design-dddddddddd.css' media='all' />\n<link rel='stylesheet' id='db-modern-css' href='$B/modern-cccccccccc.css' media='all' />\n";
 $o = db_css_combine( $head, $B, $read, $write );
 check( 'dummy LiteSpeed stylesheet dropped', false === strpos( $o, 'litespeed-dummy' ) );
-check( 'adjacent run combined into one link, order kept', 2 === substr_count( $o, 'db-combo-css' ) && 2 === count( $written ) && in_array( "/* hero-aaaaaaaaaa.css */\n.h{}\n/* ui-bbbbbbbbbb.css */\n.u{}\n", $written, true ) );
-check( 'theme stylesheet stays between the two runs', (bool) preg_match( "#db-combo-css.*theme/style\.css.*db-combo-css#s", $o ) );
+check( 'adjacent run combined into one link, order kept', 1 === substr_count( $o, "id='db-combo-css'" ) && 1 === substr_count( $o, "id='db-combo-2-css'" ) && 2 === count( $written ) && in_array( "/* hero-aaaaaaaaaa.css */\n.h{}\n/* ui-bbbbbbbbbb.css */\n.u{}\n", $written, true ) );
+check( 'theme stylesheet stays between the two runs', (bool) preg_match( "#db-combo-css.*theme/style\.css.*db-combo-2-css#s", $o ) );
 check( 'second run keeps design before modern', in_array( "/* design-dddddddddd.css */\n.d{}\n/* modern-cccccccccc.css */\n.m{}\n", $written, true ) );
 $single = "<link rel='stylesheet' id='db-ui-css' href='$B/ui-bbbbbbbbbb.css' media='all' />\n<link rel='stylesheet' href='https://ex.test/theme/style.css' />";
 check( 'a single plugin stylesheet is left alone', $single === db_css_combine( $single, $B, $read, $write ) );

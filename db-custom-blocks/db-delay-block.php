@@ -154,7 +154,8 @@ if ( ! function_exists( 'db_css_combine' ) ) {
 		$html = preg_replace( '#<link\b[^>]*litespeed-dummy\.css[^>]*>\s*#i', '', $html );
 		$q    = preg_quote( rtrim( $base_url, '/' ), '#' );
 		$one  = '<link\b[^>]*rel=[\'"]stylesheet[\'"][^>]*href=[\'"]' . $q . '/([a-z0-9-]+-[0-9a-f]{10}\.css)[\'"][^>]*>';
-		return preg_replace_callback( '#(?:' . $one . '\s*){2,}#i', function ( $m ) use ( $one, $read, $write ) {
+		$run = 0; // each combined run gets its own id (db-combo-css, db-combo-2-css, ...)
+		return preg_replace_callback( '#(?:' . $one . '\s*){2,}#i', function ( $m ) use ( $one, $read, $write, &$run ) {
 			preg_match_all( '#' . $one . '#i', $m[0], $parts );
 			$names = $parts[1];
 			$css   = '';
@@ -170,7 +171,8 @@ if ( ! function_exists( 'db_css_combine' ) ) {
 				return $m[0];
 			}
 			preg_match( '#\s*$#', $m[0], $tail );
-			return "<link rel='stylesheet' id='db-combo-css' href='" . esc_url( $url ) . "' media='all' />" . $tail[0];
+			++$run;
+			return "<link rel='stylesheet' id='db-combo" . ( $run > 1 ? '-' . $run : '' ) . "-css' href='" . esc_url( $url ) . "' media='all' />" . $tail[0];
 		}, $html );
 	}
 }
