@@ -493,7 +493,7 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 if ( ! function_exists( 'db_seller_agreement_body' ) ) {
 	function db_seller_agreement_body() {
 		$h  = '<p class="db-sales-lead">The terms for listing domain names on Domain Brothers. Version ' . esc_html( DB_SELLER_AGREEMENT_VERSION ) . '.</p>' . db_seller_css() . '<div class="dbsl">';
-		$h .= '<p class="dbsl-msg dbsl-msg--warn">Draft. This agreement is waiting for legal review and may change before selling opens to the public.</p><div class="dbsl-card">';
+		$h .= '<div class="dbsl-card">';
 		$terms = array(
 			'Your names'      => 'You confirm you own each name you list, or are authorised to sell it, that it is free of liens and disputes, and that it does not infringe anyone\'s trademark.',
 			'Listing'         => 'Listing is free and not exclusive. Domain Brothers may decline or remove any listing, including names that break our listing rules.',
@@ -606,7 +606,7 @@ add_action( 'template_redirect', function () {
 		db_sales_render( 'Sell your domains with us', 'Sell your domains', db_seller_landing_body() );
 	}
 	if ( 'seller-agreement' === $path ) {
-		db_sales_render( 'Seller agreement', 'Seller agreement', db_seller_agreement_body(), true );
+		db_sales_render( 'Seller agreement', 'Seller agreement', db_seller_agreement_body() );
 	}
 	if ( 'seller' !== $path ) {
 		return;

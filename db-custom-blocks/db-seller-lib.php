@@ -19,7 +19,7 @@ if ( ! defined( 'DB_SELLER_MAX_NAMES' ) ) {
 	define( 'DB_SELLER_COMMISSION_MIN', 100 );    // Owner decision 1.
 	define( 'DB_SELLER_VERIFY_HOURS', 72 );       // Automatic DNS checks stop after this.
 	define( 'DB_SELLER_CNAME_TARGET', 'verify.domainbrothers.com' );
-	define( 'DB_SELLER_AGREEMENT_VERSION', '2026-11-22-draft' );
+	define( 'DB_SELLER_AGREEMENT_VERSION', '2026-11-22' );
 	define( 'DB_SELLER_COUNTRIES', 'US,CA' );     // Owner decision 3: US and Canada sellers at launch.
 }
 
