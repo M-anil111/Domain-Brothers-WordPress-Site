@@ -31,12 +31,20 @@ if ( ! function_exists( 'db_ts_test_mode' ) ) {
 	/**
 	 * Staging only (bug O-3): while option db_turnstile_test_until holds a future time, Turnstile
 	 * uses Cloudflare's published always-pass test keys so scripted QA can sign in and submit
-	 * offers. It switches itself off after the time given (at most two hours from when it was set)
-	 * and never applies on production.
+	 * offers. It switches itself off after the time given (at most two hours from when it was set),
+	 * never applies on production, and applies only to requests that send the cookie db_ts_qa with
+	 * the value of the option db_turnstile_test_key (32+ characters).
 	 */
 	function db_ts_test_mode() {
 		$until = (int) get_option( 'db_turnstile_test_until', 0 );
-		return $until > time() && $until <= time() + 2 * HOUR_IN_SECONDS && function_exists( 'db_is_staging_host' ) && db_is_staging_host();
+		if ( ! ( $until > time() && $until <= time() + 2 * HOUR_IN_SECONDS && function_exists( 'db_is_staging_host' ) && db_is_staging_host() ) ) {
+			return false;
+		}
+		// Only requests that carry the QA cookie get the test keys. Real visitors keep the real
+		// widget even while a test run is on (they used to see "For testing only").
+		$key  = (string) get_option( 'db_turnstile_test_key', '' );
+		$sent = isset( $_COOKIE['db_ts_qa'] ) ? (string) wp_unslash( $_COOKIE['db_ts_qa'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return strlen( $key ) >= 32 && hash_equals( $key, $sent );
 	}
 }
 
@@ -155,3 +163,20 @@ add_action( 'admin_post_db_turnstile_save', function () {
 	wp_safe_redirect( admin_url( 'admin.php?page=db-launch&saved=turnstile#turnstile' ) );
 	exit;
 } );
+
+/*
+ * A request carrying the QA cookie may be drawn with Cloudflare's test keys, so it must never be
+ * stored by our page cache or LiteSpeed and later served to visitors. pagecache/serve.php also
+ * skips requests with this cookie.
+ */
+add_action( 'send_headers', function () {
+	if ( is_admin() || headers_sent() || empty( $_COOKIE['db_ts_qa'] ) ) {
+		return;
+	}
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true );
+	}
+	do_action( 'litespeed_control_set_nocache', 'db turnstile qa' );
+	header( 'X-LiteSpeed-Cache-Control: no-cache, private' );
+	header( 'Cache-Control: private, no-store, max-age=0' );
+}, 2 );

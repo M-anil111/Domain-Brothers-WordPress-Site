@@ -20,6 +20,9 @@
  */
 const { chromium, request } = require('playwright');
 
+// Turnstile test keys apply only to requests carrying the QA cookie (CLAUDE.md); TS_QA_KEY holds its value.
+const QA_COOKIE = process.env.TS_QA_KEY ? [{ name: 'db_ts_qa', value: process.env.TS_QA_KEY, url: (process.env.QA_BASE || 'https://beta.domainbrothers.com') + '/' }] : [];
+
 const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const STAMP = Date.now().toString(36);
 const DOMAIN = `qa-wish-${STAMP}.com`;
@@ -57,6 +60,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	};
 
 	const visitor = await browser.newContext({ ...creds, viewport: { width: 1280, height: 900 } });
+	await visitor.addCookies(QA_COOKIE);
 	// Turnstile: staging runs Cloudflare's always-pass test keys while option db_turnstile_test_until is ahead,
 	// so any non-empty token is accepted there (see CLAUDE.md).
 	const TS = process.env.TS_TOKEN || 'XXXX.DUMMY.TOKEN.XXXX';
@@ -102,6 +106,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 
 	// 6. the button and dialog, in a fresh browser
 	const ui = await browser.newContext({ ...creds, viewport: { width: 1280, height: 1000 } });
+	await ui.addCookies(QA_COOKIE);
 	const page = await ui.newPage();
 	page.setDefaultTimeout(60000);
 	await page.goto(link, { waitUntil: 'load' });

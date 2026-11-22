@@ -19,6 +19,9 @@
  */
 const { chromium } = require('playwright');
 
+// Turnstile test keys apply only to requests carrying the QA cookie (CLAUDE.md); TS_QA_KEY holds its value.
+const QA_COOKIE = process.env.TS_QA_KEY ? [{ name: 'db_ts_qa', value: process.env.TS_QA_KEY, url: (process.env.QA_BASE || 'https://beta.domainbrothers.com') + '/' }] : [];
+
 const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const STAMP = Date.now().toString(36);
 const A = `qa-acct-a-${STAMP}.com`;
@@ -62,6 +65,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	const TS = process.env.TS_TOKEN || 'XXXX.DUMMY.TOKEN.XXXX';
 	const signIn = async (email, post) => {
 		const ctx = await browser.newContext({ ...creds, viewport: { width: 1280, height: 1000 } });
+		await ctx.addCookies(QA_COOKIE);
 		const call = (path, body) => ctx.request.fetch(`${BASE}/wp-json/db/v1/${path}`, { method: 'POST', headers: { Origin: BASE, 'Content-Type': 'text/plain' }, data: JSON.stringify({ ts: TS, ...(body || {}) }) });
 		await call('wishlist/code', { email });
 		const code = await testCode(email);

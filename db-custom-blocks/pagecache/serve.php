@@ -99,7 +99,7 @@ if ( ! function_exists( 'db_pc_request' ) ) {
 		$assign  = false;
 		foreach ( array_keys( $_COOKIE ) as $name ) {
 			$name = (string) $name;
-			if ( preg_match( '/^(wordpress_logged_in_|wordpress_sec_|wp-postpass_|comment_author_|wp_woocommerce_|woocommerce_|db_wl)/', $name ) ) {
+			if ( preg_match( '/^(wordpress_logged_in_|wordpress_sec_|wp-postpass_|comment_author_|wp_woocommerce_|woocommerce_|db_wl|db_ts_qa)/', $name ) ) {
 				return $memo;
 			}
 		}
