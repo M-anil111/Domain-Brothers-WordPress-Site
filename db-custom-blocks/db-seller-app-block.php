@@ -247,7 +247,7 @@ if ( ! function_exists( 'db_seller_dashboard_view' ) ) {
 		} elseif ( 'offers' === $view ) {
 			$h .= $sec['offers'] ?? '';
 		} elseif ( 'payouts' === $view ) {
-			$h .= $sec['payouts'] ?? '';
+			$h .= ( function_exists( 'db_connect_seller_card' ) ? db_connect_seller_card( $seller, (string) $seller['email'] ) : '' ) . ( $sec['payouts'] ?? '' );
 		} elseif ( 'point' === $view ) {
 			$h .= '' !== trim( (string) ( $sec['point'] ?? '' ) ) ? $sec['point'] : '<section class="dbsl-card dbsl-sec"><h2>Point your names at us</h2><p>Once a name is live, you can point it at Domain Brothers so visitors who type it see that it is for sale.</p></section>';
 		} elseif ( 'account' === $view ) {

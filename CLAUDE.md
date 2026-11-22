@@ -18,6 +18,7 @@ theme) is not edited.
 | Designer's UI fixes (header logo, archive buttons, availability count, filters, accessibility, checkout seal, shared 1320px layout) | `db-ui-fixes-block.php` + `designer/ui-fixes/` (bundled from the standalone add-on "Domain Brothers UI Fixes"; it does nothing while that add-on is active, so deactivate the add-on to switch over) |
 | Seller marketplace phase 1 ("list your domains with us") | `db-seller-block.php` (pages `/sell-your-domains/`, `/seller/`, `/seller-agreement/`, admin Tools > Seller listings, hourly DNS check) and `db-seller-lib.php` (rules, tested offline). On only when option `db_seller_on` is `1`, or on staging when the option is unset. Plan and status: `MARKETPLACE_PLAN.md` |
 | Offers, checkout, payment plans | `db-offers-block.php`, `db-offer-template.php`, `db-stripe-block.php`, `db-plan-lifecycle-block.php`, `db-orders-block.php` |
+| Stripe Connect (seller payouts) | `db-connect-block.php`: V2 connected accounts (recipient, US sellers), hosted onboarding on the seller's Sales and payouts tab, thin account events at `/wp-json/db/v1/stripe-connect-webhook`, platform products, storefront `/connect-store/`, destination charges with an application fee. Uses the bundled official SDK `vendor/stripe-php` (v23.1.0, API 2026-11-18.endive). Admin: Tools > Stripe Connect |
 | Accounts, wishlist, alerts | `db-account-block.php`, `db-wishlist-block.php` |
 | Service pages and forms | `db-service-art-block.php`, `db-handles-block.php` (social handle pages), `db-transfer-block.php` (EPP codes, encrypted), `db-form-entries-block.php` (copy of every form submission) |
 | Blog and news | `db-article-block.php` (post layout, TOC, CTAs), `db-news-block.php`, `db-index-policy-block.php` |
@@ -87,6 +88,7 @@ Manager.
 | Secret | Stored in |
 |---|---|
 | Stripe keys (`db_stripe_live_pub_key`, `db_stripe_live_sec_key`, `db_stripe_test_pub_key`, `db_stripe_test_sec_key`) and webhook secrets (`db_stripe_wh_secret_live`, `db_stripe_wh_secret_test`) | WordPress options, set in WP Admin |
+| Stripe Connect event destination signing secrets (`db_connect_wh_secret_test`, `db_connect_wh_secret_live`) | WordPress options, saved by Tools > Stripe Connect |
 | SendGrid API key (`db_sg_api_key`) | WordPress option |
 | SMTP password (`DB_SMTP_PASS`) | constant in `wp-config.php` |
 | Domain index key (`DB_DOMAIN_INDEX_KEY`) | constant in `wp-config.php` |

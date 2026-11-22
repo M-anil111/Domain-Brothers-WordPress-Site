@@ -35,7 +35,7 @@ if ( is_readable( __DIR__ . '/db-seller-reliability-block.php' ) ) {
 	require_once __DIR__ . '/db-seller-reliability-block.php';
 }
 
-define( 'DB_SELLER_DB_VERSION', '5' );
+define( 'DB_SELLER_DB_VERSION', '6' ); // 6: Stripe Connect account ids (connect_test, connect_live)
 
 /* ------------------------------------------------------------------ setup */
 
@@ -80,6 +80,8 @@ add_action( 'init', function () {
 		suspended_at datetime DEFAULT NULL,
 		reactivate_note text NULL,
 		reactivate_at datetime DEFAULT NULL,
+		connect_test varchar(64) NOT NULL DEFAULT '',
+		connect_live varchar(64) NOT NULL DEFAULT '',
 		created_at datetime NOT NULL,
 		PRIMARY KEY  (id),
 		UNIQUE KEY email (email)

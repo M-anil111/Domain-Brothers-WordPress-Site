@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.140.2
+ * Version:     3.141.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.140.2' );
+define( 'DB_BLOCKS_LOADED', '3.141.2' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4856,6 +4856,10 @@ require_once __DIR__ . '/db-article-block.php';
 // Seller marketplace phase 1: list your domains with us (switch: option db_seller_on; staging only by default).
 if ( is_readable( __DIR__ . '/db-seller-block.php' ) && is_readable( __DIR__ . '/db-seller-lib.php' ) ) {
 	require_once __DIR__ . '/db-seller-block.php';
+	// Stripe Connect for sellers: onboarding, platform products, storefront, destination charges.
+	if ( is_readable( __DIR__ . '/db-connect-block.php' ) ) {
+		require_once __DIR__ . '/db-connect-block.php';
+	}
 }
 /*
  * "?domain=name" on an ordinary page (old contact and offer links) is read by
