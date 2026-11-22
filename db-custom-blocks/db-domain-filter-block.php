@@ -89,6 +89,12 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 add_action( 'save_post_domain', function () {
 	delete_transient( DB_DOMAIN_INDEX_KEY );
 }, 20 );
+// A price or status written straight to post meta (bulk price changes, seller edits) also rebuilds it.
+add_action( 'updated_post_meta', function ( $meta_id, $object_id, $key ) {
+	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state' ), true ) ) {
+		delete_transient( DB_DOMAIN_INDEX_KEY );
+	}
+}, 10, 3 );
 add_action( 'set_object_terms', function ( $object_id ) {
 	if ( 'domain' === get_post_type( $object_id ) ) {
 		delete_transient( DB_DOMAIN_INDEX_KEY );

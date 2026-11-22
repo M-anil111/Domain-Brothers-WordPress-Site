@@ -254,6 +254,72 @@ if ( ! function_exists( 'db_seller_domain_taken_live' ) ) {
 	}
 }
 
+
+if ( ! function_exists( 'db_seller_apply_row' ) ) {
+	/** Saves a validated price row; for a live listing the public post changes at once. */
+	function db_seller_apply_row( array $listing, array $clean ) {
+		global $wpdb;
+		$now = current_time( 'mysql', true );
+		$wpdb->update( db_seller_table( 'listings' ), array( 'option_type' => $clean['option'], 'price' => $clean['price'], 'min_offer' => $clean['min_offer'], 'review_status' => 'approved' === $listing['review_status'] ? 'approved' : 'draft', 'updated_at' => $now ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		if ( 'approved' === $listing['review_status'] && (int) $listing['post_id'] ) {
+			$meta = db_seller_listing_meta( array_merge( $listing, $clean ), (int) $listing['seller_id'], current_time( 'Y-m-d' ) );
+			foreach ( array( 'domain_price', 'domain_type', '_db_min_offer' ) as $k ) {
+				update_post_meta( (int) $listing['post_id'], $k, $meta[ $k ] );
+			}
+			do_action( 'db_page_cache_purge_all' );
+		}
+	}
+}
+
+if ( ! function_exists( 'db_seller_remove' ) ) {
+	/** Removes a listing; a live one is taken off the site. */
+	function db_seller_remove( array $listing ) {
+		global $wpdb;
+		if ( (int) $listing['post_id'] ) {
+			wp_update_post( array( 'ID' => (int) $listing['post_id'], 'post_status' => 'draft' ) );
+			do_action( 'db_page_cache_purge_all' );
+		}
+		$wpdb->update( db_seller_table( 'listings' ), array( 'review_status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	}
+}
+
+if ( ! function_exists( 'db_seller_stats' ) ) {
+	/** Wishlist saves and offers for a live listing. */
+	function db_seller_stats( array $listing ) {
+		global $wpdb;
+		$saves  = (int) $listing['post_id'] && function_exists( 'db_wl_count' ) ? (int) db_wl_count( (int) $listing['post_id'] ) : 0;
+		$offers = 0;
+		if ( function_exists( 'db_deal_table' ) ) {
+			$t = db_deal_table( 'deals' );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$offers = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE domain = %s", $listing['domain'] ) );
+		}
+		return array( $saves, $offers );
+	}
+}
+
+if ( ! function_exists( 'db_seller_read_upload' ) ) {
+	/** The uploaded spreadsheet as a table, or an error string. */
+	function db_seller_read_upload( $field ) {
+		if ( empty( $_FILES[ $field ]['tmp_name'] ) || ! is_uploaded_file( $_FILES[ $field ]['tmp_name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification
+			return 'Choose a CSV or XLSX file.';
+		}
+		$f    = $_FILES[ $field ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification
+		$ext  = strtolower( pathinfo( (string) $f['name'], PATHINFO_EXTENSION ) );
+		if ( (int) $f['size'] > 5 * 1024 * 1024 ) {
+			return 'The file is larger than 5 MB. Split it into smaller files.';
+		}
+		if ( 'xlsx' === $ext ) {
+			$t = db_seller_xlsx_table( $f['tmp_name'] );
+			return is_array( $t ) ? $t : 'That XLSX file could not be read. Save it as CSV and try again.';
+		}
+		if ( in_array( $ext, array( 'csv', 'txt' ), true ) ) {
+			return db_seller_csv_table( (string) file_get_contents( $f['tmp_name'] ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		}
+		return 'Use a .csv or .xlsx file.';
+	}
+}
+
 /* ---------------------------------------------------------------- emails */
 
 if ( ! function_exists( 'db_seller_mail' ) ) {
@@ -348,7 +414,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$saved = 0;
 			foreach ( $rows as $id => $r ) {
 				$id = (int) $id;
-				if ( ! isset( $own[ $id ] ) || ! in_array( $own[ $id ]['review_status'], array( 'draft', 'rejected' ), true ) || ! is_array( $r ) ) {
+				if ( ! isset( $own[ $id ] ) || ! in_array( $own[ $id ]['review_status'], array( 'draft', 'rejected', 'approved' ), true ) || ! is_array( $r ) ) {
 					continue;
 				}
 				list( $c, $err ) = db_seller_validate_row( $r );
@@ -356,7 +422,10 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 					$msgs[] = array( 'bad', $own[ $id ]['domain'] . ': ' . implode( ' ', $err ) );
 					continue;
 				}
-				$wpdb->update( $l, array( 'option_type' => $c['option'], 'price' => $c['price'], 'min_offer' => $c['min_offer'], 'review_status' => 'draft', 'updated_at' => $now ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				if ( $c['option'] === $own[ $id ]['option_type'] && $c['price'] === (int) $own[ $id ]['price'] && $c['min_offer'] === (int) $own[ $id ]['min_offer'] && 'rejected' !== $own[ $id ]['review_status'] ) {
+					continue;
+				}
+				db_seller_apply_row( $own[ $id ], $c );
 				++$saved;
 			}
 			array_unshift( $msgs, array( $saved ? 'ok' : 'warn', $saved ? 'Prices saved for ' . $saved . ' ' . ( 1 === $saved ? 'name' : 'names' ) . '.' : 'Nothing to save.' ) );
@@ -407,16 +476,126 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return array( array( 'ok', count( $names ) . ' ' . ( 1 === count( $names ) ? 'name' : 'names' ) . ' sent for review. We email you when they are live.' ) );
 		}
 
+		$ikey = 'db_seller_import_' . $sid;
+
+		if ( 'import_preview' === $act ) {
+			if ( ! db_wl_allow( 'seller-import:' . $sid, 20, HOUR_IN_SECONDS ) ) {
+				return array( array( 'bad', 'Too many uploads this hour. Please wait a little.' ) );
+			}
+			$table = db_seller_read_upload( 'sheet' );
+			if ( is_string( $table ) ) {
+				return array( array( 'bad', $table ) );
+			}
+			$sr = db_seller_sheet_rows( $table );
+			if ( ! $sr['rows'] ) {
+				return array_merge( array( array( 'bad', 'No rows could be imported.' ) ), array_map( function ( $e ) { return array( 'warn', $e ); }, array_slice( $sr['errors'], 0, 20 ) ) );
+			}
+			$existing = array();
+			foreach ( $own as $r ) {
+				$existing[ $r['domain'] ] = $r['review_status'];
+			}
+			$mode = isset( $p['mode'] ) && 'sync' === $p['mode'] ? 'sync' : 'import';
+			$plan = db_seller_plan_import( $sr['rows'], $existing, $mode );
+			foreach ( $plan['add'] as $i => $a ) {
+				$why = db_seller_domain_taken( $a['domain'] );
+				if ( '' !== $why ) {
+					$plan['skip'][] = array( $a['domain'], $why );
+					unset( $plan['add'][ $i ] );
+				}
+			}
+			$plan['add']    = array_values( array_slice( $plan['add'], 0, max( 0, 1000 - count( $own ) ) ) );
+			$plan['mode']   = $mode;
+			$plan['errors'] = $sr['errors'];
+			set_transient( $ikey, $plan, 30 * MINUTE_IN_SECONDS );
+			return array( array( 'ok', 'File read. Check the summary below, then confirm.' ) );
+		}
+
+		if ( 'import_cancel' === $act ) {
+			delete_transient( $ikey );
+			return array( array( 'ok', 'Import cancelled. Nothing was changed.' ) );
+		}
+
+		if ( 'import_apply' === $act ) {
+			$plan = get_transient( $ikey );
+			delete_transient( $ikey );
+			if ( ! is_array( $plan ) ) {
+				return array( array( 'bad', 'That import expired. Upload the file again.' ) );
+			}
+			$by = array();
+			foreach ( $own as $r ) {
+				$by[ $r['domain'] ] = $r;
+			}
+			$n = array( 0, 0, 0 );
+			foreach ( $plan['add'] as $a ) {
+				if ( '' !== db_seller_domain_taken( $a['domain'] ) ) {
+					continue;
+				}
+				$wpdb->insert( $l, array( 'seller_id' => $sid, 'domain' => $a['domain'], 'option_type' => $a['option'], 'price' => $a['price'], 'min_offer' => $a['min_offer'], 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				++$n[0];
+			}
+			foreach ( $plan['update'] as $u ) {
+				if ( isset( $by[ $u['domain'] ] ) && 'pending' !== $by[ $u['domain'] ]['review_status'] ) {
+					db_seller_apply_row( $by[ $u['domain'] ], $u );
+					++$n[1];
+				}
+			}
+			foreach ( $plan['remove'] as $d ) {
+				if ( isset( $by[ $d ] ) ) {
+					db_seller_remove( $by[ $d ] );
+					++$n[2];
+				}
+			}
+			return array( array( 'ok', sprintf( 'Import done: %d added, %d updated, %d removed. New names need the DNS record before you submit them.', $n[0], $n[1], $n[2] ) ) );
+		}
+
+		if ( 'bulk' === $act ) {
+			$ids  = array_map( 'intval', isset( $p['ids'] ) && is_array( $p['ids'] ) ? $p['ids'] : array() );
+			$do   = (string) ( $p['bulk'] ?? '' );
+			$pick = array_values( array_filter( array_map( function ( $i ) use ( $own ) { return $own[ $i ] ?? null; }, $ids ) ) );
+			if ( ! $pick ) {
+				return array( array( 'warn', 'Select at least one name.' ) );
+			}
+			$done = 0; $msgs = array();
+			foreach ( $pick as $r ) {
+				if ( 'remove' === $do ) {
+					db_seller_remove( $r );
+					++$done;
+					continue;
+				}
+				if ( 'pending' === $r['review_status'] ) {
+					$msgs[] = array( 'warn', $r['domain'] . ': in review; change it after the review.' );
+					continue;
+				}
+				if ( 'make_offer' === $do ) {
+					$c = array( 'option' => 'make_offer', 'price' => (int) $r['price'], 'min_offer' => (int) $r['min_offer'] );
+				} elseif ( 'adjust' === $do ) {
+					if ( ! (int) $r['price'] ) {
+						$msgs[] = array( 'warn', $r['domain'] . ': has no price to adjust.' );
+						continue;
+					}
+					$np = db_seller_adjust_price( (int) $r['price'], (float) ( $p['pct'] ?? 0 ) );
+					$c  = array( 'option' => $r['option_type'], 'price' => $np, 'min_offer' => (int) $r['min_offer'] < $np ? (int) $r['min_offer'] : 0 );
+				} else {
+					return array( array( 'warn', 'Choose an action.' ) );
+				}
+				list( $c, $err ) = db_seller_validate_row( $c );
+				if ( $err ) {
+					$msgs[] = array( 'bad', $r['domain'] . ': ' . implode( ' ', $err ) );
+					continue;
+				}
+				db_seller_apply_row( $r, $c );
+				++$done;
+			}
+			array_unshift( $msgs, array( $done ? 'ok' : 'warn', $done . ' ' . ( 1 === $done ? 'name' : 'names' ) . ' updated.' ) );
+			return $msgs;
+		}
+
 		if ( 'remove' === $act ) {
 			$id = (int) ( $p['id'] ?? 0 );
 			if ( ! isset( $own[ $id ] ) ) {
 				return array();
 			}
-			if ( (int) $own[ $id ]['post_id'] ) {
-				wp_update_post( array( 'ID' => (int) $own[ $id ]['post_id'], 'post_status' => 'draft' ) );
-				do_action( 'db_page_cache_purge_all' );
-			}
-			$wpdb->update( $l, array( 'review_status' => 'removed', 'updated_at' => $now ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			db_seller_remove( $own[ $id ] );
 			return array( array( 'ok', $own[ $id ]['domain'] . ' was removed.' ) );
 		}
 		return array();
@@ -448,7 +627,10 @@ if ( ! function_exists( 'db_seller_css' ) ) {
 			. '.dbsl-code{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 12px}.dbsl-code code{padding:8px 12px;border-radius:10px;background:#f3f6f4;border:1px solid #dfe5e1;font-size:14px;overflow-wrap:anywhere;color:#0a1628}'
 			. '.dbsl-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}.dbsl-muted{color:#4b5563;font-size:14px}'
 			. '.dbsl-scroll{overflow-x:auto}.dbsl-link{background:none;border:0;padding:6px;color:#b42318;font:inherit;font-size:14px;text-decoration:underline;cursor:pointer;min-height:40px}'
-			. '@media(max-width:760px){.dbsl-tbl thead{display:none}.dbsl-tbl tr{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid #e5ebe7}.dbsl-tbl td{border:0;padding:0}.dbsl-tbl td.dbsl-dom,.dbsl-tbl td.dbsl-wide{grid-column:1/-1}.dbsl-tbl td[data-l]::before{content:attr(data-l);display:block;font-size:12px;color:#4b5563;margin-bottom:2px}}'
+			. '@media(max-width:760px){.dbsl-tbl thead{display:none}.dbsl-tbl tr{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0;border-bottom:1px solid #e5ebe7}.dbsl-tbl td{border:0;padding:0}.dbsl-tbl td.dbsl-dom,.dbsl-tbl td.dbsl-wide{grid-column:1/-1}.dbsl-tbl td:first-child{grid-column:1/-1}.dbsl-tbl td[data-l]::before{content:attr(data-l);display:block;font-size:12px;color:#4b5563;margin-bottom:2px}}'
+			. '.dbsl-two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}@media(max-width:860px){.dbsl-two{grid-template-columns:1fr}}.dbsl-ul{margin:0 0 12px 18px;padding:0;font-size:15px;line-height:1.6}.dbsl-preview h3{margin:14px 0 6px;font-size:16px}.dbsl-radios{border:0;padding:0;margin:0 0 14px}.dbsl-radios legend{font-weight:700;font-size:14.5px;margin-bottom:6px}.dbsl-radios .dbsl-check{margin-bottom:6px}'
+			. '.dbsl-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.dbsl-filters a{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1.5px solid #cfd8d3;border-radius:999px;color:#0a1628!important;text-decoration:none!important;font-weight:600;font-size:14px}.dbsl-filters a span{color:#4b5563;font-weight:700}.dbsl-filters a.is-on{background:#0a1628;border-color:#0a1628;color:#fff!important}.dbsl-filters a.is-on span{color:#d9f99d}'
+			. '.dbsl-bulk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}.dbsl-bulk select{max-width:240px}.dbsl input[type=file]{font-size:15px;max-width:100%}.dbsl input[type=checkbox]{width:18px;height:18px;accent-color:#0a1628}'
 			. 'html body .dbsl button.dbsl-link{display:inline;min-height:40px;padding:6px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:#b42318!important;font-size:14px!important;font-weight:600!important;text-decoration:underline!important;text-transform:none!important;letter-spacing:0!important}'
 			. 'html body .dbsl button.dbsl-btn:disabled{background:#c9d1cd!important;color:#36423d!important;border-color:#c9d1cd!important;cursor:not-allowed!important;box-shadow:none!important}'
 			. '</style>';
@@ -534,65 +716,119 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 		if ( 'active' !== $seller['status'] ) {
 			return $h . '<p class="dbsl-msg dbsl-msg--bad">Your seller account is paused. <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a> for help.</p></div>';
 		}
-		$rows   = db_seller_listings( (int) $seller['id'] );
-		$drafts = array_filter( $rows, function ( $r ) { return in_array( $r['review_status'], array( 'draft', 'rejected' ), true ); } );
+		$rows     = db_seller_listings( (int) $seller['id'] );
+		$editable = array_filter( $rows, function ( $r ) { return in_array( $r['review_status'], array( 'draft', 'rejected', 'approved' ), true ); } );
+		$unverif  = array_filter( $rows, function ( $r ) { return 'draft' === $r['review_status'] && 'verified' !== $r['verify_status']; } );
+		$plan     = get_transient( 'db_seller_import_' . (int) $seller['id'] );
 
-		// Add names.
-		$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-add"><h2 id="dbsl-add">Add names</h2><form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="add"><input type="hidden" name="t" value="' . $t . '">'
+		// Import preview (waits for confirmation).
+		if ( is_array( $plan ) ) {
+			$list = function ( $items, $fmt ) { return $items ? '<ul class="dbsl-ul">' . implode( '', array_map( $fmt, array_slice( $items, 0, 25 ) ) ) . ( count( $items ) > 25 ? '<li>and ' . ( count( $items ) - 25 ) . ' more</li>' : '' ) . '</ul>' : ''; };
+			$h   .= '<section class="dbsl-card dbsl-sec dbsl-preview" aria-labelledby="dbsl-pv"><h2 id="dbsl-pv">Confirm your import</h2>'
+				. '<div class="dbsl-fee"><div><strong>' . count( $plan['add'] ) . '</strong>to add</div><div><strong>' . count( $plan['update'] ) . '</strong>to update</div><div><strong>' . count( $plan['remove'] ) . '</strong>to remove</div><div><strong>' . ( count( $plan['skip'] ) + count( (array) $plan['errors'] ) ) . '</strong>skipped</div></div>';
+			if ( $plan['remove'] ) {
+				$h .= '<p class="dbsl-msg dbsl-msg--warn">' . ( 'sync' === $plan['mode'] ? 'Sync removes every name that is not in your file. ' : '' ) . 'These names will be removed' . ( array_filter( $rows, function ( $r ) use ( $plan ) { return 'approved' === $r['review_status'] && in_array( $r['domain'], $plan['remove'], true ); } ) ? ', and live ones taken off the site' : '' ) . ':</p>' . $list( $plan['remove'], function ( $d ) { return '<li>' . esc_html( $d ) . '</li>'; } );
+			}
+			if ( $plan['add'] ) {
+				$h .= '<h3>To add</h3>' . $list( $plan['add'], function ( $a ) { return '<li>' . esc_html( $a['domain'] ) . ' &middot; ' . ( 'make_offer' === $a['option'] ? 'Make Offer' : 'Buy Now $' . number_format( $a['price'] ) ) . '</li>'; } );
+			}
+			if ( $plan['update'] ) {
+				$h .= '<h3>To update</h3>' . $list( $plan['update'], function ( $a ) { return '<li>' . esc_html( $a['domain'] ) . ' &middot; ' . ( 'make_offer' === $a['option'] ? 'Make Offer' : 'Buy Now $' . number_format( $a['price'] ) ) . '</li>'; } );
+			}
+			$skips = array_merge( array_map( function ( $s ) { return $s[0] . ': ' . $s[1]; }, $plan['skip'] ), (array) $plan['errors'] );
+			if ( $skips ) {
+				$h .= '<h3>Skipped</h3>' . $list( $skips, function ( $s ) { return '<li>' . esc_html( $s ) . '</li>'; } );
+			}
+			$h .= '<div class="dbsl-actions"><form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="import_apply"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn"' . ( $plan['add'] || $plan['update'] || $plan['remove'] ? '' : ' disabled aria-disabled="true"' ) . '>Confirm import</button></form>'
+				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="import_cancel"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn dbsl-btn--ghost">Cancel</button></form></div></section>';
+		}
+
+		// Add names: paste, or upload a spreadsheet.
+		$h .= '<div class="dbsl-two"><section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-add"><h2 id="dbsl-add">Add names</h2><form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="add"><input type="hidden" name="t" value="' . $t . '">'
 			. '<div class="dbsl-f"><label for="dbsl-names">Domain names, up to ' . DB_SELLER_MAX_NAMES . ' at a time</label><textarea id="dbsl-names" name="names" required placeholder="example.com, another.ca" aria-describedby="dbsl-names-h"></textarea><p id="dbsl-names-h" class="dbsl-muted">Separate names with commas, spaces or new lines. Web addresses are fine; we keep just the name.</p></div>'
-			. '<button type="submit" class="dbsl-btn">Add names</button></form></section>';
+			. '<button type="submit" class="dbsl-btn">Add names</button></form></section>'
+			. '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-up"><h2 id="dbsl-up">Upload a spreadsheet</h2><form method="post" action="' . $self . '" enctype="multipart/form-data"><input type="hidden" name="db_seller_action" value="import_preview"><input type="hidden" name="t" value="' . $t . '">'
+			. '<div class="dbsl-f"><label for="dbsl-file">CSV or XLSX file, up to ' . DB_SELLER_MAX_ROWS . ' rows</label><input type="file" id="dbsl-file" name="sheet" accept=".csv,.xlsx,text/csv" required aria-describedby="dbsl-file-h"><p id="dbsl-file-h" class="dbsl-muted">Columns: Domain Name, Selling Option, For Sale, Price, Minimum Price, Currency, Action Type. A Sedo export works as it is. <a href="' . esc_url( add_query_arg( 'template', '1', home_url( '/seller/' ) ) ) . '">Download the template</a>.</p></div>'
+			. '<fieldset class="dbsl-f dbsl-radios"><legend>Mode</legend><label class="dbsl-check"><input type="radio" name="mode" value="import" checked> <span><strong>Import:</strong> add new names and update the ones in the file</span></label><label class="dbsl-check"><input type="radio" name="mode" value="sync"> <span><strong>Sync:</strong> also remove names that are not in the file</span></label></fieldset>'
+			. '<button type="submit" class="dbsl-btn dbsl-btn--ghost">Read the file</button><p class="dbsl-muted" style="margin-top:8px">Nothing changes until you confirm.</p></form></section></div>';
 
-		if ( $drafts ) {
+		if ( $editable ) {
 			// Prices.
-			$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-prices"><h2 id="dbsl-prices">Prices</h2><p>Buy Now needs a price of at least $' . DB_SELLER_MIN_PRICE . '. The minimum offer is private: buyers never see it. Commission is ' . DB_SELLER_COMMISSION_PCT . '% (minimum $' . DB_SELLER_COMMISSION_MIN . ') when a name sells.</p>'
+			$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-prices"><h2 id="dbsl-prices">Prices</h2><p>Buy Now needs a price of at least $' . DB_SELLER_MIN_PRICE . '. The minimum offer is private: buyers never see it. Changes to live names apply at once. Commission is ' . DB_SELLER_COMMISSION_PCT . '% (minimum $' . DB_SELLER_COMMISSION_MIN . ') when a name sells.</p>'
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="price"><input type="hidden" name="t" value="' . $t . '"><div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col">Name</th><th scope="col">Selling option</th><th scope="col">Price (USD)</th><th scope="col">Minimum offer (USD)</th></tr></thead><tbody>';
-			foreach ( $drafts as $r ) {
+			foreach ( $editable as $r ) {
 				$id = (int) $r['id'];
-				$h .= '<tr><td class="dbsl-dom">' . esc_html( $r['domain'] ) . '</td>'
+				$h .= '<tr><td class="dbsl-dom">' . esc_html( $r['domain'] ) . ( 'approved' === $r['review_status'] ? ' <span class="dbsl-chip dbsl-chip--ok">Live</span>' : '' ) . '</td>'
 					. '<td data-l="Selling option"><label class="screen-reader-text" for="dbsl-o' . $id . '">Selling option for ' . esc_html( $r['domain'] ) . '</label><select id="dbsl-o' . $id . '" name="row[' . $id . '][option]"><option value="buy_now"' . selected( $r['option_type'], 'buy_now', false ) . '>Buy Now</option><option value="make_offer"' . selected( $r['option_type'], 'make_offer', false ) . '>Make Offer</option></select></td>'
 					. '<td data-l="Price"><label class="screen-reader-text" for="dbsl-p' . $id . '">Price for ' . esc_html( $r['domain'] ) . '</label><input type="text" inputmode="numeric" id="dbsl-p' . $id . '" name="row[' . $id . '][price]" value="' . ( (int) $r['price'] ? esc_attr( number_format( (int) $r['price'] ) ) : '' ) . '" placeholder="e.g. 2,500"></td>'
 					. '<td data-l="Minimum offer"><label class="screen-reader-text" for="dbsl-m' . $id . '">Minimum offer for ' . esc_html( $r['domain'] ) . '</label><input type="text" inputmode="numeric" id="dbsl-m' . $id . '" name="row[' . $id . '][min_offer]" value="' . ( (int) $r['min_offer'] ? esc_attr( number_format( (int) $r['min_offer'] ) ) : '' ) . '" placeholder="optional"></td></tr>';
 			}
 			$h .= '</tbody></table></div><div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save prices</button></div></form></section>';
+		}
 
+		if ( $unverif ) {
 			// Ownership.
 			$txt   = db_seller_txt_value( $seller['token'] );
-			$first = reset( $drafts );
+			$first = reset( $unverif );
 			$h    .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-own"><h2 id="dbsl-own">Prove you own the names</h2>'
 				. '<p>At your registrar, add this <strong>TXT record</strong> to each name (host <code>@</code>, the name itself). It is the same for all your names.</p>'
 				. '<div class="dbsl-code"><code id="dbsl-txt">' . esc_html( $txt ) . '</code><button type="button" class="dbsl-btn dbsl-btn--ghost dbsl-btn--sm" data-copy="dbsl-txt">Copy</button></div>'
 				. '<p class="dbsl-muted">Or add a CNAME record instead: host <code>' . esc_html( 'db-' . $seller['token'] ) . '</code> pointing to <code>' . esc_html( DB_SELLER_CNAME_TARGET ) . '</code> (for ' . esc_html( $first['domain'] ) . ' the full host is ' . esc_html( db_seller_cname_host( $seller['token'], $first['domain'] ) ) . ').</p>'
-				. '<p class="dbsl-muted">We check every hour for 3 days. Changes usually show within an hour.</p>'
+				. '<p class="dbsl-muted">' . count( $unverif ) . ' ' . ( 1 === count( $unverif ) ? 'name is' : 'names are' ) . ' waiting. We check every hour for 3 days. Changes usually show within an hour.</p>'
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="check"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn dbsl-btn--ghost">Check now</button></form></section>';
 		}
 
-		// Your names.
+		// Your names: filters, bulk actions, statistics.
+		$filters = array( 'all' => 'All', 'live' => 'Live', 'review' => 'In review', 'action' => 'Needs action' );
+		$f       = isset( $_GET['f'] ) && isset( $filters[ $_GET['f'] ] ) ? (string) $_GET['f'] : 'all'; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		$match   = function ( $r ) use ( $f ) {
+			return 'all' === $f || ( 'live' === $f && 'approved' === $r['review_status'] ) || ( 'review' === $f && 'pending' === $r['review_status'] ) || ( 'action' === $f && in_array( $r['review_status'], array( 'draft', 'rejected' ), true ) );
+		};
 		$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-list"><h2 id="dbsl-list">Your names</h2>';
 		if ( ! $rows ) {
 			$h .= '<p>No names yet. Add your first names above.</p>';
 		} else {
+			$h .= '<nav class="dbsl-filters" aria-label="Filter your names">';
+			foreach ( $filters as $k => $label ) {
+				$n  = count( array_filter( $rows, function ( $r ) use ( $k ) { return 'all' === $k || ( 'live' === $k && 'approved' === $r['review_status'] ) || ( 'review' === $k && 'pending' === $r['review_status'] ) || ( 'action' === $k && in_array( $r['review_status'], array( 'draft', 'rejected' ), true ) ); } ) );
+				$h .= '<a href="' . esc_url( 'all' === $k ? home_url( '/seller/' ) : add_query_arg( 'f', $k, home_url( '/seller/' ) ) ) . '#dbsl-list"' . ( $f === $k ? ' aria-current="page" class="is-on"' : '' ) . '>' . esc_html( $label ) . ' <span>' . $n . '</span></a>';
+			}
+			$h    .= '</nav>';
 			$ready = 0;
-			$h    .= '<div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col">Name</th><th scope="col">Option</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col"><span class="screen-reader-text">Actions</span></th></tr></thead><tbody>';
 			foreach ( $rows as $r ) {
-				list( $label, $tone ) = db_seller_status( $r );
 				if ( 'draft' === $r['review_status'] && db_seller_ready( $r ) ) {
 					++$ready;
 				}
+			}
+			$shown = array_filter( $rows, $match );
+			$h    .= '<form method="post" action="' . $self . '" id="dbsl-bulkf"><input type="hidden" name="db_seller_action" value="bulk"><input type="hidden" name="t" value="' . $t . '">'
+				. '<div class="dbsl-bulk"><label for="dbsl-bulk-do" class="screen-reader-text">Action for selected names</label><select id="dbsl-bulk-do" name="bulk"><option value="">With selected&hellip;</option><option value="adjust">Change price by %</option><option value="make_offer">Switch to Make Offer</option><option value="remove">Remove</option></select>'
+				. '<label for="dbsl-pct" class="screen-reader-text">Percent change</label><input type="text" inputmode="decimal" id="dbsl-pct" name="pct" placeholder="% e.g. -10" style="max-width:130px">'
+				. '<button type="submit" class="dbsl-btn dbsl-btn--ghost dbsl-btn--sm" onclick="var s=document.getElementById(\'dbsl-bulk-do\');return s.value!==\'remove\'||confirm(\'Remove the selected names?\');">Apply</button></div>'
+				. '<div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col"><label class="screen-reader-text" for="dbsl-all">Select all</label><input type="checkbox" id="dbsl-all" data-all></th><th scope="col">Name</th><th scope="col">Option</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Saves</th><th scope="col">Offers</th></tr></thead><tbody>';
+			foreach ( $shown as $r ) {
+				list( $label, $tone ) = db_seller_status( $r );
 				$name = esc_html( $r['domain'] );
-				if ( 'approved' === $r['review_status'] && (int) $r['post_id'] ) {
+				$live = 'approved' === $r['review_status'] && (int) $r['post_id'];
+				if ( $live ) {
 					$name = '<a href="' . esc_url( get_permalink( (int) $r['post_id'] ) ) . '">' . $name . '</a>';
 				}
+				list( $saves, $offers ) = $live ? db_seller_stats( $r ) : array( null, null );
 				$note = 'rejected' === $r['review_status'] && '' !== $r['review_note'] ? '<br><span class="dbsl-muted">' . esc_html( $r['review_note'] ) . '</span>' : '';
-				$h   .= '<tr><td class="dbsl-dom">' . $name . '</td><td data-l="Option">' . ( 'make_offer' === $r['option_type'] ? 'Make Offer' : 'Buy Now' ) . '</td><td data-l="Price">' . ( (int) $r['price'] ? '$' . esc_html( number_format( (int) $r['price'] ) ) : '&mdash;' ) . '</td>'
+				$h   .= '<tr><td><label class="screen-reader-text" for="dbsl-c' . (int) $r['id'] . '">Select ' . esc_html( $r['domain'] ) . '</label><input type="checkbox" id="dbsl-c' . (int) $r['id'] . '" name="ids[]" value="' . (int) $r['id'] . '"></td>'
+					. '<td class="dbsl-dom">' . $name . '</td><td data-l="Option">' . ( 'make_offer' === $r['option_type'] ? 'Make Offer' : 'Buy Now' ) . '</td><td data-l="Price">' . ( (int) $r['price'] ? '$' . esc_html( number_format( (int) $r['price'] ) ) : '&mdash;' ) . '</td>'
 					. '<td data-l="Status" class="dbsl-wide"><span class="dbsl-chip dbsl-chip--' . esc_attr( $tone ) . '">' . esc_html( $label ) . '</span>' . $note . '</td>'
-					. '<td><form method="post" action="' . $self . '" onsubmit="return confirm(\'Remove ' . esc_js( $r['domain'] ) . '?\')"><input type="hidden" name="db_seller_action" value="remove"><input type="hidden" name="t" value="' . $t . '"><input type="hidden" name="id" value="' . (int) $r['id'] . '"><button type="submit" class="dbsl-link" aria-label="Remove ' . esc_attr( $r['domain'] ) . '">Remove</button></form></td></tr>';
+					. '<td data-l="Saves">' . ( null === $saves ? '&mdash;' : (int) $saves ) . '</td><td data-l="Offers">' . ( null === $offers ? '&mdash;' : (int) $offers ) . '</td></tr>';
 			}
-			$h .= '</tbody></table></div>';
+			if ( ! $shown ) {
+				$h .= '<tr><td colspan="7">Nothing here.</td></tr>';
+			}
+			$h .= '</tbody></table></div></form>';
 			$h .= '<form method="post" action="' . $self . '" class="dbsl-actions"><input type="hidden" name="db_seller_action" value="submit"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn"' . ( $ready ? '' : ' disabled aria-disabled="true"' ) . '>' . ( 'trusted' === $seller['trust'] ? 'Publish' : 'Submit for review' ) . ( $ready ? ' (' . $ready . ')' : '' ) . '</button><span class="dbsl-muted">' . ( $ready ? 'Names with a valid price and a verified record are sent.' : 'A name is ready once it has a valid price and a verified record.' ) . '</span></form>';
 		}
 		$h .= '</section>';
 		$h .= '<p class="dbsl-muted">Questions? <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact a broker</a>. <a href="' . esc_url( home_url( '/seller-agreement/' ) ) . '">Seller agreement</a>.</p>';
-		$h .= '<script data-no-delay>document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-copy]");if(!b){return;}var t=document.getElementById(b.getAttribute("data-copy"));if(t&&navigator.clipboard){navigator.clipboard.writeText(t.textContent).then(function(){b.textContent="Copied";setTimeout(function(){b.textContent="Copy";},2000);});}});</script>';
+		$h .= '<script data-no-delay>document.addEventListener("change",function(e){if(e.target.matches&&e.target.matches("[data-all]")){document.querySelectorAll("#dbsl-bulkf input[name=\'ids[]\']").forEach(function(c){c.checked=e.target.checked;});}});document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-copy]");if(!b){return;}var t=document.getElementById(b.getAttribute("data-copy"));if(t&&navigator.clipboard){navigator.clipboard.writeText(t.textContent).then(function(){b.textContent="Copied";setTimeout(function(){b.textContent="Copy";},2000);});}});</script>';
 		return $h . '</div>';
 	}
 }
@@ -621,6 +857,13 @@ add_action( 'template_redirect', function () {
 		exit;
 	}
 	$seller = db_seller_get( $email );
+	if ( isset( $_GET['template'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		status_header( 200 );
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="domain-brothers-import-template.csv"' );
+		echo db_seller_template_csv(); // phpcs:ignore WordPress.Security.EscapeOutput
+		exit;
+	}
 	if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		db_seller_flash( $email, db_seller_handle_post( $email, $seller ) );
 		wp_safe_redirect( home_url( '/seller/' ) );

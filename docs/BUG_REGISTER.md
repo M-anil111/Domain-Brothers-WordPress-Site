@@ -103,3 +103,7 @@ Severity: **H** high, **M** medium, **L** low. Effort: S under 1 hour, M half a 
    axe audit; commit one fix per commit.
 
 Re-run the crawl script after batch 2 and batch 3 and compare counts against this register.
+
+## Price change log
+
+- **2026-11-22, beta:** every published, unsold listing priced under $10,000 was raised 35% (rounded to the dollar): 89 listings. Old prices are kept in post meta `_db_price_pre_35` and in the option `db_price_backup_20261122` (post id to old price), so the change can be reversed. Watcher price emails were not sent for this change; price history records it. Not applied to production (no access; production was returning 500).

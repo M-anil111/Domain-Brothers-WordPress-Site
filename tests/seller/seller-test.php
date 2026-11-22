@@ -70,4 +70,33 @@ check( 'countries outside US and Canada are refused', 1 === count( $e ) );
 list( , $e ) = db_seller_clean_profile( array( 'legal_name' => 'P', 'country' => 'US' ) );
 check( 'name and agreement are required', 2 === count( $e ) );
 
+// Phase 2: bulk import.
+$csv = "\xEF\xBB\xBFDomain Name,Selling Option,For Sale,Price,Minimum Price,Currency,Action Type\r\nalpha.com,BUY_NOW,yes,2500,2000,USD,\r\nbeta.ca,MAKE_OFFER,,,500,,\r\nold.com,,,,,,DELETE\r\nbad_name,BUY_NOW,yes,900,,USD,\r\neuro.com,BUY_NOW,yes,900,,EUR,\r\n\r\n";
+$tb = db_seller_csv_table( $csv );
+check( 'CSV with BOM and blank lines is read', 6 === count( $tb ) && 'Domain Name' === $tb[0][0] );
+check( 'semicolon CSV is read', 'x.com' === db_seller_csv_table( "Domain Name;Price\nx.com;100" )[1][0] );
+$sr = db_seller_sheet_rows( $tb );
+check( 'rows in the Sedo layout', 3 === count( $sr['rows'] ) && 'buy_now' === $sr['rows'][0]['option'] && 'make_offer' === $sr['rows'][1]['option'] && $sr['rows'][2]['delete'] );
+check( 'bad names and non-USD rows are reported with the row number', 2 === count( $sr['errors'] ) && false !== strpos( implode( ' ', $sr['errors'] ), 'Row 5' ) && false !== strpos( implode( ' ', $sr['errors'] ), 'EUR' ) );
+check( 'a file without the Domain Name column is refused', 1 === count( db_seller_sheet_rows( array( array( 'Name', 'Price' ), array( 'a.com', '1' ) ) )['errors'] ) );
+check( 'For Sale "no" means remove', ! db_seller_sheet_rows( array( array( 'Domain Name', 'For Sale' ), array( 'a.com', 'no' ) ) )['rows'][0]['for_sale'] );
+$plan = db_seller_plan_import( $sr['rows'], array( 'old.com' => 'approved', 'alpha.com' => 'draft', 'kept.com' => 'approved', 'busy.com' => 'pending' ), 'import' );
+check( 'import adds, updates and removes', 1 === count( $plan['add'] ) && 'beta.ca' === $plan['add'][0]['domain'] && 'alpha.com' === $plan['update'][0]['domain'] && array( 'old.com' ) === $plan['remove'] );
+check( 'import leaves names missing from the file alone', ! in_array( 'kept.com', $plan['remove'], true ) );
+$plan = db_seller_plan_import( $sr['rows'], array( 'old.com' => 'approved', 'kept.com' => 'approved' ), 'sync' );
+check( 'sync also removes names missing from the file', in_array( 'kept.com', $plan['remove'], true ) && in_array( 'old.com', $plan['remove'], true ) );
+$plan = db_seller_plan_import( array( array( 'domain' => 'busy.com', 'option' => 'buy_now', 'price' => '900', 'min_offer' => '', 'for_sale' => true, 'delete' => false ), array( 'domain' => 'busy.com', 'option' => 'buy_now', 'price' => '900', 'min_offer' => '', 'for_sale' => true, 'delete' => false ), array( 'domain' => 'cheap.com', 'option' => 'buy_now', 'price' => '10', 'min_offer' => '', 'for_sale' => true, 'delete' => false ) ), array( 'busy.com' => 'pending' ) );
+check( 'names in review, duplicates and invalid prices are skipped with reasons', 3 === count( $plan['skip'] ) && ! $plan['add'] && ! $plan['update'] );
+check( 'template has the seven columns', 0 === strpos( db_seller_template_csv(), 'Domain Name,Selling Option,For Sale,Price,Minimum Price,Currency,Action Type' ) && 4 === count( db_seller_sheet_rows( db_seller_csv_table( db_seller_template_csv() ) )['rows'] ) + 1 );
+check( 'price adjustment by percent', 1100 === db_seller_adjust_price( 1000, 10 ) && 900 === db_seller_adjust_price( 1000, -10 ) && 100 === db_seller_adjust_price( 150, -90 ) && 6000 === db_seller_adjust_price( 1000, 9999 ) );
+if ( class_exists( 'ZipArchive' ) ) {
+	$f = tempnam( sys_get_temp_dir(), 'x' ) . '.xlsx';
+	$z = new ZipArchive(); $z->open( $f, ZipArchive::CREATE );
+	$z->addFromString( 'xl/sharedStrings.xml', '<?xml version="1.0"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Domain Name</t></si><si><t>Price</t></si><si><t>gamma.io</t></si></sst>' );
+	$z->addFromString( 'xl/worksheets/sheet1.xml', '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row><row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>4200</v></c></row></sheetData></worksheet>' );
+	$z->close();
+	$x = db_seller_xlsx_table( $f ); unlink( $f );
+	check( 'XLSX first sheet is read (shared strings and numbers)', is_array( $x ) && 'gamma.io' === $x[1][0] && '4200' === $x[1][1] );
+} else { echo "SKIP xlsx (no ZipArchive)\n"; }
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
