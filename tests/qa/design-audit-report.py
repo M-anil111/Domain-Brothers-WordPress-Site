@@ -25,7 +25,7 @@ CHECKS = OrderedDict([
     ('h1', 'Exactly one H1'),
     ('container', 'Content container 1320px with 15px gutters'),
     ('dbxwrap', '.dbx-wrap content 15px from each side on mobile'),
-    ('padding', 'Section padding 80 / 60 / 45px (cards: gap below)'),
+    ('padding', 'Section spacing 80 / 60 / 45px (bands inside, gaps between)'),
     ('doublegap', 'One gap between neighbouring sections'),
     ('tap', 'No tap-highlight border on mobile'),
     ('focus', 'Visible keyboard focus'),
@@ -53,14 +53,15 @@ def judge(r):
         bad = [v for v in r['dbxWrap'] if not within(v, 15, 1)]
         out['dbxwrap'] = (not bad, '.dbx-wrap content at %spx, expected 15px' % (bad[0] if bad else 15))
     secs = r.get('sections') or []
-    if secs:
-        want = r.get('wantPad')
-        bad = [s for s in secs if s.get('bad')]
-        out['padding'] = (not bad, ', '.join(('%s card gap %spx' % (s['cls'], s['mb'])) if s['kind'] == 'K' else ('%s %s/%spx' % (s['cls'], s['top'], s['bottom'])) for s in bad[:3]) + ' (expected %spx)' % want)
     gaps = r.get('gaps') or []
+    want = r.get('wantPad')
+    if secs:
+        bad = [s for s in secs if s.get('bad')]
+        small = [g for g in gaps if not g['ok'] and g['gap'] < want]
+        out['padding'] = (not bad and not small, ', '.join(['%s band %s/%spx' % (s['cls'], s['top'], s['bottom']) for s in bad[:2]] + ['%s: gap %spx' % (g['between'], g['gap']) for g in small[:2]]) + ' (expected %spx)' % want)
     if gaps:
-        dbl = [g for g in gaps if not g['ok']]
-        out['doublegap'] = (not dbl, ', '.join('%s: %spx' % (g['between'], g['gap']) for g in dbl[:2]) + ' (expected one %spx gap)' % r.get('wantPad'))
+        big = [g for g in gaps if not g['ok'] and g['gap'] >= want]
+        out['doublegap'] = (not big, ', '.join('%s: %spx' % (g['between'], g['gap']) for g in big[:2]) + ' (expected one %spx gap)' % want)
     if w < 1024:
         out['tap'] = (r.get('tapHighlight') in ('rgba(0, 0, 0, 0)', 'transparent'), 'tap highlight %s' % r.get('tapHighlight'))
     if r.get('focusVisible') is not None:

@@ -115,7 +115,7 @@ function measure(arg) {
 	//       a neighbouring section of the same background).
 	//  K:   cards on the page (the gap is their margin; inner padding is the card's own).
 	// The visible gap between two neighbouring page blocks must be one gap (the tier's value).
-	const W_SEL = '.dbx, .homepage-listing > .row, .db-pulse, .db-rsold-home, .db-aud, .db-how, .pageNewContent, .resp_table.dbr, .db-pr-hero, .db-pr-options, .db-pr-details, .db-pr-quotes, .db-pr-news, .db-news-live, .db-an-own, .pagenav, .dbb, .dbc-main, .dba-story, div.dba-bleed, .dbr-body, .dbs-path, .dbs-plan-sec, .dbs-faq, .dbs-cta-sec, .dbt-team, .dbf-body, .db-faq > .dbf-wrap:not(.dbf-body), .db-team > .dbt-wrap, .dbc-hero, .dba-hero, .dba-path, .dbr-hero, .dbs-hero, .dbs-how, .dbf-hero, .dbt-hero, .db-sold > section:not(.db-sold-band)';
+	const W_SEL = 'section.db-hp-hero, .dbx, .homepage-listing > .row, .db-pulse, .db-rsold-home, .db-aud, .db-how, .pageNewContent, .resp_table.dbr, .db-pr-hero, .db-pr-options, .db-pr-details, .db-pr-quotes, .db-pr-news, .db-news-live, .db-an-own, .pagenav, .dbb, .dbc-main, .dba-story, div.dba-bleed, .dbr-body, .dbs-path, .dbs-plan-sec, .dbs-faq, .dbs-cta-sec, .dbt-team, .dbf-body, .db-faq > .dbf-wrap:not(.dbf-body), .db-team > .dbt-wrap, .dbc-hero, .dba-hero, .dba-path, .dbr-hero, .dbs-hero, .dbs-how, .dbf-hero, .dbt-hero, .db-sold > section:not(.db-sold-band)';
 	const K_SEL = '.dbl-head, .dbs2-hero, .dbsv-form, .db-sold > .db-sold-band';
 	const bgOf = (c) => (c.backgroundImage !== 'none' ? 'img' : c.backgroundColor);
 	const clear = (c) => c.backgroundImage === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor);
@@ -123,30 +123,40 @@ function measure(arg) {
 		.filter((e) => !e.parentElement.closest(W_SEL + ', ' + K_SEL)); // page level only
 	out.sections = [];
 	out.gaps = [];
+	// A section's own padding only matters where it has its own background (C): there it is the
+	// space inside the band. Everywhere else the rule is the visible gap between neighbouring
+	// page blocks, which must be one gap (a shared gap counts once), measured on the page.
 	for (const e of blocks) {
 		const cs = getComputedStyle(e);
 		const card = e.matches(K_SEL);
-		const row = { cls: String(e.className || e.tagName).slice(0, 30), kind: card ? 'K' : 'W', top: px(cs.paddingTop), bottom: px(cs.paddingBottom), mt: px(cs.marginTop), mb: px(cs.marginBottom), bg: bgOf(cs) };
-		if (card) {
-			// The gap below a card is its margin, unless it is the last block of its parent.
-			const next = [...e.parentElement.children].slice([...e.parentElement.children].indexOf(e) + 1).find((x) => vis(x) && !/^(STYLE|SCRIPT|LINK)$/.test(x.tagName));
-			row.bad = next ? Math.abs(row.mb - wantPad) > 2 : false;
-		} else {
-			const prev = e.previousElementSibling && vis(e.previousElementSibling) ? e.previousElementSibling : null;
-			const shareTop = prev && prev.matches(W_SEL) && bgOf(getComputedStyle(prev)) === row.bg;
-			const okTop = Math.abs(row.top - wantPad) <= 2 || (row.top === 0 && (shareTop || (prev && prev.matches(K_SEL))));
-			const nextEl = e.nextElementSibling;
-			const okBottom = Math.abs(row.bottom - wantPad) <= 2 || (row.bottom === 0 && nextEl && vis(nextEl));
-			row.bad = !(okTop && okBottom);
-		}
+		const row = { cls: String(e.className || e.tagName).slice(0, 30), kind: card ? 'K' : (clear(cs) ? 'W' : 'C'), top: px(cs.paddingTop), bottom: px(cs.paddingBottom), mb: px(cs.marginBottom), bg: bgOf(cs) };
+		row.bad = row.kind === 'C' && (Math.abs(row.top - wantPad) > 2 || Math.abs(row.bottom - wantPad) > 2);
 		out.sections.push(row);
 	}
-	// Gaps between neighbouring page blocks (same parent, adjacent element siblings).
+	// Neighbouring blocks in page order, also across wrappers, when no visible content sits
+	// between them (text, images or form fields between two blocks belong to a component).
 	const edge = (e) => { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return clear(c) ? { top: r.top + px(c.paddingTop), bottom: r.bottom - px(c.paddingBottom), clear: true } : { top: r.top, bottom: r.bottom, clear: false }; };
+	const contentBetween = (a, b) => {
+		// Start right after a's subtree, walk in document order until b.
+		let n = a;
+		while (n && !n.nextSibling && n !== document.body) n = n.parentNode;
+		n = n && n.nextSibling;
+		let cur = n; let guard = 0;
+		while (cur && guard++ < 5000) {
+			if (cur === b) return false;
+			if (cur.nodeType === 1 && cur.contains(b)) { cur = cur.firstChild; continue; }
+			if (cur.nodeType === 3 && cur.textContent.trim() && cur.parentElement && vis(cur.parentElement) && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(cur.parentElement.tagName)) return true;
+			if (cur.nodeType === 1 && /^(IMG|INPUT|SELECT|TEXTAREA|BUTTON|IFRAME|SVG|VIDEO)$/i.test(cur.tagName) && vis(cur)) return true;
+			if (cur.nodeType === 1 && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(cur.tagName) && cur.firstChild && vis(cur)) { cur = cur.firstChild; continue; }
+			while (cur && !cur.nextSibling) cur = cur.parentNode;
+			cur = cur && cur.nextSibling;
+		}
+		return true;
+	};
 	for (let i = 1; i < blocks.length; i++) {
 		const a = blocks[i - 1]; const b = blocks[i];
-		let sib = a.nextElementSibling; while (sib && /^(STYLE|SCRIPT|LINK)$/.test(sib.tagName)) sib = sib.nextElementSibling;
-		if (sib !== b) continue;
+		if (a.contains(b) || b.contains(a)) continue;
+		if (contentBetween(a, b)) continue;
 		const ea = edge(a); const eb = edge(b);
 		const gap = Math.round(eb.top - ea.bottom);
 		const bothColoured = !ea.clear && !eb.clear && !a.matches(K_SEL) && !b.matches(K_SEL);
