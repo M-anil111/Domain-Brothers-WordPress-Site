@@ -53,6 +53,14 @@ $sig = db_ty_sig( 'full', 'fatality.ca', '2,500' );
 ok( array( 'full', 'fatality.ca', '2,500' ) === db_ty_resolve( 'full', 'fatality.ca', '2,500', $sig ), 'signed checkout return shows domain and amount' );
 ok( array( 'generic', '', '' ) === db_ty_resolve( 'full', 'google.com', '250000', '' ), 'unsigned "payment confirmed" link falls back to a neutral thank-you' );
 ok( array( 'generic', '', '' ) === db_ty_resolve( 'full', 'fatality.ca', '25', $sig ), 'editing the amount on a signed link invalidates it' );
+// CK-1: the confirmation depends on Stripe's PaymentIntent, not only on the signed link.
+$pi_ok = array( 'id' => 'pi_123', 'status' => 'succeeded', 'metadata' => array( 'domain' => 'Fatality.ca' ) );
+ok( 'succeeded' === db_ty_payment_status_of( $pi_ok, 'fatality.ca' ), 'a succeeded PaymentIntent for the same name confirms the purchase' );
+ok( 'failed' === db_ty_payment_status_of( array_merge( $pi_ok, array( 'status' => 'requires_payment_method' ) ), 'fatality.ca' ), 'a failed Klarna/Affirm return is not shown as paid' );
+ok( 'processing' === db_ty_payment_status_of( array_merge( $pi_ok, array( 'status' => 'processing' ) ), 'fatality.ca' ), 'a processing payment shows the confirming message' );
+ok( 'failed' === db_ty_payment_status_of( $pi_ok, 'other.ca' ), 'a paid PaymentIntent for another name does not confirm this one' );
+ok( 'failed' === db_ty_payment_status_of( array(), 'fatality.ca' ), 'an unknown PaymentIntent id is not a payment' );
+ok( 'unknown' === db_ty_payment_status_of( null, 'fatality.ca' ), 'Stripe unreachable: neither confirmed nor failed' );
 ok( array( 'generic', '', '' ) === db_ty_resolve( 'plan', 'fatality.ca', '2,500', $sig ), 'a full-purchase signature does not validate a plan page' );
 ok( array( 'offer', 'fatality.ca', '' ) === db_ty_resolve( 'offer', 'FATALITY.CA', '999', '' ), 'offer page names a real listing (normalised), never an amount' );
 ok( array( 'offer', '', '' ) === db_ty_resolve( 'offer', 'URGENT: verify at evil.example', '', '' ), 'offer page drops text that is not a listing' );

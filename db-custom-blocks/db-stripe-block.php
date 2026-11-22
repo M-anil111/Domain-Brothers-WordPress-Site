@@ -1123,8 +1123,9 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		}).then(function (result) {
 			if (result.error) {
 				showErr(result.error.message || 'Payment failed. Please try again.');
-			} else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-				window.location.href = window.DB_RETURN_URL;
+			} else if (result.paymentIntent && (result.paymentIntent.status === 'succeeded' || result.paymentIntent.status === 'processing')) {
+				// The thank-you page checks this PaymentIntent with Stripe before it confirms anything.
+				window.location.href = window.DB_RETURN_URL + '&payment_intent=' + encodeURIComponent(result.paymentIntent.id);
 			} else {
 				showErr('Payment could not be confirmed. Please contact support.');
 			}
