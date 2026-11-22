@@ -612,3 +612,30 @@ add_action( 'db_platform_sections', function () {
 	wp_nonce_field( 'db_speed_settings' );
 	echo '<input type="hidden" name="action" value="db_speed_settings"><p><button class="button button-primary" name="do" value="save">Save speed settings</button> <button class="button" name="do" value="purge">Clear saved pages and object cache</button></p></form>';
 } );
+
+/*
+ * Signed-in visitors (the db_wl cookie) must never share a cached page with
+ * anyone. The header shows their name and email when signed in, so:
+ *  - every response varies on that cookie, so LiteSpeed keeps signed-in and
+ *    signed-out copies apart and never serves a signed-out copy to a signed-in
+ *    visitor (or the reverse);
+ *  - a signed-in response is marked no-cache for LiteSpeed, browsers and proxies.
+ * Our own page cache already bypasses requests with the cookie (pagecache/serve.php).
+ */
+add_action( 'send_headers', function () {
+	if ( is_admin() || headers_sent() ) {
+		return;
+	}
+	header( 'X-LiteSpeed-Vary: cookie=db_wl', false );
+	header( 'Vary: Cookie', false );
+	if ( isset( $_COOKIE['db_wl'] ) && '' !== $_COOKIE['db_wl'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		do_action( 'litespeed_control_set_nocache', 'db signed-in visitor' );
+		header( 'X-LiteSpeed-Cache-Control: no-cache, private' );
+		header( 'Cache-Control: private, no-store, max-age=0' );
+	}
+}, 1 );
+add_action( 'template_redirect', function () {
+	if ( isset( $_COOKIE['db_wl'] ) && '' !== $_COOKIE['db_wl'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		do_action( 'litespeed_control_set_nocache', 'db signed-in visitor' );
+	}
+}, 0 );
