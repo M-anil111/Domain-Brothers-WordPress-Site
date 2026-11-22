@@ -858,7 +858,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 		if ( 'details' === $act ) {
 			$id = (int) ( $p['id'] ?? 0 );
 			if ( ! isset( $own[ $id ] ) ) {
-				return array();
+				return array( array( 'bad', 'That name is not in your list.' ) );
 			}
 			$d    = db_seller_clean_details( $p );
 			$cats = db_seller_clean_categories( $p['cats'] ?? array(), array_keys( db_seller_category_options() ) );
@@ -886,7 +886,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 		if ( 'remove' === $act ) {
 			$id = (int) ( $p['id'] ?? 0 );
 			if ( ! isset( $own[ $id ] ) ) {
-				return array();
+				return array( array( 'bad', 'That name is not in your list.' ) );
 			}
 			db_seller_remove( $own[ $id ] );
 			return array( array( 'ok', $own[ $id ]['domain'] . ' was removed.' ) );

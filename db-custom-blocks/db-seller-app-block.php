@@ -92,8 +92,11 @@ if ( ! function_exists( 'db_seller_app_body' ) ) {
 			$checked = $drafts && ! array_filter( $drafts, static function ( $r ) { return 'verified' !== $r['verify_status']; } );
 			$done    = array( 'details' => true, 'add' => (bool) $rows, 'prices' => $priced, 'verify' => $checked, 'submit' => false );
 			$body    = '';
+			$add_first = '<p class="dbsl-msg dbsl-msg--warn">You have no names waiting. <a href="' . esc_url( add_query_arg( 'step', 'add', home_url( '/seller/' ) ) ) . '">Add names first</a>.</p>';
 			if ( 'add' === $step ) {
 				$body = ( $sec['import'] ?? '' ) . ( $import ? '' : db_seller_add_tabs( $sec['add'] ?? '' ) );
+			} elseif ( ! $drafts && in_array( $step, array( 'prices', 'verify' ), true ) ) {
+				$body = $add_first;
 			} elseif ( 'prices' === $step ) {
 				$body = $sec['prices'] ?? '<p>Add names first.</p>';
 			} elseif ( 'verify' === $step ) {
