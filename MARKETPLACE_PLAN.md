@@ -39,11 +39,11 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Exclusive listing option: badge on the listing, 10% commission (decision 8)
 
 ### Phase 3: seller negotiations
-- [ ] Offers on a seller's names shown in their seller page
-- [ ] Seller can accept, counter or decline (broker oversight kept)
-- [ ] Offers below the minimum answered automatically with the minimum
-- [ ] Threads expire after a set time without a reply
-- [ ] Seller emails for new offers and replies
+- [x] Offers on a seller's names shown in their seller page (history, buyer's email hidden)
+- [x] Seller can accept, counter or decline (broker emailed on every move and can act in WP Admin > Offers)
+- [x] Offers below the minimum answered automatically with the minimum
+- [x] Unanswered offers: reminder to seller and broker after 3 days, closed after 14 days
+- [x] Seller emails for new offers and replies; buyer emails and checkout reuse the offer engine
 
 ### Phase 4: sales and payouts
 - [ ] A sale of a seller's name creates a payout record (gross, commission, net)

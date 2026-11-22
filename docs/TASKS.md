@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.125.0 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.126.1 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -142,20 +142,21 @@ Totals: see the summary table at the end.
 - [x] Fixed: dashboard crash on names with view data; empty price guide
 - [x] Commit and push phase 2 extras
 
-### A3. Phase 3: seller negotiations
-- [ ] Offers on a seller's names listed in the seller dashboard
-- [ ] Offer thread view per name (buyer amount, messages, history)
-- [ ] Seller action: accept
-- [ ] Seller action: counter with an amount
-- [ ] Seller action: decline with an optional note
-- [ ] Broker oversight: team sees and can step into every thread
-- [ ] Offers below the private minimum answered automatically with the minimum
-- [ ] Threads expire after a set time without a reply
-- [ ] Email to seller: new offer
-- [ ] Email to seller: buyer replied
-- [ ] Email to buyer: seller replied (reuse offer emails)
-- [ ] Accepted offer opens checkout for the buyer at the agreed price
-- [ ] Tests: offline rules for minimum and expiry, browser flow
+### A3. Phase 3: seller negotiations (3.126, `db-seller-offers-block.php`)
+- [x] Offers on a seller's live names listed in the seller dashboard ("Offers on your names", waiting offers first, count of offers needing an answer)
+- [x] Offer thread per name: every offer, counter, acceptance and note with date
+- [x] Buyer's email never shown to the seller (first name only)
+- [x] Seller action: accept (opens payment for the buyer)
+- [x] Seller action: counter with a price (minimum $100) and an optional note
+- [x] Seller action: decline with confirmation
+- [x] Broker oversight: broker emailed on every seller move; can act on any offer in WP Admin > Offers
+- [x] Offers below the private minimum answered automatically with the minimum (seller told)
+- [x] Unanswered offers: reminder to seller and broker after 3 days, closed after 14 days (buyer and seller told)
+- [x] Email to seller: new offer, auto-answered offer, buyer accepted, buyer declined, offer closed
+- [x] Buyer emails reuse the offer engine (countered, accepted with pay link, declined)
+- [x] Accepted offer opens checkout at the agreed price (checked: $2,600 on `/buy-now/?offer=...`)
+- [x] Tests: 7 offline rule tests; browser flow (counter, refused low counter, accept, history, axe) and sweep on beta
+- [x] Fixed during testing: Decline button invisible (theme forced white text)
 
 ### A4. Phase 4: sales and payouts
 - [ ] Sale of a seller's name creates a payout record (gross, commission, net)
@@ -277,7 +278,7 @@ Totals: see the summary table at the end.
 |---|---|---|---|
 | A1 Phase 1 (13 features, 66 sub-tasks) | 66 | 0 | 0 |
 | A2 Phase 2 | 33 | 0 | 0 |
-| A3 Phase 3 | 0 | 0 | 13 |
+| A3 Phase 3 | 14 | 0 | 0 |
 | A4 Phase 4 | 0 | 0 | 11 |
 | A5 Phase 5 | 0 | 0 | 4 |
 | B Account | 22 | 0 | 1 |
