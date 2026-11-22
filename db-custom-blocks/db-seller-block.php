@@ -1040,12 +1040,12 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 		$pct  = DB_SELLER_COMMISSION_PCT;
 		$excl = DB_SELLER_EXCLUSIVE_PCT;
 		$min  = DB_SELLER_COMMISSION_MIN;
-		$h    = '<p class="db-sales-lead">List your domain names with Domain Brothers. Listing is free, our brokers handle every buyer, and you pay a commission only when a name sells.</p>';
+		$h    = '<p class="db-sales-lead">List your domain names with Domain Brothers. Listing is free, you answer offers from your seller dashboard with our brokers watching every deal, and you pay a commission only when a name sells.</p>';
 		$h   .= db_lp_css() . '<div class="dblp">';
 		$h   .= '<div class="dblp-actions" style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 40px"><a class="dblp-btn" href="' . esc_url( $cta ) . '">Create your seller account</a><a class="dblp-btn dblp-btn--ghost" href="#dbsl-broker">Large portfolio? Talk to a broker</a></div>';
 		$h   .= '<section aria-labelledby="dbsl-why" style="margin:0 0 56px"><h2 id="dbsl-why">Get your domains the attention they need</h2>'
 			. db_lp_benefits( array(
-				array( 'Brokers on every sale', 'Our brokers answer buyers, negotiate the price, secure payment before you transfer, and see the transfer through.', '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>' ),
+				array( 'Brokers behind every sale', 'You answer offers yourself: accept, counter or decline. Our brokers see every offer, step in when a seller does not answer, secure payment before you transfer and see the transfer through.', '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>' ),
 				array( 'Marketing for your names', 'Every live name gets its own page in our marketplace, appears in search and category lists on this site, and can be shared from its page.', '<path d="M3 11l15-6v14L3 13z"/><path d="M7 13v5h3"/>' ),
 				array( 'Pages built to be found in search', 'Each listing page has its own title, description and structured data, so search engines can index it.', '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>' ),
 				array( 'Flexible commissions', $pct . '% when a name sells, or ' . $excl . '% if you list it only with us. $' . $min . ' minimum. Listing is free.', '<path d="M12 3v18M17 7H9.5a3 3 0 000 6h5a3 3 0 010 6H6"/>' ),
@@ -1068,7 +1068,8 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 		$h .= '<div class="dblp-split" id="dbsl-broker"><div><h2>Large portfolio? Talk to a broker</h2><p class="dblp-lead">Send your list (or a spreadsheet with prices) and a broker contacts you, usually within one business day, to agree how we list and sell it.</p></div>'
 			. '<div class="dblp-form"><h2>Send your portfolio</h2><p class="dblp-req">Fields marked * are required.</p>' . do_shortcode( '[contact-form-7 id="1906" title="Sell Your Domain"]' ) . '</div></div>';
 		$h .= db_lp_faq( 'Questions about selling', array(
-			array( 'Who negotiates with buyers?', 'Our brokers handle every offer and every sale. We contact you before we agree a price below your minimum.' ),
+			array( 'Who negotiates with buyers?', 'You do, from your seller dashboard: accept, counter or decline each offer. An offer below your minimum is answered automatically. Our brokers see every offer and take over if you do not answer in time.' ),
+			array( 'How fast must I answer offers and transfer a sold name?', db_seller_rules_sentence() ),
 			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised. Sellers in the United States can be paid through Stripe.' ),
 			array( 'What does exclusive mean?', 'You do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and the lower ' . $excl . '% commission.' ),
 			array( 'Can I list my names elsewhere too?', 'Yes, unless you choose exclusive. Remove a name at any time from your seller page.' ),
@@ -1080,18 +1081,44 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_seller_transfer_hours' ) ) {
+	/** Hours a seller has to start a transfer after a sale (admin-editable rule). */
+	function db_seller_transfer_hours() {
+		$days = function_exists( 'db_seller_rule' ) ? (float) db_seller_rule( 'transfer_days' ) : 3;
+		return (int) round( max( 1, $days ) * 24 );
+	}
+}
+
+if ( ! function_exists( 'db_seller_rules_sentence' ) ) {
+	/** The offer and transfer rules in plain words, from the live (admin-editable) values. */
+	function db_seller_rules_sentence() {
+		$r = static function ( $k, $d ) {
+			return function_exists( 'db_seller_rule' ) ? db_seller_rule( $k ) : $d;
+		};
+		$remind  = array_map( 'intval', (array) $r( 'remind_days', array( 1, 3, 5 ) ) );
+		$strike  = (int) $r( 'strike_days', 7 );
+		$strikes = (int) $r( 'suspend_strikes', 2 );
+		$window  = (int) $r( 'strike_window', 90 );
+		$idle    = (int) $r( 'suspend_idle_days', 10 );
+		$last    = array_pop( $remind );
+		$days    = $remind ? implode( ', ', $remind ) . ' and ' . $last : (string) $last;
+		return 'Answer each offer within ' . $strike . ' days. We remind you after ' . $days . ' days. An offer left unanswered for ' . $strike . ' days counts as a strike: the buyer is told and a broker takes over. ' . $strikes . ' strikes within ' . $window . ' days, or one offer left for ' . $idle . ' days, takes all your names offline until you ask us to reactivate your account. A sold name must be transferred within ' . db_seller_transfer_hours() . ' hours of payment.';
+	}
+}
+
 if ( ! function_exists( 'db_seller_agreement_body' ) ) {
 	function db_seller_agreement_body() {
 		$h  = '<p class="db-sales-lead">The terms for listing domain names on Domain Brothers. Version ' . esc_html( DB_SELLER_AGREEMENT_VERSION ) . '.</p>' . db_seller_css() . '<div class="dbsl">';
 		$h .= '<div class="dbsl-card">';
 		$terms = array(
 			'Your names'      => 'You confirm you own each name you list, or are authorised to sell it, that it is free of liens and disputes, and that it does not infringe anyone\'s trademark.',
-			'Listing'         => 'Listing is free and not exclusive. Domain Brothers may decline or remove any listing, including names that break our listing rules.',
-			'Prices'          => 'You set a Buy Now price or ask for offers, and may set a private minimum offer. Domain Brothers may accept an offer at or above your minimum on your behalf; below it, we ask you first.',
+			'Listing'         => 'Listing is free. You may list a name elsewhere too, unless you choose exclusive for it (the lower commission below). Domain Brothers may decline or remove any listing, including names that break our listing rules.',
+			'Prices and offers' => 'You set a Buy Now price or ask for offers, and may set a minimum offer. You answer offers yourself in your seller dashboard: accept, counter or decline. An offer below your minimum is answered automatically with your minimum. Domain Brothers brokers can see every offer and conversation.',
 			'Commission'      => 'When a name sells, Domain Brothers keeps ' . DB_SELLER_COMMISSION_PCT . '% of the sale price (' . DB_SELLER_EXCLUSIVE_PCT . '% for a name you list exclusively with us, meaning you do not list it anywhere else while it is with us), with a minimum of $' . DB_SELLER_COMMISSION_MIN . '. Nothing is charged if a name does not sell.',
-			'Sale and transfer' => 'The buyer pays Domain Brothers first. Once payment is confirmed, you transfer the name as instructed within 5 business days, by authorization code or registrar push.',
-			'Payout'          => 'You are paid the sale price minus commission 7 days after the buyer confirms control of the name, or 14 days after transfer if no dispute is raised. Payments may be held while a dispute is open.',
-			'Ownership checks' => 'You add a DNS record we provide so we can confirm control of each name. Keep the record until the name sells or is removed.',
+			'Response times'  => db_seller_rules_sentence(),
+			'Sale and transfer' => 'The buyer pays Domain Brothers first. Once payment is confirmed, you start the transfer as instructed within ' . db_seller_transfer_hours() . ' hours, by authorization code or registrar push. If you do not, it counts as a strike, your payout is held and a broker steps in.',
+			'Payout'          => 'You are paid the sale price minus commission ' . DB_SELLER_PAY_AFTER_CONFIRM_DAYS . ' days after the buyer confirms control of the name, or ' . DB_SELLER_PAY_AFTER_TRANSFER_DAYS . ' days after transfer if no dispute is raised. Payments may be held while a dispute is open or after a missed transfer deadline.',
+			'Ownership checks' => 'You add a DNS record we provide so we can confirm control of each name. Keep the record until the name sells or is removed. Live names are checked again every ' . DB_SELLER_RECHECK_DAYS . ' days; a name that fails has ' . DB_SELLER_RECHECK_GRACE_DAYS . ' days to be fixed before it comes down. If another account proves control of a name, the listing moves to that account. A name that expires comes down.',
 			'Data'            => 'We store your name, email, country, phone and listing details to run the service, as described in our privacy policy.',
 			'Eligibility'     => 'Selling is open to sellers in the United States and Canada. Prices are in US dollars.',
 		);
