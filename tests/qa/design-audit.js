@@ -155,7 +155,9 @@ function measure(arg) {
 		const s = getComputedStyle(pill); const r = pill.getBoundingClientRect();
 		const rgba = (s.backgroundColor.match(/[\d.]+/g) || [255, 255, 255, 1]).map(Number);
 		const lum = (0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2]) / 255;
-		out.buyDark = (rgba.length < 4 || rgba[3] > 0.5) && lum < 0.3; // a transparent background is not dark out.buyPill = px(s.borderTopLeftRadius) >= r.height / 2 - 2;
+		// A transparent background is not dark.
+		out.buyDark = (rgba.length < 4 || rgba[3] > 0.5) && lum < 0.3;
+		out.buyPill = px(s.borderTopLeftRadius) >= r.height / 2 - 2;
 		const offer = [...document.querySelectorAll('.db-act-offer')].find(vis);
 		out.actionWidths = [buy, offer].filter(Boolean).map((a) => Math.round(a.getBoundingClientRect().width));
 		out.nestedPill = !!buy.querySelector('.badge .badge');
