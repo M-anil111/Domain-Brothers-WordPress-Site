@@ -168,7 +168,9 @@ add_action( 'template_redirect', function () {
 	}
 	$trail = db_breadcrumbs_from_rankmath( $trail );
 	ob_start( function ( $html ) use ( $trail ) {
-		if ( false === strpos( $html, '<main id="main"' ) || false !== strpos( $html, 'db-breadcrumbs' ) ) {
+		// Look for the breadcrumb element itself, not the class name: CSS rules that mention
+		// .db-breadcrumbs (the 3.137.3 tap-target styles) made every page look done (batch 2, LS-3).
+		if ( false === strpos( $html, '<main id="main"' ) || preg_match( '/<nav\b[^>]*(class="[^"]*\bdb-breadcrumbs\b|aria-label="Breadcrumb")/i', $html ) ) {
 			return $html;
 		}
 		// Insert with a callback, not a replacement string: post titles such
