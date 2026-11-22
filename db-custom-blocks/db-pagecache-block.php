@@ -256,6 +256,10 @@ register_deactivation_hook( dirname( __FILE__ ) . '/db-custom-blocks.php', funct
 if ( ! function_exists( 'db_pc_purge_all' ) ) {
 	function db_pc_purge_all() {
 		if ( ! is_dir( DB_PC_DIR ) ) {
+			// Our page cache is off (LiteSpeed hosts), but LiteSpeed's saved pages must still be
+			// cleared: returning here used to skip that, so new seller listings and price changes
+			// stayed invisible on cached lists for up to 7 days.
+			do_action( 'db_pc_purged_all' );
 			return;
 		}
 		$old = DB_PC_DIR . '-old-' . time() . '-' . wp_generate_password( 4, false );
@@ -274,13 +278,24 @@ add_action( 'db_page_cache_purge_all', 'db_pc_purge_all' );
  * plugin updates: a deployed fix can stay invisible on pages it cached earlier. Clear it
  * whenever we purge, and once after every plugin version change.
  */
+if ( ! function_exists( 'db_pc_purge_litespeed' ) ) {
+	/** Clears LiteSpeed's saved pages. The plugin's own API is used when present: on this host
+	 * the litespeed_purge_all action alone left pages stale (verified 2026-11-22). */
+	function db_pc_purge_litespeed( $reason = 'db purge' ) {
+		if ( class_exists( '\\LiteSpeed\\Purge' ) && is_callable( array( '\\LiteSpeed\\Purge', 'purge_all' ) ) ) {
+			\LiteSpeed\Purge::purge_all( $reason );
+			return;
+		}
+		do_action( 'litespeed_purge_all' );
+	}
+}
 add_action( 'db_pc_purged_all', function () {
-	do_action( 'litespeed_purge_all' );
+	db_pc_purge_litespeed( 'db purge' );
 } );
 add_action( 'init', function () {
 	if ( defined( 'DB_BLOCKS_LOADED' ) && get_option( 'db_ls_purged_ver' ) !== DB_BLOCKS_LOADED ) {
 		update_option( 'db_ls_purged_ver', DB_BLOCKS_LOADED, false );
-		do_action( 'litespeed_purge_all' );
+		db_pc_purge_litespeed( 'db plugin update' );
 		if ( ! headers_sent() ) {
 			header( 'X-LiteSpeed-Purge: *' ); // server-level purge, works even if the LiteSpeed Cache plugin ignores the action
 		}
