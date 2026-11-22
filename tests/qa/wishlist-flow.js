@@ -41,6 +41,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 
 	// 1. a listing to save
 	await admin.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+	await admin.waitForLoadState('load'); await admin.waitForTimeout(1500); // the editor's scripts must be ready before typing
 	await admin.fill('#title', DOMAIN);
 	await admin.fill('input[name=domain_price]', '2500');
 	await admin.selectOption('select[name=domain_status]', 'sale');
@@ -56,14 +57,17 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	};
 
 	const visitor = await browser.newContext({ ...creds, viewport: { width: 1280, height: 900 } });
+	// Turnstile: staging runs Cloudflare's always-pass test keys while option db_turnstile_test_until is ahead,
+	// so any non-empty token is accepted there (see CLAUDE.md).
+	const TS = process.env.TS_TOKEN || 'XXXX.DUMMY.TOKEN.XXXX';
 	const api = (path, method, body, headers = {}) => visitor.request.fetch(`${BASE}/wp-json/db/v1/wishlist/${path}`, { method, headers: { Origin: BASE, 'Content-Type': 'text/plain', ...headers }, data: body ? JSON.stringify(body) : undefined });
 
 	// 2. ask for a code: same reply for any address
-	const unknown = await (await api('code', 'POST', { email: `nobody-${STAMP}@example.com` })).json();
-	const ours = await api('code', 'POST', { email: EMAIL });
+	const unknown = await (await api('code', 'POST', { email: `nobody-${STAMP}@example.com`, ts: TS })).json();
+	const ours = await api('code', 'POST', { email: EMAIL, ts: TS });
 	const oursJ = await ours.json();
 	check('asking for a code gives the same reply for any address', unknown.ok === true && oursJ.ok === true && unknown.message === oursJ.message);
-	const bad = await api('code', 'POST', { email: 'not-an-email' });
+	const bad = await api('code', 'POST', { email: 'not-an-email', ts: TS });
 	check('an invalid address is refused', bad.status() === 400);
 	const noOrigin = await visitor.request.fetch(`${BASE}/wp-json/db/v1/wishlist/code`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, data: JSON.stringify({ email: EMAIL }) });
 	check('a request with no Origin from this site is refused', noOrigin.status() === 403);
@@ -79,7 +83,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	check('five wrong guesses burn the code (the right one then fails)', burned);
 
 	// 4. a new code signs in
-	await api('code', 'POST', { email: EMAIL });
+	await api('code', 'POST', { email: EMAIL, ts: TS });
 	const code2 = await testCode();
 	const okRes = await api('verify', 'POST', { email: EMAIL, code: code2, post: postId });
 	const okJ = await okRes.json();
@@ -112,6 +116,11 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	check('signed-out save goes to the sign-in page, not a popup', (await page.locator('dialog[open], .db-wl-dialog[open]').count()) === 0 && /[?&]add=/.test(page.url()));
 	await page.screenshot({ path: SHOTS + '/1-sign-in-page.png' });
 	await page.fill('#db-au input[name=email]', EMAIL);
+	// The Turnstile widget needs a few seconds to issue its token; submitting earlier is refused.
+	await page.waitForFunction(() => {
+		const t = document.querySelector('#db-au input[name="cf-turnstile-response"]');
+		return !t || t.value !== '';
+	}, null, { timeout: 30000 }).catch(() => {});
 	await page.click('#db-au [data-step=email] button[type=submit]');
 	await page.waitForSelector('#db-au [data-step=code]:not([hidden])');
 	await page.screenshot({ path: SHOTS + '/2-enter-code.png' });
@@ -120,6 +129,8 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.click('#db-au [data-step=code] button[type=submit]');
 	await page.waitForURL((u) => !/auth=signin/.test(u.search) || /my-wishlist/.test(u.pathname), { timeout: 60000 });
 	await page.waitForLoadState('load');
+	// The button state is filled in by script after load (the saved list comes from the API).
+	await page.waitForSelector('.db-wl-btn[aria-pressed="true"]', { timeout: 15000 }).catch(() => {});
 	check('after signing in the page returns to the domain with the item saved', /saved to wishlist/i.test(await page.locator('.db-wl-btn').innerText().catch(() => '')) || /my-wishlist/.test(page.url()), page.url());
 
 	// 7. the wishlist page
@@ -144,9 +155,10 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	await page.waitForTimeout(1500);
 	await page.goto(`${BASE}/my-wishlist/`, { waitUntil: 'load' });
 	check('Remove takes it off the wishlist', /Nothing saved yet/.test(await page.locator('body').innerText()));
-	await page.click('#db-wl-signout');
-	await page.waitForSelector('#db-wl-signin', { timeout: 30000 }).catch(() => {});
-	check('Sign out ends the session', await page.locator('#db-wl-signin').count() === 1);
+	await Promise.all([page.waitForNavigation({ waitUntil: 'load', timeout: 30000 }).catch(() => {}), page.click('#db-wl-signout')]);
+	// Signed out, /my-wishlist/ shows the wishlist intro or the sign-in card, never the account.
+	const outText = await page.locator('body').innerText();
+	check('Sign out ends the session', (await page.locator('#db-wl-signout').count()) === 0 && !outText.includes(EMAIL));
 
 	// 10. clean up (test domain and its rows)
 	await admin.goto(`${BASE}/wp-admin/post.php?post=${postId}&action=edit`, { waitUntil: 'domcontentloaded' });
