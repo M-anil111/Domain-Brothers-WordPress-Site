@@ -748,10 +748,14 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			}
 			$mode = isset( $p['mode'] ) && 'sync' === $p['mode'] ? 'sync' : 'import';
 			$plan = db_seller_plan_import( $sr['rows'], $existing, $mode );
+			$rdap_until = microtime( true ) + 15; // same budget as the paste box; names not looked up rely on the DNS check
 			foreach ( $plan['add'] as $i => $a ) {
 				$why = db_seller_tld_exists( $a['domain'] ) ? db_seller_blocked( $a['domain'] ) : 'There is no such domain ending.';
 				$why = '' !== $why ? $why : db_seller_domain_taken( $a['domain'], $sid );
 				$why = 'claim' === $why ? '' : $why; // claims are allowed; ownership proof decides
+				if ( '' === $why && 'unregistered' === db_seller_rdap_check( $a['domain'], $rdap_until ) ) {
+					$why = 'This name is not registered, so it cannot be listed.';
+				}
 				if ( '' !== $why ) {
 					$plan['skip'][] = array( $a['domain'], $why );
 					unset( $plan['add'][ $i ] );
