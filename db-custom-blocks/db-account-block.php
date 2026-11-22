@@ -569,7 +569,7 @@ if ( ! function_exists( 'db_acct_card_html' ) ) {
 			}, $chips ) ) . '</p>';
 		}
 		$h .= '<div class="db-ac-actions"><a class="db-ac-btn" href="' . esc_url( get_permalink( $post ) ) . '">View</a>'
-			. '<a class="db-ac-btn db-ac-btn--ghost" href="' . esc_url( add_query_arg( array( 'tab' => 'offers', 'domain' => $name ), home_url( '/my-wishlist/' ) ) . '#db-ac-offer' ) . '">Make an offer</a>'
+			. '<a class="db-ac-btn db-ac-btn--ghost" href="' . esc_url( add_query_arg( array( 'tab' => 'offers', 'dom' => $name ), home_url( '/my-wishlist/' ) ) . '#db-ac-offer' ) . '">Make an offer</a>'
 			. '<button type="button" class="db-ac-save' . ( $on ? ' is-on' : '' ) . '" data-ac-save="' . (int) $post->ID . '" aria-pressed="' . ( $on ? 'true' : 'false' ) . '">' . ( $on ? 'Saved' : 'Save' ) . '</button></div></li>';
 		return $h;
 	}
@@ -659,7 +659,7 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				}
 				$h .= '</ul>';
 			}
-			$pre = isset( $_GET['domain'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+			$pre = isset( $_GET['dom'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['dom'] ) ) ) : ( isset( $_GET['domain'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification
 			$h  .= '<form class="db-ac-form" id="db-ac-offer" novalidate><h3>Make an offer</h3><p class="db-ac-lead">Start typing a name from our marketplace, choose it from the list, then name your price. We reply by email and keep the conversation in My offers.</p>'
 				. '<div class="db-ac-combo"><label for="db-ac-dom">Domain</label><input type="text" id="db-ac-dom" name="domain" required autocomplete="off" spellcheck="false" placeholder="Start typing, e.g. brand" value="' . esc_attr( $pre ) . '" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-ac-dl" aria-describedby="db-ac-pick">'
 				. '<ul id="db-ac-dl" class="db-ac-dl" role="listbox" aria-label="Matching domains" hidden></ul><p id="db-ac-pick" class="db-ac-pick">Only names listed on Domain Brothers can receive offers.</p></div>'

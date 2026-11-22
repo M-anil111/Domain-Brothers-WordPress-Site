@@ -114,7 +114,7 @@ if ( ! function_exists( 'db_develop_banner_html' ) ) {
 	/** "Want to develop this domain?": the build services, with a call to action. Strings only. */
 	function db_develop_banner_html( $post ) {
 		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
-		$quote = add_query_arg( array( 'domain' => $name, 'topic' => 'develop' ), home_url( '/contact-us/' ) );
+		$quote = add_query_arg( array( 'dom' => $name, 'topic' => 'develop' ), home_url( '/contact-us/' ) );
 		$icons = array(
 			'logo'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.400 6.800 19.200l1-5.900L3.500 9.200l5.900-.8L12 3z"/></svg>',
 			'social'  => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.500h8M8 12.500h5"/></svg>',

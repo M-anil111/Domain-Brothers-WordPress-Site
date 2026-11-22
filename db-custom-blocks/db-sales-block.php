@@ -506,7 +506,7 @@ if ( ! function_exists( 'db_finder_body' ) ) {
 			$h   .= '</section>';
 		} else {
 			db_funnel_track( 'finder_start' );
-			$hint = isset( $_GET['domain'] ) ? sanitize_text_field( wp_unslash( $_GET['domain'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+			$hint = isset( $_GET['dom'] ) ? sanitize_text_field( wp_unslash( $_GET['dom'] ) ) : ( isset( $_GET['domain'] ) ? sanitize_text_field( wp_unslash( $_GET['domain'] ) ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification
 			$h   .= db_sales_broker_form( $hint );
 		}
 		return $h;
