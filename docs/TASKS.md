@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.129.1 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.130.3 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -239,7 +239,8 @@ Totals: see the summary table at the end.
 - [x] Keyboard: arrows, Enter opens the highlighted name, Escape closes
 - [x] Hints endpoint `/wp-json/db/v1/search-hints`, cached 1 hour, cleared on price or status change
 - [x] axe clean
-- [ ] Phone: same panel inside the mobile drawer search
+- [x] Phone: search button next to the menu opens a full-screen search sheet with the same popular, just-listed, category and live results (3.130)
+- [x] Fixed: links built during a hosting-preview visit were cached for everyone; caches now only save on the real host, and the index URLs carry the plugin version
 
 ---
 
