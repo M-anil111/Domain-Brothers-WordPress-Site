@@ -128,7 +128,14 @@ Re-run the crawl script after batch 2 and batch 3 and compare counts against thi
     - fixes: editor-load waits, Turnstile tokens, stale sign-in checks, webhook helper exit
     - results: wishlist-flow 20/20, account-flow 27/27, offer-flow 12/12 (webhook steps skipped, because they would mark a real listing sold), sales-features 14/14
   - **O-5:** checked the certificate decoder, DNS propagation checker and nslookup pages: all work, no change needed.
-- Open: O-1 needs the owner to choose which analytics source to keep. P-6 is only partly done: the other inline scripts have not been moved to files yet.
+- Fixed in 3.139.x:
+  - **O-1:** each Google tag now prints once. The theme header and Site Kit both printed GTM `GTM-W7B64D4`; Site Kit and Rank Math both configured GA4 `G-56DWCMLT8V`. The first copy is kept and later copies are removed (`db_hyg_dedupe_tags()`). No analytics source was turned off.
+    - Owner may still want to tidy the settings: turn off Rank Math > Analytics > "Install code", and remove the theme's hard-coded GTM.
+    - The GTM container also sends to a second GA4 property (`G-CZV2HH7JWM`) and an old Universal Analytics id. Remove those tags in GTM if they are no longer used.
+  - **P-6:** the header script, mobile menu CSS and JS, and checkout CSS are served as cached files. `/buy-now/` went from 195 KB to 136 KB.
+    - The 15.5 KB footer CSS (`db-ft-css`) comes from the standalone UI Fixes add-on, so it is not changed here. Deactivating that add-on switches to the bundled copy.
+- QA on 3.139.2: run-qa 398/398, axe clean on 11 pages at desktop and phone width.
+- Nothing open on this register.
 
 ## Price change log
 
