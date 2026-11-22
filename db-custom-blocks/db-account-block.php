@@ -656,18 +656,15 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				$h .= '</ul>';
 			}
 			$pre = isset( $_GET['domain'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
-			$h  .= '<form class="db-ac-form" id="db-ac-offer" novalidate><h3>Make an offer</h3><p class="db-ac-lead">Name your price for any domain that is for sale. We reply by email and keep the conversation in My offers.</p>'
-				. '<label>Domain<input type="text" name="domain" list="db-ac-domains" required autocomplete="off" placeholder="example.com" value="' . esc_attr( $pre ) . '"></label>'
-				. '<datalist id="db-ac-domains">';
-			foreach ( db_wl_ids( $email ) as $pid ) {
-				$p = get_post( $pid );
-				if ( db_acct_sellable( $p ) ) {
-					$h .= '<option value="' . esc_attr( db_acct_name( $p ) ) . '">';
-				}
-			}
-			$h .= '</datalist><label>Your offer (USD)<input type="text" name="amount" inputmode="numeric" required autocomplete="off" placeholder="1500" maxlength="12"></label>'
+			$h  .= '<form class="db-ac-form" id="db-ac-offer" novalidate><h3>Make an offer</h3><p class="db-ac-lead">Start typing a name from our marketplace, choose it from the list, then name your price. We reply by email and keep the conversation in My offers.</p>'
+				. '<div class="db-ac-combo"><label for="db-ac-dom">Domain</label><input type="text" id="db-ac-dom" name="domain" required autocomplete="off" spellcheck="false" placeholder="Start typing, e.g. brand" value="' . esc_attr( $pre ) . '" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-ac-dl" aria-describedby="db-ac-pick">'
+				. '<ul id="db-ac-dl" class="db-ac-dl" role="listbox" aria-label="Matching domains" hidden></ul><p id="db-ac-pick" class="db-ac-pick">Only names listed on Domain Brothers can receive offers.</p></div>'
+				. '<label>Your offer (USD)<input type="text" name="amount" inputmode="numeric" required autocomplete="off" placeholder="Choose a domain first" maxlength="12" disabled></label>'
 				. '<label>Message <span class="db-ac-opt">(optional)</span><textarea name="message" rows="3" maxlength="1000" placeholder="Tell us how you plan to use the name."></textarea></label>'
-				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary">Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>';
+				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary" disabled>Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>'
+				. '<style>.db-ac-combo{position:relative;margin-bottom:14px}.db-ac-dl{position:absolute;z-index:30;left:0;right:0;top:100%;margin:4px 0 0;padding:6px;list-style:none;max-height:280px;overflow:auto;background:#fff;border:1px solid #cfd8d3;border-radius:14px;box-shadow:0 16px 36px rgba(10,22,40,.14)}'
+				. '.db-ac-dl li{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:15px}.db-ac-dl li[aria-selected=true],.db-ac-dl li:hover{background:#eef6ee}.db-ac-dl li b{color:#0a1628}.db-ac-dl li span{color:#4b5563;white-space:nowrap}.db-ac-dl .db-ac-none{cursor:default;color:#4b5563}'
+				. '.db-ac-pick{margin:6px 0 0;font-size:13.5px;color:#4b5563}.db-ac-pick.is-ok{color:#0b6b36;font-weight:600}.db-ac-pick.is-bad{color:#b42318;font-weight:600}#db-ac-offer input:disabled,#db-ac-offer button:disabled{opacity:.55;cursor:not-allowed}</style>';
 		} elseif ( 'profile' === $tab && function_exists( 'db_acct_profile_html' ) ) {
 			$h .= db_acct_profile_html( $email, $row );
 		} else {
@@ -716,6 +713,7 @@ if ( ! function_exists( 'db_acct_script' ) ) {
 			'api'   => esc_url_raw( rest_url( 'db/v1/' ) ),
 			'tab'   => $tab,
 			'offers' => esc_url_raw( add_query_arg( 'tab', 'offers', home_url( '/my-wishlist/' ) ) ),
+			'index'  => esc_url_raw( rest_url( 'db/v1/domain-index' ) ),
 		);
 		ob_start();
 		?>
@@ -749,6 +747,38 @@ if ( ! function_exists( 'db_acct_script' ) ) {
 		});
 		var f = document.getElementById('db-ac-offer');
 		if (f) {
+			(function () {
+				var inp = f.domain, list = document.getElementById('db-ac-dl'), hint = document.getElementById('db-ac-pick'), amt = f.amount, send = f.querySelector('button[type=submit]');
+				var names = null, shown = [], act = -1, chosen = '';
+				var money = function (p) { return p > 0 ? '$' + Math.round(p).toLocaleString('en-US') : 'Open to offers'; };
+				var load = function () { if (names) { return Promise.resolve(names); } return fetch(C.index, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (rows) { names = (rows || []).map(function (r) { return { n: String(r.n || '').toLowerCase(), p: +r.p || 0 }; }); return names; }).catch(function () { names = []; return names; }); };
+				var setPick = function (row) {
+					chosen = row ? row.n : '';
+					amt.disabled = !row; send.disabled = !row;
+					amt.placeholder = row ? (row.p > 0 ? 'Listed at ' + money(row.p) : 'Your offer, e.g. 1500') : 'Choose a domain first';
+					hint.className = 'db-ac-pick' + (row ? ' is-ok' : '');
+					hint.textContent = row ? row.n + ' is for sale' + (row.p > 0 ? ' at ' + money(row.p) + '. You can offer less.' : '. Name your price.') : 'Only names listed on Domain Brothers can receive offers.';
+				};
+				var close = function () { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); act = -1; };
+				var render = function () {
+					var q = inp.value.trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '');
+					list.innerHTML = '';
+					if (q.length < 1) { close(); return; }
+					shown = names.filter(function (r) { return r.n.indexOf(q) !== -1; }).sort(function (a, b) { return (a.n.indexOf(q) - b.n.indexOf(q)) || (a.n.length - b.n.length); }).slice(0, 8);
+					if (!shown.length) { var li = document.createElement('li'); li.className = 'db-ac-none'; li.setAttribute('role', 'option'); li.setAttribute('aria-disabled', 'true'); li.textContent = 'No listed name matches "' + q + '". Try another word.'; list.appendChild(li); }
+					shown.forEach(function (r, i) { var li = document.createElement('li'); li.id = 'db-ac-o' + i; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', 'false'); li.innerHTML = '<b></b><span></span>'; li.firstChild.textContent = r.n; li.lastChild.textContent = money(r.p); li.addEventListener('mousedown', function (e) { e.preventDefault(); pick(i); }); list.appendChild(li); });
+					list.hidden = false; inp.setAttribute('aria-expanded', 'true');
+				};
+				var pick = function (i) { var r = shown[i]; if (!r) { return; } inp.value = r.n; setPick(r); close(); amt.focus(); };
+				var move = function (d) { if (list.hidden || !shown.length) { return; } act = (act + d + shown.length) % shown.length; [].forEach.call(list.children, function (li, i) { li.setAttribute('aria-selected', i === act ? 'true' : 'false'); }); inp.setAttribute('aria-activedescendant', 'db-ac-o' + act); list.children[act].scrollIntoView({ block: 'nearest' }); };
+				var exact = function () { var v = inp.value.trim().toLowerCase(); var r = (names || []).filter(function (x) { return x.n === v; })[0]; setPick(r || null); if (!r && v) { hint.className = 'db-ac-pick is-bad'; hint.textContent = 'Choose a name from the list. Only domains we list can receive offers.'; } };
+				inp.addEventListener('focus', function () { load(); });
+				inp.addEventListener('input', function () { setPick(null); load().then(render); });
+				inp.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown') { e.preventDefault(); load().then(function () { if (list.hidden) { render(); } move(1); }); } else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); } else if (e.key === 'Enter' && !list.hidden && act > -1) { e.preventDefault(); pick(act); } else if (e.key === 'Escape') { close(); } });
+				inp.addEventListener('blur', function () { setTimeout(function () { close(); load().then(exact); }, 120); });
+				if (inp.value) { load().then(exact); }
+				f.addEventListener('submit', function (e) { if (!chosen || chosen !== inp.value.trim().toLowerCase()) { e.stopImmediatePropagation(); e.preventDefault(); exact(); inp.focus(); } }, true);
+			})();
 			f.addEventListener('submit', function (e) {
 				e.preventDefault();
 				var btn = f.querySelector('button[type=submit]'); btn.disabled = true; say('db-ac-offermsg', 'Sending…');
