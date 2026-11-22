@@ -623,7 +623,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$added = array();
 			$rdap_until = microtime( true ) + 15; // registry lookups stop after 15 seconds; later names rely on the DNS check
 			foreach ( $res['ok'] as $name ) {
-				$why   = db_seller_blocked( $name );
+				$why   = db_seller_tld_exists( $name ) ? db_seller_blocked( $name ) : 'There is no such domain ending. Check the spelling.';
 				$taken = '' !== $why ? '' : db_seller_domain_taken( $name, $sid );
 				if ( 'claim' === $taken && function_exists( 'db_seller_rule' ) && ! db_wl_allow( 'seller-claim:' . $sid, (int) db_seller_rule( 'claims_per_day' ), DAY_IN_SECONDS ) ) {
 					$msgs[] = array( 'warn', $name . ': you can start at most ' . (int) db_seller_rule( 'claims_per_day' ) . ' ownership claims a day. Try again tomorrow.' );
@@ -749,7 +749,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$mode = isset( $p['mode'] ) && 'sync' === $p['mode'] ? 'sync' : 'import';
 			$plan = db_seller_plan_import( $sr['rows'], $existing, $mode );
 			foreach ( $plan['add'] as $i => $a ) {
-				$why = db_seller_blocked( $a['domain'] );
+				$why = db_seller_tld_exists( $a['domain'] ) ? db_seller_blocked( $a['domain'] ) : 'There is no such domain ending.';
 				$why = '' !== $why ? $why : db_seller_domain_taken( $a['domain'], $sid );
 				$why = 'claim' === $why ? '' : $why; // claims are allowed; ownership proof decides
 				if ( '' !== $why ) {
@@ -947,6 +947,30 @@ if ( ! function_exists( 'db_seller_rdap_check' ) ) {
 			set_transient( $key, $out, DAY_IN_SECONDS );
 		}
 		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_seller_tld_exists' ) ) {
+	/**
+	 * The name's ending is a real top-level domain (it has name servers in the root zone).
+	 * Answers true when DNS itself is unavailable, so a lookup failure never blocks a seller.
+	 */
+	function db_seller_tld_exists( $name ) {
+		$tld = substr( strrchr( '.' . (string) $name, '.' ), 1 );
+		if ( '' === $tld ) {
+			return false;
+		}
+		$key = 'db_tld_' . md5( $tld );
+		$hit = get_transient( $key );
+		if ( 'y' === $hit || 'n' === $hit ) {
+			return 'y' === $hit;
+		}
+		if ( ! function_exists( 'checkdnsrr' ) || ! checkdnsrr( 'com.', 'NS' ) ) {
+			return true;
+		}
+		$ok = checkdnsrr( $tld . '.', 'NS' );
+		set_transient( $key, $ok ? 'y' : 'n', WEEK_IN_SECONDS );
+		return $ok;
 	}
 }
 
