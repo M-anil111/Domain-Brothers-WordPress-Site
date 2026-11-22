@@ -195,3 +195,20 @@ add_action( 'template_redirect', function () {
 	}
 	db_sales_render( 'Make an offer', 'Make an offer', db_op_body( $ctx ), true );
 }, 11 );
+
+// The theme's /offer/ page carried a locked, empty "Domain Name (required)" field (a theme script
+// sets it to "N/A"), so offers arrived without a name (bug register batch 2, CK-4). Offers live on
+// /make-an-offer/, which checks the name against the listings; /offer/ forwards there.
+add_action( 'template_redirect', static function () {
+	if ( is_admin() || ! function_exists( 'is_page' ) || ! is_page( 'offer' ) ) {
+		return;
+	}
+	$args = array();
+	foreach ( array( 'd', 'amt' ) as $k ) {
+		if ( isset( $_GET[ $k ] ) && is_string( $_GET[ $k ] ) && '' !== $_GET[ $k ] ) { // phpcs:ignore WordPress.Security.NonceVerification
+			$args[ $k ] = sanitize_text_field( wp_unslash( $_GET[ $k ] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+		}
+	}
+	wp_safe_redirect( add_query_arg( $args, home_url( '/make-an-offer/' ) ), 301 );
+	exit;
+}, 4 );
