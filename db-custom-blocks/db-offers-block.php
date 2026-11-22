@@ -667,7 +667,7 @@ if ( ! function_exists( 'db_deal_buyer_html' ) ) {
 				$h .= '<div class="db-of-box" style="text-align:center"><h2>Or pay monthly</h2><div class="db-of-grid">';
 				foreach ( array( 3, 6, 9, 12 ) as $m ) {
 					$first = db_stripe_installment_cents( (float) $deal->amount, $m, 1 ) / 100;
-					$h    .= '<a class="db-of-plan" href="' . esc_url( db_deal_pay_url( $deal, $m ) ) . '"><b>' . (int) $m . ' months</b><span>' . esc_html( '$' . number_format( $first, 2 ) ) . '/month</span><span>' . ( in_array( $m, array( 3, 6 ), true ) ? '0% interest' : ( 9 === $m ? '5% interest' : '10% interest' ) ) . '</span></a>';
+					$h    .= '<a class="db-of-plan" href="' . esc_url( db_deal_pay_url( $deal, $m ) ) . '"><b>' . (int) $m . ' months</b><span>' . esc_html( '$' . number_format( $first, 2 ) ) . '/month</span><span>' . ( function_exists( 'db_plan_rate' ) ? rtrim( rtrim( number_format( (float) db_plan_rate( $m ), 2 ), '0' ), '.' ) . '% interest' : '' ) . '</span></a>';
 				}
 				$h .= '</div></div>';
 			}
