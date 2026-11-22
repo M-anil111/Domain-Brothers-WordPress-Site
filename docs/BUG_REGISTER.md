@@ -128,7 +128,7 @@ Re-run the crawl script after batch 2 and batch 3 and compare counts against thi
     - fixes: editor-load waits, Turnstile tokens, stale sign-in checks, webhook helper exit
     - results: wishlist-flow 20/20, account-flow 27/27, offer-flow 12/12 (webhook steps skipped, because they would mark a real listing sold), sales-features 14/14
   - **O-5:** checked the certificate decoder, DNS propagation checker and nslookup pages: all work, no change needed.
-- Open: O-1 needs the owner to choose which analytics source to keep. P-6 is only partly done: the remaining inline scripts are small.
+- Open: O-1 needs the owner to choose which analytics source to keep. P-6 is only partly done: the other inline scripts have not been moved to files yet.
 
 ## Price change log
 
