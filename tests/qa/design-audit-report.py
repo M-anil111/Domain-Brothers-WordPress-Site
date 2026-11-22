@@ -25,8 +25,8 @@ CHECKS = OrderedDict([
     ('h1', 'Exactly one H1'),
     ('container', 'Content container 1320px with 15px gutters'),
     ('dbxwrap', '.dbx-wrap content 15px from each side on mobile'),
-    ('padding', 'Section padding 80 / 60 / 45px'),
-    ('doublegap', 'One gap between same-background sections'),
+    ('padding', 'Section padding 80 / 60 / 45px (cards: gap below)'),
+    ('doublegap', 'One gap between neighbouring sections'),
     ('tap', 'No tap-highlight border on mobile'),
     ('focus', 'Visible keyboard focus'),
     ('crumb', 'Breadcrumb on one line, domain name weight 700'),
@@ -55,10 +55,12 @@ def judge(r):
     secs = r.get('sections') or []
     if secs:
         want = r.get('wantPad')
-        bad = [s for s in secs if (s['top'] not in (0,) and not within(s['top'], want)) or (s['bottom'] not in (0,) and not within(s['bottom'], want))]
-        out['padding'] = (not bad, ', '.join('%s %s/%spx' % (s['cls'], s['top'], s['bottom']) for s in bad[:3]) + ' (expected %spx)' % want)
-        dbl = [s for s in secs if s.get('doubleGap')]
-        out['doublegap'] = (not dbl, ', '.join('%s %spx' % (s['cls'], s['doubleGap']) for s in dbl[:2]))
+        bad = [s for s in secs if s.get('bad')]
+        out['padding'] = (not bad, ', '.join(('%s card gap %spx' % (s['cls'], s['mb'])) if s['kind'] == 'K' else ('%s %s/%spx' % (s['cls'], s['top'], s['bottom'])) for s in bad[:3]) + ' (expected %spx)' % want)
+    gaps = r.get('gaps') or []
+    if gaps:
+        dbl = [g for g in gaps if not g['ok']]
+        out['doublegap'] = (not dbl, ', '.join('%s: %spx' % (g['between'], g['gap']) for g in dbl[:2]) + ' (expected one %spx gap)' % r.get('wantPad'))
     if w < 1024:
         out['tap'] = (r.get('tapHighlight') in ('rgba(0, 0, 0, 0)', 'transparent'), 'tap highlight %s' % r.get('tapHighlight'))
     if r.get('focusVisible') is not None:

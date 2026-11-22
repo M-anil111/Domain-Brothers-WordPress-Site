@@ -9,8 +9,11 @@
  *
  * Expected values (from the design brief):
  *  - content container 1320px with 15px gutters: content starts at max(15, (width - 1320) / 2 + 15)
- *  - section padding top and bottom: 80px desktop (1200px and up), 60px tablet (768-1199px),
- *    45px mobile (under 768px); one gap, not two, where neighbouring sections share a background
+ *  - section padding top and bottom: 80px desktop (992px and up), 60px tablet (768-991px),
+ *    45px mobile (under 768px); one gap, not two, where neighbouring sections share a background.
+ *    Breakpoints and the section types follow the designer's layout system
+ *    (db-custom-blocks/designer/ui-fixes/assets/layout.css): W/C page sections carry the padding,
+ *    K cards carry the gap as their margin, components inside a section keep their own spacing.
  *  - .dbx-wrap content 15px from each side on mobile
  *  - no tap-highlight border on touch, visible keyboard focus
  *  - breadcrumb on one line where it fits; current domain name weight 700
@@ -68,7 +71,7 @@ const PAGES = process.env.ONLY ? PAGES_ALL.filter((p) => process.env.ONLY.split(
 // Runs inside the page: every measurement for one page at one width.
 function measure(arg) {
 	const vw = window.innerWidth;
-	const tier = vw >= 1200 ? 'desktop' : (vw >= 768 ? 'tablet' : 'mobile');
+	const tier = vw >= 992 ? 'desktop' : (vw >= 768 ? 'tablet' : 'mobile');
 	const wantPad = { desktop: 80, tablet: 60, mobile: 45 }[tier];
 	const wantLeft = Math.max(15, (vw - 1320) / 2 + 15);
 	const vis = (el) => { if (!el) return false; const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
@@ -90,7 +93,7 @@ function measure(arg) {
 		let right = vw - (r.right - px(s.paddingRight));
 		// A full-width main holds its own wrappers: measure the first wrapper inside it instead.
 		if (left < 1 && right < 1) {
-			const inner = [...ref.querySelectorAll('.container, .dbx-wrap, [class*="-wrap"], [class*="-inner"], [class*="container"]')].find((e) => vis(e) && e.getBoundingClientRect().left > 0);
+			const inner = [...ref.querySelectorAll('.container, .dbx-wrap, [class*="-wrap"], [class*="-inner"], [class*="container"]')].find((e) => vis(e) && e.getBoundingClientRect().left + px(getComputedStyle(e).paddingLeft) > 0);
 			if (inner) { const ir = inner.getBoundingClientRect(); const is = getComputedStyle(inner); left = ir.left + px(is.paddingLeft); right = vw - (ir.right - px(is.paddingRight)); out.containerRef = String(inner.className).slice(0, 40); }
 		}
 		out.contentLeft = Math.round(left);
@@ -107,19 +110,48 @@ function measure(arg) {
 	const wraps = [...document.querySelectorAll('.dbx-wrap')].filter(vis);
 	out.dbxWrap = wraps.slice(0, 3).map((w) => { const r = w.getBoundingClientRect(); const s = getComputedStyle(w); return Math.round(r.left + px(s.paddingLeft)); });
 
-	// Section padding and double gaps.
-	const main = document.querySelector('main') || document.body;
-	const secs = [...main.querySelectorAll(':scope > section, :scope > div > section, :scope > .dbx, section.dbx, .dbl-head')].filter(vis);
-	const seen = new Set();
+	// Section padding and gaps, by the designer's section types.
+	//  W/C: page-level sections (padding = the tier's value; 0 only where it shares the gap with
+	//       a neighbouring section of the same background).
+	//  K:   cards on the page (the gap is their margin; inner padding is the card's own).
+	// The visible gap between two neighbouring page blocks must be one gap (the tier's value).
+	const W_SEL = '.dbx, .homepage-listing > .row, .db-pulse, .db-rsold-home, .db-aud, .db-how, .pageNewContent, .resp_table.dbr, .db-pr-hero, .db-pr-options, .db-pr-details, .db-pr-quotes, .db-pr-news, .db-news-live, .db-an-own, .pagenav, .dbb, .dbc-main, .dba-story, div.dba-bleed, .dbr-body, .dbs-path, .dbs-plan-sec, .dbs-faq, .dbs-cta-sec, .dbt-team, .dbf-body, .db-faq > .dbf-wrap:not(.dbf-body), .db-team > .dbt-wrap, .dbc-hero, .dba-hero, .dba-path, .dbr-hero, .dbs-hero, .dbs-how, .dbf-hero, .dbt-hero, .db-sold > section:not(.db-sold-band)';
+	const K_SEL = '.dbl-head, .dbs2-hero, .dbsv-form, .db-sold > .db-sold-band';
+	const bgOf = (c) => (c.backgroundImage !== 'none' ? 'img' : c.backgroundColor);
+	const clear = (c) => c.backgroundImage === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor);
+	const blocks = [...document.querySelectorAll(W_SEL + ', ' + K_SEL)].filter(vis)
+		.filter((e) => !e.parentElement.closest(W_SEL + ', ' + K_SEL)); // page level only
 	out.sections = [];
-	let prev = null;
-	for (const s of secs) {
-		if (seen.has(s)) continue; seen.add(s);
-		const cs = getComputedStyle(s);
-		const row = { cls: String(s.className || s.tagName).slice(0, 30), top: px(cs.paddingTop), bottom: px(cs.paddingBottom), bg: cs.backgroundColor };
-		if (prev && prev.bg === row.bg && prev.bottom > 0 && row.top > 0 && prev.el.nextElementSibling === s) row.doubleGap = prev.bottom + row.top;
+	out.gaps = [];
+	for (const e of blocks) {
+		const cs = getComputedStyle(e);
+		const card = e.matches(K_SEL);
+		const row = { cls: String(e.className || e.tagName).slice(0, 30), kind: card ? 'K' : 'W', top: px(cs.paddingTop), bottom: px(cs.paddingBottom), mt: px(cs.marginTop), mb: px(cs.marginBottom), bg: bgOf(cs) };
+		if (card) {
+			// The gap below a card is its margin, unless it is the last block of its parent.
+			const next = [...e.parentElement.children].slice([...e.parentElement.children].indexOf(e) + 1).find((x) => vis(x) && !/^(STYLE|SCRIPT|LINK)$/.test(x.tagName));
+			row.bad = next ? Math.abs(row.mb - wantPad) > 2 : false;
+		} else {
+			const prev = e.previousElementSibling && vis(e.previousElementSibling) ? e.previousElementSibling : null;
+			const shareTop = prev && prev.matches(W_SEL) && bgOf(getComputedStyle(prev)) === row.bg;
+			const okTop = Math.abs(row.top - wantPad) <= 2 || (row.top === 0 && (shareTop || (prev && prev.matches(K_SEL))));
+			const nextEl = e.nextElementSibling;
+			const okBottom = Math.abs(row.bottom - wantPad) <= 2 || (row.bottom === 0 && nextEl && vis(nextEl));
+			row.bad = !(okTop && okBottom);
+		}
 		out.sections.push(row);
-		prev = Object.assign({ el: s }, row);
+	}
+	// Gaps between neighbouring page blocks (same parent, adjacent element siblings).
+	const edge = (e) => { const r = e.getBoundingClientRect(); const c = getComputedStyle(e); return clear(c) ? { top: r.top + px(c.paddingTop), bottom: r.bottom - px(c.paddingBottom), clear: true } : { top: r.top, bottom: r.bottom, clear: false }; };
+	for (let i = 1; i < blocks.length; i++) {
+		const a = blocks[i - 1]; const b = blocks[i];
+		let sib = a.nextElementSibling; while (sib && /^(STYLE|SCRIPT|LINK)$/.test(sib.tagName)) sib = sib.nextElementSibling;
+		if (sib !== b) continue;
+		const ea = edge(a); const eb = edge(b);
+		const gap = Math.round(eb.top - ea.bottom);
+		const bothColoured = !ea.clear && !eb.clear && !a.matches(K_SEL) && !b.matches(K_SEL);
+		const ok = Math.abs(gap - wantPad) <= 2 || (bothColoured && Math.abs(gap) <= 2);
+		out.gaps.push({ between: String(a.className).slice(0, 24) + ' / ' + String(b.className).slice(0, 24), gap, ok });
 	}
 	out.wantPad = wantPad;
 
@@ -198,7 +230,9 @@ function measure(arg) {
 			page.on('pageerror', (e) => errs.push(e.message.slice(0, 120)));
 			let status = 0;
 			for (let t = 0; t < 3; t++) {
-				const r = await page.goto(BASE + url, { waitUntil: 'load', timeout: 60000 }).catch(() => null);
+				// CACHEBUST=1 adds a throwaway query string so cached copies of a just-deployed page are skipped.
+				const target = BASE + url + (process.env.CACHEBUST ? (url.includes('?') ? '&' : '?') + 'qa_nc=' + Date.now() : '');
+				const r = await page.goto(target, { waitUntil: 'load', timeout: 60000 }).catch(() => null);
 				status = r ? r.status() : 0;
 				if (status !== 508 && status !== 503) break;
 				await page.waitForTimeout(8000 * (t + 1));
