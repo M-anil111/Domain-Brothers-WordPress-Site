@@ -103,6 +103,9 @@ if ( class_exists( 'ZipArchive' ) ) {
 check( 'ordinary names pass the blocked check', '' === db_seller_blocked( 'brightpath.ca' ) );
 check( 'famous brands need a broker', '' !== db_seller_blocked( 'cheap-google-ads.com' ) && '' !== db_seller_blocked( 'paypalhelp.ca' ) );
 check( 'abusive terms are refused', 'This name cannot be listed.' === db_seller_blocked( 'pre-teen-pics.com' ) );
+check( 'slurs are refused', 'This name cannot be listed.' === db_seller_blocked( 'my-faggot-site.com' ) );
+check( 'profanity goes to broker review', false !== strpos( db_seller_blocked( 'fuckyou.ca' ), 'review' ) && false !== strpos( db_seller_blocked( 'free-porn.net' ), 'review' ) );
+check( 'innocent names containing short words pass', '' === db_seller_blocked( 'spicekitchen.ca' ) && '' === db_seller_blocked( 'essexhomes.com' ) && '' === db_seller_blocked( 'peacockgrapes.com' ) && '' === db_seller_blocked( 'dickensbooks.ca' ) );
 check( 'subdomains are refused', false !== strpos( db_seller_normalise_name( 'shop.example.com' )[1], 'main name' ) && '' !== db_seller_normalise_name( 'a.b.c.d.qa.ca' )[1] );
 check( 'two-part endings are accepted', array( 'brand.co.uk', '' ) === db_seller_normalise_name( 'www.brand.co.uk' ) && '' === db_seller_normalise_name( 'shop.com.au' )[1] );
 check( 'plain words pass', '' === db_seller_blocked( 'bakery.ca' ) && '' === db_seller_blocked( 'torontohomes.com' ) );

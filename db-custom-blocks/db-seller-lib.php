@@ -524,14 +524,23 @@ if ( ! function_exists( 'db_seller_blocked' ) ) {
 		$label  = false === $dot ? $label : substr( $label, 0, $dot );
 		$flat   = str_replace( '-', '', $label );
 		$brands = array( 'google', 'facebook', 'instagram', 'whatsapp', 'youtube', 'amazon', 'apple', 'iphone', 'microsoft', 'windows', 'netflix', 'paypal', 'tiktok', 'twitter', 'linkedin', 'snapchat', 'spotify', 'uber', 'airbnb', 'tesla', 'nike', 'adidas', 'cocacola', 'pepsi', 'disney', 'samsung', 'visa', 'mastercard', 'walmart', 'chatgpt', 'openai', 'anthropic' );
-		$terms  = array( 'childporn', 'kiddieporn', 'lolita', 'pedo', 'preteen' );
+		// Refused outright: abuse material and slurs.
+		$terms  = array( 'childporn', 'kiddieporn', 'lolita', 'pedo', 'preteen', 'nigger', 'nigga', 'faggot', 'wetback', 'raghead', 'kkk', 'heilhitler', 'whitepower', 'killjews', 'killgays' );
+		// Broker review: profanity and adult words (short words also appear inside innocent names, so a person decides).
+		$review = array( 'fuck', 'cunt', 'shit', 'bitch', 'whore', 'slut', 'porn', 'xxx', 'nude', 'pussy', 'nazi' );
 		if ( function_exists( 'apply_filters' ) ) {
 			$brands = (array) apply_filters( 'db_seller_blocked_brands', $brands );
 			$terms  = (array) apply_filters( 'db_seller_blocked_terms', $terms );
+			$review = (array) apply_filters( 'db_seller_review_terms', $review );
 		}
 		foreach ( $terms as $t ) {
 			if ( '' !== $t && false !== strpos( $flat, $t ) ) {
 				return 'This name cannot be listed.';
+			}
+		}
+		foreach ( $review as $t ) {
+			if ( '' !== $t && false !== strpos( $flat, $t ) ) {
+				return 'Names with adult or offensive words need a broker\'s review. Contact us to list it.';
 			}
 		}
 		foreach ( $brands as $b ) {
