@@ -307,10 +307,17 @@ if ( ! function_exists( 'db_seller_sheet_rows' ) ) {
 			$out['errors'][] = 'The file is empty.';
 			return $out;
 		}
-		$head = array_map( function ( $h ) { return strtolower( preg_replace( '/[^a-z]/i', '', (string) $h ) ); }, array_shift( $table ) );
-		$col  = array_flip( $head );
+		// Common headings from other marketplaces and hand-made sheets map to the template's columns.
+		$alias = array( 'domain' => 'domainname', 'domains' => 'domainname', 'name' => 'domainname', 'url' => 'domainname', 'website' => 'domainname', 'option' => 'sellingoption', 'type' => 'sellingoption', 'listingtype' => 'sellingoption', 'askingprice' => 'price', 'buynow' => 'price', 'buynowprice' => 'price', 'bin' => 'price', 'minoffer' => 'minimumprice', 'minimumoffer' => 'minimumprice', 'minimum' => 'minimumprice', 'floor' => 'minimumprice', 'floorprice' => 'minimumprice' );
+		$head  = array_map( function ( $h ) use ( $alias ) { $k = strtolower( preg_replace( '/[^a-z]/i', '', (string) $h ) ); return $alias[ $k ] ?? $k; }, array_shift( $table ) );
+		$col   = array();
+		foreach ( $head as $i => $k ) {
+			if ( ! isset( $col[ $k ] ) ) {
+				$col[ $k ] = $i; // the first column with a heading wins
+			}
+		}
 		if ( ! isset( $col['domainname'] ) ) {
-			$out['errors'][] = 'The first row must contain the column "Domain Name". Download the template to see the layout.';
+			$out['errors'][] = 'The first row must contain a "Domain Name" column. Download the template to see the layout.';
 			return $out;
 		}
 		$get = function ( $r, $k ) use ( $col ) { return isset( $col[ $k ], $r[ $col[ $k ] ] ) ? trim( (string) $r[ $col[ $k ] ] ) : ''; };

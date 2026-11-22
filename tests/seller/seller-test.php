@@ -78,7 +78,7 @@ check( 'semicolon CSV is read', 'x.com' === db_seller_csv_table( "Domain Name;Pr
 $sr = db_seller_sheet_rows( $tb );
 check( 'rows in the Sedo layout', 3 === count( $sr['rows'] ) && 'buy_now' === $sr['rows'][0]['option'] && 'make_offer' === $sr['rows'][1]['option'] && $sr['rows'][2]['delete'] );
 check( 'bad names and non-USD rows are reported with the row number', 2 === count( $sr['errors'] ) && false !== strpos( implode( ' ', $sr['errors'] ), 'Row 5' ) && false !== strpos( implode( ' ', $sr['errors'] ), 'EUR' ) );
-check( 'a file without the Domain Name column is refused', 1 === count( db_seller_sheet_rows( array( array( 'Name', 'Price' ), array( 'a.com', '1' ) ) )['errors'] ) );
+check( 'a file without the Domain Name column is refused', 1 === count( db_seller_sheet_rows( array( array( 'Notes', 'Price' ), array( 'a.com', '1' ) ) )['errors'] ) );
 check( 'For Sale "no" means remove', ! db_seller_sheet_rows( array( array( 'Domain Name', 'For Sale' ), array( 'a.com', 'no' ) ) )['rows'][0]['for_sale'] );
 $plan = db_seller_plan_import( $sr['rows'], array( 'old.com' => 'approved', 'alpha.com' => 'draft', 'kept.com' => 'approved', 'busy.com' => 'pending' ), 'import' );
 check( 'import adds, updates and removes', 1 === count( $plan['add'] ) && 'beta.ca' === $plan['add'][0]['domain'] && 'alpha.com' === $plan['update'][0]['domain'] && array( 'old.com' ) === $plan['remove'] );
@@ -108,6 +108,8 @@ check( 'profanity goes to broker review', false !== strpos( db_seller_blocked( '
 check( 'innocent names containing short words pass', '' === db_seller_blocked( 'spicekitchen.ca' ) && '' === db_seller_blocked( 'essexhomes.com' ) && '' === db_seller_blocked( 'peacockgrapes.com' ) && '' === db_seller_blocked( 'dickensbooks.ca' ) );
 check( 'subdomains are refused', false !== strpos( db_seller_normalise_name( 'shop.example.com' )[1], 'main name' ) && '' !== db_seller_normalise_name( 'a.b.c.d.qa.ca' )[1] );
 check( 'two-part endings are accepted', array( 'brand.co.uk', '' ) === db_seller_normalise_name( 'www.brand.co.uk' ) && '' === db_seller_normalise_name( 'shop.com.au' )[1] );
+$al = db_seller_sheet_rows( array( array( 'Domain', 'Type', 'Asking Price', 'Min Offer' ), array( 'alias.ca', 'make offer', '2500', '900' ) ) );
+check( 'spreadsheet heading aliases are understood', 1 === count( $al['rows'] ) && 'alias.ca' === $al['rows'][0]['domain'] && 'make_offer' === $al['rows'][0]['option'] && '2500' === $al['rows'][0]['price'] && '900' === $al['rows'][0]['min_offer'] );
 check( 'plain words pass', '' === db_seller_blocked( 'bakery.ca' ) && '' === db_seller_blocked( 'torontohomes.com' ) );
 check( 'exclusive commission is 10 percent', 1000 === db_seller_fee( 10000, true ) && 1500 === db_seller_fee( 10000 ) && 100 === db_seller_fee( 500, true ) );
 $g = db_seller_price_guide( array( array( 'name' => 'a.ca', 'price' => 1000 ), array( 'name' => 'b.ca', 'price' => 3000 ), array( 'name' => 'c.ca', 'price' => 2000 ), array( 'name' => 'd.com', 'price' => 9000 ), array( 'name' => 'e.ca', 'price' => 0 ) ), '.ca' );
