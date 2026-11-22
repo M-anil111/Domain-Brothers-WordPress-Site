@@ -940,3 +940,97 @@ html body.db-ui-active #page#page .db-priced > .db-pr-pay {
 html body.db-ui-active #page#page .db-priced > .db-pr-pay + .db-pr-details {
 	padding-top: 0 !important;
 }
+
+/* ================================================================== *
+ * 3. Design QA fixes (2026-11-22 audit, docs/DESIGN_QA.md)
+ *    Added by hand: the generator is not in this repository.
+ * ================================================================== */
+
+/* .dbx-wrap on mobile: the card's own 26px padding sat inside the 15px
+   container gutter (content at 41px). Below 768px the card frame goes and the
+   content sits on the 15px gutter; the section keeps its 45px rhythm. */
+@media (max-width: 767.98px) {
+	html body.db-ui-active #page#page .dbx > .dbx-wrap {
+		padding: 0 !important;
+		border: 0 !important;
+		border-radius: 0 !important;
+		background: none !important;
+		box-shadow: none !important;
+	}
+}
+
+/* Payment plan chooser: its template uses #primary_info, not #primary, so it
+   missed the shared container. The plan form keeps its narrower column. */
+html body.db-ui-active #page #content #primary_info#primary_info.content-area {
+	float: none !important;
+	width: 100% !important;
+	max-width: var(--dbs-max) !important;
+	margin-left: auto !important;
+	margin-right: auto !important;
+	padding-left: var(--dbs-gut) !important;
+	padding-right: var(--dbs-gut) !important;
+	box-sizing: border-box !important;
+}
+html body.db-ui-active #page #primary_info :is(.db-plan, .db-plan-bar) {
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+/* Without its own padding the plan's outer frame would touch the text: the
+   plan is part of the white page section, so the frame goes. */
+html body.db-ui-active #page #primary_info #db-plan.db-plan {
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	background: none !important;
+}
+
+/* Sign-in and register card: flow content inside <main>; its own 20px/24px
+   padding was added on top of main's section padding. */
+html body.db-ui-active #page#page main#main > .db-au {
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+}
+
+/* K cards: a later page rule set the find-a-domain hero gap to 18px. */
+html body.db-ui-active #page#page#page main#main > :is(.dbl-head, .dbs2-hero, .dbsv-form):not(:last-child) {
+	margin-bottom: var(--dbs-py) !important;
+}
+
+/* Sold domain page: the band is a K card on the container (it was inset a
+   further 15px), the sections below are white W sections with the shared
+   rhythm, and their inner wrapper no longer narrows the container. */
+html body.db-ui-active #page#page main#main:has(> .db-sold) {
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+}
+html body.db-ui-active #page#page .db-sold > .db-sold-band {
+	max-width: none !important;
+	margin: var(--dbs-py) 0 0 !important;
+}
+html body.db-ui-active #page#page .db-sold > section:not(.db-sold-band) {
+	padding-top: var(--dbs-py) !important;
+	padding-bottom: var(--dbs-py) !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+html body.db-ui-active #page#page .db-sold > section:not(.db-sold-band) + section:not(.db-sold-band) {
+	padding-top: 0 !important;
+}
+html body.db-ui-active #page#page .db-sold .db-sold-in {
+	max-width: none !important;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+html body.db-ui-active #page#page .db-sold > section > :first-child { margin-top: 0 !important; }
+html body.db-ui-active #page#page .db-sold > section > :last-child { margin-bottom: 0 !important; }
+
+/* DB-12: Buy Now and Make an Offer are fully round pills on every listing
+   template (the All Domains cards had 8px corners). */
+html body.db-ui-active.db-ui-active #page .db-domain-card a.db-act-buy.db-act-buy,
+html body.db-ui-active.db-ui-active #page .db-domain-card a.db-act-offer.db-act-offer,
+html body.db-ui-active.db-ui-active #page a.db-act-buy.db-act-buy,
+html body.db-ui-active.db-ui-active #page a.db-act-offer.db-act-offer {
+	border-radius: 999px !important;
+}
