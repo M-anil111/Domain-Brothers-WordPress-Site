@@ -4,6 +4,61 @@ Status: **phase 1 built** (plugin 3.120.2, 2026-11-22): seller setup, add names 
 
 Goal: let any domain owner create a free account, list names for sale on Domain Brothers, receive and negotiate offers, and get paid after a managed transfer. The reference products are Sedo (the 17 screenshots and the bulk-import file supplied), Afternic and Uniregistry Market. The function set follows them; the interface does not. Sedo's seller area is dense tables, tabbed forms and pop-up wizards from the 2000s. This plan keeps every capability and rebuilds the experience as a clean, spacious, card-based interface in the style of the new site header and account pages.
 
+
+## Feature checklist (kept current)
+
+Legend: [x] built and tested on beta, [ ] to build.
+
+### Phase 1: seller basics
+- [x] Public landing page `/sell-your-domains/` (steps, fees, FAQs) and header menu entry
+- [x] Seller agreement page `/seller-agreement/` (final, version 2026-11-22)
+- [x] Sign-in with the existing email-code account; signed-out visitors are sent to sign-in and back
+- [x] Seller setup: legal name, company, country (US/CA), phone, agreement acceptance recorded with version and date
+- [x] Add names by paste (up to 50): URL clean-up, validation, duplicates, names already listed or submitted
+- [x] Prices: Buy Now (min $100) or Make Offer, private minimum offer, validation messages
+- [x] Ownership check by DNS TXT or CNAME: hourly automatic checks for 72 hours, "Check now", failed after 72 hours
+- [x] Submit for review; trusted sellers publish instantly
+- [x] Admin review queue (Tools > Seller listings): approve, reject with reason, trust, pause seller
+- [x] Approved names become normal listings (Buy Now or open to offers); minimum offer kept private
+- [x] Remove a name (live names are taken off the site)
+- [x] Emails: submitted, live, not accepted, team review alert
+- [x] Switch: option `db_seller_on` (staging on by default)
+
+### Phase 2: portfolio and bulk
+- [x] CSV and XLSX import in the Sedo layout, template download
+- [x] Import and Sync modes with a preview and confirm step
+- [x] Filters: all, live, in review, needs action
+- [x] Bulk actions: change price by %, switch to Make Offer, remove
+- [x] Price edits on live names apply to the public page at once
+- [x] Wishlist saves and offers per live name
+- [ ] Page views per live name
+- [ ] Listing detail: description, category and keywords per name
+- [ ] RDAP check that each added name is registered
+- [ ] Blocked-names check (prohibited words and famous trademarks)
+- [ ] Price guidance from Domain Brothers' own sold list (decision 10)
+- [ ] Exclusive listing option: badge on the listing, 10% commission (decision 8)
+
+### Phase 3: seller negotiations
+- [ ] Offers on a seller's names shown in their seller page
+- [ ] Seller can accept, counter or decline (broker oversight kept)
+- [ ] Offers below the minimum answered automatically with the minimum
+- [ ] Threads expire after a set time without a reply
+- [ ] Seller emails for new offers and replies
+
+### Phase 4: sales and payouts
+- [ ] A sale of a seller's name creates a payout record (gross, commission, net)
+- [ ] Payout states: waiting for transfer, waiting for buyer confirmation, due, paid, held
+- [ ] Payout date rule: 7 days after buyer confirms control, or 14 days after transfer with no dispute
+- [ ] Seller payout details through Stripe Connect onboarding (needs Connect enabled in Stripe)
+- [ ] Admin payouts screen: mark transferred, confirm, hold, pay
+- [ ] Seller sales and payouts page with a downloadable statement (CSV)
+- [ ] Audit log of price changes, publication, offers and payouts
+
+### Phase 5: sales pages for pointed domains
+- [ ] Instructions to point a name at Domain Brothers
+- [ ] Sales page served when a pointed name is visited (name, price, buy and offer actions)
+- [ ] Visits from pointed names counted as views
+
 ---
 
 ## 1. What the references do, and what we take from each

@@ -99,4 +99,17 @@ if ( class_exists( 'ZipArchive' ) ) {
 	check( 'XLSX first sheet is read (shared strings and numbers)', is_array( $x ) && 'gamma.io' === $x[1][0] && '4200' === $x[1][1] );
 } else { echo "SKIP xlsx (no ZipArchive)\n"; }
 
+// Phase 2: checks, guidance, exclusive, details.
+check( 'ordinary names pass the blocked check', '' === db_seller_blocked( 'brightpath.ca' ) );
+check( 'famous brands need a broker', '' !== db_seller_blocked( 'cheap-google-ads.com' ) && '' !== db_seller_blocked( 'paypalhelp.ca' ) );
+check( 'abusive terms are refused', 'This name cannot be listed.' === db_seller_blocked( 'pre-teen-pics.com' ) );
+check( 'plain words pass', '' === db_seller_blocked( 'bakery.ca' ) && '' === db_seller_blocked( 'torontohomes.com' ) );
+check( 'exclusive commission is 10 percent', 1000 === db_seller_fee( 10000, true ) && 1500 === db_seller_fee( 10000 ) && 100 === db_seller_fee( 500, true ) );
+$g = db_seller_price_guide( array( array( 'name' => 'a.ca', 'price' => 1000 ), array( 'name' => 'b.ca', 'price' => 3000 ), array( 'name' => 'c.ca', 'price' => 2000 ), array( 'name' => 'd.com', 'price' => 9000 ), array( 'name' => 'e.ca', 'price' => 0 ) ), '.ca' );
+check( 'price guide: median, range and count for one extension', array( 'count' => 3, 'median' => 2000, 'low' => 1000, 'high' => 3000 ) === $g );
+check( 'price guide needs 3 sales', null === db_seller_price_guide( array( array( 'name' => 'a.io', 'price' => 1 ) ), '.io' ) );
+$d = db_seller_clean_details( array( 'description' => "<b>Great</b>   name\r\n\r\n\r\n\r\nfor a bakery", 'keywords' => 'bakery, Bread; bakery, <x>cakes</x>, k1,k2,k3,k4,k5,k6,k7' ) );
+check( 'details: tags stripped, blank lines collapsed', "Great name\n\nfor a bakery" === $d['description'] );
+check( 'details: tags stripped from keywords, duplicates dropped, capped at 8', 0 === strpos( $d['keywords'], 'bakery, Bread, cakes, k1' ) && 8 === count( explode( ', ', $d['keywords'] ) ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

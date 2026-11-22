@@ -486,3 +486,92 @@ if ( ! function_exists( 'db_seller_adjust_price' ) ) {
 		return max( DB_SELLER_MIN_PRICE, (int) round( (int) $price * ( 100 + $pct ) / 100 ) );
 	}
 }
+
+/* ------------------------------------------------------------------ phase 2: checks, guidance, exclusive */
+
+if ( ! defined( 'DB_SELLER_EXCLUSIVE_PCT' ) ) {
+	define( 'DB_SELLER_EXCLUSIVE_PCT', 10 ); // Owner decision 8.
+}
+
+if ( ! function_exists( 'db_seller_blocked' ) ) {
+	/**
+	 * '' when a name may be listed by a seller, otherwise the reason. Famous brands need a broker
+	 * (trademark risk); a few abusive terms are refused outright. The lists can be extended with the
+	 * filters db_seller_blocked_brands and db_seller_blocked_terms.
+	 */
+	function db_seller_blocked( $name ) {
+		$label  = strtolower( (string) $name );
+		$dot    = strpos( $label, '.' );
+		$label  = false === $dot ? $label : substr( $label, 0, $dot );
+		$flat   = str_replace( '-', '', $label );
+		$brands = array( 'google', 'facebook', 'instagram', 'whatsapp', 'youtube', 'amazon', 'apple', 'iphone', 'microsoft', 'windows', 'netflix', 'paypal', 'tiktok', 'twitter', 'linkedin', 'snapchat', 'spotify', 'uber', 'airbnb', 'tesla', 'nike', 'adidas', 'cocacola', 'pepsi', 'disney', 'samsung', 'visa', 'mastercard', 'walmart', 'chatgpt', 'openai', 'anthropic' );
+		$terms  = array( 'childporn', 'kiddieporn', 'lolita', 'pedo', 'preteen' );
+		if ( function_exists( 'apply_filters' ) ) {
+			$brands = (array) apply_filters( 'db_seller_blocked_brands', $brands );
+			$terms  = (array) apply_filters( 'db_seller_blocked_terms', $terms );
+		}
+		foreach ( $terms as $t ) {
+			if ( '' !== $t && false !== strpos( $flat, $t ) ) {
+				return 'This name cannot be listed.';
+			}
+		}
+		foreach ( $brands as $b ) {
+			if ( '' !== $b && false !== strpos( $flat, $b ) ) {
+				return 'Names with a famous brand need a broker\'s review. Contact us to list it.';
+			}
+		}
+		return '';
+	}
+}
+
+if ( ! function_exists( 'db_seller_fee' ) ) {
+	/** Commission for a sale: 15% (10% when exclusive), $100 minimum, never more than the price. */
+	function db_seller_fee( $price, $exclusive = false ) {
+		$price = max( 0, (int) $price );
+		$pct   = $exclusive ? DB_SELLER_EXCLUSIVE_PCT : DB_SELLER_COMMISSION_PCT;
+		return min( $price, max( DB_SELLER_COMMISSION_MIN, (int) round( $price * $pct / 100 ) ) );
+	}
+}
+
+if ( ! function_exists( 'db_seller_price_guide' ) ) {
+	/**
+	 * Price guidance for one extension from Domain Brothers' own sales.
+	 *
+	 * @param array<int,array{name:string,price:float}> $sold Sold names with a recorded price.
+	 * @return array{count:int,median:int,low:int,high:int}|null Null below 3 recorded sales.
+	 */
+	function db_seller_price_guide( array $sold, $ext ) {
+		$ext = strtolower( (string) $ext );
+		$p   = array();
+		foreach ( $sold as $s ) {
+			$n   = strtolower( (string) ( $s['name'] ?? '' ) );
+			$dot = strrpos( $n, '.' );
+			if ( false !== $dot && substr( $n, $dot ) === $ext && (float) ( $s['price'] ?? 0 ) > 0 ) {
+				$p[] = (float) $s['price'];
+			}
+		}
+		if ( count( $p ) < 3 ) {
+			return null;
+		}
+		sort( $p );
+		$c   = count( $p );
+		$mid = 0 === $c % 2 ? ( $p[ $c / 2 - 1 ] + $p[ $c / 2 ] ) / 2 : $p[ ( $c - 1 ) / 2 ];
+		return array( 'count' => $c, 'median' => (int) round( $mid ), 'low' => (int) round( $p[0] ), 'high' => (int) round( $p[ $c - 1 ] ) );
+	}
+}
+
+if ( ! function_exists( 'db_seller_clean_details' ) ) {
+	/** The listing details form: description (600 chars, plain text) and up to 8 keywords. */
+	function db_seller_clean_details( array $p ) {
+		$desc = trim( preg_replace( '/[ \t]+/', ' ', strip_tags( (string) ( $p['description'] ?? '' ) ) ) );
+		$desc = mb_substr( preg_replace( "/\n{3,}/", "\n\n", str_replace( "\r", '', $desc ) ), 0, 600 );
+		$kw   = array();
+		foreach ( preg_split( '/[,;\n]+/', strip_tags( (string) ( $p['keywords'] ?? '' ) ) ) as $k ) {
+			$k = trim( mb_substr( preg_replace( '/[^\p{L}\p{N} \-]/u', '', $k ), 0, 30 ) );
+			if ( '' !== $k && ! in_array( mb_strtolower( $k ), array_map( 'mb_strtolower', $kw ), true ) ) {
+				$kw[] = $k;
+			}
+		}
+		return array( 'description' => $desc, 'keywords' => implode( ', ', array_slice( $kw, 0, 8 ) ) );
+	}
+}

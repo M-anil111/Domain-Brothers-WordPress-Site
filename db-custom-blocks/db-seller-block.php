@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/db-seller-lib.php';
 
-define( 'DB_SELLER_DB_VERSION', '1' );
+define( 'DB_SELLER_DB_VERSION', '2' );
 
 /* ------------------------------------------------------------------ setup */
 
@@ -78,6 +78,9 @@ add_action( 'init', function () {
 		checks int(10) unsigned NOT NULL DEFAULT 0,
 		review_status varchar(10) NOT NULL DEFAULT 'draft',
 		review_note varchar(255) NOT NULL DEFAULT '',
+		exclusive tinyint(1) NOT NULL DEFAULT 0,
+		description text NULL,
+		keywords varchar(255) NOT NULL DEFAULT '',
 		post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
@@ -238,6 +241,9 @@ if ( ! function_exists( 'db_seller_publish' ) ) {
 		foreach ( db_seller_listing_meta( $listing, (int) $listing['seller_id'], current_time( 'Y-m-d' ) ) as $k => $v ) {
 			update_post_meta( $post_id, $k, $v );
 		}
+		update_post_meta( $post_id, 'db_exclusive', ! empty( $listing['exclusive'] ) ? '1' : '' );
+		update_post_meta( $post_id, 'db_seller_desc', (string) ( $listing['description'] ?? '' ) );
+		update_post_meta( $post_id, 'db_seller_keywords', (string) ( $listing['keywords'] ?? '' ) );
 		$now = current_time( 'mysql', true );
 		$wpdb->update( db_seller_table( 'listings' ), array( 'review_status' => 'approved', 'post_id' => (int) $post_id, 'review_note' => '', 'updated_at' => $now ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		do_action( 'db_page_cache_purge_all' );
@@ -260,11 +266,18 @@ if ( ! function_exists( 'db_seller_apply_row' ) ) {
 	function db_seller_apply_row( array $listing, array $clean ) {
 		global $wpdb;
 		$now = current_time( 'mysql', true );
-		$wpdb->update( db_seller_table( 'listings' ), array( 'option_type' => $clean['option'], 'price' => $clean['price'], 'min_offer' => $clean['min_offer'], 'review_status' => 'approved' === $listing['review_status'] ? 'approved' : 'draft', 'updated_at' => $now ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$data = array( 'option_type' => $clean['option'], 'price' => $clean['price'], 'min_offer' => $clean['min_offer'], 'review_status' => 'approved' === $listing['review_status'] ? 'approved' : 'draft', 'updated_at' => $now );
+		if ( isset( $clean['exclusive'] ) ) {
+			$data['exclusive'] = $clean['exclusive'] ? 1 : 0;
+		}
+		$wpdb->update( db_seller_table( 'listings' ), $data, array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		if ( 'approved' === $listing['review_status'] && (int) $listing['post_id'] ) {
 			$meta = db_seller_listing_meta( array_merge( $listing, $clean ), (int) $listing['seller_id'], current_time( 'Y-m-d' ) );
 			foreach ( array( 'domain_price', 'domain_type', '_db_min_offer' ) as $k ) {
 				update_post_meta( (int) $listing['post_id'], $k, $meta[ $k ] );
+			}
+			if ( isset( $clean['exclusive'] ) ) {
+				update_post_meta( (int) $listing['post_id'], 'db_exclusive', $clean['exclusive'] ? '1' : '' );
 			}
 			do_action( 'db_page_cache_purge_all' );
 		}
@@ -287,14 +300,32 @@ if ( ! function_exists( 'db_seller_stats' ) ) {
 	/** Wishlist saves and offers for a live listing. */
 	function db_seller_stats( array $listing ) {
 		global $wpdb;
-		$saves  = (int) $listing['post_id'] && function_exists( 'db_wl_count' ) ? (int) db_wl_count( (int) $listing['post_id'] ) : 0;
-		$offers = 0;
-		if ( function_exists( 'db_deal_table' ) ) {
+		$pid    = (int) $listing['post_id'];
+		$saves  = $pid && function_exists( 'db_wl_count' ) ? (int) db_wl_count( $pid ) : 0;
+		$hits   = $pid && function_exists( 'db_hits_for_domain' ) ? db_hits_for_domain( $pid ) : null;
+		$views  = $hits ? (int) ( $hits['all_h'] ?? 0 ) : 0;
+		$offers = $hits ? (int) ( $hits['offers'] ?? 0 ) : 0;
+		if ( ! $hits && function_exists( 'db_deal_table' ) ) {
 			$t = db_deal_table( 'deals' );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$offers = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE domain = %s", $listing['domain'] ) );
 		}
-		return array( $saves, $offers );
+		return array( $saves, $offers, $views );
+	}
+}
+
+if ( ! function_exists( 'db_seller_sold_prices' ) ) {
+	/** Domain Brothers' sold names with a recorded price, cached for an hour. */
+	function db_seller_sold_prices() {
+		$c = get_transient( 'db_seller_sold_prices' );
+		if ( is_array( $c ) ) {
+			return $c;
+		}
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = (array) $wpdb->get_results( "SELECT p.post_title AS name, pm.meta_value AS price FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = 'db_sold_price' WHERE p.post_type = 'domain' AND pm.meta_value + 0 > 0 LIMIT 2000", ARRAY_A );
+		set_transient( 'db_seller_sold_prices', $rows, HOUR_IN_SECONDS );
+		return $rows;
 	}
 }
 
@@ -385,7 +416,8 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$msgs = array();
 			$added = array();
 			foreach ( $res['ok'] as $name ) {
-				$why = db_seller_domain_taken( $name );
+				$why = db_seller_blocked( $name );
+				$why = '' !== $why ? $why : db_seller_domain_taken( $name );
 				if ( '' !== $why ) {
 					$msgs[] = array( 'warn', $name . ': ' . $why );
 					continue;
@@ -422,7 +454,8 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 					$msgs[] = array( 'bad', $own[ $id ]['domain'] . ': ' . implode( ' ', $err ) );
 					continue;
 				}
-				if ( $c['option'] === $own[ $id ]['option_type'] && $c['price'] === (int) $own[ $id ]['price'] && $c['min_offer'] === (int) $own[ $id ]['min_offer'] && 'rejected' !== $own[ $id ]['review_status'] ) {
+				$c['exclusive'] = ! empty( $r['exclusive'] );
+				if ( $c['option'] === $own[ $id ]['option_type'] && $c['price'] === (int) $own[ $id ]['price'] && $c['min_offer'] === (int) $own[ $id ]['min_offer'] && (int) $c['exclusive'] === (int) $own[ $id ]['exclusive'] && 'rejected' !== $own[ $id ]['review_status'] ) {
 					continue;
 				}
 				db_seller_apply_row( $own[ $id ], $c );
@@ -497,7 +530,8 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$mode = isset( $p['mode'] ) && 'sync' === $p['mode'] ? 'sync' : 'import';
 			$plan = db_seller_plan_import( $sr['rows'], $existing, $mode );
 			foreach ( $plan['add'] as $i => $a ) {
-				$why = db_seller_domain_taken( $a['domain'] );
+				$why = db_seller_blocked( $a['domain'] );
+				$why = '' !== $why ? $why : db_seller_domain_taken( $a['domain'] );
 				if ( '' !== $why ) {
 					$plan['skip'][] = array( $a['domain'], $why );
 					unset( $plan['add'][ $i ] );
@@ -590,6 +624,21 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return $msgs;
 		}
 
+		if ( 'details' === $act ) {
+			$id = (int) ( $p['id'] ?? 0 );
+			if ( ! isset( $own[ $id ] ) ) {
+				return array();
+			}
+			$d = db_seller_clean_details( $p );
+			$wpdb->update( $l, array( 'description' => $d['description'], 'keywords' => $d['keywords'], 'updated_at' => $now ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			if ( 'approved' === $own[ $id ]['review_status'] && (int) $own[ $id ]['post_id'] ) {
+				update_post_meta( (int) $own[ $id ]['post_id'], 'db_seller_desc', $d['description'] );
+				update_post_meta( (int) $own[ $id ]['post_id'], 'db_seller_keywords', $d['keywords'] );
+				do_action( 'db_page_cache_purge_all' );
+			}
+			return array( array( 'ok', 'Details saved for ' . $own[ $id ]['domain'] . '.' ) );
+		}
+
 		if ( 'remove' === $act ) {
 			$id = (int) ( $p['id'] ?? 0 );
 			if ( ! isset( $own[ $id ] ) ) {
@@ -631,6 +680,7 @@ if ( ! function_exists( 'db_seller_css' ) ) {
 			. '.dbsl-two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}@media(max-width:860px){.dbsl-two{grid-template-columns:1fr}}.dbsl-ul{margin:0 0 12px 18px;padding:0;font-size:15px;line-height:1.6}.dbsl-preview h3{margin:14px 0 6px;font-size:16px}.dbsl-radios{border:0;padding:0;margin:0 0 14px}.dbsl-radios legend{font-weight:700;font-size:14.5px;margin-bottom:6px}.dbsl-radios .dbsl-check{margin-bottom:6px}'
 			. '.dbsl-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.dbsl-filters a{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1.5px solid #cfd8d3;border-radius:999px;color:#0a1628!important;text-decoration:none!important;font-weight:600;font-size:14px}.dbsl-filters a span{color:#4b5563;font-weight:700}.dbsl-filters a.is-on{background:#0a1628;border-color:#0a1628;color:#fff!important}.dbsl-filters a.is-on span{color:#d9f99d}'
 			. '.dbsl-bulk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}.dbsl-bulk select{max-width:240px}.dbsl input[type=file]{font-size:15px;max-width:100%}.dbsl input[type=checkbox]{width:18px;height:18px;accent-color:#0a1628}'
+			. '.dbsl-guide{margin:0 0 14px;padding:12px 16px;border-radius:14px;background:#f2f8f0;border:1px solid #d9eccf}.dbsl-guide p{margin:0 0 4px}.dbsl-edit{font-weight:700;color:#0b6b36!important;white-space:nowrap}'
 			. 'html body .dbsl button.dbsl-link{display:inline;min-height:40px;padding:6px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:#b42318!important;font-size:14px!important;font-weight:600!important;text-decoration:underline!important;text-transform:none!important;letter-spacing:0!important}'
 			. 'html body .dbsl button.dbsl-btn:disabled{background:#c9d1cd!important;color:#36423d!important;border-color:#c9d1cd!important;cursor:not-allowed!important;box-shadow:none!important}'
 			. '</style>';
@@ -754,16 +804,31 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 
 		if ( $editable ) {
 			// Prices.
-			$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-prices"><h2 id="dbsl-prices">Prices</h2><p>Buy Now needs a price of at least $' . DB_SELLER_MIN_PRICE . '. The minimum offer is private: buyers never see it. Changes to live names apply at once. Commission is ' . DB_SELLER_COMMISSION_PCT . '% (minimum $' . DB_SELLER_COMMISSION_MIN . ') when a name sells.</p>'
-				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="price"><input type="hidden" name="t" value="' . $t . '"><div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col">Name</th><th scope="col">Selling option</th><th scope="col">Price (USD)</th><th scope="col">Minimum offer (USD)</th></tr></thead><tbody>';
+			$guide = '';
+			$exts  = array();
+			foreach ( $editable as $r ) {
+				$dp = strrpos( $r['domain'], '.' );
+				$exts[ substr( $r['domain'], $dp ) ] = true;
+			}
+			$sold = db_seller_sold_prices();
+			foreach ( array_keys( $exts ) as $x ) {
+				$g = db_seller_price_guide( $sold, $x );
+				if ( $g ) {
+					$guide .= '<li><strong>' . esc_html( $x ) . '</strong>: ' . (int) $g['count'] . ' sold through Domain Brothers, median $' . esc_html( number_format( $g['median'] ) ) . ' (range $' . esc_html( number_format( $g['low'] ) ) . ' to $' . esc_html( number_format( $g['high'] ) ) . ')</li>';
+				}
+			}
+			$h .= '<section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-prices"><h2 id="dbsl-prices">Prices</h2><p>Buy Now needs a price of at least $' . DB_SELLER_MIN_PRICE . '. The minimum offer is private: buyers never see it. Changes to live names apply at once. Commission is ' . DB_SELLER_COMMISSION_PCT . '% (minimum $' . DB_SELLER_COMMISSION_MIN . ') when a name sells, or ' . DB_SELLER_EXCLUSIVE_PCT . '% if you list it only with us.</p>'
+				. ( '' !== $guide ? '<div class="dbsl-guide"><p><strong>Price guide</strong> from our own sales:</p><ul class="dbsl-ul">' . $guide . '</ul></div>' : '' )
+				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="price"><input type="hidden" name="t" value="' . $t . '"><div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col">Name</th><th scope="col">Selling option</th><th scope="col">Price (USD)</th><th scope="col">Minimum offer (USD)</th><th scope="col">Exclusive</th></tr></thead><tbody>';
 			foreach ( $editable as $r ) {
 				$id = (int) $r['id'];
 				$h .= '<tr><td class="dbsl-dom">' . esc_html( $r['domain'] ) . ( 'approved' === $r['review_status'] ? ' <span class="dbsl-chip dbsl-chip--ok">Live</span>' : '' ) . '</td>'
 					. '<td data-l="Selling option"><label class="screen-reader-text" for="dbsl-o' . $id . '">Selling option for ' . esc_html( $r['domain'] ) . '</label><select id="dbsl-o' . $id . '" name="row[' . $id . '][option]"><option value="buy_now"' . selected( $r['option_type'], 'buy_now', false ) . '>Buy Now</option><option value="make_offer"' . selected( $r['option_type'], 'make_offer', false ) . '>Make Offer</option></select></td>'
 					. '<td data-l="Price"><label class="screen-reader-text" for="dbsl-p' . $id . '">Price for ' . esc_html( $r['domain'] ) . '</label><input type="text" inputmode="numeric" id="dbsl-p' . $id . '" name="row[' . $id . '][price]" value="' . ( (int) $r['price'] ? esc_attr( number_format( (int) $r['price'] ) ) : '' ) . '" placeholder="e.g. 2,500"></td>'
-					. '<td data-l="Minimum offer"><label class="screen-reader-text" for="dbsl-m' . $id . '">Minimum offer for ' . esc_html( $r['domain'] ) . '</label><input type="text" inputmode="numeric" id="dbsl-m' . $id . '" name="row[' . $id . '][min_offer]" value="' . ( (int) $r['min_offer'] ? esc_attr( number_format( (int) $r['min_offer'] ) ) : '' ) . '" placeholder="optional"></td></tr>';
+					. '<td data-l="Minimum offer"><label class="screen-reader-text" for="dbsl-m' . $id . '">Minimum offer for ' . esc_html( $r['domain'] ) . '</label><input type="text" inputmode="numeric" id="dbsl-m' . $id . '" name="row[' . $id . '][min_offer]" value="' . ( (int) $r['min_offer'] ? esc_attr( number_format( (int) $r['min_offer'] ) ) : '' ) . '" placeholder="optional"></td>'
+					. '<td data-l="Exclusive"><label class="dbsl-check"><input type="checkbox" name="row[' . $id . '][exclusive]" value="1"' . checked( (int) $r['exclusive'], 1, false ) . '> <span>Only with us (' . DB_SELLER_EXCLUSIVE_PCT . '%)</span></label></td></tr>';
 			}
-			$h .= '</tbody></table></div><div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save prices</button></div></form></section>';
+			$h .= '</tbody></table></div><p class="dbsl-muted">Exclusive means you do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and a lower commission.</p><div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save prices</button></div></form></section>';
 		}
 
 		if ( $unverif ) {
@@ -776,6 +841,19 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<p class="dbsl-muted">Or add a CNAME record instead: host <code>' . esc_html( 'db-' . $seller['token'] ) . '</code> pointing to <code>' . esc_html( DB_SELLER_CNAME_TARGET ) . '</code> (for ' . esc_html( $first['domain'] ) . ' the full host is ' . esc_html( db_seller_cname_host( $seller['token'], $first['domain'] ) ) . ').</p>'
 				. '<p class="dbsl-muted">' . count( $unverif ) . ' ' . ( 1 === count( $unverif ) ? 'name is' : 'names are' ) . ' waiting. We check every hour for 3 days. Changes usually show within an hour.</p>'
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="check"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn dbsl-btn--ghost">Check now</button></form></section>';
+		}
+
+		// Details editor (?edit=ID).
+		$edit_id = isset( $_GET['edit'] ) ? (int) $_GET['edit'] : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		foreach ( $rows as $r ) {
+			if ( (int) $r['id'] !== $edit_id || 'pending' === $r['review_status'] ) {
+				continue;
+			}
+			$h .= '<section class="dbsl-card dbsl-sec" id="dbsl-edit" aria-labelledby="dbsl-ed-h"><h2 id="dbsl-ed-h">Details for ' . esc_html( $r['domain'] ) . '</h2><p>Shown on the name\'s page' . ( 'approved' === $r['review_status'] ? ' at once' : ' once it is live' ) . '. Say who the name suits; buyers read this.</p>'
+				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="details"><input type="hidden" name="t" value="' . $t . '"><input type="hidden" name="id" value="' . (int) $r['id'] . '">'
+				. '<div class="dbsl-f"><label for="dbsl-desc">Description (up to 600 characters)</label><textarea id="dbsl-desc" name="description" maxlength="600">' . esc_textarea( (string) $r['description'] ) . '</textarea></div>'
+				. '<div class="dbsl-f"><label for="dbsl-kw">Keywords (up to 8, separated by commas)</label><input type="text" id="dbsl-kw" name="keywords" maxlength="255" value="' . esc_attr( (string) $r['keywords'] ) . '" placeholder="bakery, bread, Toronto"></div>'
+				. '<div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save details</button><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/seller/' ) ) . '#dbsl-list">Close</a></div></form></section>';
 		}
 
 		// Your names: filters, bulk actions, statistics.
@@ -805,7 +883,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<div class="dbsl-bulk"><label for="dbsl-bulk-do" class="screen-reader-text">Action for selected names</label><select id="dbsl-bulk-do" name="bulk"><option value="">With selected&hellip;</option><option value="adjust">Change price by %</option><option value="make_offer">Switch to Make Offer</option><option value="remove">Remove</option></select>'
 				. '<label for="dbsl-pct" class="screen-reader-text">Percent change</label><input type="text" inputmode="decimal" id="dbsl-pct" name="pct" placeholder="% e.g. -10" style="max-width:130px">'
 				. '<button type="submit" class="dbsl-btn dbsl-btn--ghost dbsl-btn--sm" onclick="var s=document.getElementById(\'dbsl-bulk-do\');return s.value!==\'remove\'||confirm(\'Remove the selected names?\');">Apply</button></div>'
-				. '<div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col"><label class="screen-reader-text" for="dbsl-all">Select all</label><input type="checkbox" id="dbsl-all" data-all></th><th scope="col">Name</th><th scope="col">Option</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Saves</th><th scope="col">Offers</th></tr></thead><tbody>';
+				. '<div class="dbsl-scroll"><table class="dbsl-tbl"><thead><tr><th scope="col"><label class="screen-reader-text" for="dbsl-all">Select all</label><input type="checkbox" id="dbsl-all" data-all></th><th scope="col">Name</th><th scope="col">Option</th><th scope="col">Price</th><th scope="col">Status</th><th scope="col">Views</th><th scope="col">Saves</th><th scope="col">Offers</th><th scope="col"><span class="screen-reader-text">Details</span></th></tr></thead><tbody>';
 			foreach ( $shown as $r ) {
 				list( $label, $tone ) = db_seller_status( $r );
 				$name = esc_html( $r['domain'] );
@@ -813,15 +891,16 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				if ( $live ) {
 					$name = '<a href="' . esc_url( get_permalink( (int) $r['post_id'] ) ) . '">' . $name . '</a>';
 				}
-				list( $saves, $offers ) = $live ? db_seller_stats( $r ) : array( null, null );
+				list( $saves, $offers, $views ) = $live ? db_seller_stats( $r ) : array( null, null, null );
 				$note = 'rejected' === $r['review_status'] && '' !== $r['review_note'] ? '<br><span class="dbsl-muted">' . esc_html( $r['review_note'] ) . '</span>' : '';
 				$h   .= '<tr><td><label class="screen-reader-text" for="dbsl-c' . (int) $r['id'] . '">Select ' . esc_html( $r['domain'] ) . '</label><input type="checkbox" id="dbsl-c' . (int) $r['id'] . '" name="ids[]" value="' . (int) $r['id'] . '"></td>'
 					. '<td class="dbsl-dom">' . $name . '</td><td data-l="Option">' . ( 'make_offer' === $r['option_type'] ? 'Make Offer' : 'Buy Now' ) . '</td><td data-l="Price">' . ( (int) $r['price'] ? '$' . esc_html( number_format( (int) $r['price'] ) ) : '&mdash;' ) . '</td>'
 					. '<td data-l="Status" class="dbsl-wide"><span class="dbsl-chip dbsl-chip--' . esc_attr( $tone ) . '">' . esc_html( $label ) . '</span>' . $note . '</td>'
-					. '<td data-l="Saves">' . ( null === $saves ? '&mdash;' : (int) $saves ) . '</td><td data-l="Offers">' . ( null === $offers ? '&mdash;' : (int) $offers ) . '</td></tr>';
+					. '<td data-l="Views">' . ( null === $views ? '&mdash;' : (int) $views ) . '</td><td data-l="Saves">' . ( null === $saves ? '&mdash;' : (int) $saves ) . '</td><td data-l="Offers">' . ( null === $offers ? '&mdash;' : (int) $offers ) . '</td>'
+					. '<td>' . ( 'pending' === $r['review_status'] ? '' : '<a class="dbsl-edit" href="' . esc_url( add_query_arg( 'edit', (int) $r['id'], home_url( '/seller/' ) ) ) . '#dbsl-edit" aria-label="Edit details for ' . esc_attr( $r['domain'] ) . '">Details</a>' ) . '</td></tr>';
 			}
 			if ( ! $shown ) {
-				$h .= '<tr><td colspan="7">Nothing here.</td></tr>';
+				$h .= '<tr><td colspan="9">Nothing here.</td></tr>';
 			}
 			$h .= '</tbody></table></div></form>';
 			$h .= '<form method="post" action="' . $self . '" class="dbsl-actions"><input type="hidden" name="db_seller_action" value="submit"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn"' . ( $ready ? '' : ' disabled aria-disabled="true"' ) . '>' . ( 'trusted' === $seller['trust'] ? 'Publish' : 'Submit for review' ) . ( $ready ? ' (' . $ready . ')' : '' ) . '</button><span class="dbsl-muted">' . ( $ready ? 'Names with a valid price and a verified record are sent.' : 'A name is ready once it has a valid price and a verified record.' ) . '</span></form>';
@@ -962,3 +1041,20 @@ if ( ! function_exists( 'db_seller_admin_page' ) ) {
 		echo '</div>';
 	}
 }
+
+/* ---------------------------------------------------------- public page */
+
+add_filter( 'db_dd_html', function ( $html, $post ) {
+	if ( ! $post instanceof WP_Post || ! get_post_meta( $post->ID, 'db_seller_id', true ) ) {
+		return $html;
+	}
+	$desc = (string) get_post_meta( $post->ID, 'db_seller_desc', true );
+	$excl = '1' === (string) get_post_meta( $post->ID, 'db_exclusive', true );
+	if ( '' === $desc && ! $excl ) {
+		return $html;
+	}
+	$box  = '<section class="db-seller-note" aria-label="About this name" style="max-width:1100px;margin:24px auto 0;padding:20px 22px;border:1px solid #dfe5e1;border-radius:20px;background:#fff">';
+	$box .= $excl ? '<p style="margin:0 0 8px"><span style="display:inline-block;padding:5px 12px;border-radius:999px;background:#0a1628;color:#b5e61d;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase">Exclusive to Domain Brothers</span></p>' : '';
+	$box .= '' !== $desc ? '<h2 style="margin:0 0 6px;font-size:20px">From the owner</h2>' . wpautop( esc_html( $desc ) ) : '';
+	return $box . '</section>' . $html;
+}, 20, 2 );
