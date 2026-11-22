@@ -550,6 +550,11 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			}
 			var ef = box.querySelector('[data-step=email]'), cf = box.querySelector('[data-step=code]'), m = box.querySelector('.db-au-msg'), mail = '';
 			var tell = function (t, bad) { m.textContent = t; m.className = 'db-au-msg' + (bad ? ' is-bad' : ''); };
+			if (qs.get('plan') === '1' && !addId) {
+				var pn = document.createElement('p'); pn.className = 'db-au-note'; pn.setAttribute('role', 'status');
+				pn.textContent = 'Payment plans need a free account, so you can see your schedule and next payment in My account. Enter your email for a sign-in code; new here, the same code creates your account. You go straight back to checkout.';
+				var f0 = box.querySelector('form'); if (f0) { f0.parentNode.insertBefore(pn, f0); }
+			}
 			if (window.dbTsRender) { window.dbTsRender(box); }
 			ef.addEventListener('submit', function (e) {
 				e.preventDefault(); mail = ef.email.value.trim(); tell('Sending your code…');

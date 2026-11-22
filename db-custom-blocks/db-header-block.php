@@ -253,10 +253,12 @@ if ( ! function_exists( 'db_acct_menu_links' ) ) {
 			array( 'Wishlist', $page, 'heart' ),
 			array( 'Alerts', add_query_arg( 'tab', 'alerts', $page ), 'bell' ),
 			array( 'My offers', add_query_arg( 'tab', 'offers', $page ), 'chat' ),
+			( function_exists( 'db_acct_plans_for' ) && function_exists( 'db_wl_email' ) && db_acct_plans_for( db_wl_email() ) ) ? array( 'Payment plans', add_query_arg( 'tab', 'plans', $page ), 'card' ) : null,
 			array( 'Transfers', add_query_arg( 'tab', 'transfers', $page ), 'swap' ),
 			array( 'Discover', add_query_arg( 'tab', 'discover', $page ), 'spark' ),
 			array( 'Profile', add_query_arg( 'tab', 'profile', $page ), 'user' ),
 		);
+		$links = array_values( array_filter( $links ) );
 		if ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ) {
 			$links[] = array( 'Seller dashboard', home_url( '/seller/' ), 'tag' );
 		}
@@ -293,6 +295,7 @@ if ( ! function_exists( 'db_acct_icon' ) ) {
 			'spark' => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.500 2.500M15.500 15.500L18 18M6 18l2.500-2.500M15.500 8.500L18 6"/>',
 			'user'  => '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
 			'tag'   => '<path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.500" cy="7.500" r="1.500"/>',
+			'card'  => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>',
 			'out'   => '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/>',
 		);
 		return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.900" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ( $p[ $key ] ?? '' ) . '</svg>';
@@ -684,7 +687,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	.db-hd-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
 	/* Search: pill with icon, Search button, and a panel of popular names and live results. */
 	.db-hd-search { position: relative; display: flex; align-items: center; margin: 0 8px 0 0; }
-	html body .db-hd .db-hd-search input[type=search] { width: 240px; height: 44px; margin: 0; padding: 0 92px 0 42px; border: 1.5px solid #dfe3ea !important; border-radius: 999px !important; background: #f4f6f9 !important; box-shadow: none !important; font-size: 15px; color: #0f172a; transition: width .25s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+	html body .db-hd .db-hd-search input[type=search] { width: 268px; height: 44px; margin: 0; padding: 0 90px 0 40px; border: 1.5px solid #dfe3ea !important; border-radius: 999px !important; background: #f4f6f9 !important; box-shadow: none !important; font-size: 15px; color: #0f172a; transition: width .25s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; }
 	html body .db-hd .db-hd-search input[type=search]::placeholder { color: #667085; }
 	html body .db-hd .db-hd-search input[type=search]::-webkit-search-cancel-button { display: none; }
 	html body .db-hd .db-hd-search.is-open input[type=search], html body .db-hd .db-hd-search input[type=search]:focus { width: 340px; background: #fff !important; border-color: #0f1b2d !important; box-shadow: 0 0 0 4px rgba(181,230,29,.35) !important; outline: 0; }

@@ -110,6 +110,7 @@ if ( ! function_exists( 'db_acct_intro' ) ) {
 			'alerts'    => 'Alerts are updates about the names you follow: a price change, a sale, a new offer or a status change. Newest first.',
 			'offers'    => 'My offers keeps every offer you make and our reply. We answer each one by email within one business day.',
 			'transfers' => 'After you buy, each stage of the transfer is shown here, from payment to completion, with notes from our team.',
+			'plans'     => 'Each monthly plan with your next payment, what you have paid, what is left and the full schedule. We email a reminder before every payment.',
 			'discover'  => 'Discover shows what was listed recently and what other buyers are looking at. Save any name to follow it.',
 			'profile'   => 'Your details and what you are looking for. We use your answers to suggest names, and your newsletter choice controls what we email.',
 		);
