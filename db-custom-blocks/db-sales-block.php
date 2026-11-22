@@ -1150,7 +1150,7 @@ if ( ! function_exists( 'db_sales_route_meta' ) ) {
 	function db_sales_route_meta() {
 		$path = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : '';
 		$map  = array(
-			'find-a-domain' => array( 'Domain Finder: Find the Right Name in 3 Easy Steps | Domain Brothers', 'Describe your business and budget, and the domain finder lists premium names that fit, with prices and monthly payment plans. Free to use.' ),
+			'find-a-domain' => array( 'Domain Finder: Find the Right Name in 3 Steps | Domain Brothers', 'Describe your business and budget, and the domain finder lists premium names that fit, with prices and monthly payment plans. Free to use.' ),
 			'trust-center'  => array( 'Trust Center: How Payments and Transfers Are Protected | Domain Brothers', 'How Domain Brothers protects a domain purchase: Stripe card payments, encrypted transfer codes, recorded offers and tracked transfer stages.' ),
 			'collections'   => array( 'Domain Collections: Curated Premium Names by Industry | Domain Brothers', 'Curated collections of premium domains for sale, grouped by industry and use. Each list shows names available today, with prices and payment plans.' ),
 		);

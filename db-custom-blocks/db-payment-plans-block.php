@@ -224,7 +224,7 @@ if ( ! function_exists( 'db_pp_meta' ) ) {
 	/** @return array{0:string,1:string} Title and description. */
 	function db_pp_meta() {
 		return array(
-			'Payment Terms: Card Payments, Plans and Ownership | Domain Brothers',
+			'Payment Terms: Cards, Plans and Ownership | Domain Brothers',
 			'Everything about paying for a domain: prices and offers, card payments, payment plans over 3 to 12 months with a calculator, missed payments, ownership and transfer, and our no-refund rule.',
 		);
 	}

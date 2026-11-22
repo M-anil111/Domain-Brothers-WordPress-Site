@@ -141,7 +141,7 @@ if ( ! function_exists( 'db_tp_route_meta' ) ) {
 			return null;
 		}
 		if ( 'domain-tools' === db_sales_request_path() ) {
-			return array( 'Free Domain Tools: Lookup, SSL, DNS, Email Security and Extensions | Domain Brothers', 'Free domain tools: registry record, domain age and expiry, DNS, SSL certificate, HTTP and security headers, DMARC and SPF, IP address and web history. No sign-up.', db_tp_url() );
+			return array( 'Free Domain Tools: Lookup, SSL, DNS and Email | Domain Brothers', 'Free domain tools: registry record, domain age and expiry, DNS, SSL certificate, HTTP and security headers, DMARC and SPF, IP address and web history. No sign-up.', db_tp_url() );
 		}
 		$slug = db_tp_slug();
 		if ( '' === $slug ) {
