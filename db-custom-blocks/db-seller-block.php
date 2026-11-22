@@ -28,8 +28,14 @@ if ( is_readable( __DIR__ . '/db-seller-payouts-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-seller-lander-block.php' ) ) {
 	require_once __DIR__ . '/db-seller-lander-block.php';
 }
+if ( is_readable( __DIR__ . '/db-seller-app-block.php' ) ) {
+	require_once __DIR__ . '/db-seller-app-block.php';
+}
+if ( is_readable( __DIR__ . '/db-seller-reliability-block.php' ) ) {
+	require_once __DIR__ . '/db-seller-reliability-block.php';
+}
 
-define( 'DB_SELLER_DB_VERSION', '4' );
+define( 'DB_SELLER_DB_VERSION', '5' );
 
 /* ------------------------------------------------------------------ setup */
 
@@ -68,7 +74,12 @@ add_action( 'init', function () {
 		agreement_version varchar(40) NOT NULL DEFAULT '',
 		agreed_at datetime DEFAULT NULL,
 		trust varchar(10) NOT NULL DEFAULT 'new',
-		status varchar(12) NOT NULL DEFAULT 'active',
+		status varchar(20) NOT NULL DEFAULT 'active',
+		strikes int(10) unsigned NOT NULL DEFAULT 0,
+		status_note varchar(255) NOT NULL DEFAULT '',
+		suspended_at datetime DEFAULT NULL,
+		reactivate_note text NULL,
+		reactivate_at datetime DEFAULT NULL,
 		created_at datetime NOT NULL,
 		PRIMARY KEY  (id),
 		UNIQUE KEY email (email)
@@ -92,6 +103,7 @@ add_action( 'init', function () {
 		keywords varchar(255) NOT NULL DEFAULT '',
 		categories varchar(64) NOT NULL DEFAULT '',
 		recheck_fail_at datetime DEFAULT NULL,
+		offline_reason varchar(20) NOT NULL DEFAULT '',
 		post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
@@ -574,14 +586,28 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			}
 			$data += array( 'email' => $email, 'token' => bin2hex( random_bytes( 12 ) ), 'trust' => 'new', 'status' => 'active', 'created_at' => $now );
 			$wpdb->insert( db_seller_table( 'sellers' ), $data ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$dup = function_exists( 'db_seller_duplicate_of' ) ? db_seller_duplicate_of( $c['phone'], (int) $wpdb->insert_id ) : 0;
+			if ( $dup ) {
+				// Flag for the broker, do not block: phones are shared, and the broker decides.
+				$wpdb->update( db_seller_table( 'sellers' ), array( 'trust' => 'flagged' ), array( 'id' => (int) $wpdb->insert_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				if ( function_exists( 'db_plan_notify_admin' ) ) {
+					db_plan_notify_admin( 'New seller matches an offline account', array( 'New seller' => $email, 'Matches seller id' => $dup, 'Review' => admin_url( 'tools.php?page=db-seller-review#dbsl-sellers' ) ) );
+				}
+			}
 			return array( array( 'ok', 'You are set up as a seller. Add your first names below.' ) );
 		}
 
 		if ( ! $seller ) {
 			return array( array( 'bad', 'Complete the seller setup first.' ) );
 		}
+		if ( function_exists( 'db_seller_reliability_post' ) ) {
+			$rel = db_seller_reliability_post( $act, $seller, $p );
+			if ( null !== $rel ) {
+				return $rel;
+			}
+		}
 		if ( 'active' !== $seller['status'] ) {
-			return array( array( 'bad', 'Your seller account is paused. Contact us for help.' ) );
+			return array( array( 'bad', 'paused' === $seller['status'] ? 'Your listings are paused. Resume them to make changes.' : 'Your seller account is offline. Send a reactivation request from this page.' ) );
 		}
 		$sid = (int) $seller['id'];
 
@@ -599,6 +625,10 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			foreach ( $res['ok'] as $name ) {
 				$why   = db_seller_blocked( $name );
 				$taken = '' !== $why ? '' : db_seller_domain_taken( $name, $sid );
+				if ( 'claim' === $taken && function_exists( 'db_seller_rule' ) && ! db_wl_allow( 'seller-claim:' . $sid, (int) db_seller_rule( 'claims_per_day' ), DAY_IN_SECONDS ) ) {
+					$msgs[] = array( 'warn', $name . ': you can start at most ' . (int) db_seller_rule( 'claims_per_day' ) . ' ownership claims a day. Try again tomorrow.' );
+					continue;
+				}
 				if ( 'claim' === $taken ) {
 					$msgs[] = array( 'warn', $name . ': another account lists this name. It moves to you only once you prove ownership with your DNS record below; the other account is then told.' );
 					$taken  = '';
@@ -1040,6 +1070,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 		$unverif  = array_filter( $rows, function ( $r ) { return 'draft' === $r['review_status'] && 'verified' !== $r['verify_status']; } );
 		$plan     = get_transient( 'db_seller_import_' . (int) $seller['id'] );
 
+		$h .= '<!--dbsl:import-->';
 		// Import preview (waits for confirmation).
 		if ( is_array( $plan ) ) {
 			$list = function ( $items, $fmt ) { return $items ? '<ul class="dbsl-ul">' . implode( '', array_map( $fmt, array_slice( $items, 0, 25 ) ) ) . ( count( $items ) > 25 ? '<li>and ' . ( count( $items ) - 25 ) . ' more</li>' : '' ) . '</ul>' : ''; };
@@ -1062,6 +1093,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="import_cancel"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn dbsl-btn--ghost">Cancel</button></form></div></section>';
 		}
 
+		$h .= '<!--dbsl:add-->';
 		// Add names: paste, or upload a spreadsheet.
 		$h .= '<div class="dbsl-two"><section class="dbsl-card dbsl-sec" aria-labelledby="dbsl-add"><h2 id="dbsl-add">Add names</h2><form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="add"><input type="hidden" name="t" value="' . $t . '">'
 			. '<div class="dbsl-f"><label for="dbsl-names">Domain names, up to ' . DB_SELLER_MAX_NAMES . ' at a time</label><textarea id="dbsl-names" name="names" required placeholder="example.com, another.ca" aria-describedby="dbsl-names-h"></textarea><p id="dbsl-names-h" class="dbsl-muted">Separate names with commas, spaces or new lines. Web addresses are fine; we keep just the name.</p></div>'
@@ -1071,6 +1103,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 			. '<fieldset class="dbsl-f dbsl-radios"><legend>Mode</legend><label class="dbsl-check"><input type="radio" name="mode" value="import" checked> <span><strong>Import:</strong> add new names and update the ones in the file</span></label><label class="dbsl-check"><input type="radio" name="mode" value="sync"> <span><strong>Sync:</strong> also remove names that are not in the file</span></label></fieldset>'
 			. '<button type="submit" class="dbsl-btn dbsl-btn--ghost">Read the file</button><p class="dbsl-muted" style="margin-top:8px">Nothing changes until you confirm.</p></form></section></div>';
 
+		$h .= '<!--dbsl:prices-->';
 		if ( $editable ) {
 			// Prices.
 			$guide = '';
@@ -1100,6 +1133,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 			$h .= '</tbody></table></div><p class="dbsl-muted">Exclusive means you do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and a lower commission.</p><div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save prices</button></div></form></section>';
 		}
 
+		$h .= '<!--dbsl:verify-->';
 		if ( $unverif ) {
 			// Ownership.
 			$txt   = db_seller_txt_value( $seller['token'] );
@@ -1112,6 +1146,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="check"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn dbsl-btn--ghost">Check now</button></form></section>';
 		}
 
+		$h .= '<!--dbsl:edit-->';
 		// Details editor (?edit=ID).
 		$edit_id = isset( $_GET['edit'] ) ? (int) $_GET['edit'] : 0; // phpcs:ignore WordPress.Security.NonceVerification
 		foreach ( $rows as $r ) {
@@ -1123,19 +1158,24 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<div class="dbsl-f"><label for="dbsl-desc">Description (up to 600 characters)</label><textarea id="dbsl-desc" name="description" maxlength="600">' . esc_textarea( (string) $r['description'] ) . '</textarea></div>'
 				. '<div class="dbsl-f"><label for="dbsl-kw">Keywords (up to 8, separated by commas)</label><input type="text" id="dbsl-kw" name="keywords" maxlength="255" value="' . esc_attr( (string) $r['keywords'] ) . '" placeholder="bakery, bread, Toronto"></div>'
 				. db_seller_category_fieldset( (string) ( $r['categories'] ?? '' ) )
-				. '<div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save details</button><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/seller/' ) ) . '#dbsl-list">Close</a></div></form></section>';
+				. '<div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save details</button><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/seller/' ) ) . '#dbsl-list">Close</a></div></form>'
+				. '<form method="post" action="' . $self . '" class="dbsa-sold" onsubmit="return confirm(\'Take ' . esc_js( $r['domain'] ) . ' off the site because you sold it elsewhere?\')"><input type="hidden" name="db_seller_action" value="sold_elsewhere"><input type="hidden" name="t" value="' . $t . '"><input type="hidden" name="id" value="' . (int) $r['id'] . '"><p class="dbsl-muted">Sold this name somewhere else? Tell us and we take it down at once, with no penalty.</p><button type="submit" class="dbsl-btn dbsl-btn--ghost dbsl-btn--sm">I sold it elsewhere</button></form></section>';
 		}
 
+		$h .= '<!--dbsl:offers-->';
 		if ( function_exists( 'db_seller_offers_html' ) ) {
 			$h .= db_seller_offers_html( $seller, $self, $t );
 		}
+		$h .= '<!--dbsl:payouts-->';
 		if ( function_exists( 'db_seller_payouts_html' ) ) {
 			$h .= db_seller_payouts_html( $seller );
 		}
+		$h .= '<!--dbsl:point-->';
 		if ( function_exists( 'db_seller_point_html' ) ) {
 			$h .= db_seller_point_html( $seller, $rows, $self, $t );
 		}
 
+		$h .= '<!--dbsl:names-->';
 		// Your names: filters, bulk actions, statistics.
 		$filters = array( 'all' => 'All', 'live' => 'Live', 'review' => 'In review', 'action' => 'Needs action' );
 		$f       = isset( $_GET['f'] ) && isset( $filters[ $_GET['f'] ] ) ? (string) $_GET['f'] : 'all'; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
@@ -1186,6 +1226,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 			$h .= '<form method="post" action="' . $self . '" class="dbsl-actions"><input type="hidden" name="db_seller_action" value="submit"><input type="hidden" name="t" value="' . $t . '"><button type="submit" class="dbsl-btn"' . ( $ready ? '' : ' disabled aria-disabled="true"' ) . '>' . ( 'trusted' === $seller['trust'] ? 'Publish' : 'Submit for review' ) . ( $ready ? ' (' . $ready . ')' : '' ) . '</button><span class="dbsl-muted">' . ( $ready ? 'Names with a valid price and a verified record are sent.' : 'A name is ready once it has a valid price and a verified record.' ) . '</span></form>';
 		}
 		$h .= '</section>';
+		$h .= '<!--dbsl:tail-->';
 		$h .= '<p class="dbsl-muted">Questions? <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact a broker</a>. <a href="' . esc_url( home_url( '/seller-agreement/' ) ) . '">Seller agreement</a>.</p>';
 		$h .= '<script data-no-delay>document.addEventListener("change",function(e){if(e.target.matches&&e.target.matches("[data-all]")){document.querySelectorAll("#dbsl-bulkf input[name=\'ids[]\']").forEach(function(c){c.checked=e.target.checked;});}});document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-copy]");if(!b){return;}var t=document.getElementById(b.getAttribute("data-copy"));if(t&&navigator.clipboard){navigator.clipboard.writeText(t.textContent).then(function(){b.textContent="Copied";setTimeout(function(){b.textContent="Copy";},2000);});}});</script>';
 		return $h . '</div>';
@@ -1224,17 +1265,55 @@ add_action( 'template_redirect', function () {
 		exit;
 	}
 	if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		db_seller_flash( $email, db_seller_handle_post( $email, $seller ) );
-		wp_safe_redirect( home_url( '/seller/' ) );
+		$act  = isset( $_POST['db_seller_action'] ) ? sanitize_key( wp_unslash( $_POST['db_seller_action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+		$msgs = db_seller_handle_post( $email, $seller );
+		db_seller_flash( $email, $msgs );
+		// After a successful step, go to the next one; otherwise stay where the seller was.
+		$bad  = (bool) array_filter( (array) $msgs, static function ( $m ) { return 'bad' === ( $m[0] ?? '' ); } );
+		$next = $bad ? '' : ( function_exists( 'db_seller_step_after' ) ? db_seller_step_after( $act ) : '' );
+		$ref  = wp_get_referer();
+		$back = ( $ref && 0 === strpos( $ref, home_url( '/seller/' ) ) ) ? remove_query_arg( array( 'edit' ), $ref ) : home_url( '/seller/' );
+		if ( 'names' === $next ) {
+			$back = add_query_arg( 'view', 'names', home_url( '/seller/' ) );
+		} elseif ( '' !== $next ) {
+			$back = add_query_arg( 'step', $next, home_url( '/seller/' ) );
+		}
+		wp_safe_redirect( $back );
 		exit;
 	}
-	db_sales_render( 'Your seller page', 'Seller', db_seller_dashboard_body( $email, $seller, db_seller_flash( $email ) ), true );
+	db_sales_render( 'Your seller page', 'Seller', function_exists( 'db_seller_app_body' ) ? db_seller_app_body( $email, $seller, db_seller_flash( $email ) ) : db_seller_dashboard_body( $email, $seller, db_seller_flash( $email ) ), true );
 }, 11 );
 
 /* ----------------------------------------------------------------- admin */
 
 add_action( 'admin_menu', function () {
 	add_management_page( 'Seller listings', 'Seller listings', 'manage_options', 'db-seller-review', 'db_seller_admin_page' );
+} );
+
+add_action( 'admin_post_db_seller_rules', function () {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	check_admin_referer( 'db_seller_rules' );
+	$in  = isset( $_POST['rules'] ) && is_array( $_POST['rules'] ) ? wp_unslash( $_POST['rules'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$def = db_seller_rules_default();
+	$out = array();
+	foreach ( $def as $k => $d ) {
+		if ( ! isset( $in[ $k ] ) ) {
+			continue;
+		}
+		if ( is_array( $d ) ) {
+			$days = array_values( array_unique( array_filter( array_map( 'intval', explode( ',', (string) $in[ $k ] ) ), static function ( $x ) { return $x > 0 && $x < 60; } ) ) );
+			sort( $days );
+			$out[ $k ] = $days ? array_slice( $days, 0, 5 ) : $d;
+		} else {
+			$v         = (int) $in[ $k ];
+			$out[ $k ] = $v > 0 && $v <= 365 ? $v : $d;
+		}
+	}
+	update_option( 'db_seller_rules', $out, false );
+	wp_safe_redirect( add_query_arg( 'msg', rawurlencode( 'Seller rules saved.' ), admin_url( 'tools.php?page=db-seller-review#dbsl-rules' ) ) );
+	exit;
 } );
 
 add_action( 'admin_post_db_seller_toggle', function () {
@@ -1291,6 +1370,23 @@ add_action( 'admin_post_db_seller_admin', function () {
 				$msg = 'Rejected ' . $row['domain'] . '.';
 			}
 		}
+	} elseif ( in_array( $do, array( 'suspend', 'unsuspend', 'reactivate', 'reset_strikes' ), true ) && function_exists( 'db_seller_suspend' ) ) {
+		$sel = db_seller_by_id( $id );
+		if ( $sel ) {
+			if ( 'suspend' === $do ) {
+				$why = isset( $_POST['note'] ) ? sanitize_text_field( wp_unslash( $_POST['note'] ) ) : '';
+				$n   = db_seller_suspend( $sel, '' !== $why ? $why : 'Paused by Domain Brothers.', 'admin' );
+				$msg = 'Seller taken offline (' . $n . ' names).';
+			} elseif ( 'reset_strikes' === $do ) {
+				$wpdb->update( $s, array( 'strikes' => 0 ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->prefix}db_seller_audit SET action = 'strike_cleared' WHERE seller_id = %d AND action = 'strike'", $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				db_seller_audit( $id, '', 'strikes_reset', 'Strikes reset by the broker' );
+				$msg = 'Strikes reset.';
+			} else {
+				$n   = db_seller_reactivate( $sel, ! empty( $_POST['reset'] ) );
+				$msg = 'Seller reactivated (' . $n . ' names back online).';
+			}
+		}
 	} elseif ( in_array( $do, array( 'trust', 'untrust', 'suspend', 'unsuspend' ), true ) ) {
 		$data = 'trust' === $do ? array( 'trust' => 'trusted' ) : ( 'untrust' === $do ? array( 'trust' => 'new' ) : array( 'status' => 'suspend' === $do ? 'suspended' : 'active' ) );
 		$wpdb->update( $s, $data, array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -1337,15 +1433,50 @@ if ( ! function_exists( 'db_seller_admin_page' ) ) {
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$sellers = (array) $wpdb->get_results( "SELECT s.*, (SELECT COUNT(*) FROM {$l} l WHERE l.seller_id = s.id AND l.review_status = 'approved') AS live, (SELECT COUNT(*) FROM {$l} l WHERE l.seller_id = s.id AND l.review_status IN ('draft','pending')) AS open FROM {$s} s ORDER BY s.id DESC LIMIT 200", ARRAY_A );
-		echo '<h2>Sellers (' . count( $sellers ) . ')</h2>';
+		echo '<h2 id="dbsl-sellers">Sellers (' . count( $sellers ) . ')</h2>';
 		if ( $sellers ) {
-			echo '<table class="widefat striped"><thead><tr><th>Seller</th><th>Country</th><th>Agreement</th><th>Live</th><th>Open</th><th>Trust</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+			echo '<table class="widefat striped"><thead><tr><th>Seller</th><th>Live</th><th>Open</th><th>Trust</th><th>Status</th><th>Strikes (window)</th><th>Reactivation request</th><th>Actions</th></tr></thead><tbody>';
+			$labels = array( 'active' => 'Active', 'paused' => 'Paused by seller', 'suspended' => 'Offline (by us)', 'suspended_unresp' => 'Offline: not responding', 'closed' => 'Closed' );
 			foreach ( $sellers as $r ) {
-				echo '<tr><td>' . esc_html( $r['legal_name'] ) . ( '' !== $r['company'] ? ' (' . esc_html( $r['company'] ) . ')' : '' ) . '<br>' . esc_html( $r['email'] ) . '</td><td>' . esc_html( $r['country'] ) . '</td><td>' . esc_html( $r['agreement_version'] . ' ' . $r['agreed_at'] ) . '</td><td>' . (int) $r['live'] . '</td><td>' . (int) $r['open'] . '</td><td>' . esc_html( $r['trust'] ) . '</td><td>' . esc_html( $r['status'] ) . '</td><td>'
-					. ( 'trusted' === $r['trust'] ? $f( 'untrust', $r['id'], 'Require review' ) : $f( 'trust', $r['id'], 'Trust (publish instantly)' ) )
-					. ( 'active' === $r['status'] ? $f( 'suspend', $r['id'], 'Pause seller' ) : $f( 'unsuspend', $r['id'], 'Reactivate' ) ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput
+				$win  = function_exists( 'db_seller_strikes_in_window' ) ? db_seller_strikes_in_window( (int) $r['id'] ) : 0;
+				$acts = ( 'trusted' === $r['trust'] ? $f( 'untrust', $r['id'], 'Require review' ) : $f( 'trust', $r['id'], 'Trust' ) );
+				if ( 'active' === $r['status'] ) {
+					$acts .= $f( 'suspend', $r['id'], 'Take offline', '<input type="text" name="note" placeholder="Reason sent to the seller" style="width:180px"> ' );
+				} elseif ( in_array( $r['status'], array( 'suspended', 'suspended_unresp' ), true ) ) {
+					$acts .= $f( 'reactivate', $r['id'], 'Reactivate', '', 'button button-primary' ) . $f( 'reactivate', $r['id'], 'Reactivate and reset strikes', '<input type="hidden" name="reset" value="1">' );
+				}
+				if ( $win ) {
+					$acts .= $f( 'reset_strikes', $r['id'], 'Reset strikes' );
+				}
+				echo '<tr><td>' . esc_html( $r['legal_name'] ) . ( '' !== $r['company'] ? ' (' . esc_html( $r['company'] ) . ')' : '' ) . '<br>' . esc_html( $r['email'] ) . ' &middot; ' . esc_html( $r['country'] ) . '</td>'
+					. '<td>' . (int) $r['live'] . '</td><td>' . (int) $r['open'] . '</td><td>' . esc_html( 'flagged' === $r['trust'] ? 'Flagged: matches an offline account' : $r['trust'] ) . '</td>'
+					. '<td><strong>' . esc_html( $labels[ $r['status'] ] ?? $r['status'] ) . '</strong>' . ( '' !== (string) ( $r['status_note'] ?? '' ) ? '<br><small>' . esc_html( $r['status_note'] ) . '</small>' : '' ) . '</td>'
+					. '<td>' . (int) $win . ' (' . (int) ( $r['strikes'] ?? 0 ) . ' total)</td>'
+					. '<td>' . ( ! empty( $r['reactivate_at'] ) ? '<small>' . esc_html( $r['reactivate_at'] ) . '</small><br>' . esc_html( mb_substr( (string) $r['reactivate_note'], 0, 300 ) ) : '&mdash;' ) . '</td>'
+					. '<td>' . $acts . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
 			}
 			echo '</tbody></table>';
+		}
+		if ( function_exists( 'db_seller_rule' ) ) {
+			$rules = array(
+				'remind_days'       => array( 'Reminder days for an unanswered offer', 'comma list, e.g. 1,3,5' ),
+				'strike_days'       => array( 'Strike after (days unanswered)', 'the buyer is told and the broker takes over' ),
+				'suspend_strikes'   => array( 'Strikes that take an account offline', '' ),
+				'strike_window'     => array( 'Strike window (days)', '' ),
+				'suspend_idle_days' => array( 'Or one offer ignored for (days)', '' ),
+				'transfer_days'     => array( 'Days to start a transfer after a sale', '' ),
+				'expiry_warn_days'  => array( 'Warn before a name expires (days)', '' ),
+				'claims_per_day'    => array( 'Ownership claims per account per day', '' ),
+			);
+			echo '<h2 id="dbsl-rules">Seller rules</h2><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+			wp_nonce_field( 'db_seller_rules' );
+			echo '<input type="hidden" name="action" value="db_seller_rules"><table class="form-table" role="presentation"><tbody>';
+			foreach ( $rules as $k => $lab ) {
+				$v = db_seller_rule( $k );
+				$v = is_array( $v ) ? implode( ',', $v ) : (string) $v;
+				echo '<tr><th scope="row"><label for="dbsr-' . esc_attr( $k ) . '">' . esc_html( $lab[0] ) . '</label></th><td><input type="text" id="dbsr-' . esc_attr( $k ) . '" name="rules[' . esc_attr( $k ) . ']" value="' . esc_attr( $v ) . '" class="regular-text">' . ( $lab[1] ? '<p class="description">' . esc_html( $lab[1] ) . '</p>' : '' ) . '</td></tr>';
+			}
+			echo '</tbody></table><p class="description">Ownership is re-checked every ' . (int) DB_SELLER_RECHECK_DAYS . ' days with ' . (int) DB_SELLER_RECHECK_GRACE_DAYS . ' days to fix a missing record.</p><p><button class="button button-primary">Save rules</button></p></form>';
 		}
 		echo '</div>';
 	}

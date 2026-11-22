@@ -27,6 +27,18 @@ add_action( 'init', function () {
 	}
 	$post = db_listing_post_for_domain( $name );
 	if ( ! $post ) {
+		// A seller's name that is offline (paused or account offline): say so instead of showing the main site.
+		$l = function_exists( 'db_seller_table' ) ? db_seller_table( 'listings' ) : '';
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$off = $l ? $wpdb->get_var( $wpdb->prepare( "SELECT offline_reason FROM {$l} WHERE domain = %s AND review_status = 'approved' AND offline_reason <> '' LIMIT 1", $name ) ) : '';
+		if ( $off ) {
+			status_header( 503 );
+			header( 'Retry-After: 86400' );
+			nocache_headers();
+			echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' . esc_html( $name ) . ' | Domain Brothers</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:16px/1.6 system-ui,sans-serif;background:#f6f8f2;color:#0f172a;padding:16px}.c{max-width:560px;padding:36px;border-radius:24px;background:#fff;border:1px solid #e4e7ec;text-align:center}h1{margin:0 0 8px;font-size:clamp(28px,6vw,42px);overflow-wrap:anywhere}a{display:inline-block;margin-top:14px;padding:12px 22px;border-radius:999px;background:#0a1628;color:#fff;font-weight:800;text-decoration:none}</style></head><body><div class="c"><h1>' . esc_html( $name ) . '</h1><p>This name is temporarily unavailable. Browse other premium names, or ask us about this one.</p><a href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse domains</a></div></body></html>'; // phpcs:ignore WordPress.Security.EscapeOutput
+			exit;
+		}
 		return;
 	}
 	echo db_seller_lander_html( $post ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.

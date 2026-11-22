@@ -136,6 +136,7 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'Type your sign-in email exactly to confirm.' ), 400 );
 			}
 			global $wpdb;
+			do_action( 'db_account_before_delete', $email ); // e.g. a seller's live names come down first
 			foreach ( db_ad_delete_targets( $wpdb->prefix ) as $table => $col ) {
 				$wpdb->delete( $table, array( $col => $email ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			}
