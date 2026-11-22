@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/db-seller-lib.php';
 
-define( 'DB_SELLER_DB_VERSION', '2' );
+define( 'DB_SELLER_DB_VERSION', '3' );
 
 /* ------------------------------------------------------------------ setup */
 
@@ -81,6 +81,7 @@ add_action( 'init', function () {
 		exclusive tinyint(1) NOT NULL DEFAULT 0,
 		description text NULL,
 		keywords varchar(255) NOT NULL DEFAULT '',
+		categories varchar(64) NOT NULL DEFAULT '',
 		post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
@@ -244,6 +245,7 @@ if ( ! function_exists( 'db_seller_publish' ) ) {
 		update_post_meta( $post_id, 'db_exclusive', ! empty( $listing['exclusive'] ) ? '1' : '' );
 		update_post_meta( $post_id, 'db_seller_desc', (string) ( $listing['description'] ?? '' ) );
 		update_post_meta( $post_id, 'db_seller_keywords', (string) ( $listing['keywords'] ?? '' ) );
+		db_seller_apply_categories( (int) $post_id, (string) ( $listing['categories'] ?? '' ) );
 		$now = current_time( 'mysql', true );
 		$wpdb->update( db_seller_table( 'listings' ), array( 'review_status' => 'approved', 'post_id' => (int) $post_id, 'review_note' => '', 'updated_at' => $now ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		do_action( 'db_page_cache_purge_all' );
@@ -428,9 +430,13 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$res  = db_seller_parse_names( (string) ( $p['names'] ?? '' ), min( DB_SELLER_MAX_NAMES, $room ) );
 			$msgs = array();
 			$added = array();
+			$rdap_until = microtime( true ) + 15; // registry lookups stop after 15 seconds; later names rely on the DNS check
 			foreach ( $res['ok'] as $name ) {
 				$why = db_seller_blocked( $name );
 				$why = '' !== $why ? $why : db_seller_domain_taken( $name );
+				if ( '' === $why && 'unregistered' === db_seller_rdap_check( $name, $rdap_until ) ) {
+					$why = 'This name is not registered, so it cannot be listed. Check the spelling.';
+				}
 				if ( '' !== $why ) {
 					$msgs[] = array( 'warn', $name . ': ' . $why );
 					continue;
@@ -642,11 +648,13 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			if ( ! isset( $own[ $id ] ) ) {
 				return array();
 			}
-			$d = db_seller_clean_details( $p );
-			$wpdb->update( $l, array( 'description' => $d['description'], 'keywords' => $d['keywords'], 'updated_at' => $now ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$d    = db_seller_clean_details( $p );
+			$cats = db_seller_clean_categories( $p['cats'] ?? array(), array_keys( db_seller_category_options() ) );
+			$wpdb->update( $l, array( 'description' => $d['description'], 'keywords' => $d['keywords'], 'categories' => $cats, 'updated_at' => $now ), array( 'id' => $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			if ( 'approved' === $own[ $id ]['review_status'] && (int) $own[ $id ]['post_id'] ) {
 				update_post_meta( (int) $own[ $id ]['post_id'], 'db_seller_desc', $d['description'] );
 				update_post_meta( (int) $own[ $id ]['post_id'], 'db_seller_keywords', $d['keywords'] );
+				db_seller_apply_categories( (int) $own[ $id ]['post_id'], $cats );
 				do_action( 'db_page_cache_purge_all' );
 			}
 			return array( array( 'ok', 'Details saved for ' . $own[ $id ]['domain'] . '.' ) );
@@ -661,6 +669,72 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return array( array( 'ok', $own[ $id ]['domain'] . ' was removed.' ) );
 		}
 		return array();
+	}
+}
+
+if ( ! function_exists( 'db_seller_category_options' ) ) {
+	/** The site's domain categories: id => name. */
+	function db_seller_category_options() {
+		$terms = get_terms( array( 'taxonomy' => 'domain_category', 'hide_empty' => false ) );
+		$out   = array();
+		if ( is_array( $terms ) ) {
+			foreach ( $terms as $t ) {
+				$out[ (int) $t->term_id ] = (string) $t->name;
+			}
+		}
+		asort( $out );
+		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_seller_apply_categories' ) ) {
+	/** Sets the listing's categories; an empty choice leaves the existing ones. */
+	function db_seller_apply_categories( $post_id, $cats ) {
+		$ids = array_filter( array_map( 'intval', explode( ',', (string) $cats ) ) );
+		if ( $post_id && $ids ) {
+			wp_set_object_terms( (int) $post_id, $ids, 'domain_category', false );
+			delete_transient( 'db_search_hints' );
+		}
+	}
+}
+
+if ( ! function_exists( 'db_seller_category_fieldset' ) ) {
+	function db_seller_category_fieldset( $current ) {
+		$opts = db_seller_category_options();
+		if ( ! $opts ) {
+			return '';
+		}
+		$cur = array_map( 'intval', explode( ',', $current ) );
+		$h   = '<fieldset class="dbsl-f dbsl-cats"><legend>Categories (up to 3)</legend><div class="dbsl-catgrid">';
+		foreach ( $opts as $id => $name ) {
+			$h .= '<label><input type="checkbox" name="cats[]" value="' . (int) $id . '"' . ( in_array( (int) $id, $cur, true ) ? ' checked' : '' ) . '> ' . esc_html( $name ) . '</label>';
+		}
+		return $h . '</div></fieldset>';
+	}
+}
+
+if ( ! function_exists( 'db_seller_rdap_check' ) ) {
+	/**
+	 * Registry (RDAP) lookup for one name, cached for a day. Returns
+	 * 'registered', 'unregistered' or 'unknown'. Stops looking up once the
+	 * time budget runs out, so a long paste never stalls the page.
+	 */
+	function db_seller_rdap_check( $name, $until ) {
+		$key = 'db_rdap_' . md5( $name );
+		$hit = get_transient( $key );
+		if ( is_string( $hit ) && '' !== $hit ) {
+			return $hit;
+		}
+		if ( microtime( true ) > $until ) {
+			return 'unknown';
+		}
+		$res  = wp_remote_get( 'https://rdap.org/domain/' . rawurlencode( $name ), array( 'timeout' => 4, 'redirection' => 3, 'headers' => array( 'Accept' => 'application/rdap+json' ) ) );
+		$code = is_wp_error( $res ) ? null : (int) wp_remote_retrieve_response_code( $res );
+		$out  = db_seller_rdap_verdict( $name, $code );
+		if ( 'unknown' !== $out ) {
+			set_transient( $key, $out, DAY_IN_SECONDS );
+		}
+		return $out;
 	}
 }
 
@@ -693,7 +767,7 @@ if ( ! function_exists( 'db_seller_css' ) ) {
 			. '.dbsl-two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}@media(max-width:860px){.dbsl-two{grid-template-columns:1fr}}.dbsl-ul{margin:0 0 12px 18px;padding:0;font-size:15px;line-height:1.6}.dbsl-preview h3{margin:14px 0 6px;font-size:16px}.dbsl-radios{border:0;padding:0;margin:0 0 14px}.dbsl-radios legend{font-weight:700;font-size:14.5px;margin-bottom:6px}.dbsl-radios .dbsl-check{margin-bottom:6px}'
 			. '.dbsl-filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.dbsl-filters a{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1.5px solid #cfd8d3;border-radius:999px;color:#0a1628!important;text-decoration:none!important;font-weight:600;font-size:14px}.dbsl-filters a span{color:#4b5563;font-weight:700}.dbsl-filters a.is-on{background:#0a1628;border-color:#0a1628;color:#fff!important}.dbsl-filters a.is-on span{color:#d9f99d}'
 			. '.dbsl-bulk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}.dbsl-bulk select{max-width:240px}.dbsl input[type=file]{font-size:15px;max-width:100%}.dbsl input[type=checkbox]{width:18px;height:18px;accent-color:#0a1628}'
-			. '.dbsl-guide{margin:0 0 14px;padding:12px 16px;border-radius:14px;background:#f2f8f0;border:1px solid #d9eccf}.dbsl-guide p{margin:0 0 4px}.dbsl-edit{font-weight:700;color:#0b6b36!important;white-space:nowrap}'
+			. '.dbsl-cats{border:0;padding:0;margin:0 0 14px}.dbsl-cats legend{font-weight:700;margin:0 0 8px}.dbsl-catgrid{display:flex;flex-wrap:wrap;gap:8px}.dbsl-catgrid label{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border:1.5px solid #d3d9e1;border-radius:999px;font-weight:600;cursor:pointer}.dbsl-catgrid label:has(input:checked){border-color:#0a1628;background:#0a1628;color:#fff}.dbsl-guide{margin:0 0 14px;padding:12px 16px;border-radius:14px;background:#f2f8f0;border:1px solid #d9eccf}.dbsl-guide p{margin:0 0 4px}.dbsl-edit{font-weight:700;color:#0b6b36!important;white-space:nowrap}'
 			. 'html body .dbsl button.dbsl-link{display:inline;min-height:40px;padding:6px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:#b42318!important;font-size:14px!important;font-weight:600!important;text-decoration:underline!important;text-transform:none!important;letter-spacing:0!important}'
 			. 'html body .dbsl button.dbsl-btn:disabled{background:#c9d1cd!important;color:#36423d!important;border-color:#c9d1cd!important;cursor:not-allowed!important;box-shadow:none!important}'
 			. '</style>';
@@ -866,6 +940,7 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<form method="post" action="' . $self . '"><input type="hidden" name="db_seller_action" value="details"><input type="hidden" name="t" value="' . $t . '"><input type="hidden" name="id" value="' . (int) $r['id'] . '">'
 				. '<div class="dbsl-f"><label for="dbsl-desc">Description (up to 600 characters)</label><textarea id="dbsl-desc" name="description" maxlength="600">' . esc_textarea( (string) $r['description'] ) . '</textarea></div>'
 				. '<div class="dbsl-f"><label for="dbsl-kw">Keywords (up to 8, separated by commas)</label><input type="text" id="dbsl-kw" name="keywords" maxlength="255" value="' . esc_attr( (string) $r['keywords'] ) . '" placeholder="bakery, bread, Toronto"></div>'
+				. db_seller_category_fieldset( (string) ( $r['categories'] ?? '' ) )
 				. '<div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save details</button><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/seller/' ) ) . '#dbsl-list">Close</a></div></form></section>';
 		}
 

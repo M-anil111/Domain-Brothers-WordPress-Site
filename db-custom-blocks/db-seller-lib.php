@@ -575,3 +575,57 @@ if ( ! function_exists( 'db_seller_clean_details' ) ) {
 		return array( 'description' => $desc, 'keywords' => implode( ', ', array_slice( $kw, 0, 8 ) ) );
 	}
 }
+
+if ( ! function_exists( 'db_seller_clean_categories' ) ) {
+	/**
+	 * Category ids chosen for a listing: whole numbers from the allowed set,
+	 * no repeats, at most 3, as a comma-separated string.
+	 *
+	 * @param mixed $raw     Submitted value (array or comma list).
+	 * @param int[] $allowed Ids of the site's domain categories.
+	 */
+	function db_seller_clean_categories( $raw, array $allowed ) {
+		$list    = is_array( $raw ) ? $raw : explode( ',', (string) $raw );
+		$allowed = array_map( 'intval', $allowed );
+		$out     = array();
+		foreach ( $list as $v ) {
+			$v = (int) $v;
+			if ( $v > 0 && in_array( $v, $allowed, true ) && ! in_array( $v, $out, true ) ) {
+				$out[] = $v;
+			}
+			if ( count( $out ) >= 3 ) {
+				break;
+			}
+		}
+		return implode( ',', $out );
+	}
+}
+
+if ( ! function_exists( 'db_seller_rdap_tlds' ) ) {
+	/** Extensions whose registries answer RDAP reliably (a 404 there means the name is not registered). */
+	function db_seller_rdap_tlds() {
+		return array( 'com', 'net', 'org', 'ca', 'app', 'dev', 'info', 'biz', 'io', 'co', 'xyz', 'online', 'store', 'tech', 'site' );
+	}
+}
+
+if ( ! function_exists( 'db_seller_rdap_verdict' ) ) {
+	/**
+	 * Reads an RDAP answer for a name: 'registered', 'unregistered' or 'unknown'.
+	 * Only a 404 from a registry on the reliable list counts as unregistered;
+	 * anything else (timeouts, rate limits, other extensions) is 'unknown' and
+	 * the DNS ownership check decides later.
+	 *
+	 * @param string   $name Normalised domain name.
+	 * @param int|null $code HTTP status, or null when the lookup failed.
+	 */
+	function db_seller_rdap_verdict( $name, $code ) {
+		$tld = strtolower( (string) substr( (string) strrchr( (string) $name, '.' ), 1 ) );
+		if ( 200 === $code ) {
+			return 'registered';
+		}
+		if ( 404 === $code && in_array( $tld, db_seller_rdap_tlds(), true ) ) {
+			return 'unregistered';
+		}
+		return 'unknown';
+	}
+}

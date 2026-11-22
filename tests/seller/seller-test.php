@@ -112,4 +112,11 @@ $d = db_seller_clean_details( array( 'description' => "<b>Great</b>   name\r\n\r
 check( 'details: tags stripped, blank lines collapsed', "Great name\n\nfor a bakery" === $d['description'] );
 check( 'details: tags stripped from keywords, duplicates dropped, capped at 8', 0 === strpos( $d['keywords'], 'bakery, Bread, cakes, k1' ) && 8 === count( explode( ', ', $d['keywords'] ) ) );
 
+// Categories and registry check.
+check( 'categories: allowed ids only, no repeats, max 3', '4,7,9' === db_seller_clean_categories( array( '4', '7', 'x', '99', '4', '9', '12' ), array( 4, 7, 9, 12 ) ) );
+check( 'categories: comma list and empty input', '7' === db_seller_clean_categories( '7,,0,-3', array( 7 ) ) && '' === db_seller_clean_categories( array(), array( 1 ) ) );
+check( 'rdap: 200 is registered', 'registered' === db_seller_rdap_verdict( 'brightpath.ky', 200 ) );
+check( 'rdap: 404 on a reliable registry is unregistered', 'unregistered' === db_seller_rdap_verdict( 'nothere-zz.ca', 404 ) && 'unregistered' === db_seller_rdap_verdict( 'nothere-zz.com', 404 ) );
+check( 'rdap: 404 elsewhere, timeouts and rate limits are unknown', 'unknown' === db_seller_rdap_verdict( 'cayman.ky', 404 ) && 'unknown' === db_seller_rdap_verdict( 'a.com', null ) && 'unknown' === db_seller_rdap_verdict( 'a.com', 429 ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
