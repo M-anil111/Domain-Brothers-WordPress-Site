@@ -674,7 +674,8 @@ if ( ! function_exists( 'db_wl_auth_html' ) ) {
 				. '<h1 id="db-au-h" class="db-au-title">Good to see you again</h1>'
 				. '<div class="db-au-card">' . $forms
 				. '<p class="db-au-links"><a href="' . $signup . '">Don&rsquo;t have an account?</a><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Trouble signing in?</a></p></div>'
-				. '<ul class="db-au-chips" aria-label="What your account holds">' . $chips . '</ul></section>';
+				. '<ul class="db-au-chips" aria-label="What your account holds">' . $chips . '</ul>'
+				. ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? '<div class="db-au-box db-au-box--sell"><h2>Own domains you no longer use?</h2><p>List them on Domain Brothers for free. Our brokers handle every buyer, and you pay a commission only when a name sells.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">Sell your domains</a></div>' : '' ) . '</section>';
 		}
 
 		$props = '';
@@ -690,7 +691,7 @@ if ( ! function_exists( 'db_wl_auth_html' ) ) {
 			. '<div class="db-au-card"><h1 id="db-au-h" class="db-au-title">Create account</h1><p class="db-au-sub">Get started with a free account.</p><p class="db-au-req"><span aria-hidden="true">*</span> indicates a required field.</p>'
 			. $forms . '<p class="db-au-alt">Already have an account? <a href="' . $signin . '">Sign in</a>.</p></div>'
 			. '<div class="db-au-side"><h2>Never lose track of a name you want.</h2><p>An account keeps every domain you are watching, and every offer you have made, in one place.</p><ul class="db-au-props">' . $props . '</ul>'
-			. '<div class="db-au-box"><h2>Want a name that is not listed?</h2><p>You do not need an account to ask. Tell us the domain and a broker replies within one business day.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/acquire-premium-domain/' ) ) . '">Acquire a domain</a></div></div>'
+			. '<div class="db-au-box"><h2>Want a name that is not listed?</h2><p>You do not need an account to ask. Tell us the domain and a broker replies within one business day.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/acquire-premium-domain/' ) ) . '">Acquire a domain</a></div>' . ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? '<div class="db-au-box db-au-box--sell"><h2>Own domains you no longer use?</h2><p>List them on Domain Brothers for free. Our brokers handle every buyer, and you pay a commission only when a name sells.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">Sell your domains</a></div>' : '' ) . '</div>'
 			. '</div></section>';
 	}
 }

@@ -1105,3 +1105,8 @@ body.category.db-ui-active #main > .news-cnt { margin: 0 !important; padding: 0 
 .db-an--cat .db-an-head { margin-bottom: 26px; }
 html body.db-ui-active .db-an-page { font-size: .45em; font-weight: 700; letter-spacing: 0; color: var(--m-muted); vertical-align: middle; }
 body.category.db-ui-active .pagenav { margin: 28px 0 8px; }
+
+/* "Sell your domains" box on the sign-in page (under the card) and the register side panel. */
+.db-au--signin .db-au-box--sell { position: relative; z-index: 1; max-width: 520px; margin: 28px auto 0; text-align: center; }
+.db-au--signin .db-au-box--sell p { margin-left: auto; margin-right: auto; }
+.db-au--register .db-au-box--sell { margin-top: 22px; }

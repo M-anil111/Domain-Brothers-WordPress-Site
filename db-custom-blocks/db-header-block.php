@@ -260,7 +260,9 @@ if ( ! function_exists( 'db_acct_menu_links' ) ) {
 		);
 		$links = array_values( array_filter( $links ) );
 		if ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ) {
-			$links[] = array( 'Seller dashboard', home_url( '/seller/' ), 'tag' );
+			$email   = function_exists( 'db_wl_email' ) ? db_wl_email() : '';
+			$seller  = '' !== $email && function_exists( 'db_seller_get' ) && db_seller_get( $email );
+			$links[] = $seller ? array( 'Seller dashboard', home_url( '/seller/' ), 'tag' ) : array( 'Sell your domains', home_url( '/sell-your-domains/' ), 'tag' );
 		}
 		return $links;
 	}
