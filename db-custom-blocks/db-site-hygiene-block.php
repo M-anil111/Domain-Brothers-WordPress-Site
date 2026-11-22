@@ -132,6 +132,25 @@ if ( ! function_exists( 'db_hyg_single_h1' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_hyg_iframe_titles' ) ) {
+	/**
+	 * Every iframe gets a title for screen readers (bug A-6). Third-party snippets such as
+	 * Google Tag Manager's noscript frame print none.
+	 */
+	function db_hyg_iframe_titles( $html ) {
+		if ( false === stripos( (string) $html, '<iframe' ) ) {
+			return $html;
+		}
+		return preg_replace_callback( '#<iframe\b([^>]*)>#i', static function ( $m ) {
+			if ( preg_match( '/\stitle\s*=/i', $m[1] ) ) {
+				return $m[0];
+			}
+			$t = false !== stripos( $m[1], 'googletagmanager.com' ) ? 'Google Tag Manager' : 'Embedded content';
+			return '<iframe title="' . $t . '"' . $m[1] . '>';
+		}, $html );
+	}
+}
+
 add_action( 'template_redirect', function () {
 	if ( is_admin() || wp_doing_ajax() || is_feed() || is_embed() || is_robots() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 		return;
@@ -140,7 +159,7 @@ add_action( 'template_redirect', function () {
 		if ( ! is_string( $html ) || false === stripos( $html, '<html' ) ) {
 			return $html;
 		}
-		return db_hyg_img_fix( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ), 'db_hyg_img_dims' );
+		return db_hyg_img_fix( db_hyg_iframe_titles( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ) ), 'db_hyg_img_dims' );
 	} );
 }, 3 ); // Early on purpose: virtual pages that render and exit before priority 8 would skip it.
 

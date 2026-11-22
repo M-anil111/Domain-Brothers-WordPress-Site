@@ -78,5 +78,8 @@ check( 'viewport: user-scalable=0 removed', false === stripos( db_hyg_viewport_f
 check( 'viewport: a clean tag is untouched', '<meta name="viewport" content="width=device-width,initial-scale=1">' === db_hyg_viewport_fix( '<meta name="viewport" content="width=device-width,initial-scale=1">' ) );
 check( 'viewport: non-strings pass through', null === db_hyg_viewport_fix( null ) );
 
+check( 'iframe: GTM noscript frame gets a title', false !== strpos( db_hyg_iframe_titles( '<iframe src="https://www.googletagmanager.com/ns.html?id=X" height="0">' ), 'title="Google Tag Manager"' ) );
+check( 'iframe: other untitled frames get a generic title', '<iframe title="Embedded content" src="x">' === db_hyg_iframe_titles( '<iframe src="x">' ) );
+check( 'iframe: an existing title is kept', '<iframe title="Map" src="x">' === db_hyg_iframe_titles( '<iframe title="Map" src="x">' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
