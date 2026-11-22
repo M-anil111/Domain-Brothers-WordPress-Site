@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.132.1
+ * Version:     3.132.3
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.132.1' );
+define( 'DB_BLOCKS_LOADED', '3.132.3' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4842,6 +4842,61 @@ add_filter( 'wpcf7_form_elements', function ( $html ) {
 		return '<' . $m[1] . rtrim( $attrs ) . ' aria-label="' . esc_attr( $label ) . '"' . $close;
 	}, $html );
 }, 20 );
+
+/*
+ * Pagination and search edge cases (bugs RS-3, RS-4, RS-5):
+ *  - a page number past the last page of a list (/news/page/99/) is a 404;
+ *  - /all-domains/ shows every name on one page, so /all-domains/page/2/ is
+ *    a duplicate and redirects to /all-domains/;
+ *  - an empty search (/?s=) goes to the full domain list.
+ */
+add_action( 'template_redirect', function () {
+	global $wp_query;
+	if ( is_admin() || ! $wp_query instanceof WP_Query ) {
+		return;
+	}
+	$paged = (int) get_query_var( 'paged' );
+	if ( is_search() && isset( $_GET['s'] ) && '' === trim( (string) wp_unslash( $_GET['s'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		wp_safe_redirect( home_url( '/all-domains/' ), 302 );
+		exit;
+	}
+	if ( $paged > 1 && is_page( 'all-domains' ) ) {
+		wp_safe_redirect( get_permalink( get_queried_object_id() ), 301 );
+		exit;
+	}
+	if ( $paged > 1 && ( is_home() || is_archive() ) && $paged > max( 1, (int) $wp_query->max_num_pages ) ) {
+		$wp_query->set_404();
+		status_header( 404 );
+		nocache_headers();
+	}
+}, 2 );
+
+/* Internal links to retired slugs (bug RS-6): point them straight at the current pages, sparing a redirect. */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || is_feed() ) {
+		return;
+	}
+	$map = array(
+		'/digital-marketing/'      => '/digital-marketing-services/',
+		'/software-development/'   => '/custom-software-development-services/',
+		'/other-services/'         => '/web-hosting-maintenance-services/',
+		'/mobile-app-development/' => '/mobile-app-development-services/',
+	);
+	$home = untrailingslashit( home_url() );
+	$from = array();
+	$to   = array();
+	foreach ( $map as $old => $new ) {
+		foreach ( array( $home, '' ) as $base ) {
+			$from[] = 'href="' . $base . $old . '"';
+			$to[]   = 'href="' . $home . $new . '"';
+			$from[] = 'href="' . $base . rtrim( $old, '/' ) . '"';
+			$to[]   = 'href="' . $home . $new . '"';
+		}
+	}
+	ob_start( function ( $html ) use ( $from, $to ) {
+		return is_string( $html ) && '' !== $html ? str_replace( $from, $to, $html ) : $html;
+	} );
+}, 4 );
 
 if ( ! function_exists( 'db_on_canonical_host' ) ) {
 	/**
