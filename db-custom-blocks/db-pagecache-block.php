@@ -664,3 +664,30 @@ add_action( 'template_redirect', function () {
 		do_action( 'litespeed_control_set_nocache', 'db signed-in visitor' );
 	}
 }, 0 );
+
+/*
+ * Lists of names stay fresh for at most 10 minutes. On this host the server cache in front of
+ * WordPress (Hostinger's, reading LiteSpeed's cache headers) ignores purge headers sent from
+ * WordPress; only the Hostinger API clears it. Pages that list names (home, All Domains, listing
+ * collections, category archives) therefore get a 10-minute public TTL instead of the default
+ * 24 hours, so a newly published, repriced or sold name shows within 10 minutes.
+ */
+if ( ! defined( 'DB_PC_LIST_TTL' ) ) {
+	define( 'DB_PC_LIST_TTL', 600 );
+}
+add_action( 'template_redirect', function () {
+	if ( is_admin() ) {
+		return;
+	}
+	$is_list = is_front_page() || is_page( 'all-domains' ) || is_tax( 'domain_category' ) || is_post_type_archive( 'domain' )
+		|| ( function_exists( 'db_pages_kind' ) && in_array( db_pages_kind(), array( 'listing', 'all' ), true ) );
+	if ( ! $is_list ) {
+		return;
+	}
+	do_action( 'litespeed_control_set_ttl', DB_PC_LIST_TTL );
+	// send_headers has already run by now, so the header is sent here (signed-in visitors are
+	// marked no-cache elsewhere and are left alone).
+	if ( ! headers_sent() && empty( $_COOKIE['db_wl'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		header( 'X-LiteSpeed-Cache-Control: public,max-age=' . DB_PC_LIST_TTL );
+	}
+}, 1 );
