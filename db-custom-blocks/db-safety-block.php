@@ -579,11 +579,24 @@ if ( ! function_exists( 'db_safety_template_guards' ) ) {
 				'to'      => '/all-domains/',
 				'code'    => 302,
 			),
+			// Legacy PayPal return page: its template crashes on any query string
+			// (string * int at payment-successful.php:121), and the old guard let
+			// every query string through. Payments now confirm on /thank-you/.
 			'payment-successful' => array(
-				'require' => array(),
+				'require' => null,
 				'to'      => '/thank-you/',
 				'code'    => 302,
 			),
+			// Legacy DomainFolio transactional templates. They change data, send
+			// email or call PayPal / PlugnPay on a plain GET and build SQL from
+			// request values (bug register batch 2, SC-1/SC-2). Checkout runs on
+			// Stripe now, so they answer 410 Gone before the template runs.
+			'check-domain'              => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			'plugnpay'                  => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			'paypal-ipn'                => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			'payment-cancel'            => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			'installment-detail-buyer'  => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			'installment-detail-seller' => array( 'require' => null, 'to' => '/', 'code' => 410 ),
 			'installment-detail-admin' => array(
 				'require' => array(),
 				'to'      => '/',
@@ -601,6 +614,26 @@ if ( ! function_exists( 'db_safety_template_guards' ) ) {
 				'code'    => 301,
 			),
 		);
+	}
+}
+
+if ( ! function_exists( 'db_safety_gone' ) ) {
+	/** Ends the request with a 404/410 and the theme's 404 page, without running the page template. */
+	function db_safety_gone( $code ) {
+		global $wp_query;
+		if ( $wp_query instanceof WP_Query ) {
+			$wp_query->set_404();
+		}
+		status_header( $code );
+		nocache_headers();
+		header( 'X-Robots-Tag: noindex', true );
+		$tpl = get_404_template();
+		if ( $tpl ) {
+			include $tpl;
+		} else {
+			echo '<!doctype html><title>Page gone</title><p>This page is no longer available.</p>';
+		}
+		exit;
 	}
 }
 
@@ -624,6 +657,9 @@ add_action( 'template_redirect', function () {
 	}
 
 	if ( null === $g['require'] ) {
+		if ( in_array( (int) $g['code'], array( 404, 410 ), true ) ) {
+			db_safety_gone( (int) $g['code'] );
+		}
 		wp_safe_redirect( home_url( $g['to'] ), $g['code'] );
 		exit;
 	}

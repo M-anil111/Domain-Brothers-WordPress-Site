@@ -471,10 +471,16 @@ if ( ! function_exists( 'db_pc_warm_list' ) ) {
 		foreach ( $ids as $id ) {
 			$urls[] = get_permalink( $id );
 		}
+		// Pages guarded by db-safety-block.php (legacy payment templates, checkout pages that
+		// need parameters) are never requested: some of them change data on a plain GET.
+		$guarded = function_exists( 'db_safety_template_guards' ) ? array_keys( db_safety_template_guards() ) : array();
 		$out = array();
 		foreach ( array_unique( array_filter( $urls ) ) as $u ) {
 			$path = strtolower( (string) wp_parse_url( $u, PHP_URL_PATH ) );
 			if ( '' === $path || db_pc_skip_path( $path ) ) {
+				continue;
+			}
+			if ( $guarded && in_array( trim( $path, '/' ), $guarded, true ) ) {
 				continue;
 			}
 			$out[] = $u;

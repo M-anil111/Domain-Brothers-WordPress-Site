@@ -35,7 +35,7 @@ if ( ! defined( 'DB_PC_GUARD' ) ) {
 if ( ! function_exists( 'db_pc_skip_path' ) ) {
 	/** True for (lower-case) paths that are never cached: admin, API, personal and transactional pages. */
 	function db_pc_skip_path( $lower ) {
-		return (bool) preg_match( '#^/(wp-admin|wp-login|wp-json|wp-content|wp-includes|wp-cron|xmlrpc|feed|comments/feed|checkout|thank-you|my-wishlist|my-account|account|compare-domains|find-a-domain|trust-center|cart|sign-in|signin|login|log-in|register|sign-up|signup|create-account|transfer)(/|\.|$)#', $lower )
+		return (bool) preg_match( '#^/(wp-admin|wp-login|wp-json|wp-content|wp-includes|wp-cron|xmlrpc|feed|comments/feed|checkout|thank-you|my-wishlist|my-account|account|compare-domains|find-a-domain|trust-center|cart|sign-in|signin|login|log-in|register|sign-up|signup|create-account|transfer|payment-successful|payment-cancel|paypal-ipn|plugnpay|check-domain|installment-detail-admin|installment-detail-buyer|installment-detail-seller|buy-now|payment-plan-setup)(/|\.|$)#', $lower )
 			|| (bool) preg_match( '#(/feed/?|\.(php|xml|txt|json|xsl|ico|map))$#', $lower );
 	}
 }
