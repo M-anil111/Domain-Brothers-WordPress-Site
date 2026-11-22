@@ -303,6 +303,7 @@ if ( ! function_exists( 'db_seller_stats' ) ) {
 		$pid    = (int) $listing['post_id'];
 		$saves  = $pid && function_exists( 'db_wl_count' ) ? (int) db_wl_count( $pid ) : 0;
 		$hits   = $pid && function_exists( 'db_hits_for_domain' ) ? db_hits_for_domain( $pid ) : null;
+		$hits   = is_object( $hits ) ? (array) $hits : ( is_array( $hits ) ? $hits : null ); // the hits query returns rows as objects
 		$views  = $hits ? (int) ( $hits['all_h'] ?? 0 ) : 0;
 		$offers = $hits ? (int) ( $hits['offers'] ?? 0 ) : 0;
 		if ( ! $hits && function_exists( 'db_deal_table' ) ) {
@@ -323,7 +324,19 @@ if ( ! function_exists( 'db_seller_sold_prices' ) ) {
 		}
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = (array) $wpdb->get_results( "SELECT p.post_title AS name, pm.meta_value AS price FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = 'db_sold_price' WHERE p.post_type = 'domain' AND pm.meta_value + 0 > 0 LIMIT 2000", ARRAY_A );
+		// The recorded sale price when there is one, otherwise the price the name was listed at when it sold.
+		$rows = (array) $wpdb->get_results(
+			"SELECT p.post_title AS name, COALESCE( NULLIF( sp.meta_value + 0, 0 ), lp.meta_value + 0 ) AS price
+			FROM {$wpdb->posts} p
+			LEFT JOIN {$wpdb->postmeta} sp ON sp.post_id = p.ID AND sp.meta_key = 'db_sold_price'
+			LEFT JOIN {$wpdb->postmeta} lp ON lp.post_id = p.ID AND lp.meta_key = 'domain_price'
+			LEFT JOIN {$wpdb->postmeta} st ON st.post_id = p.ID AND st.meta_key = 'domain_status'
+			LEFT JOIN {$wpdb->postmeta} ls ON ls.post_id = p.ID AND ls.meta_key = 'db_listing_state'
+			WHERE p.post_type = 'domain' AND p.post_status = 'publish'
+			  AND ( sp.meta_value + 0 > 0 OR LOWER( st.meta_value ) = 'sold' OR ls.meta_value = 'sold' )
+			HAVING price > 0 LIMIT 2000",
+			ARRAY_A
+		);
 		set_transient( 'db_seller_sold_prices', $rows, HOUR_IN_SECONDS );
 		return $rows;
 	}
