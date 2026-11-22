@@ -592,7 +592,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 #db-co :is(button,a,span,strong){text-transform:none;letter-spacing:inherit}
 #db-co a{color:inherit}
 #db-co :is(input,select,textarea){min-height:0;max-width:none;box-shadow:none}
-#db-co .co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
+#db-co .co-wrap{width:100%;max-width:1320px;margin:0 auto;padding:0 15px;box-sizing:border-box}
 /* The theme's content column is boxed and padded; the checkout runs full width. */
 body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#f4f7f5 !important}
 #db-co .co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -729,7 +729,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 	#db-co .co-left{padding:20px 20px 36px}
 }
 @media (max-width:600px){
-	#db-co .co-wrap{padding:0 16px}
+	#db-co .co-wrap{padding:0 15px}
 	#db-co .co-steps-wrap{padding:0 12px}
 	#db-co .co-steps{--w:96px}
 	#db-co .co-step-label{font-size:12px;letter-spacing:0;line-height:1.3;white-space:normal}
@@ -767,7 +767,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 #db-co .co-next h2{font-weight:800}
 #db-co .co-next h2::after{background:var(--co-green);height:3px;border-radius:2px}
 #db-co .co-next .co-bubble{box-shadow:0 6px 18px rgba(10,22,40,.08)}
-#db-co .co-topbar{max-width:1290px;margin:28px auto -20px;padding:0 24px}
+#db-co .co-topbar{max-width:1320px;margin:28px auto -20px;padding:0 15px;box-sizing:border-box}
 #db-co .co-topbar .db-pa{margin:0}
 #db-co .co-topbar .db-pa{display:flex;gap:10px;align-items:center}
 #db-co .co-topbar .db-pa-btn{padding:0 18px;gap:8px;background:#fff}
