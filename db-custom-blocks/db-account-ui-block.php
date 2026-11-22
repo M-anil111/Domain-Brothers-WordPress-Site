@@ -126,19 +126,29 @@ if ( ! function_exists( 'db_acct_profile_html' ) ) {
 		$row     = is_array( $row ) ? $row : array();
 		$profile = json_decode( (string) ( $row['profile'] ?? '' ), true );
 		$profile = is_array( $profile ) ? $profile : array();
-		$h       = '<h2 class="db-ac-h">Profile</h2><form class="db-ac-form db-ac-profile" id="db-ac-profile" novalidate>'
-			. '<div class="db-ac-grid2"><label>Full name<input type="text" name="name" value="' . esc_attr( (string) ( $row['full_name'] ?? '' ) ) . '" maxlength="120" autocomplete="name" placeholder="Your full name"></label>'
-			. '<label>Email<input type="email" value="' . esc_attr( $email ) . '" readonly aria-describedby="db-ac-email-note"><span class="db-ac-note" id="db-ac-email-note">This is how you sign in. To change it, contact us.</span></label>'
-			. '<label>Phone <span class="db-ac-opt">(optional)</span><input type="tel" name="phone" value="' . esc_attr( (string) ( $row['phone'] ?? '' ) ) . '" maxlength="25" autocomplete="tel" placeholder="+1 555 123 4567"></label></div>'
-			. '<label class="db-ac-check"><input type="checkbox" name="newsletter" value="1"' . ( ! empty( $row['newsletter'] ) ? ' checked' : '' ) . '><span>Send me the Domain Brothers newsletter: new premium domains, price drops and short guides. I can unsubscribe at any time.</span></label>'
-			. '<h3>What you are looking for</h3>';
+		$name    = (string) ( $row['full_name'] ?? '' );
+		$since   = ! empty( $row['created_at'] ) ? wp_date( 'F j, Y', strtotime( $row['created_at'] . ' UTC' ) ) : '';
+		$consent = trim( (string) ( $row['consent_version'] ?? '' ) );
+		$initial = strtoupper( mb_substr( '' !== $name ? $name : $email, 0, 1 ) );
+		$h  = '<div class="db-pf"><div class="db-pf-main">';
+		$h .= '<form class="db-pf-form" id="db-ac-profile" novalidate>';
+		// Details.
+		$h .= '<section class="db-pf-card" aria-labelledby="db-pf-det"><div class="db-pf-cardhead"><span class="db-pf-avatar" aria-hidden="true">' . esc_html( $initial ) . '</span><div><h2 id="db-pf-det">Your details</h2><p>Used on offers, receipts and payment plans.</p></div></div>'
+			. '<div class="db-pf-grid"><div class="db-pf-field"><label for="db-pf-name">Full name</label><input type="text" id="db-pf-name" name="name" value="' . esc_attr( $name ) . '" maxlength="120" autocomplete="name" placeholder="Your full name"></div>'
+			. '<div class="db-pf-field"><label for="db-pf-phone">Phone <span class="db-pf-opt">optional</span></label><input type="tel" id="db-pf-phone" name="phone" value="' . esc_attr( (string) ( $row['phone'] ?? '' ) ) . '" maxlength="25" autocomplete="tel" placeholder="+1 555 123 4567"></div>'
+			. '<div class="db-pf-field db-pf-wide"><label for="db-pf-email">Email</label><div class="db-pf-lock"><input type="email" id="db-pf-email" value="' . esc_attr( $email ) . '" readonly aria-describedby="db-pf-email-n"><span class="db-pf-chip">Sign-in email</span></div><p class="db-pf-note" id="db-pf-email-n">This is how you sign in. To change it, <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">contact us</a>.</p></div></div></section>';
+		// Newsletter.
+		$h .= '<section class="db-pf-card db-pf-row" aria-labelledby="db-pf-nl"><div><h2 id="db-pf-nl">Newsletter</h2><p>New premium domains, price drops and short guides. Unsubscribe at any time.</p></div>'
+			. '<label class="db-pf-switch"><input type="checkbox" name="newsletter" value="1"' . ( ! empty( $row['newsletter'] ) ? ' checked' : '' ) . '><span class="db-pf-track" aria-hidden="true"></span><span class="db-pf-sr">Send me the Domain Brothers newsletter</span></label></section>';
+		// Preferences.
+		$h .= '<section class="db-pf-card" aria-labelledby="db-pf-look"><h2 id="db-pf-look">What you are looking for</h2><p>Your answers shape the names we suggest. Choose as many as fit.</p><div class="db-pf-qs">';
 		foreach ( db_reg_questions() as $key => $def ) {
-			$h .= '<fieldset class="db-ac-q"><legend>' . esc_html( $def['label'] ) . '</legend>';
+			$h .= '<fieldset class="db-pf-q"><legend>' . esc_html( $def['label'] ) . '</legend>';
 			if ( 'text' === $def['type'] ) {
-				$h .= '<input type="text" name="' . esc_attr( $key ) . '" value="' . esc_attr( (string) ( $profile[ $key ] ?? '' ) ) . '" maxlength="80" autocomplete="off" placeholder="For example: dental clinic, fintech app, online shop">';
+				$h .= '<input type="text" name="' . esc_attr( $key ) . '" value="' . esc_attr( (string) ( $profile[ $key ] ?? '' ) ) . '" maxlength="80" autocomplete="off" placeholder="For example: dental clinic, fintech app, online shop" aria-label="' . esc_attr( $def['label'] ) . '">';
 			} else {
 				$cur = (array) ( $profile[ $key ] ?? array() );
-				$h  .= '<div class="db-ac-pills">';
+				$h  .= '<div class="db-pf-pills">';
 				foreach ( $def['options'] as $val => $label ) {
 					$h .= '<label><input type="' . ( 'multi' === $def['type'] ? 'checkbox' : 'radio' ) . '" name="' . esc_attr( $key ) . '" value="' . esc_attr( $val ) . '"' . ( in_array( $val, $cur, true ) ? ' checked' : '' ) . '><span>' . esc_html( $label ) . '</span></label>';
 				}
@@ -146,13 +156,17 @@ if ( ! function_exists( 'db_acct_profile_html' ) ) {
 			}
 			$h .= '</fieldset>';
 		}
-		$h .= '<button type="submit" class="db-wl-primary">Save profile</button><p class="db-ac-msg" id="db-ac-profilemsg" role="status" aria-live="polite"></p></form>'
-			. '<div class="db-wl-card db-ac-danger"><h2>Your data</h2><p>Signed up on ' . esc_html( ! empty( $row['created_at'] ) ? wp_date( 'F j, Y', strtotime( $row['created_at'] . ' UTC' ) ) : 'an earlier date' ) . '. You agreed to policy version ' . esc_html( (string) ( $row['consent_version'] ?? 'on file' ) ) . '. Read our <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">Privacy Policy</a>.</p>'
-			. '<p><button type="button" class="db-ac-btn db-ac-btn--ghost" id="db-ad-export">Download my data</button></p>'
-			. '<form class="db-ac-form" id="db-ad-delete" novalidate><label>To delete your account, type your sign-in email<input type="email" name="confirm" autocomplete="off" placeholder="' . esc_attr( $email ) . '" required></label>'
-			. '<button type="submit" class="db-ac-btn db-ac-btn--ghost">Delete my account</button></form>'
-			. '<p class="db-ac-note">Deleting removes your account, saved domains and sign-in sessions. We keep purchase and payment-plan records, which we must retain for tax and payment-dispute reasons, and any enquiry you sent us. Email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> to have those reviewed.</p>'
-			. '<p class="db-ac-msg" id="db-ad-msg" role="status" aria-live="polite"></p></div>';
+		$h .= '</div></section>';
+		$h .= '<div class="db-pf-save"><button type="submit" class="db-pf-btn">Save profile</button><p class="db-ac-msg" id="db-ac-profilemsg" role="status" aria-live="polite"></p></div></form></div>';
+		// Side column: data and danger zone.
+		$h .= '<aside class="db-pf-side" aria-label="Your data"><section class="db-pf-card"><h2>Your data</h2><dl class="db-pf-dl">'
+			. ( '' !== $since ? '<div><dt>Member since</dt><dd>' . esc_html( $since ) . '</dd></div>' : '' )
+			. '<div><dt>Policies</dt><dd>' . ( '' !== $consent ? 'Accepted version ' . esc_html( $consent ) : 'Accepted at sign-up' ) . '</dd></div></dl>'
+			. '<p class="db-pf-note">See our <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">Privacy Policy</a>.</p>'
+			. '<button type="button" class="db-pf-btn db-pf-btn--ghost" id="db-ad-export">Download my data</button></section>'
+			. '<section class="db-pf-card db-pf-danger" aria-labelledby="db-pf-del"><h2 id="db-pf-del">Delete account</h2><p>Removes your account, saved domains and sign-in sessions. Purchase and payment-plan records are kept for tax and dispute reasons. Email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> to have those reviewed.</p>'
+			. '<form id="db-ad-delete" novalidate><label for="db-pf-confirm">Type your sign-in email to confirm</label><input type="email" id="db-pf-confirm" name="confirm" autocomplete="off" placeholder="' . esc_attr( $email ) . '" required>'
+			. '<button type="submit" class="db-pf-btn db-pf-btn--danger">Delete my account</button></form><p class="db-ac-msg" id="db-ad-msg" role="status" aria-live="polite"></p></section></aside></div>';
 		return $h;
 	}
 }
@@ -197,6 +211,35 @@ add_action( 'wp_enqueue_scripts', function () {
 		. '.db-ac-pills input{position:absolute;opacity:0;pointer-events:none}.db-ac-pills span{display:inline-flex;align-items:center;min-height:38px;padding:7px 14px;border:1.5px solid #d3d9e1;border-radius:999px;background:#fff;color:#0f172a;font-size:14.5px;font-weight:600}'
 		. '.db-ac-pills input:checked+span{border-color:#b5e61d;background:#b5e61d;color:#0f1b2d;font-weight:800}.db-ac-pills input:focus-visible+span{box-shadow:0 0 0 3px rgba(181,230,29,.7)}'
 		. '.db-ac-danger{margin-top:22px}'
+		// Profile tab (2026-11 redesign).
+		. '.db-pf{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start;margin-top:4px}@media(max-width:1000px){.db-pf{grid-template-columns:minmax(0,1fr)}}'
+		. '.db-pf-main,.db-pf-side,.db-pf-form{display:grid;gap:16px;min-width:0}.db-pf-side{position:sticky;top:96px}@media(max-width:1000px){.db-pf-side{position:static}}'
+		. 'html body .db-pf-form{max-width:none!important;width:auto!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:none!important}'
+		. '.db-pf-card{padding:24px;border:1px solid #e4e7ec;border-radius:22px;background:#fff;box-shadow:0 6px 20px rgba(15,23,42,.04)}'
+		. 'html body .db-pf-card h2{margin:0 0 4px;font-size:20px;font-weight:900;letter-spacing:-.01em;color:#0f172a}.db-pf-card>p,.db-pf-cardhead p{margin:0 0 16px;color:#4b5563;font-size:15px;line-height:1.5}'
+		. '.db-pf-cardhead{display:flex;gap:14px;align-items:center;margin-bottom:4px}.db-pf-cardhead p{margin:2px 0 0}.db-pf-avatar{flex:none;display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:50%;background:#0f1b2d;color:#b5e61d;font-size:22px;font-weight:900}'
+		. '.db-pf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}.db-pf-wide{grid-column:1/-1}@media(max-width:640px){.db-pf-grid{grid-template-columns:minmax(0,1fr)}}'
+		. 'html body .db-pf-field label,html body .db-pf-danger label{display:block;margin:0 0 6px;font-size:14.5px;font-weight:700;color:#0f172a}.db-pf-opt{font-weight:500;color:#6b7280;font-size:13px;margin-left:4px}'
+		. 'html body .db-pf input[type=text],html body .db-pf input[type=tel],html body .db-pf input[type=email]{display:block;width:100%!important;max-width:none!important;min-height:48px;height:48px;margin:0!important;padding:0 14px!important;border:1.5px solid #d3d9e1!important;border-radius:14px!important;background:#fff;font-size:16px;color:#0f172a;box-sizing:border-box}'
+		. 'html body .db-pf input:focus{outline:none;border-color:#0f1b2d!important;box-shadow:0 0 0 4px rgba(181,230,29,.35)!important}'
+		. '.db-pf-lock{position:relative}html body .db-pf-lock input{background:#f6f7f9!important;color:#4b5563!important;padding-right:130px!important}.db-pf-chip{position:absolute;right:10px;top:50%;transform:translateY(-50%);padding:4px 10px;border-radius:999px;background:#e4e7ec;color:#374151;font-size:12px;font-weight:700}'
+		. '.db-pf-note{margin:6px 0 0;color:#6b7280;font-size:13.5px;line-height:1.5}.db-pf-note a{color:#3f6212;font-weight:700}'
+		. '.db-pf-row{display:flex;gap:16px;align-items:center;justify-content:space-between}.db-pf-row p{margin:0!important}'
+		. '.db-pf-switch{position:relative;flex:none;display:inline-flex;cursor:pointer}.db-pf-switch input{position:absolute;opacity:0;width:1px;height:1px}.db-pf-track{width:56px;height:32px;border-radius:999px;background:#d3d9e1;position:relative;transition:background .2s}'
+		. '.db-pf-track::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:transform .2s}.db-pf-switch input:checked+.db-pf-track{background:#0f1b2d}.db-pf-switch input:checked+.db-pf-track::after{transform:translateX(24px);background:#b5e61d}'
+		. '.db-pf-switch input:focus-visible+.db-pf-track{box-shadow:0 0 0 4px rgba(181,230,29,.5)}.db-pf-sr{position:absolute;left:-9999px}'
+		. '.db-pf-qs{display:grid;gap:4px}.db-pf-q{margin:0;padding:16px 0;border:0;border-top:1px solid #eef1f4;min-width:0}.db-pf-q:first-child{border-top:0;padding-top:4px}'
+		. 'html body .db-pf-q legend{float:left;width:100%;margin:0 0 10px;padding:0;font-size:15.5px;font-weight:800;color:#0f172a}.db-pf-q legend+*{clear:both}'
+		. '.db-pf-pills{display:flex;flex-wrap:wrap;gap:8px}.db-pf-pills label{margin:0;cursor:pointer}.db-pf-pills input{position:absolute;opacity:0;pointer-events:none}'
+		. '.db-pf-pills span{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 16px;border:1.5px solid #d3d9e1;border-radius:999px;background:#fff;color:#0f172a;font-size:14.5px;font-weight:600;transition:border-color .15s,background .15s}'
+		. '.db-pf-pills label:hover span{border-color:#0f1b2d}.db-pf-pills input:checked+span{border-color:#0f1b2d;background:#0f1b2d;color:#fff}.db-pf-pills input:checked+span::before{content:"";width:8px;height:8px;border-radius:50%;background:#b5e61d}.db-pf-pills input:focus-visible+span{box-shadow:0 0 0 4px rgba(181,230,29,.5)}'
+		. '.db-pf-save{position:sticky;bottom:12px;z-index:5;display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 18px;border:1px solid #e4e7ec;border-radius:18px;background:rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(15,23,42,.10);backdrop-filter:blur(6px)}.db-pf-save .db-ac-msg{margin:0}'
+		. 'html body .db-pf-btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 26px;border:0;border-radius:999px;background:#0f1b2d;color:#fff;font-size:16px;font-weight:800;cursor:pointer}html body .db-pf-btn:hover{background:#1e2f47}'
+		. 'html body .db-pf-btn--ghost{width:100%;margin-top:14px;background:#fff;color:#0f172a;border:1.5px solid #d3d9e1}html body .db-pf-btn--ghost:hover{background:#f6f7f9}'
+		. '.db-pf-dl{display:grid;gap:10px;margin:12px 0 0}.db-pf-dl div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eef1f4}.db-pf-dl dt{color:#6b7280;font-size:14px}.db-pf-dl dd{margin:0;color:#0f172a;font-weight:700;font-size:14px;text-align:right}'
+		. '.db-pf-danger{border-color:#fecaca;background:#fffafa}html body .db-pf-danger h2{color:#991b1b}.db-pf-danger p{font-size:14px!important}.db-pf-danger p a{color:#991b1b;font-weight:700}'
+		. 'html body .db-pf .db-pf-danger button.db-pf-btn--danger{width:100%;margin-top:12px;background:#fff!important;color:#b42318!important;border:1.5px solid #f3a5a5!important}html body .db-pf .db-pf-danger button.db-pf-btn--danger:hover,html body .db-pf .db-pf-danger button.db-pf-btn--danger:focus-visible{background:#b42318!important;color:#fff!important;border-color:#b42318!important}'
+		. '@media(prefers-reduced-motion:reduce){.db-pf-track,.db-pf-track::after,.db-pf-pills span{transition:none}}'
 		// Wide, medium, small, cover screens.
 		. '@media(max-width:1100px){.db-ac-guide-b{grid-template-columns:minmax(0,1fr)}}'
 		. '@media(max-width:900px){.db-ac-grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.db-ac-who-a{margin-left:0;width:100%;justify-content:space-between}}'
