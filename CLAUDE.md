@@ -64,6 +64,10 @@ into `wp-content/plugins/` with the DomainFolio theme active.
    Tools > DB Fatal Log.
 5. The page cache is purged automatically on plugin update, post and menu
    changes (`db_pc_purge_all()` in `db-pagecache-block.php`).
+6. Clear Hostinger's server cache (hPanel > Websites > beta > Cache, or the Hostinger API
+   `agency-hosting_cache_clear-website`). It sits in front of WordPress and keeps serving the
+   old pages otherwise. Signed-in visitors (cookie `db_wl`) are excluded from LiteSpeed's cache
+   (LiteSpeed Cache > Excludes > Do Not Cache Cookies) and their pages are sent `no-store`.
 
 Emergency rollback when wp-admin is down: upload the previous file versions to
 `public_html/wp-content/plugins/db-custom-blocks/` with the Hostinger File
