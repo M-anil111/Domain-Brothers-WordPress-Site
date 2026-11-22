@@ -370,6 +370,13 @@ add_action( 'updated_option', function ( $option ) {
 	db_pc_queue_all();
 } );
 
+// LiteSpeed must not keep its own copy of a warm-up address (?ref=db-cache-warm).
+add_action( 'send_headers', function () {
+	if ( isset( $_GET['ref'] ) && 'db-cache-warm' === $_GET['ref'] && ! headers_sent() ) { // phpcs:ignore WordPress.Security.NonceVerification
+		header( 'X-LiteSpeed-Cache-Control: no-cache' );
+	}
+} );
+
 /* -------------------------------------------------------------- saving */
 
 add_action( 'template_redirect', function () {
@@ -486,7 +493,10 @@ if ( ! function_exists( 'db_pc_warm_run' ) ) {
 				if ( 'x' !== $v ) {
 					$args['cookies'] = array( new WP_Http_Cookie( array( 'name' => 'db_exp_cta', 'value' => $v ) ) );
 				}
-				$res  = wp_remote_get( $url, $args );
+				// ?ref= makes LiteSpeed (in front of WordPress) pass the request through instead of
+				// answering from its own copy (it drops utm_* but keeps ref); our cache ignores ref and
+				// saves under the plain address (P-5: warm runs used to save almost nothing).
+				$res  = wp_remote_get( add_query_arg( 'ref', 'db-cache-warm', $url ), $args );
 				$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
 				if ( 401 === $code ) {
 					$state['blocked'] = true;
