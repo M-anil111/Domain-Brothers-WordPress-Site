@@ -115,10 +115,11 @@ function measure(arg) {
 	//       a neighbouring section of the same background).
 	//  K:   cards on the page (the gap is their margin; inner padding is the card's own).
 	// The visible gap between two neighbouring page blocks must be one gap (the tier's value).
-	const W_SEL = 'section.db-hp-hero, .dbx, .homepage-listing > .row, .db-pulse, .db-rsold-home, .db-aud, .db-how, .pageNewContent, .resp_table.dbr, .db-pr-hero, .db-pr-options, .db-pr-details, .db-pr-quotes, .db-pr-news, .db-news-live, .db-an-own, .pagenav, .dbb, .dbc-main, .dba-story, div.dba-bleed, .dbr-body, .dbs-path, .dbs-plan-sec, .dbs-faq, .dbs-cta-sec, .dbt-team, .dbf-body, .db-faq > .dbf-wrap:not(.dbf-body), .db-team > .dbt-wrap, .dbc-hero, .dba-hero, .dba-path, .dbr-hero, .dbs-hero, .dbs-how, .dbf-hero, .dbt-hero, .db-sold > section:not(.db-sold-band)';
+	const W_SEL = 'section.db-hp-hero, .dbs > section.dbs-full:not(.dbs-partners), .dbx, .homepage-listing > .row, .db-pulse, .db-rsold-home, .db-aud, .db-how, .pageNewContent, .resp_table.dbr, .db-pr-hero, .db-pr-options, .db-pr-details, .db-pr-quotes, .db-pr-news, .db-news-live, .db-an-own, .pagenav, .dbb, .dbc-main, .dba-story, div.dba-bleed, .dbr-body, .dbs-path, .dbs-plan-sec, .dbs-faq, .dbs-cta-sec, .dbt-team, .dbf-body, .db-faq > .dbf-wrap:not(.dbf-body), .db-team > .dbt-wrap, .dbc-hero, .dba-hero, .dba-path, .dbr-hero, .dbs-hero, .dbs-how, .dbf-hero, .dbt-hero, .db-sold > section:not(.db-sold-band)';
 	const K_SEL = '.dbl-head, .dbs2-hero, .dbsv-form, .db-sold > .db-sold-band';
 	const bgOf = (c) => (c.backgroundImage !== 'none' ? 'img' : c.backgroundColor);
-	const clear = (c) => c.backgroundImage === 'none' && /rgba\(0, 0, 0, 0\)|transparent/.test(c.backgroundColor);
+	// White is the page background, so a white band counts as part of the white page.
+	const clear = (c) => c.backgroundImage === 'none' && /rgba\(0, 0, 0, 0\)|transparent|rgb\(255, 255, 255\)/.test(c.backgroundColor);
 	const blocks = [...document.querySelectorAll(W_SEL + ', ' + K_SEL)].filter(vis)
 		.filter((e) => !e.parentElement.closest(W_SEL + ', ' + K_SEL)); // page level only
 	out.sections = [];
@@ -130,7 +131,12 @@ function measure(arg) {
 		const cs = getComputedStyle(e);
 		const card = e.matches(K_SEL);
 		const row = { cls: String(e.className || e.tagName).slice(0, 30), kind: card ? 'K' : (clear(cs) ? 'W' : 'C'), top: px(cs.paddingTop), bottom: px(cs.paddingBottom), mb: px(cs.marginBottom), bg: bgOf(cs) };
-		row.bad = row.kind === 'C' && (Math.abs(row.top - wantPad) > 2 || Math.abs(row.bottom - wantPad) > 2);
+		// A band next to a band of the same colour shares one gap: that edge may be 0.
+		const sib = (el, dir) => { let x = el[dir]; while (x && (/^(STYLE|SCRIPT|LINK)$/.test(x.tagName) || !vis(x))) x = x[dir]; return x; };
+		const p = sib(e, 'previousElementSibling'); const n = sib(e, 'nextElementSibling');
+		const sameAbove = p && bgOf(getComputedStyle(p)) === row.bg; const sameBelow = n && bgOf(getComputedStyle(n)) === row.bg;
+		const okEdge = (v, shared) => Math.abs(v - wantPad) <= 2 || (v === 0 && shared);
+		row.bad = row.kind === 'C' && !(okEdge(row.top, sameAbove) && okEdge(row.bottom, sameBelow));
 		out.sections.push(row);
 	}
 	// Neighbouring blocks in page order, also across wrappers, when no visible content sits
@@ -157,7 +163,11 @@ function measure(arg) {
 		const a = blocks[i - 1]; const b = blocks[i];
 		if (a.contains(b) || b.contains(a)) continue;
 		if (contentBetween(a, b)) continue;
-		const ea = edge(a); const eb = edge(b);
+		// Two bands of the same colour read as one band: their gap is between their contents.
+		const sameBand = !a.matches(K_SEL) && !b.matches(K_SEL) && bgOf(getComputedStyle(a)) === bgOf(getComputedStyle(b));
+		const ea = sameBand ? Object.assign(edge(a), { clear: true }) : edge(a);
+		const eb = sameBand ? Object.assign(edge(b), { clear: true }) : edge(b);
+		if (sameBand) { const ca = getComputedStyle(a); const cb = getComputedStyle(b); ea.bottom = a.getBoundingClientRect().bottom - px(ca.paddingBottom); eb.top = b.getBoundingClientRect().top + px(cb.paddingTop); }
 		const gap = Math.round(eb.top - ea.bottom);
 		const bothColoured = !ea.clear && !eb.clear && !a.matches(K_SEL) && !b.matches(K_SEL);
 		const ok = Math.abs(gap - wantPad) <= 2 || (bothColoured && Math.abs(gap) <= 2);
