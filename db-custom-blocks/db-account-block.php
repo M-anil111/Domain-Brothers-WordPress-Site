@@ -617,6 +617,11 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 			$url = 'saved' === $key ? home_url( '/my-wishlist/' ) : add_query_arg( 'tab', $key, home_url( '/my-wishlist/' ) );
 			$h  .= '<a href="' . esc_url( $url ) . '" class="db-ac-tab' . ( $tab === $key ? ' is-on' : '' ) . '"' . ( $tab === $key ? ' aria-current="page"' : '' ) . '>' . esc_html( $label ) . $extra . '</a>';
 		}
+		// Selling lives on its own page (/seller/); the account tabs link to it so it is never hidden.
+		if ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ) {
+			$is_seller = function_exists( 'db_seller_get' ) && db_seller_get( $email );
+			$h        .= '<a href="' . esc_url( home_url( $is_seller ? '/seller/' : '/sell-your-domains/' ) ) . '" class="db-ac-tab db-ac-tab--sell">' . esc_html( $is_seller ? 'Seller dashboard' : 'Sell your domains' ) . ' <span aria-hidden="true">&rarr;</span></a>';
+		}
 		$h .= '</nav>';
 		$h .= function_exists( 'db_acct_intro' ) ? db_acct_intro( $tab ) : '';
 
@@ -660,13 +665,31 @@ if ( ! function_exists( 'db_acct_render' ) ) {
 				$h .= '</ul>';
 			}
 			$pre = isset( $_GET['dom'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['dom'] ) ) ) : ( isset( $_GET['domain'] ) ? strtolower( sanitize_text_field( wp_unslash( $_GET['domain'] ) ) ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification
+			// How an offer works, beside the form (it used to sit alone with empty space on its left).
+			$steps = array(
+				array( 'Choose a name and your price', 'Pick any name listed on Domain Brothers and enter what you would pay. Add a note about how you plan to use it if you like.' ),
+				array( 'We reply by email', 'A broker replies, usually within one business day. If the owner has set a private minimum and your offer is below it, you get their counter-offer straight away.' ),
+				array( 'Negotiate in one place', 'Accept, counter or decline from the offer page. Every message stays in My offers, so you never lose track.' ),
+				array( 'Pay the agreed price', 'Once you both agree, checkout opens at that price. Payment is by card through Stripe.' ),
+				array( 'Get your domain', 'We move the name to your registrar and guide you through each step of the transfer.' ),
+			);
+			$how = '<aside class="db-ac-how" aria-labelledby="db-ac-how-h"><h3 id="db-ac-how-h">How making an offer works</h3><ol>';
+			foreach ( $steps as $i => $st ) {
+				$how .= '<li><span class="db-ac-how-n" aria-hidden="true">' . ( $i + 1 ) . '</span><div><strong>' . esc_html( $st[0] ) . '</strong><p>' . esc_html( $st[1] ) . '</p></div></li>';
+			}
+			$how .= '</ol><p class="db-ac-how-note">Making an offer is free and does not commit you to buy until you accept a price. <a href="' . esc_url( home_url( '/faqs/' ) ) . '">Read the FAQs</a></p></aside>';
+			$h  .= '<div class="db-ac-offerwrap">' . $how;
 			$h  .= '<form class="db-ac-form" id="db-ac-offer" novalidate><h3>Make an offer</h3><p class="db-ac-lead">Start typing a name from our marketplace, choose it from the list, then name your price. We reply by email and keep the conversation in My offers.</p>'
 				. '<div class="db-ac-combo"><label for="db-ac-dom">Domain</label><input type="text" id="db-ac-dom" name="domain" required autocomplete="off" spellcheck="false" placeholder="Start typing, e.g. brand" value="' . esc_attr( $pre ) . '" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-ac-dl" aria-describedby="db-ac-pick">'
 				. '<ul id="db-ac-dl" class="db-ac-dl" role="listbox" aria-label="Matching domains" hidden></ul><p id="db-ac-pick" class="db-ac-pick">Only names listed on Domain Brothers can receive offers.</p></div>'
 				. '<label>Your offer (USD)<input type="text" name="amount" inputmode="numeric" required autocomplete="off" placeholder="Choose a domain first" maxlength="12" disabled></label>'
 				. '<label>Message <span class="db-ac-opt">(optional)</span><textarea name="message" rows="3" maxlength="1000" placeholder="Tell us how you plan to use the name."></textarea></label>'
-				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary" disabled>Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form>'
-				. '<style>.db-ac-combo{position:relative;margin-bottom:14px}.db-ac-dl{position:absolute;z-index:30;left:0;right:0;top:100%;margin:4px 0 0;padding:6px;list-style:none;max-height:280px;overflow:auto;background:#fff;border:1px solid #cfd8d3;border-radius:14px;box-shadow:0 16px 36px rgba(10,22,40,.14)}'
+				. '<div class="db-ts"></div><button type="submit" class="db-wl-primary" disabled>Send offer</button><p class="db-ac-msg" id="db-ac-offermsg" role="status" aria-live="polite"></p></form></div>'
+				. '<style>.db-ac-tab--sell{background:#b5e61d!important;color:#0a1628!important;font-weight:800}.db-ac-offerwrap{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;align-items:start;margin-top:8px}@media(max-width:860px){.db-ac-offerwrap{grid-template-columns:1fr}}.db-ac-offerwrap>.db-ac-form{margin:0}'
+				. '.db-ac-how{padding:22px 22px 18px;border-radius:20px;background:#0a1628;color:#fff}html body .db-ac-how h3{margin:0 0 14px;color:#fff;font-size:20px;font-weight:800}.db-ac-how ol{margin:0;padding:0;list-style:none;display:grid;gap:14px}.db-ac-how li{display:flex;gap:12px;align-items:flex-start}'
+				. '.db-ac-how-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#b5e61d;color:#0a1628;font-weight:900;font-size:14px}.db-ac-how strong{display:block;color:#fff;font-size:15.5px}html body .db-ac-how p{margin:2px 0 0;color:rgba(255,255,255,.85);font-size:14.5px;line-height:1.55}'
+				. 'html body .db-ac-how p.db-ac-how-note{margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18)}html body .db-ac-how a{color:#d9f99d;font-weight:700}'
+				. '.db-ac-combo{position:relative;margin-bottom:14px}.db-ac-dl{position:absolute;z-index:30;left:0;right:0;top:100%;margin:4px 0 0;padding:6px;list-style:none;max-height:280px;overflow:auto;background:#fff;border:1px solid #cfd8d3;border-radius:14px;box-shadow:0 16px 36px rgba(10,22,40,.14)}'
 				. '.db-ac-dl li{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:15px}.db-ac-dl li[aria-selected=true],.db-ac-dl li:hover{background:#eef6ee}.db-ac-dl li b{color:#0a1628}.db-ac-dl li span{color:#4b5563;white-space:nowrap}.db-ac-dl .db-ac-none{cursor:default;color:#4b5563}'
 				. '.db-ac-pick{margin:6px 0 0;font-size:13.5px;color:#4b5563}.db-ac-pick.is-ok{color:#0b6b36;font-weight:600}.db-ac-pick.is-bad{color:#b42318;font-weight:600}#db-ac-offer input:disabled,#db-ac-offer button:disabled{opacity:.55;cursor:not-allowed}</style>';
 		} elseif ( 'plans' === $tab && function_exists( 'db_acct_plans_html' ) ) {
