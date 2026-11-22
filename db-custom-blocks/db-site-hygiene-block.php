@@ -486,3 +486,20 @@ add_action( 'init', function () {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'db_hyg_purge_entries' );
 	}
 } );
+
+/* -------------------------------------------- tap targets and small text */
+
+// Phone tap targets of at least 32px and no visible text under 12px (bugs A-3, A-4).
+// Inline links inside sentences are left alone (WCAG 2.5.8 exempts them).
+add_action( 'wp_head', function () {
+	$x = 'html body ';
+	echo '<style id="db-tap-css">'
+		. $x . '#db-legal-links a{display:inline-flex;align-items:center;min-height:36px;padding:0 4px}'
+		. $x . '.db-breadcrumbs a{display:inline-flex;align-items:center;justify-content:center;min-width:32px;min-height:32px}'
+		. $x . 'a.db-domain-card__name,' . $x . '.db-domain-card__name a{display:inline-flex;align-items:center;min-height:32px}'
+		. $x . '.db-tools-sim a,' . $x . 'a.db-dev-link,' . $x . '.dbr-fd-reset,' . $x . 'a.db-ty-chip,' . $x . '.db-ty-chip{display:inline-flex;align-items:center;min-height:36px}'
+		. $x . '.db-own-card a{display:inline-flex;align-items:center;min-height:36px}'
+		. $x . '.site-footer li>a,' . $x . 'footer li>a{display:inline-block;min-width:32px}'
+		. $x . '.db-pay-opt small,' . $x . '.db-ty-also-label,' . $x . '.db-pr-price small,' . $x . '.db-pr-btn small,' . $x . '.db-hd-sp-chips small{font-size:12.5px}'
+		. '</style>' . "\n";
+}, 40 );
