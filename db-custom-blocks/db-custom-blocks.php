@@ -428,9 +428,9 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			array( 'award', '27+ Years Combined Experience' ),
 			array( 'globe', '5,000+ Domains Sold' ),
 			array( 'clock', 'Domains Transferred in Under 2 Hours' ),
-			array( 'lock', 'Buyer Protection Program' ),
+			array( 'lock', 'Secure Stripe Checkout' ),
 			array( 'calendar', 'Pay Over 3 to 12 Months' ),
-			array( 'check', '100% Money-Back Guarantee' ),
+			array( 'check', 'Name Held for You During Your Plan' ),
 		);
 		$pill = static function ( $item, $hidden ) use ( $icons ) {
 			return '<li class="db-hp-titem"' . ( $hidden ? ' aria-hidden="true"' : '' ) . '><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $icons[ $item[0] ] . '</svg><span>' . esc_html( $item[1] ) . '</span></li>';
