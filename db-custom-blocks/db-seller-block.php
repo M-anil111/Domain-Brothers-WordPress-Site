@@ -625,21 +625,22 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			foreach ( $res['ok'] as $name ) {
 				$why   = db_seller_tld_exists( $name ) ? db_seller_blocked( $name ) : 'There is no such domain ending. Check the spelling.';
 				$taken = '' !== $why ? '' : db_seller_domain_taken( $name, $sid );
-				if ( 'claim' === $taken && function_exists( 'db_seller_rule' ) && ! db_wl_allow( 'seller-claim:' . $sid, (int) db_seller_rule( 'claims_per_day' ), DAY_IN_SECONDS ) ) {
-					$msgs[] = array( 'warn', $name . ': you can start at most ' . (int) db_seller_rule( 'claims_per_day' ) . ' ownership claims a day. Try again tomorrow.' );
-					continue;
-				}
-				if ( 'claim' === $taken ) {
-					$msgs[] = array( 'warn', $name . ': another account lists this name. It moves to you only once you prove ownership with your DNS record below; the other account is then told.' );
-					$taken  = '';
-				}
-				$why = '' !== $why ? $why : $taken;
+				$claim = 'claim' === $taken;
+				$why   = '' !== $why ? $why : ( $claim ? '' : $taken );
 				if ( '' === $why && 'unregistered' === db_seller_rdap_check( $name, $rdap_until ) ) {
 					$why = 'This name is not registered, so it cannot be listed. Check the spelling.';
 				}
 				if ( '' !== $why ) {
 					$msgs[] = array( 'warn', $name . ': ' . $why );
 					continue;
+				}
+				// Only a name that is otherwise addable counts toward the daily claim limit.
+				if ( $claim && function_exists( 'db_seller_rule' ) && ! db_wl_allow( 'seller-claim:' . $sid, (int) db_seller_rule( 'claims_per_day' ), DAY_IN_SECONDS ) ) {
+					$msgs[] = array( 'warn', $name . ': you can start at most ' . (int) db_seller_rule( 'claims_per_day' ) . ' ownership claims a day. Try again tomorrow.' );
+					continue;
+				}
+				if ( $claim ) {
+					$msgs[] = array( 'warn', $name . ': another account lists this name. It moves to you only once you prove ownership with your DNS record; the other account is then told.' );
 				}
 				$wpdb->insert( $l, array( 'seller_id' => $sid, 'domain' => $name, 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$added[] = $name;
