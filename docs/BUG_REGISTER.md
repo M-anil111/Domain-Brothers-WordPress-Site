@@ -108,7 +108,27 @@ Re-run the crawl script after batch 2 and batch 3 and compare counts against thi
 
 - Fixed earlier (3.119 to 3.134): CO-1 to CO-4, RS-1 to RS-7, RS-9, A-1.
 - Fixed in 3.135.x: **S-3, S-4, S-5** (lookup API accepts ports, trailing dots, paths and Unicode names; unknown `parts` refused with a message), **RS-8** (descriptions kept within 160 characters; register and thank-you have one), **RS-10** (`og:url` on pages the plugin draws; register share title), **RS-12** (`favicon.ico` and `apple-touch-icon.png` written to the site root from the site icon).
-- Open: RS-11, A-2 to A-6, P-1 to P-6, S-1, S-2, S-6, O-2 to O-5, CO-5. O-1 needs the owner (which analytics source to keep).
+- Fixed in 3.136 to 3.138:
+  - **A-2:** unique ids for combined stylesheets.
+  - **A-3, A-4:** tap targets of at least 32px; small text at 12.5px.
+  - **A-5:** `aria-level` where heading levels skip.
+  - **A-6:** iframe titles.
+  - **S-1:** Content-Security-Policy in report-only mode, with the Tools > CSP reports screen. Zero reports after the fixes. Set option `db_csp_enforce` to `1` to enforce it.
+  - **S-2:** COOP and CORP headers.
+  - **S-6:** archive history from the Wayback CDX API.
+  - **RS-11:** Product schema only for priced, available names with an image.
+  - **CO-5:** the plan start date follows the site's time zone.
+  - **P-1:** news block cached and refreshed by cron.
+  - **P-2, P-3, P-6 (partly):** the UI enhancer script is served as a cached file, about 40KB less HTML per page.
+  - **P-4:** cluster and infographic images compressed: 7.7MB to 4.0MB in the repository, 14.4MB to 5.0MB on beta (backups in `uploads/db-img-backup/2026-11/`).
+  - **P-5:** the cache warmer bypasses LiteSpeed, so warm passes now save pages.
+  - **O-3:** Turnstile test mode for scripted QA (option `db_turnstile_test_until`, staging only, at most 2 hours).
+  - **O-4:** weekly live QA and axe audits on GitHub (`live-qa.yml`).
+  - **O-2:** the old QA scripts were repaired and re-run on beta:
+    - fixes: editor-load waits, Turnstile tokens, stale sign-in checks, webhook helper exit
+    - results: wishlist-flow 20/20, account-flow 27/27, offer-flow 12/12 (webhook steps skipped, because they would mark a real listing sold), sales-features 14/14
+  - **O-5:** checked the certificate decoder, DNS propagation checker and nslookup pages: all work, no change needed.
+- Open: O-1 needs the owner to choose which analytics source to keep. P-6 is only partly done: the remaining inline scripts are small.
 
 ## Price change log
 
