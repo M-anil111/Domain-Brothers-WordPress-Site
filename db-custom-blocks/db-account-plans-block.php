@@ -28,7 +28,7 @@ add_action( 'template_redirect', function () {
 	if ( 'buy-now' !== trim( (string) db_sales_request_path(), '/' ) ) {
 		return;
 	}
-	$months = isset( $_GET['months'] ) ? (int) $_GET['months'] : 0; // phpcs:ignore WordPress.Security.NonceVerification
+	$months = isset( $_GET['months'] ) && ctype_digit( (string) wp_unslash( $_GET['months'] ) ) ? (int) $_GET['months'] : 0; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 	if ( ! in_array( $months, array( 3, 6, 9, 12 ), true ) || '' !== db_wl_email() ) {
 		return;
 	}

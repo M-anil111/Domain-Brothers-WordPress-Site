@@ -266,15 +266,22 @@ add_action( 'template_redirect', static function () {
 		$price_raw = base64_decode( $p_raw, true );
 		// phpcs:enable
 
-		if ( $domain === false || $price_raw === false ) {
-			wp_die( esc_html( 'Invalid request.' ) );
+		// A malformed or edited link is not a server error: send the visitor to
+		// the name's page when it is a listing, otherwise to the marketplace.
+		$bail = static function ( $name ) {
+			$post = ( $name && function_exists( 'db_listing_post_for_domain' ) ) ? db_listing_post_for_domain( strtolower( (string) $name ) ) : null;
+			wp_safe_redirect( $post ? get_permalink( $post ) : home_url( '/all-domains/' ), 302 );
+			exit;
+		};
+		if ( $domain === false || $price_raw === false || ! preg_match( '/^[a-z0-9.-]{3,253}$/i', (string) $domain ) ) {
+			$bail( '' );
 		}
 
 		$domain       = sanitize_text_field( $domain );
 		$client_price = (float) $price_raw;
 
 		if ( ! $domain || $client_price <= 0.0 ) {
-			wp_die( esc_html( 'Invalid request parameters.' ) );
+			$bail( $domain ); // the URL price only picks the name; the real price comes from the listing
 		}
 
 		// A sold, reserved or not-for-sale name is "no longer available" (410)
@@ -294,7 +301,7 @@ add_action( 'template_redirect', static function () {
 		// Without this, anyone could edit ?p= and buy any domain for $1.
 		$price = db_stripe_lookup_domain_price( $domain );
 		if ( null === $price ) {
-			wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
+			$bail( $domain ); // offer-only or unlisted: its page offers the right next step
 		}
 		$domain = db_stripe_norm( $domain );
 	}
@@ -303,8 +310,15 @@ add_action( 'template_redirect', static function () {
 	// month); a request carrying it turns the main query into an empty date
 	// archive and the buy-now page 404s before this hook can render.
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$months_raw = isset( $_GET['months'] ) ? (int) sanitize_text_field( wp_unslash( $_GET['months'] ) ) : 0;
+	$months_str = isset( $_GET['months'] ) ? trim( (string) sanitize_text_field( wp_unslash( $_GET['months'] ) ) ) : '';
+	$months_raw = ctype_digit( $months_str ) ? (int) $months_str : 0;
 	$is_plan    = in_array( $months_raw, [ 3, 6, 9, 12 ], true );
+	if ( '' !== $months_str && '0' !== $months_str && ! $is_plan ) {
+		// Not a plan we offer (2, 99, -3, "3abc"): let the buyer choose a real one
+		// instead of silently charging the full price.
+		wp_safe_redirect( function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $domain, $price )['plan'] : home_url( '/all-domains/' ), 302 );
+		exit;
+	}
 	$months     = $is_plan ? $months_raw : 0;
 
 	// Never take a second buyer's money for a name that is already sold or on
