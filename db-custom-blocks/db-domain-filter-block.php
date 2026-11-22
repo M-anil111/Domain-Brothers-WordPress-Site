@@ -296,10 +296,15 @@ if ( ! function_exists( 'db_ad_fix_query_vars' ) ) {
 	/**
 	 * Pure: the corrected query vars for the theme's All Domains query.
 	 *
-	 * @param array $qv WP_Query vars.
+	 * Names marked sold or not for sale by the plugin (db_listing_state) are left out as well as
+	 * domain_status = sold. With $for_sale_ids (the ids in db_domain_index(), which also knows the
+	 * names already taken through checkout) the list is limited to exactly those names.
+	 *
+	 * @param array      $qv           WP_Query vars.
+	 * @param array|null $for_sale_ids Ids of the names for sale, or null when not known.
 	 * @return array
 	 */
-	function db_ad_fix_query_vars( array $qv ) {
+	function db_ad_fix_query_vars( array $qv, $for_sale_ids = null ) {
 		$qv['posts_per_page'] = 1000;
 		$qv['paged']          = 1;
 		$qv['no_found_rows']  = false;
@@ -317,7 +322,21 @@ if ( ! function_exists( 'db_ad_fix_query_vars' ) ) {
 				array( 'key' => 'domain_status', 'compare' => 'NOT EXISTS' ),
 			);
 		}
+		$meta[] = array(
+			'relation' => 'OR',
+			array( 'key' => 'db_listing_state', 'value' => array( 'sold', 'not_for_sale' ), 'compare' => 'NOT IN' ),
+			array( 'key' => 'db_listing_state', 'compare' => 'NOT EXISTS' ),
+		);
 		$qv['meta_query'] = $meta;
+		if ( is_array( $for_sale_ids ) && $for_sale_ids ) {
+			$ids = array_values( array_unique( array_map( 'intval', $for_sale_ids ) ) );
+			$qv['post__in'] = isset( $qv['post__in'] ) && is_array( $qv['post__in'] ) && $qv['post__in']
+				? array_values( array_intersect( array_map( 'intval', $qv['post__in'] ), $ids ) )
+				: $ids;
+			if ( ! $qv['post__in'] ) {
+				$qv['post__in'] = array( 0 ); // nothing for sale matches: an empty list, not every post
+			}
+		}
 		return $qv;
 	}
 }
@@ -344,7 +363,10 @@ add_action( 'pre_get_posts', function ( $q ) {
 	if ( ! function_exists( 'is_page' ) || ! is_page( 'all-domains' ) || ! db_ad_is_theme_query( $q->query_vars ) ) {
 		return;
 	}
-	foreach ( db_ad_fix_query_vars( $q->query_vars ) as $k => $v ) {
+	$for_sale = function_exists( 'db_domain_index' ) ? array_map( static function ( $r ) {
+		return (int) $r['id'];
+	}, db_domain_index() ) : null;
+	foreach ( db_ad_fix_query_vars( $q->query_vars, $for_sale ) as $k => $v ) {
 		$q->set( $k, $v );
 	}
 } );
