@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.127.2 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.128.0 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -158,18 +158,21 @@ Totals: see the summary table at the end.
 - [x] Tests: 7 offline rule tests; browser flow (counter, refused low counter, accept, history, axe) and sweep on beta
 - [x] Fixed during testing: Decline button invisible (theme forced white text)
 
-### A4. Phase 4: sales and payouts
-- [ ] Sale of a seller's name creates a payout record (gross, commission, net)
-- [ ] Payout states: waiting for transfer, waiting for buyer confirmation, due, paid, held
-- [ ] Payout date rule: 7 days after buyer confirms control, or 14 days after transfer with no dispute
-- [ ] Payment-plan sales: payout follows the plan (paid as instalments clear, or at the end)
-- [ ] Seller payout details through Stripe Connect onboarding (owner must enable Connect in Stripe)
-- [ ] Admin payouts screen: mark transferred, confirm, hold, pay
-- [ ] Seller "Sales and payouts" page
-- [ ] Downloadable statement (CSV)
-- [ ] Audit log: price changes, publication, offers, payouts
-- [ ] Emails: sale made, transfer needed, payout sent
-- [ ] Tests: offline payout maths and state changes
+### A4. Phase 4: sales and payouts (3.128, `db-seller-payouts-block.php`)
+- [x] Payout record per sale: gross, commission (15%, 10% exclusive, $100 minimum), net
+- [x] Created automatically from Stripe full payments; repeated webhooks ignored
+- [x] Payment-plan sales: "collecting", each instalment added; moves to "waiting for transfer" when paid off
+- [x] Off-site sales recorded by the broker (Tools > Seller payouts)
+- [x] States: collecting, waiting for transfer, waiting for buyer confirmation, due, paid, held (release returns to the same step)
+- [x] Due date: 7 days after the buyer confirms control, or 14 days after transfer without a dispute (hourly job)
+- [x] Paying before the due date is refused; paid with a reference
+- [x] Admin screen: mark transferred, buyer confirmed, hold with reason, release, mark paid
+- [x] Seller "Sales and payouts" section: paid to you, on the way, each sale with commission, payout, status, due or paid date
+- [x] CSV statement download (formula-safe)
+- [x] Audit log: prices, publication, offers, sales, plan payments, payout steps (shown on the admin screen)
+- [x] Emails to seller: sold (transfer steps), sold on a plan, plan paid off, payout scheduled, payout sent, payout on hold; broker emailed on sales and due payouts
+- [x] Tests: 11 offline rule tests; full plan sale simulated on beta; seller view, CSV, admin screen, axe on desktop and phone
+- [ ] Stripe Connect onboarding for automatic payouts (owner must enable Connect in Stripe; bank transfer until then)
 
 ### A5. Phase 5: sales pages for pointed domains
 - [ ] Instructions to point a name (nameservers or A record) at Domain Brothers
@@ -290,7 +293,7 @@ Totals: see the summary table at the end.
 | A1 Phase 1 (13 features, 66 sub-tasks) | 66 | 0 | 0 |
 | A2 Phase 2 | 33 | 0 | 0 |
 | A3 Phase 3 | 14 | 0 | 0 |
-| A4 Phase 4 | 0 | 0 | 11 |
+| A4 Phase 4 | 13 | 0 | 1 |
 | A5 Phase 5 | 0 | 0 | 4 |
 | B Account | 22 | 0 | 1 |
 | C Search | 8 | 0 | 1 |

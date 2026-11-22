@@ -46,13 +46,13 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Seller emails for new offers and replies; buyer emails and checkout reuse the offer engine
 
 ### Phase 4: sales and payouts
-- [ ] A sale of a seller's name creates a payout record (gross, commission, net)
-- [ ] Payout states: waiting for transfer, waiting for buyer confirmation, due, paid, held
-- [ ] Payout date rule: 7 days after buyer confirms control, or 14 days after transfer with no dispute
-- [ ] Seller payout details through Stripe Connect onboarding (needs Connect enabled in Stripe)
-- [ ] Admin payouts screen: mark transferred, confirm, hold, pay
-- [ ] Seller sales and payouts page with a downloadable statement (CSV)
-- [ ] Audit log of price changes, publication, offers and payouts
+- [x] A sale of a seller's name creates a payout record (gross, commission, net); full payments, payment plans and off-site sales
+- [x] Payout states: collecting (plan), waiting for transfer, waiting for buyer confirmation, due, paid, held
+- [x] Payout date rule: 7 days after buyer confirms control, or 14 days after transfer with no dispute
+- [ ] Seller payout details through Stripe Connect onboarding (needs Connect enabled in Stripe by the owner; until then bank transfer, recorded with a reference)
+- [x] Admin payouts screen (Tools > Seller payouts): mark transferred, confirm, hold, release, pay with reference, record off-site sale
+- [x] Seller sales and payouts section with a downloadable statement (CSV)
+- [x] Audit log of price changes, publication, offers, sales and payouts
 
 ### Phase 5: sales pages for pointed domains
 - [ ] Instructions to point a name at Domain Brothers
