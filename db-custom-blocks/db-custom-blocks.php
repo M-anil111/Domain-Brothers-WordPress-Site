@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.130.3
+ * Version:     3.131.4
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.130.3' );
+define( 'DB_BLOCKS_LOADED', '3.131.4' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -3189,8 +3189,19 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 .db-ui-active .db-home-tab.is-active { background: var(--db-navy); border-color: transparent; color: #fff; }
 .db-ui-active .db-home-panel { display: none; width: 100%; }
 .db-ui-active .db-home-panel.is-active { display: block; }
-.db-ui-active .db-home-panel .View-all { display: block; margin: 0 0 var(--db-sp-4); }
-.db-ui-active .db-home-panel .View-all a { margin-left: 0; }
+/* Header row: tabs left; View all and the List/Grid switch right (2026-11). */
+.db-ui-active .db-home-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin: 0 0 22px; padding: 0 0 18px; border-bottom: 1px solid #e4e7ec; }
+.db-ui-active .db-home-head .db-home-tabbar { margin: 0; }
+.db-ui-active .db-home-tools { display: flex; align-items: center; gap: 18px; margin-left: auto; }
+html body.db-ui-active .db-home-tools .db-viewbar { margin: 0; }
+html body.db-ui-active a.db-home-viewall { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; color: #0f1b2d !important; font-size: 15px; font-weight: 700; text-decoration: underline !important; text-decoration-color: #b5e61d !important; text-decoration-thickness: 3px !important; text-underline-offset: 6px; white-space: nowrap; }
+html body.db-ui-active a.db-home-viewall:hover { text-decoration-color: #0f1b2d !important; }
+.db-ui-active .db-home-panel .View-all { display: none; }
+@media (max-width: 640px) { .db-ui-active .db-home-tools { width: 100%; justify-content: space-between; margin-left: 0; } }
+html body.home.db-ui-active #page#page #main#main.homepage-listing > .row { padding-top: 32px !important; }
+html body.home.db-ui-active.db-ui-active section.db-hp-hero.db-hp-hero.db-hp-hero { padding-bottom: 40px !important; } /* beats the shared layout's 80px section padding here only */
+.home.db-ui-active .db-home-tabs { margin-top: 0; }
+@media (min-width: 992px) { html body.home.db-ui-active #main.homepage-listing > .row > .col-lg-4 { margin-top: 0 !important; padding-top: 0 !important; } }
 
 /* ==========================================================================
    14. LIVE NEWS FEED — /news/ (db-news-block.php)
@@ -3792,7 +3803,21 @@ add_action( 'wp_footer', function () {
 				var hBar = document.createElement('div');
 				hBar.className = 'db-home-tabbar';
 				hBar.setAttribute('role', 'tablist');
-				hWrap.appendChild(hBar);
+				hBar.setAttribute('aria-label', 'Domain lists');
+				// One header row: tabs on the left; View all and the List/Grid switch on the right.
+				var hHead = document.createElement('div');
+				hHead.className = 'db-home-head';
+				var hTools = document.createElement('div');
+				hTools.className = 'db-home-tools';
+				var hAll = document.createElement('a');
+				hAll.className = 'db-home-viewall';
+				hAll.href = '/all-domains/';
+				hAll.innerHTML = 'View all <span aria-hidden="true">&rarr;</span>';
+				hTools.appendChild(hAll);
+				hHead.appendChild(hBar);
+				hHead.appendChild(hTools);
+				hWrap.appendChild(hHead);
+				var syncAll = function (col) { var l = col.querySelector('.View-all a'); if (l && l.href) { hAll.href = l.href; } };
 				homeDomainCols[0].parentNode.insertBefore(hWrap, homeDomainCols[0]);
 				homeDomainCols.forEach(function (col, i) {
 					var heading = col.querySelector('h2.page-title');
@@ -3810,11 +3835,12 @@ add_action( 'wp_footer', function () {
 						homeDomainCols.forEach(function (c) { c.classList.remove('is-active'); });
 						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
 						col.classList.add('is-active');
+						syncAll(col);
 					});
 					hBar.appendChild(btn);
 					col.classList.add('db-home-panel');
 					col.classList.remove('col-lg-4', 'pe-0');
-					if (i === 0) { col.classList.add('is-active'); }
+					if (i === 0) { col.classList.add('is-active'); syncAll(col); }
 					if (heading) { heading.style.display = 'none'; }
 					hWrap.appendChild(col);
 				});

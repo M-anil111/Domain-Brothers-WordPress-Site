@@ -80,6 +80,14 @@ add_action( 'wp_footer', function () {
 	function ensure() {
 		var grid = document.querySelector('.db-domain-grid');
 		if (!grid) { return; }
+		// Home: the switch sits in the tab header row, next to View all.
+		var tools = document.querySelector('.db-home-tools');
+		if (tools) {
+			if (tools.querySelector('.db-viewbar')) { return; }
+			document.querySelectorAll('.db-viewbar').forEach(function (n) { n.remove(); });
+			tools.insertBefore(make(), tools.firstChild);
+			return;
+		}
 		// Sit above the filter bar when there is one: the filter finds its results grid as its next sibling.
 		var anchor = document.querySelector('.db-dfilter') || grid;
 		if (anchor.previousElementSibling && anchor.previousElementSibling.classList.contains('db-viewbar')) { return; }
