@@ -18,10 +18,13 @@ const https = require('https');
 
 const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const SECRET = process.env.STRIPE_TEST_WEBHOOK_SECRET;
-if (!SECRET) { console.error('Set STRIPE_TEST_WEBHOOK_SECRET'); process.exit(2); }
+// Checked when run from the command line and on each send, not when required: offer-flow.js
+// loads this module and skips its webhook steps when no secret is set.
+if (!SECRET && require.main === module) { console.error('Set STRIPE_TEST_WEBHOOK_SECRET'); process.exit(2); }
 
 function send({ kind, domain, args }) {
 return new Promise((resolve) => {
+if (!SECRET) { console.error('Set STRIPE_TEST_WEBHOOK_SECRET'); return resolve({ ok: false }); }
 const rest = args;
 
 const rid = crypto.randomBytes(8).toString('hex');
