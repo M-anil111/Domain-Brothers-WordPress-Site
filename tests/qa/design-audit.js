@@ -77,6 +77,7 @@ function measure(arg) {
 
 	out.hscroll = document.documentElement.scrollWidth > vw + 1 ? document.documentElement.scrollWidth - vw : 0;
 	out.h1 = [...document.querySelectorAll('h1')].filter(vis).length;
+	out.h1Hidden = [...document.querySelectorAll('h1')].filter((h) => !vis(h)).map((h) => h.innerText.trim().slice(0, 50));
 
 	// Container: the content box of the main column (main element, else the first wrapper), not
 	// the text inside it (headings inside padded banners are inset on purpose).
@@ -129,8 +130,10 @@ function measure(arg) {
 	// Breadcrumb: one line and the current item's weight.
 	if (vis(crumb)) {
 		const items = [...crumb.querySelectorAll('li, a, span')].filter(vis);
-		const tops = new Set(items.map((i) => Math.round(i.getBoundingClientRect().top / 4)));
-		out.crumbLines = tops.size;
+		// Items on one line overlap vertically; count rows by grouping items whose boxes overlap.
+		const rowsY = [];
+		items.map((i) => i.getBoundingClientRect()).sort((a, b2) => a.top - b2.top).forEach((r) => { const row = rowsY.find((y) => r.top < y.bottom - 2 && r.bottom > y.top + 2); if (row) { row.top = Math.min(row.top, r.top); row.bottom = Math.max(row.bottom, r.bottom); } else { rowsY.push({ top: r.top, bottom: r.bottom }); } });
+		out.crumbLines = rowsY.length;
 		const last = crumb.querySelector('[aria-current], li:last-child, span:last-child');
 		out.crumbLastWeight = last ? Number(getComputedStyle(last).fontWeight) : null;
 		out.crumbText = crumb.innerText.replace(/\s+/g, ' ').trim().slice(0, 60);
@@ -148,14 +151,13 @@ function measure(arg) {
 	// Archive cards: Buy Now pill and action widths.
 	const buy = [...document.querySelectorAll('.db-act-buy')].find(vis);
 	if (buy) {
-		const pill = buy.querySelector('.badge') || buy;
+		const pill = [buy, buy.querySelector('.badge')].filter(Boolean).sort((a, b2) => b2.getBoundingClientRect().width * b2.getBoundingClientRect().height - a.getBoundingClientRect().width * a.getBoundingClientRect().height)[0];
 		const s = getComputedStyle(pill); const r = pill.getBoundingClientRect();
-		const rgb = (s.backgroundColor.match(/\d+/g) || [255, 255, 255]).map(Number);
-		const lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
-		out.buyDark = lum < 0.3; out.buyPill = px(s.borderTopLeftRadius) >= r.height / 2 - 2;
-		const pills = buy.closest('.db-domain-card, tr, li') ? [...buy.closest('.db-domain-card, tr, li').querySelectorAll('.db-act-buy .badge, .db-act-offer .badge, .db-act-plan .badge, a.badge, .badge')].filter(vis) : [];
-		const widths = pills.map((p) => Math.round(p.getBoundingClientRect().width));
-		out.actionWidths = widths;
+		const rgba = (s.backgroundColor.match(/[\d.]+/g) || [255, 255, 255, 1]).map(Number);
+		const lum = (0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2]) / 255;
+		out.buyDark = (rgba.length < 4 || rgba[3] > 0.5) && lum < 0.3; // a transparent background is not dark out.buyPill = px(s.borderTopLeftRadius) >= r.height / 2 - 2;
+		const offer = [...document.querySelectorAll('.db-act-offer')].find(vis);
+		out.actionWidths = [buy, offer].filter(Boolean).map((a) => Math.round(a.getBoundingClientRect().width));
 		out.nestedPill = !!buy.querySelector('.badge .badge');
 	}
 
@@ -164,6 +166,8 @@ function measure(arg) {
 	const cm = (document.querySelector('main') || document.body).innerText.match(/(\d[\d,]*)\s+(?:available\s+|premium\s+)*(?:domains?|names?)\b[^\n]{0,40}/i);
 	out.countText = cm ? cm[0].trim().slice(0, 80) : '';
 	out.countNum = cm ? Number(cm[1].replace(/,/g, '')) : null;
+	const fm = (document.querySelector('main') || document.body).innerText.match(/of\s+(\d[\d,]*)\s+matching/i);
+	out.filteredNum = fm ? Number(fm[1].replace(/,/g, '')) : null;
 	out.cardsShown = [...document.querySelectorAll('.db-domain-card, table tbody tr')].filter(vis).length;
 
 	// Accessibility: header search labels and footer link heights.
@@ -173,8 +177,8 @@ function measure(arg) {
 	out.footerMinTap = ft.length ? Math.min(...ft.map((x) => Math.round(x.getBoundingClientRect().height))) : null;
 
 	// Checkout summary amount.
-	const sum = document.querySelector('.co-summary, .order-summary, [class*="summary"]');
-	out.summaryText = sum ? (sum.innerText.match(/\$[\d,]+(\.\d\d)?/) || [''])[0] : '';
+	const sum = [...document.querySelectorAll('[class*="summary" i], [id*="summary" i], aside')].find((e) => vis(e) && /\$[\d,]+\.\d\d/.test(e.innerText)) || document.body;
+	out.summaryText = (sum.innerText.match(/\$[\d,]+\.\d\d/) || [''])[0];
 	return out;
 }
 

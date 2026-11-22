@@ -46,7 +46,7 @@ def judge(r):
     if 'error' in r:
         return {'errors': (False, 'measurement failed: ' + r['error'][:80])}
     out['hscroll'] = (r.get('hscroll', 0) == 0, '%spx wider than the screen' % r.get('hscroll'))
-    out['h1'] = (r.get('h1') == 1, '%s H1 elements' % r.get('h1'))
+    out['h1'] = (r.get('h1') == 1, '%s visible H1 elements%s' % (r.get('h1'), ('; hidden H1: "%s"' % '", "'.join(r.get('h1Hidden') or [])) if r.get('h1Hidden') else ''))
     if r.get('contentLeft') is not None:
         out['container'] = (within(r['contentLeft'], r['wantLeft']), 'content starts at %spx, expected %spx (measured on %s)' % (r['contentLeft'], r['wantLeft'], r.get('containerRef')))
     if r.get('dbxWrap') and w < 768:
@@ -83,7 +83,8 @@ def judge(r):
             ok = n is not None and n == shown and (live is None or abs(n - live) <= 1)
             out['count'] = (ok, 'count says %s, %s cards shown, index has %s' % (n, shown, live))
         else:
-            out['count'] = (n is not None and n == shown, 'filtered link: count says %s, %s cards shown' % (n, shown))
+            f = r.get('filteredNum')
+            out['count'] = (f is not None and f == shown, 'filtered link: filtered count says %s, %s cards shown (total line %s)' % (f, shown, n))
     out['a11y'] = (r.get('searchUnlabelled', 0) == 0 and (r.get('footerMinTap') or 99) >= 32, '%s unlabelled search fields, smallest footer link %spx' % (r.get('searchUnlabelled'), r.get('footerMinTap')))
     if r['page'] == 'Checkout':
         out['checkout'] = (r.get('summaryText') == '$10,125.00' or r.get('summaryText') == '$10,125', 'summary shows "%s", listing price $10,125' % r.get('summaryText'))
