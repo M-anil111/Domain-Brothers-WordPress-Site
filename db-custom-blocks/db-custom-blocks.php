@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.137.4
+ * Version:     3.137.5
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.137.4' );
+define( 'DB_BLOCKS_LOADED', '3.137.5' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1852,6 +1852,38 @@ if ( ! function_exists( 'db_external_style' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_external_script' ) ) {
+	/**
+	 * Prints a script block as a cached file (uploads/db-blocks/<handle>-<hash>.js) instead of
+	 * inline, so the browser downloads it once rather than with every page (bug P-2/P-3/P-6).
+	 * Runs at the same place and in the same order as the inline version (a plain, blocking
+	 * <script src>). Falls back to inline output when uploads is not writable.
+	 *
+	 * @param string $handle Short name, used for the file and the element id.
+	 * @param string $html   The full <script>…</script> block.
+	 */
+	function db_external_script( string $handle, string $html ) : void {
+		if ( ! preg_match( '#^\s*<script\b[^>]*>(.*)</script>\s*$#is', $html, $m ) ) {
+			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
+			return;
+		}
+		$js     = trim( $m[1] );
+		$upload = wp_upload_dir();
+		$dir    = $upload['basedir'] . '/db-blocks';
+		$file   = $dir . '/' . $handle . '-' . substr( md5( $js ), 0, 10 ) . '.js';
+		if ( ! empty( $upload['error'] ) || ( ! file_exists( $file ) && ( ! wp_mkdir_p( $dir ) || false === file_put_contents( $file, $js ) ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
+			return;
+		}
+		foreach ( (array) glob( $dir . '/' . $handle . '-*.js' ) as $old ) {
+			if ( $old !== $file ) {
+				@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			}
+		}
+		echo '<script id="db-' . esc_attr( $handle ) . '" src="' . esc_url( $upload['baseurl'] . '/db-blocks/' . basename( $file ) ) . '"></script>' . "\n";
+	}
+}
+
 if ( ! function_exists( 'db_ui_css' ) ) {
 	function db_ui_css() : string {
 		ob_start();
@@ -3435,6 +3467,7 @@ add_action( 'wp_enqueue_scripts', function () {
  * This tags them with classes the design system styles (see section 10).
  */
 add_action( 'wp_footer', function () {
+	ob_start();
 	?>
 	<script id="db-ui-enhancer">
 	(function () {
@@ -4148,6 +4181,7 @@ add_action( 'wp_footer', function () {
 	})();
 	</script>
 	<?php
+	db_external_script( 'ui-enhancer', (string) ob_get_clean() );
 }, 98 );
 
 /* ============================================================
