@@ -526,24 +526,41 @@ add_action( 'rest_api_init', function () {
 		'permission_callback' => '__return_true',
 		'args'                => array( 'd' => array( 'required' => true, 'type' => 'string' ), 'parts' => array( 'required' => false, 'type' => 'string' ) ),
 		'callback'            => function ( WP_REST_Request $req ) {
-			$raw = strtolower( trim( (string) $req->get_param( 'd' ) ) );
-			$raw = preg_replace( '#^https?://#', '', $raw );
-			$raw = preg_replace( '#^www\.#', '', explode( '/', $raw )[0] );
-			$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
+			$raw = mb_strtolower( trim( (string) $req->get_param( 'd' ) ) );
+			$raw = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $raw );        // scheme
+			$raw = preg_replace( '#[/?\#].*$#s', '', $raw );                 // path, query, fragment
+			$raw = preg_replace( '#:\d+$#', '', $raw );                      // port
+			$raw = rtrim( preg_replace( '#^www\.#', '', $raw ), '.' );       // www and trailing dot
 			$send = static function ( $data, $code = 200 ) {
 				$res = new WP_REST_Response( $data, $code );
 				$res->header( 'Cache-Control', 'no-store' );
 				return $res;
 			};
+			if ( preg_match( '/[^\x20-\x7e]/', $raw ) ) {
+				// Names with accents or non-Latin letters are looked up in their punycode (xn--) form.
+				$ascii = function_exists( 'idn_to_ascii' ) ? idn_to_ascii( $raw, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46 ) : false;
+				if ( ! is_string( $ascii ) || '' === $ascii ) {
+					return $send( array( 'error' => 'Enter names with accents or non-Latin letters in their xn-- (punycode) form.' ), 400 );
+				}
+				$raw = $ascii;
+			}
+			$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
+			if ( '' === $name && preg_match( '/^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+xn--[a-z0-9-]{1,59}$/', $raw ) ) {
+				$name = $raw; // punycode extension, e.g. .xn--p1ai
+			}
 			if ( '' === $name ) {
 				return $send( array( 'error' => 'Enter a domain name such as example.com.' ), 400 );
+			}
+			$want  = array_filter( array_map( 'sanitize_key', explode( ',', (string) $req->get_param( 'parts' ) ) ) );
+			$bad   = array_diff( $want, db_lk_parts() );
+			if ( $bad ) {
+				return $send( array( 'error' => 'Unknown parts: ' . implode( ', ', $bad ) . '. Use any of: ' . implode( ', ', db_lk_parts() ) . '.' ), 400 );
 			}
 			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
 			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
-			$parts = array_filter( array_map( 'sanitize_key', explode( ',', (string) $req->get_param( 'parts' ) ) ) );
-			$data  = db_lk_collect( $name, $parts );
+			$data  = db_lk_collect( $name, $want );
 			return $send( $data );
 		},
 	) );
