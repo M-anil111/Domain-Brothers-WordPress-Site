@@ -863,3 +863,32 @@ add_filter( 'rest_post_dispatch', function ( $res, $server, $req ) {
 	}
 	return $res;
 }, 10, 3 );
+
+/*
+ * The account page is rendered by this plugin on top of a 404 query, so the
+ * theme and Rank Math titled it "Page Not Found" (bug RS-2). Give it a real
+ * title and description for whoever is looking: signed in or not.
+ */
+if ( ! function_exists( 'db_wl_page_title' ) ) {
+	function db_wl_page_title() {
+		$signed = function_exists( 'db_wl_email' ) && '' !== db_wl_email();
+		return ( $signed ? 'My account' : 'Sign in or create an account' ) . ' | Domain Brothers';
+	}
+}
+foreach ( array( 'pre_get_document_title', 'rank_math/frontend/title', 'rank_math/opengraph/facebook/og_title' ) as $db_wl_hook ) {
+	add_filter( $db_wl_hook, function ( $t ) {
+		return db_wl_is_page_request() ? db_wl_page_title() : $t;
+	}, 999 );
+}
+foreach ( array( 'rank_math/frontend/description', 'rank_math/opengraph/facebook/og_description' ) as $db_wl_hook ) {
+	add_filter( $db_wl_hook, function ( $d ) {
+		return db_wl_is_page_request() ? 'Your Domain Brothers account: saved domains, price alerts, offers, payment plans and transfers in one place. Sign in with a one-time email code.' : $d;
+	}, 999 );
+}
+unset( $db_wl_hook );
+add_filter( 'rank_math/frontend/robots', function ( $r ) {
+	if ( db_wl_is_page_request() ) {
+		$r['index'] = 'noindex';
+	}
+	return $r;
+}, 999 );
