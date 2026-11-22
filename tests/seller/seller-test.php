@@ -119,4 +119,13 @@ check( 'rdap: 200 is registered', 'registered' === db_seller_rdap_verdict( 'brig
 check( 'rdap: 404 on a reliable registry is unregistered', 'unregistered' === db_seller_rdap_verdict( 'nothere-zz.ca', 404 ) && 'unregistered' === db_seller_rdap_verdict( 'nothere-zz.com', 404 ) );
 check( 'rdap: 404 elsewhere, timeouts and rate limits are unknown', 'unknown' === db_seller_rdap_verdict( 'cayman.ky', 404 ) && 'unknown' === db_seller_rdap_verdict( 'a.com', null ) && 'unknown' === db_seller_rdap_verdict( 'a.com', 429 ) );
 
+// Phase 3: negotiations.
+check( 'auto-counter: below minimum answers with the minimum', 2000.0 === db_seller_auto_counter( 1500, 2000 ) );
+check( 'auto-counter: at or above minimum, or no minimum, does nothing', null === db_seller_auto_counter( 2000, 2000 ) && null === db_seller_auto_counter( 2500, 2000 ) && null === db_seller_auto_counter( 50, 0 ) );
+check( 'sweep: remind after 3 days once, close after 14 days', 'remind' === db_seller_offer_due( 'open', 72, false ) && '' === db_seller_offer_due( 'open', 100, true ) && 'expire' === db_seller_offer_due( 'open', 336, true ) && '' === db_seller_offer_due( 'open', 10, false ) );
+check( 'sweep: only offers waiting for the seller', '' === db_seller_offer_due( 'countered', 999, false ) && '' === db_seller_offer_due( 'accepted', 999, false ) );
+check( 'seller move: accept only when open', '' === db_seller_offer_check( 'accept', '', 'open' ) && '' !== db_seller_offer_check( 'accept', '', 'countered' ) );
+check( 'seller move: counter needs at least $100', '' !== db_seller_offer_check( 'counter', '50', 'open' ) && '' !== db_seller_offer_check( 'counter', 'abc', 'open' ) && '' === db_seller_offer_check( 'counter', '$4,500', 'open' ) );
+check( 'seller move: no counter on paid or accepted, no decline when closed, unknown moves refused', '' !== db_seller_offer_check( 'counter', '500', 'paid' ) && '' !== db_seller_offer_check( 'decline', '', 'expired' ) && '' !== db_seller_offer_check( 'delete', '', 'open' ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

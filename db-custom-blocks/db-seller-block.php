@@ -19,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/db-seller-lib.php';
+if ( is_readable( __DIR__ . '/db-seller-offers-block.php' ) ) {
+	require_once __DIR__ . '/db-seller-offers-block.php';
+}
 
 define( 'DB_SELLER_DB_VERSION', '3' );
 
@@ -660,6 +663,10 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return array( array( 'ok', 'Details saved for ' . $own[ $id ]['domain'] . '.' ) );
 		}
 
+		if ( 'offer' === $act && function_exists( 'db_seller_offer_post' ) ) {
+			return db_seller_offer_post( $seller, $p );
+		}
+
 		if ( 'remove' === $act ) {
 			$id = (int) ( $p['id'] ?? 0 );
 			if ( ! isset( $own[ $id ] ) ) {
@@ -742,7 +749,7 @@ if ( ! function_exists( 'db_seller_rdap_check' ) ) {
 
 if ( ! function_exists( 'db_seller_css' ) ) {
 	function db_seller_css() {
-		return '<style>.dbsl{max-width:1100px;margin:0 auto;color:#0a1628}.dbsl *{box-sizing:border-box}'
+		return '<style>' . ( function_exists( 'db_seller_offers_css' ) ? db_seller_offers_css() : '' ) . '.dbsl{max-width:1100px;margin:0 auto;color:#0a1628}.dbsl *{box-sizing:border-box}'
 			. '.dbsl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:0 0 28px;padding:0;list-style:none}'
 			. '.dbsl-card{background:#fff;border:1px solid #dfe5e1;border-radius:20px;padding:22px 22px 20px;box-shadow:0 6px 20px rgba(10,22,40,.05)}'
 			. '.dbsl-card h2,.dbsl-card h3{margin:0 0 8px;font-size:20px;font-weight:800;letter-spacing:-.01em;color:#0a1628}.dbsl-card p{margin:0 0 8px;font-size:15.5px;line-height:1.6;color:#374151}'
@@ -942,6 +949,10 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 				. '<div class="dbsl-f"><label for="dbsl-kw">Keywords (up to 8, separated by commas)</label><input type="text" id="dbsl-kw" name="keywords" maxlength="255" value="' . esc_attr( (string) $r['keywords'] ) . '" placeholder="bakery, bread, Toronto"></div>'
 				. db_seller_category_fieldset( (string) ( $r['categories'] ?? '' ) )
 				. '<div class="dbsl-actions"><button type="submit" class="dbsl-btn">Save details</button><a class="dbsl-btn dbsl-btn--ghost" href="' . esc_url( home_url( '/seller/' ) ) . '#dbsl-list">Close</a></div></form></section>';
+		}
+
+		if ( function_exists( 'db_seller_offers_html' ) ) {
+			$h .= db_seller_offers_html( $seller, $self, $t );
 		}
 
 		// Your names: filters, bulk actions, statistics.

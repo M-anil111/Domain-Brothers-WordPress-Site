@@ -629,3 +629,80 @@ if ( ! function_exists( 'db_seller_rdap_verdict' ) ) {
 		return 'unknown';
 	}
 }
+
+/* Phase 3: seller negotiations. */
+
+if ( ! defined( 'DB_SELLER_REMIND_HOURS' ) ) {
+	define( 'DB_SELLER_REMIND_HOURS', 72 );   // an unanswered offer reminds the seller (and the broker) after 3 days
+}
+if ( ! defined( 'DB_SELLER_EXPIRE_HOURS' ) ) {
+	define( 'DB_SELLER_EXPIRE_HOURS', 336 );  // and closes after 14 days without a reply
+}
+
+if ( ! function_exists( 'db_seller_auto_counter' ) ) {
+	/**
+	 * The automatic answer to an offer below the seller's private minimum: the
+	 * minimum, or null when the offer is at or above it (or there is no minimum).
+	 */
+	function db_seller_auto_counter( $amount, $min_offer ) {
+		$amount    = (float) $amount;
+		$min_offer = (int) $min_offer;
+		return ( $min_offer > 0 && $amount > 0 && $amount < $min_offer ) ? (float) $min_offer : null;
+	}
+}
+
+if ( ! function_exists( 'db_seller_offer_due' ) ) {
+	/**
+	 * What the hourly job does with an offer waiting for the seller:
+	 * 'expire', 'remind' or ''.
+	 *
+	 * @param string $state    Deal state.
+	 * @param int    $idle_h   Hours since the last move on the deal.
+	 * @param bool   $reminded Whether the reminder was already sent.
+	 */
+	function db_seller_offer_due( $state, $idle_h, $reminded ) {
+		if ( 'open' !== $state ) {
+			return '';
+		}
+		$idle_h = (int) $idle_h;
+		if ( $idle_h >= DB_SELLER_EXPIRE_HOURS ) {
+			return 'expire';
+		}
+		if ( $idle_h >= DB_SELLER_REMIND_HOURS && ! $reminded ) {
+			return 'remind';
+		}
+		return '';
+	}
+}
+
+if ( ! function_exists( 'db_seller_offer_check' ) ) {
+	/**
+	 * Checks a seller's move on an offer before it reaches the deal engine.
+	 * Returns '' when it may go ahead, otherwise the reason.
+	 *
+	 * @param string $do     accept | counter | decline
+	 * @param mixed  $amount Counter price (counter only).
+	 * @param string $state  Deal state.
+	 */
+	function db_seller_offer_check( $do, $amount, $state ) {
+		if ( ! in_array( $do, array( 'accept', 'counter', 'decline' ), true ) ) {
+			return 'Choose accept, counter or decline.';
+		}
+		if ( 'accept' === $do && 'open' !== $state ) {
+			return 'Only an offer waiting for you can be accepted.';
+		}
+		if ( 'decline' === $do && ! in_array( $state, array( 'open', 'countered' ), true ) ) {
+			return 'This offer is already closed.';
+		}
+		if ( 'counter' === $do ) {
+			if ( ! in_array( $state, array( 'open', 'countered', 'declined', 'expired' ), true ) ) {
+				return 'This offer can no longer be countered.';
+			}
+			$v = db_seller_clean_amount( $amount );
+			if ( null === $v || $v < DB_SELLER_MIN_PRICE ) {
+				return 'Enter a counter price of at least $' . DB_SELLER_MIN_PRICE . '.';
+			}
+		}
+		return '';
+	}
+}
