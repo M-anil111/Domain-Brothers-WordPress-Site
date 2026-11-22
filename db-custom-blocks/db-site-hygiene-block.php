@@ -503,3 +503,105 @@ add_action( 'wp_head', function () {
 		. $x . '.db-pay-opt small,' . $x . '.db-ty-also-label,' . $x . '.db-pr-price small,' . $x . '.db-pr-btn small,' . $x . '.db-hd-sp-chips small{font-size:12.5px}'
 		. '</style>' . "\n";
 }, 40 );
+
+/* ---------------------------------------- content security policy (report only) */
+
+/*
+ * Bug S-1: the only policy was upgrade-insecure-requests. This sends a full policy in
+ * report-only mode: browsers block nothing, they report what the policy would block to
+ * /wp-json/db/v1/csp-report. Tools > CSP reports lists those (deduplicated). When the list
+ * shows only noise, switch to enforcing by setting option db_csp_enforce to 1.
+ */
+if ( ! function_exists( 'db_csp_policy' ) ) {
+	function db_csp_policy() {
+		$g = 'https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.googletagmanager.com';
+		$p = array(
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' {$g} https://*.googlesyndication.com https://*.doubleclick.net https://js.stripe.com https://challenges.cloudflare.com https://*.hs-scripts.com https://*.hs-analytics.net https://*.hs-banner.com https://*.hsforms.net https://*.hubspot.com https://static.addtoany.com https://connect.facebook.net https://*.clarity.ms https://static.cloudflareinsights.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google",
+			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+			"font-src 'self' data: https://fonts.gstatic.com",
+			"img-src 'self' data: blob: https:",
+			"connect-src 'self' {$g} https://api.stripe.com https://*.stripe.com https://challenges.cloudflare.com https://*.hubspot.com https://*.hubapi.com https://*.hs-banner.com https://*.clarity.ms https://*.googlesyndication.com https://*.doubleclick.net https://www.facebook.com https://www.google.com https://fundingchoicesmessages.google.com https://*.adtrafficquality.google https://cloudflareinsights.com",
+			"frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://challenges.cloudflare.com https://www.facebook.com https://www.googletagmanager.com https://*.googlesyndication.com https://*.doubleclick.net https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com https://static.addtoany.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com",
+			"frame-ancestors 'self'",
+			"base-uri 'self'",
+			"form-action 'self' https://checkout.stripe.com",
+			"object-src 'none'",
+			'report-uri ' . esc_url_raw( rest_url( 'db/v1/csp-report' ) ),
+		);
+		return implode( '; ', (array) apply_filters( 'db_csp_directives', $p ) );
+	}
+}
+
+add_action( 'send_headers', function () {
+	if ( is_admin() || headers_sent() ) {
+		return;
+	}
+	$enforce = '1' === (string) get_option( 'db_csp_enforce', '0' );
+	header( ( $enforce ? 'Content-Security-Policy: ' : 'Content-Security-Policy-Report-Only: ' ) . db_csp_policy() );
+}, 100 );
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'db/v1', '/csp-report', array(
+		'methods'             => 'POST',
+		'permission_callback' => '__return_true',
+		'callback'            => function ( WP_REST_Request $req ) {
+			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
+			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'csp|' . $ip, 60, 10 * MINUTE_IN_SECONDS ) ) {
+				return new WP_REST_Response( null, 204 );
+			}
+			$body = json_decode( (string) $req->get_body(), true );
+			$r    = is_array( $body ) ? ( $body['csp-report'] ?? ( $body[0]['body'] ?? $body ) ) : array();
+			if ( ! is_array( $r ) ) {
+				return new WP_REST_Response( null, 204 );
+			}
+			$dir     = sanitize_text_field( (string) ( $r['effective-directive'] ?? $r['effectiveDirective'] ?? $r['violated-directive'] ?? '' ) );
+			$blocked = (string) ( $r['blocked-uri'] ?? $r['blockedURL'] ?? '' );
+			$host    = wp_parse_url( $blocked, PHP_URL_HOST );
+			$what    = $host ? $host : substr( sanitize_text_field( $blocked ), 0, 40 );
+			$page    = esc_url_raw( (string) ( $r['document-uri'] ?? $r['documentURL'] ?? '' ) );
+			if ( '' === $dir || '' === $what ) {
+				return new WP_REST_Response( null, 204 );
+			}
+			$all = get_option( 'db_csp_reports', array() );
+			$all = is_array( $all ) ? $all : array();
+			$key = substr( $dir . ' ' . $what, 0, 120 );
+			if ( ! isset( $all[ $key ] ) && count( $all ) >= 200 ) {
+				return new WP_REST_Response( null, 204 );
+			}
+			$n           = (int) ( $all[ $key ]['n'] ?? 0 ) + 1;
+			$all[ $key ] = array( 'n' => $n, 'last' => time(), 'page' => substr( $page, 0, 200 ) );
+			update_option( 'db_csp_reports', $all, false );
+			return new WP_REST_Response( null, 204 );
+		},
+	) );
+} );
+
+add_action( 'admin_menu', function () {
+	add_management_page( 'CSP reports', 'CSP reports', 'manage_options', 'db-csp-reports', function () {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( isset( $_POST['db_csp_clear'] ) && check_admin_referer( 'db_csp_clear' ) ) {
+			delete_option( 'db_csp_reports' );
+		}
+		$all = get_option( 'db_csp_reports', array() );
+		$all = is_array( $all ) ? $all : array();
+		uasort( $all, static function ( $a, $b ) { return $b['n'] <=> $a['n']; } );
+		echo '<div class="wrap"><h1>Content security policy reports</h1><p>The policy runs in <strong>' . ( '1' === (string) get_option( 'db_csp_enforce', '0' ) ? 'enforcing' : 'report-only' ) . '</strong> mode. Each row is something the policy would block. Add genuine services to <code>db_csp_policy()</code>; once only noise remains, set the option <code>db_csp_enforce</code> to 1.</p>';
+		if ( ! $all ) {
+			echo '<p>No reports yet.</p>';
+		} else {
+			echo '<table class="widefat striped"><thead><tr><th>Directive and source</th><th>Count</th><th>Last seen</th><th>Example page</th></tr></thead><tbody>';
+			foreach ( $all as $k => $v ) {
+				echo '<tr><td><code>' . esc_html( $k ) . '</code></td><td>' . (int) $v['n'] . '</td><td>' . esc_html( wp_date( 'M j, Y g:i a', (int) $v['last'] ) ) . '</td><td>' . esc_html( $v['page'] ) . '</td></tr>';
+			}
+			echo '</tbody></table>';
+		}
+		echo '<form method="post" style="margin-top:14px">';
+		wp_nonce_field( 'db_csp_clear' );
+		echo '<input type="hidden" name="db_csp_clear" value="1">';
+		submit_button( 'Clear the list', 'secondary', 'submit', false );
+		echo '</form></div>';
+	} );
+} );
