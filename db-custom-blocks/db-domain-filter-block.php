@@ -92,11 +92,15 @@ add_action( 'save_post_domain', function () {
 	delete_transient( DB_DOMAIN_INDEX_KEY );
 }, 20 );
 // A price or status written straight to post meta (bulk price changes, seller edits) also rebuilds it.
-add_action( 'updated_post_meta', function ( $meta_id, $object_id, $key ) {
-	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state' ), true ) ) {
+$db_index_meta_hook = function ( $meta_id, $object_id, $key ) {
+	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state', 'domain_keyword' ), true ) ) {
 		delete_transient( DB_DOMAIN_INDEX_KEY );
 	}
-}, 10, 3 );
+};
+// New meta too: a seller listing is created first and its price written after, so an index built
+// in between would keep the name without a price until it expired.
+add_action( 'updated_post_meta', $db_index_meta_hook, 10, 3 );
+add_action( 'added_post_meta', $db_index_meta_hook, 10, 3 );
 add_action( 'set_object_terms', function ( $object_id ) {
 	if ( 'domain' === get_post_type( $object_id ) ) {
 		delete_transient( DB_DOMAIN_INDEX_KEY );
@@ -279,3 +283,68 @@ add_action( 'wp_footer', function () {
 </script>
 	<?php
 }, 30 );
+
+/*
+ * All Domains lists every name for sale. The theme's template (page-templates/domains.php) runs
+ * its own WP_Query: one page of 100 posts, sold names included, and its price and length views
+ * also require Domain_owner = "Jay Mehta". With page 2 redirected to page 1, names past the first
+ * 100 (every new seller listing among them) never appeared, and seller names were missing from
+ * the filtered views. Here the theme's domain query on that page loads all names for sale (up to
+ * 1000), without sold names and without the owner condition.
+ */
+if ( ! function_exists( 'db_ad_fix_query_vars' ) ) {
+	/**
+	 * Pure: the corrected query vars for the theme's All Domains query.
+	 *
+	 * @param array $qv WP_Query vars.
+	 * @return array
+	 */
+	function db_ad_fix_query_vars( array $qv ) {
+		$qv['posts_per_page'] = 1000;
+		$qv['paged']          = 1;
+		$qv['no_found_rows']  = false;
+		$meta = isset( $qv['meta_query'] ) && is_array( $qv['meta_query'] ) ? $qv['meta_query'] : array();
+		$meta = array_values( array_filter( $meta, static function ( $c ) {
+			return ! ( is_array( $c ) && isset( $c['key'] ) && 'Domain_owner' === $c['key'] );
+		} ) );
+		$has_status = (bool) array_filter( $meta, static function ( $c ) {
+			return is_array( $c ) && isset( $c['key'] ) && 'domain_status' === $c['key'];
+		} );
+		if ( ! $has_status ) {
+			$meta[] = array(
+				'relation' => 'OR',
+				array( 'key' => 'domain_status', 'value' => 'sold', 'compare' => '!=' ),
+				array( 'key' => 'domain_status', 'compare' => 'NOT EXISTS' ),
+			);
+		}
+		$qv['meta_query'] = $meta;
+		return $qv;
+	}
+}
+
+if ( ! function_exists( 'db_ad_is_theme_query' ) ) {
+	/** Pure: true for the theme template's own list queries (100 per page, or the Domain_owner filter). */
+	function db_ad_is_theme_query( array $qv ) {
+		if ( 100 === (int) ( $qv['posts_per_page'] ?? 0 ) ) {
+			return true;
+		}
+		foreach ( (array) ( $qv['meta_query'] ?? array() ) as $c ) {
+			if ( is_array( $c ) && 'Domain_owner' === ( $c['key'] ?? '' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || $q->is_main_query() || 'domain' !== $q->get( 'post_type' ) || ! did_action( 'template_redirect' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'is_page' ) || ! is_page( 'all-domains' ) || ! db_ad_is_theme_query( $q->query_vars ) ) {
+		return;
+	}
+	foreach ( db_ad_fix_query_vars( $q->query_vars ) as $k => $v ) {
+		$q->set( $k, $v );
+	}
+} );
