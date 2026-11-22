@@ -705,6 +705,7 @@ if ( ! function_exists( 'db_sales_render' ) ) {
 			header( 'X-Robots-Tag: noindex, follow' );
 		}
 		// Pages drawn here are not WordPress posts, so the theme and Rank Math would fall back to the 404 title.
+		$GLOBALS['db_drawn_page'] = true; // og:url (db-rankmath-block.php)
 		$doc_title = function ( $t ) use ( $title ) {
 			return ( function_exists( 'db_sales_route_meta' ) && db_sales_route_meta() ) ? $t : $title . ' | Domain Brothers';
 		};

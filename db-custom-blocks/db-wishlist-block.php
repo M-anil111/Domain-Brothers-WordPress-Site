@@ -749,6 +749,7 @@ add_action( 'template_redirect', function () {
 	global $wp_query;
 	$wp_query->is_404 = false;
 
+	$GLOBALS['db_drawn_page'] = true; // og:url (db-rankmath-block.php)
 	$email = db_wl_email();
 	$stop  = function_exists( 'db_acct_handle_stop' ) ? db_acct_handle_stop() : '';
 	get_header();

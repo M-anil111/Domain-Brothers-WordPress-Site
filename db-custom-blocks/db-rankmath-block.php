@@ -370,3 +370,66 @@ add_action( 'init', function () {
 	$o['open_graph_image_id'] = (int) $id;
 	update_option( 'rank-math-options-titles', $o );
 }, 30 );
+
+/*
+ * Head tags for pages this plugin draws itself (on top of WordPress's 404 query):
+ * Rank Math has no post for them, so it prints no og:url and leaves some without a
+ * description. Also keeps every description within 160 characters (bugs RS-8, RS-10).
+ */
+if ( ! function_exists( 'db_rm_virtual_descriptions' ) ) {
+	/** Path => description for drawn and utility pages that have none of their own. */
+	function db_rm_virtual_descriptions() {
+		return array(
+			'register'  => 'Create a free Domain Brothers account in three steps to save domains, get price alerts, make offers and follow your payment plans.',
+			'thank-you' => 'Thanks for contacting Domain Brothers. A broker reads every message and replies within one business day.',
+			'sign-in'   => 'Sign in to your Domain Brothers account with a one-time email code. No password to remember.',
+		);
+	}
+}
+
+if ( ! function_exists( 'db_rm_fit_description' ) ) {
+	/** A description cut to $max characters: at the last full sentence if one fits, else at a word, with an ellipsis. */
+	function db_rm_fit_description( $text, $max = 160 ) {
+		$text = trim( preg_replace( '/\s+/', ' ', (string) $text ) );
+		if ( mb_strlen( $text ) <= $max ) {
+			return $text;
+		}
+		$cut = mb_substr( $text, 0, $max );
+		if ( preg_match( '/^(.{70,}[.!?])\s/u', $cut . ' ', $m ) ) {
+			return $m[1];
+		}
+		$cut = mb_substr( $text, 0, $max - 1 );
+		$sp  = mb_strrpos( $cut, ' ' );
+		return rtrim( false !== $sp ? mb_substr( $cut, 0, $sp ) : $cut, " ,;:-" ) . '…';
+	}
+}
+
+if ( ! function_exists( 'db_rm_request_url' ) ) {
+	/** This page's address without a query string. */
+	function db_rm_request_url() {
+		$path = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : '';
+		return '' === $path ? home_url( '/' ) : home_url( '/' . trim( $path, '/' ) . '/' );
+	}
+}
+
+foreach ( array( 'rank_math/frontend/description', 'rank_math/opengraph/facebook/og_description', 'rank_math/opengraph/twitter/twitter_description' ) as $db_rm_hook ) {
+	add_filter( $db_rm_hook, function ( $d ) {
+		if ( '' === trim( (string) $d ) && function_exists( 'db_sales_request_path' ) ) {
+			$map = db_rm_virtual_descriptions();
+			$d   = $map[ db_sales_request_path() ] ?? $d;
+		}
+		return '' === trim( (string) $d ) ? $d : db_rm_fit_description( $d );
+	}, 1000 );
+}
+unset( $db_rm_hook );
+
+// Rank Math prints no og:url on drawn pages; add it once, only when Rank Math printed none.
+// Rank Math prints no og:url on pages this plugin draws over the 404 query. Those pages set
+// $GLOBALS['db_drawn_page'] before get_header(); only they get the tag.
+add_action( 'wp_head', function () {
+	if ( empty( $GLOBALS['db_drawn_page'] ) || is_admin() || ( function_exists( 'db_tp_route_meta' ) && db_tp_route_meta() ) ) {
+		// Tool pages print their own Open Graph tags (db-tool-pages-block.php).
+		return;
+	}
+	echo '<meta property="og:url" content="' . esc_url( db_rm_request_url() ) . '">' . "\n";
+}, 3 );

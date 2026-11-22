@@ -411,6 +411,7 @@ add_action( 'template_redirect', function () {
 	status_header( 200 );
 	global $wp_query;
 	$wp_query->is_404 = false;
+	$GLOBALS['db_drawn_page'] = true; // og:url (db-rankmath-block.php)
 	get_header();
 	echo '<div id="primary" class="content-area"><main id="main" class="site-main db-reg-page">';
 	echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">Create account</span></li></ol></nav>';
@@ -420,9 +421,12 @@ add_action( 'template_redirect', function () {
 	exit;
 }, 6 );
 
-add_filter( 'pre_get_document_title', function ( $title ) {
-	return function_exists( 'db_sales_request_path' ) && in_array( db_sales_request_path(), array( 'register', 'sign-up', 'signup', 'create-account' ), true ) ? 'Create your account | Domain Brothers' : $title;
-}, 32 );
+foreach ( array( 'pre_get_document_title', 'rank_math/frontend/title', 'rank_math/opengraph/facebook/og_title', 'rank_math/opengraph/twitter/twitter_title' ) as $db_reg_hook ) {
+	add_filter( $db_reg_hook, function ( $title ) {
+		return function_exists( 'db_sales_request_path' ) && in_array( db_sales_request_path(), array( 'register', 'sign-up', 'signup', 'create-account' ), true ) ? 'Create your account | Domain Brothers' : $title;
+	}, 32 );
+}
+unset( $db_reg_hook );
 
 if ( ! function_exists( 'db_reg_page_html' ) ) {
 	/** The three-step sign-up. */
