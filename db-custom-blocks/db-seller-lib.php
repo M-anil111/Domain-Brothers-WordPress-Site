@@ -815,3 +815,31 @@ if ( ! function_exists( 'db_seller_statement_rows' ) ) {
 		return $rows;
 	}
 }
+
+/* Phase 5: sales pages for pointed names. */
+
+if ( ! function_exists( 'db_seller_pointed_name' ) ) {
+	/**
+	 * The domain a request was made for when it is not the site's own host:
+	 * lowercase, without "www." and port. '' for the site itself, its
+	 * subdomains, IP addresses or anything that is not a domain name.
+	 *
+	 * @param string $host      HTTP Host header.
+	 * @param string $site_host The site's own host (from home_url).
+	 */
+	function db_seller_pointed_name( $host, $site_host ) {
+		$host = strtolower( trim( (string) $host ) );
+		$host = rtrim( $host, '.' );
+		$host = rtrim( (string) preg_replace( '/:\d+$/', '', $host ), '.' );
+		$site = strtolower( preg_replace( '/^www\./', '', (string) $site_host ) );
+		$root = implode( '.', array_slice( explode( '.', $site ), -2 ) ); // e.g. domainbrothers.com from beta.domainbrothers.com
+		if ( '' === $host || filter_var( $host, FILTER_VALIDATE_IP ) || ! preg_match( '/^[a-z0-9.-]+\.[a-z]{2,}$/', $host ) ) {
+			return '';
+		}
+		$name = preg_replace( '/^www\./', '', $host );
+		if ( $name === $site || $name === $root || substr( $name, -strlen( '.' . $root ) ) === '.' . $root ) {
+			return '';
+		}
+		return $name;
+	}
+}

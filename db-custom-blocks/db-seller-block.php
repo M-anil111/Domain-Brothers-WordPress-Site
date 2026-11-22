@@ -25,6 +25,9 @@ if ( is_readable( __DIR__ . '/db-seller-offers-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-seller-payouts-block.php' ) ) {
 	require_once __DIR__ . '/db-seller-payouts-block.php';
 }
+if ( is_readable( __DIR__ . '/db-seller-lander-block.php' ) ) {
+	require_once __DIR__ . '/db-seller-lander-block.php';
+}
 
 define( 'DB_SELLER_DB_VERSION', '3' );
 
@@ -666,6 +669,13 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			return array( array( 'ok', 'Details saved for ' . $own[ $id ]['domain'] . '.' ) );
 		}
 
+		if ( 'pointed' === $act && function_exists( 'db_seller_point_post' ) ) {
+			$own = array();
+			foreach ( db_seller_listings( $sid ) as $r ) {
+				$own[ (int) $r['id'] ] = $r;
+			}
+			return db_seller_point_post( $seller, $own, $p );
+		}
 		if ( 'offer' === $act && function_exists( 'db_seller_offer_post' ) ) {
 			return db_seller_offer_post( $seller, $p );
 		}
@@ -959,6 +969,9 @@ if ( ! function_exists( 'db_seller_dashboard_body' ) ) {
 		}
 		if ( function_exists( 'db_seller_payouts_html' ) ) {
 			$h .= db_seller_payouts_html( $seller );
+		}
+		if ( function_exists( 'db_seller_point_html' ) ) {
+			$h .= db_seller_point_html( $seller, $rows, $self, $t );
 		}
 
 		// Your names: filters, bulk actions, statistics.

@@ -143,4 +143,10 @@ $rows = db_seller_statement_rows( array( array( 'domain' => '=cmd.ca', 'created'
 check( 'statement: header, money with 2 decimals, status words', 'Domain' === $rows[0][0] && '850.00' === $rows[1][4] && 'Paid to you' === $rows[1][5] && 2 === count( $rows ) );
 check( 'statement: formula-looking text neutralised', "'=cmd.ca" === $rows[1][0] && "'+ref1" === $rows[1][8] );
 
+// Phase 5: pointed names.
+check( 'pointed name: www, port, case and trailing dot removed', 'brightpath.ca' === db_seller_pointed_name( 'WWW.BrightPath.ca:443.', 'beta.domainbrothers.com' ) || 'brightpath.ca' === db_seller_pointed_name( 'WWW.BrightPath.ca.', 'beta.domainbrothers.com' ) );
+check( 'pointed name: the site, its root and subdomains are not pointed names', '' === db_seller_pointed_name( 'beta.domainbrothers.com', 'beta.domainbrothers.com' ) && '' === db_seller_pointed_name( 'www.domainbrothers.com', 'beta.domainbrothers.com' ) && '' === db_seller_pointed_name( 'cdn.domainbrothers.com', 'www.domainbrothers.com' ) );
+check( 'pointed name: IPs, preview hosts without a TLD and junk are ignored', '' === db_seller_pointed_name( '72.60.128.77', 'beta.domainbrothers.com' ) && '' === db_seller_pointed_name( 'localhost', 'x.com' ) && '' === db_seller_pointed_name( 'bad host', 'x.com' ) );
+check( 'pointed name: a port on a normal host', 'bakery.ca' === db_seller_pointed_name( 'bakery.ca:8080', 'beta.domainbrothers.com' ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
