@@ -1034,3 +1034,40 @@ html body.db-ui-active.db-ui-active #page a.db-act-buy.db-act-buy,
 html body.db-ui-active.db-ui-active #page a.db-act-offer.db-act-offer {
 	border-radius: 999px !important;
 }
+
+/* Service pages (Services, Brokerage): the page content adds sections the
+   generator did not list (dbs-services, dbs-vision, dbs-start, dbs-feat,
+   dbs-process), each with its own padding (40-88px). They follow the section
+   rhythm too. The partners logo strip stays a slim strip. */
+html body.db-ui-active #page#page .dbs > section.dbs-full:not(.dbs-partners) {
+	padding-top: var(--dbs-py) !important;
+	padding-bottom: var(--dbs-py) !important;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+html body.db-ui-active #page#page .dbs > section.dbs-full:not(.dbs-partners) > .dbs-wrap {
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+	min-height: 0 !important;
+}
+/* Same background next to each other: one gap. */
+html body.db-ui-active #page#page#page#page#page .dbs > section:is(.dbs-start + .dbs-cta-sec, .dbs-faq + .dbs-cta-sec).dbs-full.dbs-full {
+	padding-top: 0 !important;
+}
+/* The grey closing band of the Services page is followed by the white guide
+   section: different backgrounds keep both paddings. */
+html body.db-ui-active #page#page#page#page#page .dbs:has(> .dbs-start + .dbs-cta-sec:last-of-type) ~ .dbsv-built > .dbx:first-of-type {
+	padding-top: var(--dbs-py) !important;
+}
+
+/* Blog archive: the post grid ends the white section; the pagination below
+   shares its gap. */
+html body.db-ui-active #page#page#page#page#page .db-an:has(> .db-an-own:last-of-type) + .pagenav {
+	padding-top: 0 !important;
+}
+
+/* Deals with no live deals: the empty results box between the banner card and
+   the guide section has no height, so the guide shares the card's gap. */
+html body.db-ui-active #page#page#page#page main#main.dbl-deals-empty > .dbl-head ~ .dbx {
+	padding-top: 0 !important;
+}
