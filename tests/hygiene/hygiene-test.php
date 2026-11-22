@@ -86,5 +86,25 @@ check( 'headings: a skipped level gets aria-level, siblings match', false !== st
 check( 'headings: correct levels and headings outside main are untouched', false !== strpos( $hl, '<header><h4>x</h4></header>' ) && false !== strpos( $hl, '<h2>C</h2><h3>D</h3>' ) && false === strpos( $hl, '<h1 aria' ) );
 check( 'headings: h1 then h3 becomes level 2', false !== strpos( db_hyg_heading_levels( '<main><h1>O</h1><h3>e</h3><h3>w</h3><h2>H</h2></main>' ), '<h3 aria-level="2">e</h3><h3 aria-level="2">w</h3><h2>H</h2>' ) );
 check( 'headings: no main, no change', '<h1>a</h1><h4>b</h4>' === db_hyg_heading_levels( '<h1>a</h1><h4>b</h4>' ) );
+// ---- duplicate Google tags (O-1): snippets as printed by the theme, Site Kit and Rank Math
+$theme_gtm = "<script type=\"text/db-delay\">(function(w, d, s, l, i) { j.src ='https://www.googletagmanager.com/gtm.js?id=' + i + dl; })(window, document, 'script', 'dataLayer', 'GTM-W7B64D4');</script>\n";
+$sk_gtag   = "<script type=\"text/db-delay\" id=\"google_gtagjs-js\" data-src=\"https://www.googletagmanager.com/gtag/js?id=G-56DWCMLT8V\" async></script>\n";
+$sk_after  = "<script id=\"google_gtagjs-js-after\">\nwindow.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}\ngtag(\"js\", new Date());\ngtag(\"config\", \"G-56DWCMLT8V\");\n window._googlesitekit = {};\n</script>\n";
+$rm_gtag   = "<script async id=\"google_gtagjs\" data-src=\"https://www.googletagmanager.com/gtag/js?id=G-56DWCMLT8V\"></script>\n";
+$rm_inline = "<script id=\"google_gtagjs-inline\">\nwindow.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', 'G-56DWCMLT8V', {} );\n</script>\n";
+$sk_gtm    = "<script>\n( function( w, d, s, l, i ) { j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl; } )( window, document, 'script', 'dataLayer', 'GTM-W7B64D4' );\n</script>\n";
+$ns        = '<noscript><iframe title="Google Tag Manager" src="https://www.googletagmanager.com/ns.html?id=GTM-W7B64D4" height="0" width="0" style="display:none"></iframe></noscript>';
+$other     = "<script>var x = 1;</script>\n";
+$page      = "<html><head>$theme_gtm$sk_gtag$sk_after$rm_gtag$rm_inline$sk_gtm$other</head><body>$ns<p>x</p>$ns</body></html>";
+$d         = db_hyg_dedupe_tags( $page );
+check( 'tags: GTM container loads once', 1 === substr_count( $d, "gtm.js?id=" ) && false !== strpos( $d, $theme_gtm ) );
+check( 'tags: gtag.js for the GA4 id loads once (Site Kit copy kept)', 1 === substr_count( $d, 'gtag/js?id=G-56DWCMLT8V' ) && false !== strpos( $d, $sk_gtag ) );
+check( 'tags: GA4 configured once (Site Kit copy with its event helper kept)', 1 === preg_match_all( "/gtag\\(\\s*['\"]config/", $d ) && false !== strpos( $d, '_googlesitekit' ) );
+check( 'tags: GTM noscript frame once', 1 === substr_count( $d, 'ns.html?id=GTM-W7B64D4' ) );
+check( 'tags: unrelated scripts untouched', false !== strpos( $d, $other ) && false !== strpos( $d, '<p>x</p>' ) );
+check( 'tags: a second, different GA4 id is kept', 2 === substr_count( db_hyg_dedupe_tags( $sk_gtag . str_replace( 'G-56DWCMLT8V', 'G-OTHER123', $sk_gtag ) ), 'gtag/js?id=' ) );
+check( 'tags: a page without Google tags is returned as is', '<html><p>a</p></html>' === db_hyg_dedupe_tags( '<html><p>a</p></html>' ) );
+check( 'tags: running twice changes nothing more', db_hyg_dedupe_tags( $d ) === $d );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

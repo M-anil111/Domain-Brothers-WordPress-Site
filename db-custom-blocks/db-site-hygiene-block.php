@@ -189,6 +189,64 @@ if ( ! function_exists( 'db_hyg_iframe_titles' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_hyg_dedupe_tags' ) ) {
+	/**
+	 * Google tags print once (bug O-1). The theme header hard-codes the GTM container that
+	 * Site Kit also prints, and Rank Math's "install code" configures the GA4 property Site
+	 * Kit already configures, so every page view counted twice. The first copy of each
+	 * (GTM container, gtag.js loader, gtag config per id, GTM noscript frame) is kept and
+	 * later copies are removed. A script that also carries anything new is kept.
+	 */
+	function db_hyg_dedupe_tags( $html ) {
+		$html = (string) $html;
+		if ( false === stripos( $html, 'googletagmanager.com' ) && false === stripos( $html, 'gtag(' ) ) {
+			return $html;
+		}
+		$seen = array();
+		$keep = static function ( array $keys ) use ( &$seen ) {
+			$new = false;
+			foreach ( $keys as $k ) {
+				if ( empty( $seen[ $k ] ) ) {
+					$new = true;
+				}
+			}
+			foreach ( $keys as $k ) {
+				$seen[ $k ] = true;
+			}
+			return $new;
+		};
+		$out = preg_replace_callback( '#<script\b[^>]*>.*?</script>[ \t]*\n?#is', static function ( $m ) use ( $keep ) {
+			$tag = $m[0];
+			if ( false === stripos( $tag, 'googletagmanager.com' ) && false === stripos( $tag, 'gtag(' ) ) {
+				return $tag;
+			}
+			$keys = array();
+			if ( preg_match( '#googletagmanager\.com/gtag/js\?id=([A-Za-z0-9-]+)#', $tag, $k ) ) {
+				$keys[] = 'gtagjs:' . strtoupper( $k[1] );
+			}
+			if ( preg_match_all( '#gtag\(\s*[\'"]config[\'"]\s*,\s*[\'"]([A-Za-z0-9-]+)[\'"]#', $tag, $k ) ) {
+				foreach ( $k[1] as $id ) {
+					$keys[] = 'config:' . strtoupper( $id );
+				}
+			}
+			if ( false !== stripos( $tag, 'gtm.js' ) && preg_match( '#[\'"=](GTM-[A-Za-z0-9]+)\b#', $tag, $k ) ) {
+				$keys[] = 'gtm:' . strtoupper( $k[1] );
+			}
+			if ( ! $keys ) {
+				return $tag;
+			}
+			return $keep( $keys ) ? $tag : '';
+		}, $html );
+		if ( null === $out ) {
+			return $html; // PCRE limit hit: leave the page as it was.
+		}
+		$out2 = preg_replace_callback( '#<noscript>\s*<iframe\b[^>]*googletagmanager\.com/ns\.html\?id=(GTM-[A-Za-z0-9]+)[^>]*>\s*</iframe>\s*</noscript>#i', static function ( $m ) use ( $keep ) {
+			return $keep( array( 'gtmns:' . strtoupper( $m[1] ) ) ) ? $m[0] : '';
+		}, $out );
+		return null === $out2 ? $out : $out2;
+	}
+}
+
 add_action( 'template_redirect', function () {
 	if ( is_admin() || wp_doing_ajax() || is_feed() || is_embed() || is_robots() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
 		return;
@@ -197,7 +255,7 @@ add_action( 'template_redirect', function () {
 		if ( ! is_string( $html ) || false === stripos( $html, '<html' ) ) {
 			return $html;
 		}
-		return db_hyg_img_fix( db_hyg_iframe_titles( db_hyg_heading_levels( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ) ) ), 'db_hyg_img_dims' );
+		return db_hyg_img_fix( db_hyg_iframe_titles( db_hyg_dedupe_tags( db_hyg_heading_levels( db_hyg_single_h1( db_hyg_viewport_fix( $html ) ) ) ) ), 'db_hyg_img_dims' );
 	} );
 }, 3 ); // Early on purpose: virtual pages that render and exit before priority 8 would skip it.
 
