@@ -597,7 +597,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#f4f7f5 !important}
 #db-co .co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Stepper */
-#db-co .co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
+#db-co .co-steps-wrap{max-width:1320px;margin:48px auto 40px;padding:0 15px;box-sizing:border-box}
 #db-co .co-steps{--w:190px;--p:.5;list-style:none;position:relative;display:flex;justify-content:space-between}
 #db-co .co-steps::before,#db-co .co-steps::after{content:"";position:absolute;top:17px;left:calc(var(--w) / 2);height:2px}
 #db-co .co-steps::before{right:calc(var(--w) / 2);background:var(--co-line)}
@@ -730,7 +730,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 }
 @media (max-width:600px){
 	#db-co .co-wrap{padding:0 15px}
-	#db-co .co-steps-wrap{padding:0 12px}
+	#db-co .co-steps-wrap{padding:0 15px}
 	#db-co .co-steps{--w:96px}
 	#db-co .co-step-label{font-size:12px;letter-spacing:0;line-height:1.3;white-space:normal}
 	#db-co .co-toggle{grid-template-columns:1fr;margin-left:0}
