@@ -184,6 +184,16 @@ Totals: see the summary table at the end.
 - [x] Tests: 4 offline host tests; page rendered on beta and audited (axe clean, desktop and phone)
 - [ ] Per pointed name: broker adds it as an alias domain in Hostinger (a hosting step for each request; cannot be tested before a real name is pointed)
 
+### A6. Phase 6: guided seller area and reliability (3.134 to 3.135)
+- [x] Step-by-step wizard with explainers and dashboard tabs (`db-seller-app-block.php`); checked on desktop and phone, axe clean on all 20 screens
+- [x] Reminders days 1, 3, 5; strike day 7; buyer told once per deal; suspension after 2 strikes in 90 days (simulated on beta with a moved clock)
+- [x] Reactivation request and admin reactivate (names republished)
+- [x] Pause and resume, sold elsewhere, transfer deadline with payout hold, expiry warning and take-down (each simulated on beta)
+- [x] Claim limit, duplicate-phone flag, account-delete hook, admin Sellers table and rules box
+- [x] Functional test (`tests/qa/seller-e2e/`): set-up validation, CSRF and cross-origin refused, 5 names plus junk, prices, another account's ids refused, HTML escaped, renamed .exe, 6.7 MB file, 1,005 rows, 25-row sheet with bad rows and a formula, replayed import, sync, submit, claim and transfer, suspended seller, feature switch off and on
+- [x] Defects found and fixed: profanity accepted (now broker review; slurs refused); made-up endings such as `.zz` accepted; subdomains treated as names; spreadsheet claims skipped the daily limit; spreadsheet skipped the registration check; "Domain"/"URL" headings rejected; refused claims showed a claim notice and used a claim; `/seller/` titled "Page Not Found"; empty steps said "every name is verified"; no message for another seller's ids; switching the feature off left the daily jobs running; buyers emailed twice about one handover
+- [x] Offline tests: 110 pass
+
 ---
 
 ## B. Account area (`/my-wishlist/`)
@@ -300,6 +310,7 @@ Totals: see the summary table at the end.
 | A3 Phase 3 | 14 | 0 | 0 |
 | A4 Phase 4 | 13 | 0 | 1 |
 | A5 Phase 5 | 7 | 0 | 1 |
+| A6 Phase 6 | 8 | 0 | 0 |
 | B Account | 22 | 0 | 1 |
 | C Search | 8 | 0 | 1 |
 | D Pages | 15 | 0 | 3 |

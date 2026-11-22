@@ -60,6 +60,16 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Visits from pointed names counted as landing views (bots excluded)
 - [ ] Per name: broker adds it as an alias domain in hosting (hosting step, done per request)
 
+### Phase 6: guided seller area and seller reliability (3.134 to 3.135)
+- [x] `/seller/` as a five-step wizard (details, add names, prices, prove ownership, submit) with an explainer and "why we ask" on each step, then a dashboard with tabs (names, offers, sales and payouts, point your names, account)
+- [x] Unanswered offers: reminders on days 1, 3 and 5, a strike on day 7 with the buyer told a broker has taken over (once per deal)
+- [x] Two strikes in 90 days, or one offer ignored for 10 days: account suspended, every name offline (drafted, URLs kept), pointed names show "temporarily unavailable"
+- [x] Reactivation request from the seller page; the broker reactivates in Tools > Seller listings and every name comes back
+- [x] Pause and resume listings (no strike), "Sold elsewhere" per name, transfer deadline (reminders days 1 and 2, strike and payout hold on day 3), expiring names (warning 30 days ahead, taken off when expired)
+- [x] Claim limit of 5 a day (paste box and spreadsheet), duplicate accounts flagged by phone, live names come down when a seller deletes their account
+- [x] Admin: Sellers table (status, strikes, reactivation requests, suspend, reactivate, reset strikes) and a rules box for every limit above
+- [x] Functional test over HTTP (`tests/qa/seller-e2e/`), 11 defects found and fixed (see `docs/TASKS.md` A6)
+
 ---
 
 ## 1. What the references do, and what we take from each
