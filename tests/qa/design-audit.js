@@ -19,7 +19,7 @@
  *  - breadcrumb on one line where it fits; current domain name weight 700
  *  - mobile header: logo and menu button do not overlap
  *  - archive: Buy Now is one dark pill, both action buttons the same width, one H1
- *  - availability count equals the live index (128 on 2026-11-22), also on a filtered link
+ *  - availability count equals the live index (names for sale), also on a filtered link
  *  - header search fields labelled, footer links at least 32px tall
  *  - checkout order summary equals the listing price
  */
