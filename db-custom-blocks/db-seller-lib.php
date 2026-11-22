@@ -922,3 +922,137 @@ if ( ! function_exists( 'db_seller_recheck_action' ) ) {
 		return ( (int) $now - (int) $fail_ts ) >= DB_SELLER_RECHECK_GRACE_DAYS * 86400 ? 'take_down' : 'still_failing';
 	}
 }
+
+/* Guided seller flow. */
+
+if ( ! function_exists( 'db_seller_next_step' ) ) {
+	/**
+	 * The step a seller should see next: add | prices | verify | submit | dashboard.
+	 *
+	 * @param array $rows       The seller's listings (review_status, verify_status, option, price, min_offer).
+	 * @param bool  $has_import A spreadsheet preview is waiting for confirmation.
+	 */
+	function db_seller_next_step( array $rows, $has_import = false ) {
+		if ( $has_import ) {
+			return 'add';
+		}
+		$drafts = array_filter( $rows, static function ( $r ) { return in_array( $r['review_status'] ?? '', array( 'draft', 'rejected' ), true ); } );
+		if ( ! $rows || ( ! $drafts && ! array_filter( $rows, static function ( $r ) { return in_array( $r['review_status'] ?? '', array( 'pending', 'approved' ), true ); } ) ) ) {
+			return 'add';
+		}
+		if ( ! $drafts ) {
+			return 'dashboard';
+		}
+		foreach ( $drafts as $r ) {
+			list( , $err ) = db_seller_validate_row( $r );
+			if ( $err ) {
+				return 'prices';
+			}
+		}
+		foreach ( $drafts as $r ) {
+			if ( 'verified' !== ( $r['verify_status'] ?? '' ) ) {
+				return 'verify';
+			}
+		}
+		return 'submit';
+	}
+}
+
+if ( ! function_exists( 'db_seller_step_after' ) ) {
+	/** Where a successful form post sends the seller: the step that follows the action. */
+	function db_seller_step_after( $action ) {
+		$map = array( 'setup' => 'add', 'add' => 'prices', 'import_apply' => 'prices', 'price' => 'verify', 'submit' => 'names' );
+		return $map[ (string) $action ] ?? '';
+	}
+}
+
+/* Seller reliability: answering offers, transfers, expiring names. */
+
+if ( ! function_exists( 'db_seller_rules_default' ) ) {
+	/** Defaults for the rules the owner can change in WP Admin. */
+	function db_seller_rules_default() {
+		return array(
+			'remind_days'       => array( 1, 3, 5 ), // reminders to answer an offer
+			'strike_days'       => 7,               // unanswered this long: a strike, the buyer is told, the broker takes over
+			'suspend_strikes'   => 2,               // strikes within the window that take the account offline
+			'strike_window'     => 90,              // days
+			'suspend_idle_days' => 10,              // or one offer ignored this long
+			'transfer_days'     => 3,               // days to start a transfer after a sale
+			'expiry_warn_days'  => 30,              // warn before a name expires
+			'claims_per_day'    => 5,               // ownership claims one account may start per day
+		);
+	}
+}
+
+if ( ! function_exists( 'db_seller_nudge_stage' ) ) {
+	/** How many reminders an offer this old should have had (0 = none yet). */
+	function db_seller_nudge_stage( $idle_h, array $days ) {
+		$n = 0;
+		foreach ( array_values( $days ) as $i => $d ) {
+			if ( (float) $idle_h >= (float) $d * 24 ) {
+				$n = $i + 1;
+			}
+		}
+		return $n;
+	}
+}
+
+if ( ! function_exists( 'db_seller_strike_due' ) ) {
+	function db_seller_strike_due( $idle_h, $strike_days ) {
+		return (float) $idle_h >= (float) $strike_days * 24;
+	}
+}
+
+if ( ! function_exists( 'db_seller_should_suspend' ) ) {
+	/** True when the account goes offline: too many strikes in the window, or one offer ignored too long. */
+	function db_seller_should_suspend( $strikes_in_window, $max_idle_h, $suspend_strikes, $suspend_idle_days ) {
+		return (int) $strikes_in_window >= (int) $suspend_strikes || (float) $max_idle_h >= (float) $suspend_idle_days * 24;
+	}
+}
+
+if ( ! function_exists( 'db_seller_transfer_stage' ) ) {
+	/**
+	 * A sold name waiting for the seller to transfer it: '' | remind1 | remind2 | strike.
+	 * Reminders on day 1 and 2, a strike once the deadline passes.
+	 */
+	function db_seller_transfer_stage( $hours_waiting, $transfer_days ) {
+		$h = (float) $hours_waiting;
+		if ( $h >= (float) $transfer_days * 24 ) {
+			return 'strike';
+		}
+		if ( $h >= 48 ) {
+			return 'remind2';
+		}
+		return $h >= 24 ? 'remind1' : '';
+	}
+}
+
+if ( ! function_exists( 'db_seller_rdap_expiry' ) ) {
+	/** The expiry time in an RDAP domain answer (events[].eventAction "expiration"), or 0. */
+	function db_seller_rdap_expiry( $json ) {
+		$d = is_array( $json ) ? $json : json_decode( (string) $json, true );
+		if ( ! is_array( $d ) || empty( $d['events'] ) || ! is_array( $d['events'] ) ) {
+			return 0;
+		}
+		foreach ( $d['events'] as $e ) {
+			if ( isset( $e['eventAction'], $e['eventDate'] ) && 'expiration' === strtolower( (string) $e['eventAction'] ) ) {
+				$t = strtotime( (string) $e['eventDate'] );
+				return $t ? (int) $t : 0;
+			}
+		}
+		return 0;
+	}
+}
+
+if ( ! function_exists( 'db_seller_expiry_action' ) ) {
+	/** '' | warn (expires within the warning window) | expired. Unknown expiry (0) does nothing. */
+	function db_seller_expiry_action( $expiry_ts, $now, $warn_days ) {
+		if ( (int) $expiry_ts <= 0 ) {
+			return '';
+		}
+		if ( (int) $expiry_ts <= (int) $now ) {
+			return 'expired';
+		}
+		return ( (int) $expiry_ts - (int) $now ) <= (int) $warn_days * 86400 ? 'warn' : '';
+	}
+}

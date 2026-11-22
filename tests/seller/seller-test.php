@@ -158,4 +158,23 @@ check( 'recheck: due and passing renews', 'renew' === db_seller_recheck_action( 
 check( 'recheck: due and failing warns first, then waits 14 days, then takes down', 'warn' === db_seller_recheck_action( $n - 121 * $d, 0, false, $n ) && 'still_failing' === db_seller_recheck_action( $n - 125 * $d, $n - 5 * $d, false, $n ) && 'take_down' === db_seller_recheck_action( $n - 140 * $d, $n - 14 * $d, false, $n ) );
 check( 'recheck: a failing name that is fixed renews', 'renew' === db_seller_recheck_action( $n - 125 * $d, $n - 3 * $d, true, $n ) );
 
+// Guided flow.
+$dr = function ( $o ) { return array_merge( array( 'review_status' => 'draft', 'verify_status' => 'pending', 'option' => 'buy_now', 'option_type' => 'buy_now', 'price' => 0, 'min_offer' => 0 ), $o ); };
+check( 'flow: no names starts at add', 'add' === db_seller_next_step( array() ) );
+check( 'flow: an import preview stays on add', 'add' === db_seller_next_step( array( $dr( array() ) ), true ) );
+check( 'flow: unpriced draft goes to prices', 'prices' === db_seller_next_step( array( $dr( array() ) ) ) );
+check( 'flow: priced but unverified goes to verify', 'verify' === db_seller_next_step( array( $dr( array( 'price' => 500 ) ) ) ) );
+check( 'flow: priced and verified goes to submit', 'submit' === db_seller_next_step( array( $dr( array( 'price' => 500, 'verify_status' => 'verified' ) ) ) ) );
+check( 'flow: everything live opens the dashboard', 'dashboard' === db_seller_next_step( array( $dr( array( 'review_status' => 'approved', 'price' => 500 ) ) ) ) );
+check( 'flow: only removed names starts at add again', 'add' === db_seller_next_step( array( $dr( array( 'review_status' => 'removed' ) ) ) ) );
+check( 'flow: after each action', 'prices' === db_seller_step_after( 'add' ) && 'verify' === db_seller_step_after( 'price' ) && 'names' === db_seller_step_after( 'submit' ) && '' === db_seller_step_after( 'check' ) );
+// Reliability.
+$rd = db_seller_rules_default();
+check( 'nudges: none before day 1, then 1, 2, 3', 0 === db_seller_nudge_stage( 23, $rd['remind_days'] ) && 1 === db_seller_nudge_stage( 24, $rd['remind_days'] ) && 2 === db_seller_nudge_stage( 72, $rd['remind_days'] ) && 3 === db_seller_nudge_stage( 130, $rd['remind_days'] ) );
+check( 'strike on day 7, not before', ! db_seller_strike_due( 167, 7 ) && db_seller_strike_due( 168, 7 ) );
+check( 'suspend: second strike or 10 days ignored', ! db_seller_should_suspend( 1, 200, 2, 10 ) && db_seller_should_suspend( 2, 10, 2, 10 ) && db_seller_should_suspend( 1, 240, 2, 10 ) );
+check( 'transfer: reminders day 1 and 2, strike day 3', '' === db_seller_transfer_stage( 10, 3 ) && 'remind1' === db_seller_transfer_stage( 30, 3 ) && 'remind2' === db_seller_transfer_stage( 50, 3 ) && 'strike' === db_seller_transfer_stage( 72, 3 ) );
+check( 'rdap expiry parsed from events', 1798761600 === db_seller_rdap_expiry( '{"events":[{"eventAction":"registration","eventDate":"2020-01-01T00:00:00Z"},{"eventAction":"expiration","eventDate":"2027-01-01T00:00:00Z"}]}' ) && 0 === db_seller_rdap_expiry( 'not json' ) );
+check( 'expiry: warn within 30 days, down when expired, nothing when unknown', 'warn' === db_seller_expiry_action( $n + 10 * $d, $n, 30 ) && 'expired' === db_seller_expiry_action( $n - 1, $n, 30 ) && '' === db_seller_expiry_action( $n + 40 * $d, $n, 30 ) && '' === db_seller_expiry_action( 0, $n, 30 ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
