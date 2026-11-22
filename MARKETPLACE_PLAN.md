@@ -55,9 +55,10 @@ Legend: [x] built and tested on beta, [ ] to build.
 - [x] Audit log of price changes, publication, offers, sales and payouts
 
 ### Phase 5: sales pages for pointed domains
-- [ ] Instructions to point a name at Domain Brothers
-- [ ] Sales page served when a pointed name is visited (name, price, buy and offer actions)
-- [ ] Visits from pointed names counted as views
+- [x] Instructions to point a name at Domain Brothers (A record, www CNAME) and an "I have pointed it" request to the broker
+- [x] Sales page served when a pointed name is visited (name, price, monthly price, Buy now, Make an offer, Pay monthly; sold page for sold names)
+- [x] Visits from pointed names counted as landing views (bots excluded)
+- [ ] Per name: broker adds it as an alias domain in hosting (hosting step, done per request)
 
 ---
 

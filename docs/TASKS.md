@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.128.0 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.129.1 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -174,11 +174,15 @@ Totals: see the summary table at the end.
 - [x] Tests: 11 offline rule tests; full plan sale simulated on beta; seller view, CSV, admin screen, axe on desktop and phone
 - [ ] Stripe Connect onboarding for automatic payouts (owner must enable Connect in Stripe; bank transfer until then)
 
-### A5. Phase 5: sales pages for pointed domains
-- [ ] Instructions to point a name (nameservers or A record) at Domain Brothers
-- [ ] Sales page served when a pointed name is visited (name, price, Buy and Offer)
-- [ ] Visits from pointed names counted as views
-- [ ] Hosting side: wildcard or per-name site mapping on the server (needs hosting change)
+### A5. Phase 5: sales pages for pointed domains (3.129, `db-seller-lander-block.php`)
+- [x] "Point your names at us" section in the seller dashboard: A record (option `db_seller_point_ip`, set on beta), www CNAME, keep the TXT record
+- [x] "I have pointed it" request: broker emailed with the hosting step, logged in the audit log, limited to 10 a day
+- [x] Standalone sales page when a pointed name is visited: name, price, monthly price, owner description, exclusive badge, Buy now, Make an offer, Pay monthly (all on the main site)
+- [x] Sold names show a "sold" page with links to browse or request a name
+- [x] Visits counted as landing views of the listing (bots excluded); page is noindex with a canonical to the listing
+- [x] The site itself, its subdomains, IP addresses and the hosting preview host are never treated as pointed names (offline tests)
+- [x] Tests: 4 offline host tests; page rendered on beta and audited (axe clean, desktop and phone)
+- [ ] Per pointed name: broker adds it as an alias domain in Hostinger (a hosting step for each request; cannot be tested before a real name is pointed)
 
 ---
 
@@ -294,7 +298,7 @@ Totals: see the summary table at the end.
 | A2 Phase 2 | 33 | 0 | 0 |
 | A3 Phase 3 | 14 | 0 | 0 |
 | A4 Phase 4 | 13 | 0 | 1 |
-| A5 Phase 5 | 0 | 0 | 4 |
+| A5 Phase 5 | 7 | 0 | 1 |
 | B Account | 22 | 0 | 1 |
 | C Search | 8 | 0 | 1 |
 | D Pages | 15 | 0 | 3 |
