@@ -45,7 +45,26 @@ if ( ! function_exists( 'db_seller_normalise_name' ) ) {
 		if ( strlen( $s ) > 253 || ! preg_match( '/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,24}|xn--[a-z0-9-]{1,59})$/', $s ) ) {
 			return array( '', 'Not a valid domain name.' );
 		}
+		if ( ! db_seller_is_main_name( $s ) ) {
+			return array( '', 'List the main name only (for example example.com, not shop.example.com).' );
+		}
 		return array( $s, '' );
+	}
+}
+
+if ( ! function_exists( 'db_seller_is_main_name' ) ) {
+	/** A name someone can register: two labels, or three under a two-part ending such as co.uk. */
+	function db_seller_is_main_name( $name ) {
+		$labels = explode( '.', (string) $name );
+		$n      = count( $labels );
+		if ( 2 === $n ) {
+			return true;
+		}
+		if ( 3 !== $n ) {
+			return false;
+		}
+		$second = array( 'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'com.au', 'net.au', 'org.au', 'id.au', 'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'com.mx', 'co.in', 'net.in', 'org.in', 'co.jp', 'com.cn', 'com.sg', 'com.hk', 'co.kr', 'com.tr', 'com.ar', 'co.il', 'com.my', 'com.ph', 'co.id', 'com.co', 'qc.ca', 'on.ca', 'bc.ca', 'ab.ca' );
+		return in_array( $labels[1] . '.' . $labels[2], $second, true );
 	}
 }
 

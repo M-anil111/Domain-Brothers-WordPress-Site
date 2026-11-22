@@ -103,6 +103,8 @@ if ( class_exists( 'ZipArchive' ) ) {
 check( 'ordinary names pass the blocked check', '' === db_seller_blocked( 'brightpath.ca' ) );
 check( 'famous brands need a broker', '' !== db_seller_blocked( 'cheap-google-ads.com' ) && '' !== db_seller_blocked( 'paypalhelp.ca' ) );
 check( 'abusive terms are refused', 'This name cannot be listed.' === db_seller_blocked( 'pre-teen-pics.com' ) );
+check( 'subdomains are refused', false !== strpos( db_seller_normalise_name( 'shop.example.com' )[1], 'main name' ) && '' !== db_seller_normalise_name( 'a.b.c.d.qa.ca' )[1] );
+check( 'two-part endings are accepted', array( 'brand.co.uk', '' ) === db_seller_normalise_name( 'www.brand.co.uk' ) && '' === db_seller_normalise_name( 'shop.com.au' )[1] );
 check( 'plain words pass', '' === db_seller_blocked( 'bakery.ca' ) && '' === db_seller_blocked( 'torontohomes.com' ) );
 check( 'exclusive commission is 10 percent', 1000 === db_seller_fee( 10000, true ) && 1500 === db_seller_fee( 10000 ) && 100 === db_seller_fee( 500, true ) );
 $g = db_seller_price_guide( array( array( 'name' => 'a.ca', 'price' => 1000 ), array( 'name' => 'b.ca', 'price' => 3000 ), array( 'name' => 'c.ca', 'price' => 2000 ), array( 'name' => 'd.com', 'price' => 9000 ), array( 'name' => 'e.ca', 'price' => 0 ) ), '.ca' );
