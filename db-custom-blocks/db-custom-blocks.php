@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.145.0
+ * Version:     3.145.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.145.0' );
+define( 'DB_BLOCKS_LOADED', '3.145.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1058,8 +1058,18 @@ function db_plan_takeover( $html ) {
 
 add_action( 'template_redirect', function () {
 	if ( is_admin() || ! db_is_plan_page() ) { return; }
-	$GLOBALS['db_plan_widget_prebuilt'] = db_plan_widget_html();
-	if ( '' === $GLOBALS['db_plan_widget_prebuilt'] ) { return; }
+	$domain = strtolower( trim( db_plan_b64( 'd' ) ) );
+	$post   = '' !== $domain ? get_page_by_title( $domain, OBJECT, 'domain' ) : null;
+	$state  = ( $post && function_exists( 'db_listing_state' ) ) ? db_listing_state( $post ) : '';
+	$GLOBALS['db_plan_widget_prebuilt'] = in_array( $state, array( 'sold', 'not_for_sale' ), true ) ? '' : db_plan_widget_html();
+	if ( '' === $GLOBALS['db_plan_widget_prebuilt'] ) {
+		// No plan for this link (offer-only, sold or unlisted name, or an edited price): send the
+		// visitor to the listing instead of the theme's legacy template, which priced the plan from
+		// the URL and promised terms that do not exist (bug register batch 2, CK-2).
+		$to = ( $post && 'publish' === $post->post_status ) ? get_permalink( $post ) : home_url( '/all-domains/' );
+		wp_safe_redirect( $to, 302 );
+		exit;
+	}
 	ob_start( 'db_plan_takeover' );
 }, 27 );
 
