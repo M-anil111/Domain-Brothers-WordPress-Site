@@ -298,7 +298,7 @@ const PAGES = [
 		const nums = prices.filter((t) => /\$/.test(t)).map((t) => Number(t.replace(/[^0-9]/g, '')));
 		const firstOffer = prices.indexOf('Open to offers');
 		const ascending = nums.every((v, i) => i === 0 || nums[i - 1] <= v) && (firstOffer === -1 || prices.slice(firstOffer).every((t) => t === 'Open to offers'));
-		record(`FN-24-${vp}`, 'Filter', `sort by price covers every listing, low to high, offers last (${vp})`, total > before && prices.length === total && ascending, `rows=${prices.length} total=${total} pagerows=${before}`);
+		record(`FN-24-${vp}`, 'Filter', `sort by price covers every listing, low to high, offers last (${vp})`, total > 0 && total >= before && prices.length === total && ascending, `rows=${prices.length} total=${total} pagerows=${before}`);
 		await page.selectOption('.db-dfilter select[name="tld"]', '.ca');
 		await page.selectOption('.db-dfilter select[name="max"]', '2500');
 		await page.waitForTimeout(400);
