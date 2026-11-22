@@ -21,6 +21,7 @@ const UAS = ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.
 	await a.goto(`${BASE}/wp-login.php`); await a.fill('#user_login', process.env.DB_WP_USER); await a.fill('#user_pass', process.env.DB_WP_PASS);
 	await Promise.all([a.waitForURL(/wp-admin/, { waitUntil: 'commit' }), a.click('#wp-submit')]);
 	await a.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+	await a.waitForLoadState('load'); await a.waitForTimeout(1500); // the editor's scripts must be ready before typing
 	await a.fill('#title', DOMAIN); await a.fill('input[name=domain_price]', '3000'); await a.selectOption('select[name=domain_status]', 'sale');
 	await Promise.all([a.waitForURL(/post\.php\?post=\d+&action=edit/), a.click('#publish')]);
 	const postId = new URL(a.url()).searchParams.get('post');

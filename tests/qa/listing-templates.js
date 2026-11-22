@@ -43,6 +43,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	const created = [];
 	for (const c of CLEANUP_ONLY ? [] : CASES) {
 		await page.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+		await page.waitForLoadState('load'); await page.waitForTimeout(1500); // the editor's scripts must be ready before typing
 		await page.waitForSelector('#title');
 		await page.fill('#title', c.title);
 		await page.fill('input[name=domain_price]', c.price);

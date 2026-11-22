@@ -110,6 +110,7 @@ const money = (s) => parseFloat(String(s).replace(/[^0-9.]/g, ''));
 		const stamp = Date.now().toString(36);
 		const title = `qa-ph-${stamp}.com`;
 		await admin.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+		await admin.waitForLoadState('load'); await admin.waitForTimeout(1500); // the editor's scripts must be ready before typing
 		await admin.fill('#title', title);
 		await admin.fill('input[name=domain_price]', '2500');
 		await admin.selectOption('select[name=domain_status]', 'sale');
