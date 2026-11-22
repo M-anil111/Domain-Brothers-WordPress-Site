@@ -332,3 +332,41 @@ if ( ! function_exists( 'db_rankmath_editor_js' ) ) {
 JS;
 	}
 }
+
+/*
+ * Default share image (bug RS-9): pages without their own image had no
+ * og:image, so shared links showed no picture. When Rank Math's default
+ * Open Graph image is empty, use the branded 1200x630 image in this plugin.
+ */
+add_action( 'init', function () {
+	$o = get_option( 'rank-math-options-titles' );
+	if ( ! is_array( $o ) || ! empty( $o['open_graph_image_id'] ) || ! is_readable( __DIR__ . '/assets/og/db-share.jpg' ) ) {
+		return;
+	}
+	if ( ! empty( $o['open_graph_image'] ) && false === strpos( (string) $o['open_graph_image'], 'assets/og/db-share.jpg' ) ) {
+		return; // the owner chose another default image
+	}
+	// Rank Math only uses a default image from the media library: add ours once.
+	$id = (int) get_option( 'db_og_default_attachment', 0 );
+	if ( ! $id || ! get_post( $id ) ) {
+		$up = wp_upload_dir();
+		if ( ! empty( $up['error'] ) ) {
+			return;
+		}
+		$dest = trailingslashit( $up['path'] ) . 'domain-brothers-share.jpg';
+		if ( ! file_exists( $dest ) && ! copy( __DIR__ . '/assets/og/db-share.jpg', $dest ) ) {
+			return;
+		}
+		$id = wp_insert_attachment( array( 'post_mime_type' => 'image/jpeg', 'post_title' => 'Domain Brothers share image', 'post_status' => 'inherit' ), $dest );
+		if ( ! $id || is_wp_error( $id ) ) {
+			return;
+		}
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		wp_update_attachment_metadata( $id, wp_generate_attachment_metadata( $id, $dest ) );
+		update_post_meta( $id, '_wp_attachment_image_alt', 'Domain Brothers, premium domain marketplace' );
+		update_option( 'db_og_default_attachment', (int) $id, false );
+	}
+	$o['open_graph_image']    = wp_get_attachment_url( $id );
+	$o['open_graph_image_id'] = (int) $id;
+	update_option( 'rank-math-options-titles', $o );
+}, 30 );
