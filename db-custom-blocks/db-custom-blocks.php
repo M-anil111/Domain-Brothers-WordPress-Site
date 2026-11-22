@@ -881,6 +881,7 @@ function db_plan_widget_html() {
 		data-p="<?php echo esc_attr( $p_b64 ); ?>"
 		data-cur="<?php echo esc_attr( $cur ); ?>"
 		data-rates="<?php echo esc_attr( wp_json_encode( array_combine( array_map( 'strval', $terms ), array_map( 'db_plan_rate', $terms ) ) ) ); ?>"
+		data-today="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>"
 		data-buynow="<?php echo esc_attr( home_url( '/buy-now/' ) ); ?>">
 
 		<div class="db-plan-head">
@@ -997,7 +998,8 @@ function db_plan_widget_html() {
 			if(badge){ badge.textContent=rt?rt+'% interest':'0% interest'; }
 			var body=document.getElementById('db-plan-schedule-body');
 			body.innerHTML='';
-			var today=new Date();
+			/* The site's date, the same one checkout uses (CO-5): never the visitor's clock. */
+			var tp=(root.getAttribute('data-today')||'').split('-'),today=tp.length===3?new Date(+tp[0],+tp[1]-1,+tp[2]):new Date();
 			arr.forEach(function(amt,i){
 				var tr=document.createElement('tr');
 				var dt=i===0?today:addMonths(today,i);
