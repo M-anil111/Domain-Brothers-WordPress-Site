@@ -83,14 +83,25 @@ if ( ! function_exists( 'db_article_cta' ) ) {
 	 * @return array{title:string,text:string,primary:array,secondary:array}
 	 */
 	function db_article_cta( $post ) {
-		unset( $post );
-		// One call to action for every post: buying a premium domain. Other
-		// services (appraisal, brokerage, marketing) are deliberately not pushed.
+		// Posts about selling or valuing a name invite readers to sell; every other post to buy.
+		// Each call to action carries the other as its secondary link.
+		$topic = strtolower( get_the_title( $post ) . ' ' . implode( ' ', wp_list_pluck( (array) get_the_category( $post->ID ), 'name' ) ) );
+		$sell  = function_exists( 'db_seller_enabled' ) && db_seller_enabled() && preg_match( '/\b(sell|selling|seller|sold|valu(e|ation|ing)|apprais|worth|flip|portfolio|park(ing|ed))/', $topic );
+		$buy   = array( 'Browse premium domains', home_url( '/all-domains/' ) );
+		$list  = array( 'Sell your domains', home_url( '/sell-your-domains/' ) );
+		if ( $sell ) {
+			return array(
+				'title'     => 'Own a domain you no longer use?',
+				'text'      => 'List it on Domain Brothers for free. Our brokers handle every buyer, and you pay a commission only when it sells.',
+				'primary'   => $list,
+				'secondary' => $buy,
+			);
+		}
 		return array(
 			'title'     => 'Ready to buy a premium domain?',
 			'text'      => 'Premium domains with clear prices, flexible payment terms and offers answered within one business day.',
 			'primary'   => array( 'Buy a premium domain now', home_url( '/all-domains/' ) ),
-			'secondary' => array( '', '' ),
+			'secondary' => function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? $list : array( 'Acquire a specific domain', home_url( '/acquire-premium-domain/' ) ),
 		);
 	}
 }
@@ -167,7 +178,11 @@ if ( ! function_exists( 'db_article_layout' ) ) {
 			. '<section class="dbb-end"><div class="dbb-share"><span>Share</span>' . $share . '</div>' . ( '' !== $tags ? '<div class="dbb-tags">' . $tags . '</div>' : '' )
 			. '<div class="dbb-author"><span class="dbb-avatar dbb-avatar--lg" aria-hidden="true">DB</span><div><p class="dbb-author-n">Written by the <a href="' . esc_url( home_url( '/our-team/' ) ) . '">Domain Brothers team</a></p><p>Domain brokers and marketers with 27+ years of combined experience and 5,000+ domain sales. We write about what we see in real deals.</p></div></div>'
 			. '<div class="dbb-final"><div><p class="dbb-final-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p></div><p class="dbb-final-a"><a class="dbb-btn dbb-btn--light" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a></p></div></section></div>'
-			. '<aside class="dbb-side">' . $tocs . '</aside></div>'
+			. '<aside class="dbb-side">' . $tocs
+			. '<div class="dbb-sidecta"><p class="dbb-sidecta-t">' . esc_html( $cta['title'] ) . '</p><p>' . esc_html( $cta['text'] ) . '</p><a class="dbb-btn dbb-btn--light" href="' . esc_url( $cta['primary'][1] ) . '">' . esc_html( $cta['primary'][0] ) . '</a>'
+			. ( '' !== $cta['secondary'][0] ? '<a class="dbb-sidecta-2" href="' . esc_url( $cta['secondary'][1] ) . '">' . esc_html( $cta['secondary'][0] ) . ' &rarr;</a>' : '' ) . '</div>'
+			. '</aside></div>'
+			. ( function_exists( 'db_link_hub_html' ) ? db_link_hub_html( (string) wp_parse_url( $url, PHP_URL_PATH ) ) : '' )
 			. '</div>';
 		unset( $footer );
 		return substr_replace( $html, $out, $art[0][1], strlen( $art[0][0] ) );
