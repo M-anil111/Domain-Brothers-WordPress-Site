@@ -149,4 +149,13 @@ check( 'pointed name: the site, its root and subdomains are not pointed names', 
 check( 'pointed name: IPs, preview hosts without a TLD and junk are ignored', '' === db_seller_pointed_name( '72.60.128.77', 'beta.domainbrothers.com' ) && '' === db_seller_pointed_name( 'localhost', 'x.com' ) && '' === db_seller_pointed_name( 'bad host', 'x.com' ) );
 check( 'pointed name: a port on a normal host', 'bakery.ca' === db_seller_pointed_name( 'bakery.ca:8080', 'beta.domainbrothers.com' ) );
 
+// One owner per name; 120-day re-check.
+check( 'claim: other sellers\' open rows lose, own and removed rows untouched', array( 1, 3 ) === db_seller_claim_losers( array( array( 'id' => 1, 'seller_id' => 7, 'review_status' => 'approved' ), array( 'id' => 2, 'seller_id' => 9, 'review_status' => 'draft' ), array( 'id' => 3, 'seller_id' => 8, 'review_status' => 'draft' ), array( 'id' => 4, 'seller_id' => 7, 'review_status' => 'removed' ) ), 9 ) );
+check( 'taken: own row, inventory and sales refuse; another account is a claim', 'Already in your list.' === db_seller_taken_reason( true, true, false, false ) && 'Already listed on Domain Brothers.' === db_seller_taken_reason( false, false, true, false ) && '' !== db_seller_taken_reason( false, true, false, true ) && 'claim' === db_seller_taken_reason( false, true, false, false ) && '' === db_seller_taken_reason( false, false, false, false ) );
+$n = 1800000000; $d = 86400;
+check( 'recheck: nothing due before 120 days', '' === db_seller_recheck_action( $n - 119 * $d, 0, false, $n ) );
+check( 'recheck: due and passing renews', 'renew' === db_seller_recheck_action( $n - 121 * $d, 0, true, $n ) );
+check( 'recheck: due and failing warns first, then waits 14 days, then takes down', 'warn' === db_seller_recheck_action( $n - 121 * $d, 0, false, $n ) && 'still_failing' === db_seller_recheck_action( $n - 125 * $d, $n - 5 * $d, false, $n ) && 'take_down' === db_seller_recheck_action( $n - 140 * $d, $n - 14 * $d, false, $n ) );
+check( 'recheck: a failing name that is fixed renews', 'renew' === db_seller_recheck_action( $n - 125 * $d, $n - 3 * $d, true, $n ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

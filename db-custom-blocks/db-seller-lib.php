@@ -843,3 +843,82 @@ if ( ! function_exists( 'db_seller_pointed_name' ) ) {
 		return $name;
 	}
 }
+
+/* One owner per name: claims between accounts. */
+
+if ( ! function_exists( 'db_seller_claim_losers' ) ) {
+	/**
+	 * When a seller proves ownership of a name, every other seller's open row
+	 * for that name loses it. Returns the ids of those rows.
+	 *
+	 * @param array $rows       Rows for the name: id, seller_id, review_status.
+	 * @param int   $winner_sid The seller who just verified.
+	 */
+	function db_seller_claim_losers( array $rows, $winner_sid ) {
+		$out = array();
+		foreach ( $rows as $r ) {
+			if ( (int) $r['seller_id'] !== (int) $winner_sid && in_array( (string) $r['review_status'], array( 'draft', 'pending', 'approved', 'rejected' ), true ) ) {
+				$out[] = (int) $r['id'];
+			}
+		}
+		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_seller_taken_reason' ) ) {
+	/**
+	 * Whether a seller may add a name, as a pure rule. Returns '' (free),
+	 * 'claim' (another account lists it: allowed, needs fresh proof), or the reason it is refused.
+	 *
+	 * @param bool $mine      This seller already has an open row for the name.
+	 * @param bool $other     Another seller has an open row for the name.
+	 * @param bool $inventory The name is one of Domain Brothers' own listings.
+	 * @param bool $in_sale   A sale of the name is in progress.
+	 */
+	function db_seller_taken_reason( $mine, $other, $inventory, $in_sale ) {
+		if ( $mine ) {
+			return 'Already in your list.';
+		}
+		if ( $inventory ) {
+			return 'Already listed on Domain Brothers.';
+		}
+		if ( $in_sale ) {
+			return 'This name is being sold right now. Contact us if you own it.';
+		}
+		return $other ? 'claim' : '';
+	}
+}
+
+/* Ownership re-check every 120 days. */
+
+if ( ! defined( 'DB_SELLER_RECHECK_DAYS' ) ) {
+	define( 'DB_SELLER_RECHECK_DAYS', 120 ); // live names prove ownership again every 120 days
+}
+if ( ! defined( 'DB_SELLER_RECHECK_GRACE_DAYS' ) ) {
+	define( 'DB_SELLER_RECHECK_GRACE_DAYS', 14 ); // a failing name has 14 days to be fixed before it comes down
+}
+
+if ( ! function_exists( 'db_seller_recheck_action' ) ) {
+	/**
+	 * What the daily re-check does with one live name.
+	 *
+	 * @param int  $verified_ts When ownership was last proved.
+	 * @param int  $fail_ts     When the re-check first failed (0 = not failing).
+	 * @param bool $passes      Whether the DNS record is there now (only read when a check is due).
+	 * @param int  $now         Unix time.
+	 * @return string '' (nothing due) | renew | warn | still_failing | take_down
+	 */
+	function db_seller_recheck_action( $verified_ts, $fail_ts, $passes, $now ) {
+		$due = (int) $fail_ts > 0 || ( (int) $now - (int) $verified_ts ) >= DB_SELLER_RECHECK_DAYS * 86400;
+		if ( ! $due ) {
+			return '';
+		}
+		if ( $passes ) {
+			return 'renew';
+		}
+		if ( (int) $fail_ts <= 0 ) {
+			return 'warn';
+		}
+		return ( (int) $now - (int) $fail_ts ) >= DB_SELLER_RECHECK_GRACE_DAYS * 86400 ? 'take_down' : 'still_failing';
+	}
+}

@@ -29,7 +29,7 @@ if ( is_readable( __DIR__ . '/db-seller-lander-block.php' ) ) {
 	require_once __DIR__ . '/db-seller-lander-block.php';
 }
 
-define( 'DB_SELLER_DB_VERSION', '3' );
+define( 'DB_SELLER_DB_VERSION', '4' );
 
 /* ------------------------------------------------------------------ setup */
 
@@ -91,6 +91,7 @@ add_action( 'init', function () {
 		description text NULL,
 		keywords varchar(255) NOT NULL DEFAULT '',
 		categories varchar(64) NOT NULL DEFAULT '',
+		recheck_fail_at datetime DEFAULT NULL,
 		post_id bigint(20) unsigned NOT NULL DEFAULT 0,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
@@ -133,18 +134,69 @@ if ( ! function_exists( 'db_seller_listings' ) ) {
 }
 
 if ( ! function_exists( 'db_seller_domain_taken' ) ) {
-	/** '' when a name can be added, otherwise the reason. */
-	function db_seller_domain_taken( $name ) {
+	/**
+	 * '' when a name can be added, 'claim' when another account lists it (the
+	 * name may be added, and is taken over only once this seller proves
+	 * ownership), otherwise the reason it is refused.
+	 */
+	function db_seller_domain_taken( $name, $seller_id = 0 ) {
+		global $wpdb;
+		$t    = db_seller_table( 'listings' );
+		$name = strtolower( (string) $name );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT seller_id FROM {$t} WHERE domain = %s AND review_status IN ('draft','pending','approved')", $name ), ARRAY_A );
+		$mine = false;
+		$other = false;
+		foreach ( $rows as $r ) {
+			if ( (int) $r['seller_id'] === (int) $seller_id ) {
+				$mine = true;
+			} else {
+				$other = true;
+			}
+		}
+		// The site's own inventory: a domain post that is not a seller listing.
+		$inv = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'db_seller_id' WHERE p.post_type = 'domain' AND p.post_status IN ('publish','pending','private') AND LOWER(p.post_title) = %s AND ( m.meta_value IS NULL OR m.meta_value = '' OR m.meta_value = '0' )", $name ) );
+		$sale = 0;
+		if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}db_seller_payouts'" ) ) {
+			$sale = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}db_seller_payouts WHERE domain = %s AND state <> 'paid'", $name ) );
+		}
+		// phpcs:enable
+		if ( ! $sale && function_exists( 'db_stripe_domain_unavailable' ) && db_stripe_domain_unavailable( $name ) ) {
+			$sale = 1; // sold or on a buyer's payment plan
+		}
+		return db_seller_taken_reason( $mine, $other, $inv > 0, $sale > 0 );
+	}
+}
+
+if ( ! function_exists( 'db_seller_resolve_claims' ) ) {
+	/**
+	 * A seller just proved ownership of a name: every other account's row for
+	 * it is taken off (its public page comes down) and that account is told.
+	 */
+	function db_seller_resolve_claims( array $winner ) {
 		global $wpdb;
 		$t = db_seller_table( 'listings' );
+		$s = db_seller_table( 'sellers' );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$open = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE domain = %s AND review_status IN ('draft','pending','approved')", $name ) );
-		if ( $open ) {
-			return 'Already submitted to Domain Brothers.';
+		$rows  = (array) $wpdb->get_results( $wpdb->prepare( "SELECT l.*, s.email FROM {$t} l JOIN {$s} s ON s.id = l.seller_id WHERE l.domain = %s", $winner['domain'] ), ARRAY_A );
+		$lose  = db_seller_claim_losers( $rows, (int) $winner['seller_id'] );
+		foreach ( $rows as $r ) {
+			if ( ! in_array( (int) $r['id'], $lose, true ) ) {
+				continue;
+			}
+			$was_live = 'approved' === $r['review_status'];
+			db_seller_remove( $r );
+			$wpdb->update( $t, array( 'review_note' => 'Ownership proved by another account on ' . gmdate( 'Y-m-d' ) ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			if ( is_email( $r['email'] ) ) {
+				db_seller_mail( $r['email'], 'You no longer list ' . $r['domain'] . ' on Domain Brothers', '<p>Another Domain Brothers account has just proved ownership of <strong>' . esc_html( $r['domain'] ) . '</strong> by adding its own DNS record to the name. Because a name can only be listed by its current owner, ' . ( $was_live ? 'your listing has been taken off the site' : 'it has been removed from your seller list' ) . '.</p><p>If you still own this name, this is a mistake: reply to this email or <a href="' . esc_url( home_url( '/contact-us/' ) ) . '">contact us</a> and our broker will look into it.</p>' );
+			}
+			if ( function_exists( 'db_seller_audit' ) ) {
+				db_seller_audit( (int) $r['seller_id'], $r['domain'], 'lost_claim', 'Another account (seller ' . (int) $winner['seller_id'] . ') proved ownership', 'system' );
+			}
+			if ( function_exists( 'db_plan_notify_admin' ) ) {
+				db_plan_notify_admin( 'Ownership changed hands: ' . $r['domain'], array( 'Domain' => $r['domain'], 'Previous seller' => $r['email'], 'New seller id' => (int) $winner['seller_id'], 'Was live' => $was_live ? 'yes (taken down)' : 'no' ) );
+			}
 		}
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$live = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'domain' AND post_status IN ('publish','pending','draft','private') AND LOWER(post_title) = %s", $name ) );
-		return $live ? 'Already listed on Domain Brothers.' : '';
 	}
 }
 
@@ -170,6 +222,25 @@ if ( ! function_exists( 'db_seller_csrf' ) ) {
 
 /* ---------------------------------------------------------- verification */
 
+if ( ! function_exists( 'db_seller_dns_proof' ) ) {
+	/**
+	 * Which of the seller's records the name carries right now: 'txt', 'cname' or ''.
+	 * The filter lets the test suite stand in for DNS; nothing on the site uses it.
+	 */
+	function db_seller_dns_proof( $name, $token ) {
+		$pre = apply_filters( 'db_seller_dns_proof', null, $name, $token );
+		if ( null !== $pre ) {
+			return (string) $pre;
+		}
+		$txt = function_exists( 'dns_get_record' ) ? @dns_get_record( $name, DNS_TXT ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( is_array( $txt ) && db_seller_txt_matches( $txt, $token ) ) {
+			return 'txt';
+		}
+		$cn = function_exists( 'dns_get_record' ) ? @dns_get_record( db_seller_cname_host( $token, $name ), DNS_CNAME ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		return ( is_array( $cn ) && db_seller_cname_matches( $cn ) ) ? 'cname' : '';
+	}
+}
+
 if ( ! function_exists( 'db_seller_check_ownership' ) ) {
 	/**
 	 * Looks up the TXT and CNAME records for one listing and stores the result.
@@ -179,16 +250,7 @@ if ( ! function_exists( 'db_seller_check_ownership' ) ) {
 	function db_seller_check_ownership( array $listing, $token ) {
 		global $wpdb;
 		$name   = $listing['domain'];
-		$method = '';
-		$txt    = function_exists( 'dns_get_record' ) ? @dns_get_record( $name, DNS_TXT ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors
-		if ( is_array( $txt ) && db_seller_txt_matches( $txt, $token ) ) {
-			$method = 'txt';
-		} else {
-			$cn = function_exists( 'dns_get_record' ) ? @dns_get_record( db_seller_cname_host( $token, $name ), DNS_CNAME ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors
-			if ( is_array( $cn ) && db_seller_cname_matches( $cn ) ) {
-				$method = 'cname';
-			}
-		}
+		$method = db_seller_dns_proof( $name, $token );
 		$now   = current_time( 'mysql', true );
 		$age_h = ( time() - strtotime( $listing['created_at'] . ' UTC' ) ) / HOUR_IN_SECONDS;
 		$state = '' !== $method ? 'verified' : ( $age_h > DB_SELLER_VERIFY_HOURS ? 'failed' : 'pending' );
@@ -198,6 +260,9 @@ if ( ! function_exists( 'db_seller_check_ownership' ) ) {
 			$data['verified_at']   = $now;
 		}
 		$wpdb->update( db_seller_table( 'listings' ), $data, array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		if ( 'verified' === $state ) {
+			db_seller_resolve_claims( $listing ); // the name now belongs to this account only
+		}
 		return $state;
 	}
 }
@@ -223,6 +288,83 @@ add_action( 'db_seller_verify_cron', function () {
 	}
 } );
 
+/* -------------------------------------------- re-check every 120 days */
+
+add_action( 'init', function () {
+	if ( db_seller_enabled() && ! wp_next_scheduled( 'db_seller_recheck_cron' ) ) {
+		wp_schedule_event( time() + 900, 'daily', 'db_seller_recheck_cron' );
+	}
+} );
+
+add_action( 'db_seller_recheck_cron', 'db_seller_recheck_run' );
+if ( ! function_exists( 'db_seller_recheck_run' ) ) {
+	/**
+	 * Daily: live names whose proof is 120 days old (or already failing) are
+	 * checked again. Passing names are renewed; failing ones get 14 days and
+	 * a warning, then come down. Each seller gets one summary email per run.
+	 *
+	 * @return array counts by action, for the admin screen and tests.
+	 */
+	function db_seller_recheck_run() {
+		global $wpdb;
+		$l    = db_seller_table( 'listings' );
+		$s    = db_seller_table( 'sellers' );
+		$now  = time();
+		$cut  = gmdate( 'Y-m-d H:i:s', $now - DB_SELLER_RECHECK_DAYS * DAY_IN_SECONDS );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT l.*, s.token, s.email FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.review_status = 'approved' AND ( l.recheck_fail_at IS NOT NULL OR l.verified_at IS NULL OR l.verified_at <= %s ) ORDER BY l.id LIMIT 300", $cut ), ARRAY_A );
+		$count = array( 'renew' => 0, 'warn' => 0, 'still_failing' => 0, 'take_down' => 0 );
+		$mail  = array();
+		foreach ( $rows as $r ) {
+			$vts    = $r['verified_at'] ? (int) strtotime( $r['verified_at'] . ' UTC' ) : 0;
+			$fts    = $r['recheck_fail_at'] ? (int) strtotime( $r['recheck_fail_at'] . ' UTC' ) : 0;
+			$method = db_seller_dns_proof( $r['domain'], $r['token'] );
+			$act    = db_seller_recheck_action( $vts, $fts, '' !== $method, $now );
+			if ( '' === $act ) {
+				continue;
+			}
+			++$count[ $act ];
+			$nowsql = gmdate( 'Y-m-d H:i:s', $now );
+			if ( 'renew' === $act ) {
+				$wpdb->update( $l, array( 'verified_at' => $nowsql, 'verify_method' => $method, 'recheck_fail_at' => null, 'last_check' => $nowsql ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			} elseif ( 'warn' === $act ) {
+				$wpdb->update( $l, array( 'recheck_fail_at' => $nowsql, 'last_check' => $nowsql ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			} elseif ( 'still_failing' === $act ) {
+				$wpdb->update( $l, array( 'last_check' => $nowsql ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			} else {
+				db_seller_remove( $r );
+				$wpdb->update( $l, array( 'review_note' => 'Taken off: ownership record missing for ' . DB_SELLER_RECHECK_GRACE_DAYS . ' days after the 120-day check' ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			}
+			if ( function_exists( 'db_seller_audit' ) ) {
+				db_seller_audit( (int) $r['seller_id'], $r['domain'], 'recheck_' . $act, 'Ownership re-check: ' . $act, 'system' );
+			}
+			$mail[ $r['email'] ][ $act ][] = $r['domain'];
+		}
+		foreach ( $mail as $to => $acts ) {
+			if ( ! is_email( $to ) ) {
+				continue;
+			}
+			$txt = db_seller_txt_value( '' );
+			$h   = '<p>Every ' . DB_SELLER_RECHECK_DAYS . ' days we check that each name you list still carries your ownership record, so only current owners can sell a name.</p>';
+			if ( ! empty( $acts['renew'] ) ) {
+				$h .= '<p><strong>Still yours, nothing to do:</strong> ' . esc_html( implode( ', ', $acts['renew'] ) ) . '.</p>';
+			}
+			$fail = array_merge( $acts['warn'] ?? array(), $acts['still_failing'] ?? array() );
+			if ( $fail ) {
+				$h .= '<p><strong>Action needed within ' . DB_SELLER_RECHECK_GRACE_DAYS . ' days:</strong> ' . esc_html( implode( ', ', $fail ) ) . '. The ownership record (TXT or CNAME) is missing. Add it back at your registrar; the values are on your <a href="' . esc_url( home_url( '/seller/' ) ) . '">seller page</a>. Names still missing the record after ' . DB_SELLER_RECHECK_GRACE_DAYS . ' days are taken off the site.</p>';
+			}
+			if ( ! empty( $acts['take_down'] ) ) {
+				$h .= '<p><strong>Taken off the site:</strong> ' . esc_html( implode( ', ', $acts['take_down'] ) ) . '. The ownership record was missing for ' . DB_SELLER_RECHECK_GRACE_DAYS . ' days. Add the record and list the name again whenever you like.</p>';
+			}
+			unset( $txt );
+			$subj = $fail ? 'Action needed: check your domain ownership records' : ( ! empty( $acts['take_down'] ) ? 'Names taken off Domain Brothers' : 'Your names passed the 120-day ownership check' );
+			db_seller_mail( $to, $subj, $h );
+		}
+		update_option( 'db_seller_recheck_last', array( 'ts' => $now, 'count' => $count ), false );
+		return $count;
+	}
+}
+
 /* --------------------------------------------------------------- publish */
 
 if ( ! function_exists( 'db_seller_publish' ) ) {
@@ -234,17 +376,31 @@ if ( ! function_exists( 'db_seller_publish' ) ) {
 	function db_seller_publish( array $listing ) {
 		global $wpdb;
 		$taken = db_seller_domain_taken_live( $listing['domain'] );
+		$reuse = 0;
 		if ( $taken ) {
-			return 'A listing for this name already exists (post ' . $taken . ').';
+			// A page left by a seller who lost the name is reused (same URL, same history).
+			$prev = (int) get_post_meta( $taken, 'db_seller_id', true );
+			$prow = (int) get_post_meta( $taken, 'db_seller_listing', true );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$pst  = $prow ? (string) $wpdb->get_var( $wpdb->prepare( 'SELECT review_status FROM ' . db_seller_table( 'listings' ) . ' WHERE id = %d', $prow ) ) : '';
+			if ( $prev && $prev !== (int) $listing['seller_id'] && 'removed' === $pst ) {
+				$reuse = (int) $taken;
+			} else {
+				return 'A listing for this name already exists (post ' . $taken . ').';
+			}
 		}
 		$listing['option'] = $listing['option_type'];
-		$post_id           = wp_insert_post( array(
-			'post_type'   => 'domain',
-			'post_status' => 'publish',
-			'post_title'  => $listing['domain'],
-			'post_name'   => sanitize_title( str_replace( '.', '-', $listing['domain'] ) ),
-			'post_author' => 1,
-		), true );
+		if ( $reuse ) {
+			$post_id = wp_update_post( array( 'ID' => $reuse, 'post_status' => 'publish' ), true );
+		} else {
+			$post_id = wp_insert_post( array(
+				'post_type'   => 'domain',
+				'post_status' => 'publish',
+				'post_title'  => $listing['domain'],
+				'post_name'   => sanitize_title( str_replace( '.', '-', $listing['domain'] ) ),
+				'post_author' => 1,
+			), true );
+		}
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id->get_error_message();
 		}
@@ -441,8 +597,13 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$added = array();
 			$rdap_until = microtime( true ) + 15; // registry lookups stop after 15 seconds; later names rely on the DNS check
 			foreach ( $res['ok'] as $name ) {
-				$why = db_seller_blocked( $name );
-				$why = '' !== $why ? $why : db_seller_domain_taken( $name );
+				$why   = db_seller_blocked( $name );
+				$taken = '' !== $why ? '' : db_seller_domain_taken( $name, $sid );
+				if ( 'claim' === $taken ) {
+					$msgs[] = array( 'warn', $name . ': another account lists this name. It moves to you only once you prove ownership with your DNS record below; the other account is then told.' );
+					$taken  = '';
+				}
+				$why = '' !== $why ? $why : $taken;
 				if ( '' === $why && 'unregistered' === db_seller_rdap_check( $name, $rdap_until ) ) {
 					$why = 'This name is not registered, so it cannot be listed. Check the spelling.';
 				}
@@ -559,7 +720,8 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			$plan = db_seller_plan_import( $sr['rows'], $existing, $mode );
 			foreach ( $plan['add'] as $i => $a ) {
 				$why = db_seller_blocked( $a['domain'] );
-				$why = '' !== $why ? $why : db_seller_domain_taken( $a['domain'] );
+				$why = '' !== $why ? $why : db_seller_domain_taken( $a['domain'], $sid );
+				$why = 'claim' === $why ? '' : $why; // claims are allowed; ownership proof decides
 				if ( '' !== $why ) {
 					$plan['skip'][] = array( $a['domain'], $why );
 					unset( $plan['add'][ $i ] );
@@ -589,7 +751,7 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			}
 			$n = array( 0, 0, 0 );
 			foreach ( $plan['add'] as $a ) {
-				if ( '' !== db_seller_domain_taken( $a['domain'] ) ) {
+				if ( ! in_array( db_seller_domain_taken( $a['domain'], $sid ), array( '', 'claim' ), true ) ) {
 					continue;
 				}
 				$wpdb->insert( $l, array( 'seller_id' => $sid, 'domain' => $a['domain'], 'option_type' => $a['option'], 'price' => $a['price'], 'min_offer' => $a['min_offer'], 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -1075,6 +1237,31 @@ add_action( 'admin_menu', function () {
 	add_management_page( 'Seller listings', 'Seller listings', 'manage_options', 'db-seller-review', 'db_seller_admin_page' );
 } );
 
+add_action( 'admin_post_db_seller_toggle', function () {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( 'Not allowed.' );
+	}
+	check_admin_referer( 'db_seller_toggle' );
+	$on = isset( $_POST['on'] ) && '1' === (string) $_POST['on'];
+	update_option( 'db_seller_on', $on ? '1' : '0' );
+	if ( ! $on ) {
+		wp_clear_scheduled_hook( 'db_seller_verify_cron' );
+	}
+	do_action( 'db_page_cache_purge_all' );
+	do_action( 'litespeed_purge_all' );
+	if ( function_exists( 'db_seller_audit' ) ) {
+		db_seller_audit( 0, '', 'feature_' . ( $on ? 'on' : 'off' ), '"Sell with us" switched ' . ( $on ? 'on' : 'off' ) );
+	}
+	wp_safe_redirect( add_query_arg( 'msg', rawurlencode( '"Sell with us" is now ' . ( $on ? 'on' : 'off' ) . '.' ), admin_url( 'tools.php?page=db-seller-review' ) ) );
+	exit;
+} );
+
+/* A shortcut to the switch from the Plugins screen. */
+add_filter( 'plugin_action_links_' . plugin_basename( dirname( __FILE__ ) . '/db-custom-blocks.php' ), function ( $links ) {
+	array_unshift( $links, '<a href="' . esc_url( admin_url( 'tools.php?page=db-seller-review' ) ) . '">Sell with us: ' . ( db_seller_enabled() ? 'on' : 'off' ) . '</a>' );
+	return $links;
+} );
+
 add_action( 'admin_post_db_seller_admin', function () {
 	global $wpdb;
 	if ( ! current_user_can( 'manage_options' ) ) {
@@ -1125,7 +1312,11 @@ if ( ! function_exists( 'db_seller_admin_page' ) ) {
 			return '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin:0 4px 4px 0">' . wp_nonce_field( 'db_seller_admin', '_wpnonce', true, false ) . '<input type="hidden" name="action" value="db_seller_admin"><input type="hidden" name="do" value="' . esc_attr( $do ) . '"><input type="hidden" name="id" value="' . (int) $id . '">' . $extra . '<button class="' . esc_attr( $cls ) . '">' . esc_html( $label ) . '</button></form>';
 		};
 		echo '<div class="wrap"><h1>Seller listings</h1>';
-		echo '<p>Selling is <strong>' . ( db_seller_enabled() ? 'on' : 'off' ) . '</strong> on this site (option <code>db_seller_on</code>). Public page: <a href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">/sell-your-domains/</a>.</p>';
+		$on = db_seller_enabled();
+		echo '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:14px 0 18px;padding:16px 20px;border:1px solid ' . ( $on ? '#9ad27a' : '#dcdcde' ) . ';border-left-width:6px;border-radius:6px;background:' . ( $on ? '#f3fbee' : '#fff' ) . '">'
+			. '<div style="flex:1 1 380px"><p style="margin:0;font-size:15px"><strong>"Sell with us" is ' . ( $on ? 'ON' : 'OFF' ) . '.</strong> ' . ( $on ? 'Visitors can open <a href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">/sell-your-domains/</a> and list names; the menu shows "Sell your domains".' : 'The seller pages, the menu link and the hourly ownership checks are switched off. Names already live stay listed; offers and payouts on them keep working.' ) . '</p></div>'
+			. '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">' . wp_nonce_field( 'db_seller_toggle', '_wpnonce', true, false ) . '<input type="hidden" name="action" value="db_seller_toggle"><input type="hidden" name="on" value="' . ( $on ? '0' : '1' ) . '">'
+			. '<button class="button ' . ( $on ? '' : 'button-primary' ) . ' button-hero">' . ( $on ? 'Turn "Sell with us" off' : 'Turn "Sell with us" on' ) . '</button></form></div>';
 		if ( ! empty( $_GET['msg'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 			echo '<div class="notice notice-info"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['msg'] ) ) ) . '</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification
 		}
