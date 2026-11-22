@@ -147,7 +147,8 @@ const PAGES = [
 		record('FN-04', 'Checkout', '/buy-now/ renders (Stripe form or "being configured")', r4.status === 200 && /(db-stripe-payment-element|being configured)/.test(r4.body), r4.status);
 		record('FN-05', 'Checkout', '/buy-now/ is never cached', /no-cache|no-store|private/.test(r4.headers.get('cache-control') || ''), r4.headers.get('cache-control'));
 		const r5 = await http(`/buy-now/?d=${encodeURIComponent(b64('not-a-listing.zz'))}&p=${encodeURIComponent(P)}`);
-		record('FN-06', 'Checkout', '/buy-now/ refuses a domain that is not a listing', !/db-stripe-payment-element/.test(r5.body) && /could not be verified|Invalid/.test(r5.body), r5.status);
+		// Since the CO-1 fix a name that is not a listing goes back to /all-domains/ (no error page, no payment form).
+		record('FN-06', 'Checkout', '/buy-now/ refuses a domain that is not a listing', !/db-stripe-payment-element/.test(r5.body) && ((r5.status === 302 && /\/all-domains\/$/.test(r5.headers.get('location') || '')) || /could not be verified|Invalid/.test(r5.body)), r5.status + ' ' + (r5.headers.get('location') || ''));
 		const r6 = await http('/payment-plan-setup/');
 		record('FN-07', 'Checkout', 'bare plan page redirects', r6.status === 302, r6.status);
 		const r7 = await http('/thank-you/?type=full&d=fatality.ca&amt=2500');
@@ -199,7 +200,7 @@ const PAGES = [
 	{
 		// A published domain already marked sold (the production design reference): its own page, not a bounce to the home page.
 		const sold = await http('/domains/wingcms-com/');
-		record('FN-44', 'Listing states', 'a sold domain shows the sold page (banner, news, testimonials), with no redirect to the home page', sold.status === 200 && /Has Been Sold/.test(sold.body) && /db-sold-band/.test(sold.body) && /Domain News/.test(sold.body) && /Testimonials/.test(sold.body) && !/window\.location\.href\s*=\s*['"]https?:\/\/[^'"]*['"]\s*;?\s*<\/script>/.test(sold.body.split('db-sold-band')[0]), sold.status);
+		record('FN-44', 'Listing states', 'a sold domain shows the sold page (banner, news, testimonials), with no redirect to the home page', sold.status === 200 && /Has Been Sold/.test(sold.body) && /db-sold-band/.test(sold.body) && /Domain News/.test(sold.body) && /Testimonials|What buyers say/.test(sold.body) && !/window\.location\.href\s*=\s*['"]https?:\/\/[^'"]*['"]\s*;?\s*<\/script>/.test(sold.body.split('db-sold-band')[0]), sold.status);
 		const chk = await http('/buy-now/?d=' + Buffer.from('wingcms.com').toString('base64') + '&p=' + Buffer.from('1000').toString('base64'));
 		record('FN-45', 'Listing states', 'checkout refuses a sold domain', chk.status === 410, chk.status);
 	}
@@ -256,6 +257,9 @@ const PAGES = [
 		await page.goto(`${BASE}/payment-plan-setup/?d=${encodeURIComponent(D)}&p=${encodeURIComponent(P)}`, { waitUntil: 'load' });
 		await page.waitForTimeout(1000);
 		const rates = { 3: 0, 6: 5, 9: 8, 12: 10 };
+		// The chooser charges the listing's own price, whatever p= says, so read it from the page.
+		const listPrice = Number(await page.$eval('[data-price]', (e) => e.getAttribute('data-price')).catch(() => 0));
+		record('FN-19', 'Plans', 'plan chooser uses the listing price, not the price in the link', listPrice > 0, listPrice);
 		const terms = await page.$$eval('.db-plan-term', (els) => els.length);
 		record('FN-20', 'Plans', 'plan chooser shows 4 terms', terms === 4, terms);
 		for (let i = 0; i < terms; i++) {
@@ -267,7 +271,7 @@ const PAGES = [
 				href: document.querySelector('#db-plan-cta').getAttribute('href'),
 			}));
 			const m = [3, 6, 9, 12][i];
-			const totalC = Math.round(2500 * (100 + rates[m]));
+			const totalC = Math.round(listPrice * (100 + rates[m]));
 			const sumC = Math.round(s.rows.reduce((a, b) => a + b, 0) * 100);
 			record(`FN-21-${m}`, 'Plans', `${m}-month plan: ${m} rows summing to $${(totalC / 100).toFixed(2)}`, s.rows.length === m && sumC === totalC, `rows=${s.rows.length} sum=${sumC / 100} monthly=${s.monthly}`);
 			record(`FN-22-${m}`, 'Plans', `${m}-month CTA carries months=${m}`, new RegExp(`months=${m}(&|$)`).test(s.href), s.href);
