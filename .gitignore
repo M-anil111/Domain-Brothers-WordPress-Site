@@ -1,1 +1,3 @@
 db-custom-blocks/release.json
+__pycache__/
+*.pyc
