@@ -231,6 +231,58 @@ add_action( 'template_redirect', function () {
 	exit;
 }, 2 );
 
+/* ----------------------------------------------- favicon.ico, apple-touch-icon */
+
+if ( ! function_exists( 'db_hyg_icon_source' ) ) {
+	/** Local path of the site icon (WordPress site icon, else the theme's uploaded favicon), or ''. */
+	function db_hyg_icon_source() {
+		$id = (int) get_option( 'site_icon' );
+		if ( $id ) {
+			$f = get_attached_file( $id );
+			if ( $f && is_readable( $f ) ) {
+				return $f;
+			}
+		}
+		$up = wp_upload_dir();
+		$f  = trailingslashit( $up['basedir'] ) . '2017/03/favicon.png';
+		return is_readable( $f ) ? $f : '';
+	}
+}
+
+if ( ! function_exists( 'db_hyg_png_to_ico' ) ) {
+	/** An .ico file holding one PNG image (valid in every current browser). */
+	function db_hyg_png_to_ico( $png ) {
+		$size = @getimagesizefromstring( $png ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( ! $size || IMAGETYPE_PNG !== $size[2] ) {
+			return '';
+		}
+		$w = $size[0] >= 256 ? 0 : (int) $size[0];
+		$h = $size[1] >= 256 ? 0 : (int) $size[1];
+		return pack( 'vvv', 0, 1, 1 ) . pack( 'CCCCvvVV', $w, $h, 0, 0, 1, 32, strlen( $png ), 22 ) . $png;
+	}
+}
+
+// Browsers and crawlers ask for /favicon.ico and /apple-touch-icon.png directly. The web server
+// answers those paths itself (WordPress never sees them), so real files are written once.
+add_action( 'admin_init', function () {
+	if ( ! current_user_can( 'manage_options' ) || get_option( 'db_hyg_icons_done' ) === DB_BLOCKS_LOADED ) {
+		return;
+	}
+	update_option( 'db_hyg_icons_done', DB_BLOCKS_LOADED, false );
+	$src = db_hyg_icon_source();
+	if ( '' === $src || ! wp_is_writable( ABSPATH ) ) {
+		return;
+	}
+	$png = (string) file_get_contents( $src ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	if ( ! file_exists( ABSPATH . 'apple-touch-icon.png' ) && '' !== $png ) {
+		file_put_contents( ABSPATH . 'apple-touch-icon.png', $png ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	}
+	$ico = db_hyg_png_to_ico( $png );
+	if ( ! file_exists( ABSPATH . 'favicon.ico' ) && '' !== $ico ) {
+		file_put_contents( ABSPATH . 'favicon.ico', $ico ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+	}
+} );
+
 /* ---------------------------------------------------------------- 404 page */
 
 if ( ! function_exists( 'db_hyg_404_links' ) ) {
