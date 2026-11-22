@@ -225,16 +225,226 @@ if ( ! function_exists( 'db_header_html' ) ) {
 				. '</div></div></li>';
 		}
 		$h .= '</ul></nav><div class="db-hd-right">'
-			. '<form class="db-hd-search" role="search" method="get" action="' . $home . '"><label class="screen-reader-text" for="db-hd-q">Search domains</label>'
-			. '<input id="db-hd-q" type="search" name="s" placeholder="Search domains" autocomplete="off"><input type="hidden" name="post_type" value="domain">'
-			. '<button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.600-3.600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></form>'
-			. '<a class="db-hd-link" href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-db-acct="signin">Sign in</a>'
-			. '<a class="db-hd-cta" href="' . esc_url( home_url( '/register/' ) ) . '" data-db-acct="register">Create account</a>'
-			. '<a class="db-hd-link" href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" data-db-acct="signout" hidden>Sign out</a>'
+			. '<form class="db-hd-search" role="search" method="get" action="' . $home . '" data-hints="' . esc_url( rest_url( 'db/v1/search-hints' ) ) . '" data-index="' . esc_url( rest_url( 'db/v1/domain-index' ) ) . '">'
+			. '<label class="screen-reader-text" for="db-hd-q">Search domains</label>'
+			. '<span class="db-hd-sicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-3.600-3.600" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>'
+			. '<input id="db-hd-q" type="search" name="s" placeholder="Search domains" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-hd-sp" enterkeyhint="search">'
+			. '<input type="hidden" name="post_type" value="domain">'
+			. '<kbd class="db-hd-kbd" aria-hidden="true">/</kbd>'
+			. '<button type="submit" class="db-hd-sgo" aria-label="Search">Search</button>'
+			. '<div class="db-hd-sp" id="db-hd-sp" hidden><div class="db-hd-sp-in" data-sp-body><p class="db-hd-sp-load">Loading popular names…</p></div>'
+			. '<p class="db-hd-sp-foot"><span><kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to open</span><a href="' . esc_url( home_url( '/find-a-domain/' ) ) . '">Not sure? Try the domain finder <span aria-hidden="true">&rarr;</span></a></p></div>'
+			. '</form>'
+			. db_header_account_html()
 			. '</div></div></header>';
 		return $h;
 	}
 }
+
+if ( ! function_exists( 'db_acct_menu_links' ) ) {
+	/**
+	 * The account sections, shared by the header dropdown and the mobile drawer.
+	 *
+	 * @return array<int,array{0:string,1:string,2:string}> label, url, icon key
+	 */
+	function db_acct_menu_links() {
+		$page  = home_url( '/my-wishlist/' );
+		$links = array(
+			array( 'Wishlist', $page, 'heart' ),
+			array( 'Alerts', add_query_arg( 'tab', 'alerts', $page ), 'bell' ),
+			array( 'My offers', add_query_arg( 'tab', 'offers', $page ), 'chat' ),
+			array( 'Transfers', add_query_arg( 'tab', 'transfers', $page ), 'swap' ),
+			array( 'Discover', add_query_arg( 'tab', 'discover', $page ), 'spark' ),
+			array( 'Profile', add_query_arg( 'tab', 'profile', $page ), 'user' ),
+		);
+		if ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ) {
+			$links[] = array( 'Seller dashboard', home_url( '/seller/' ), 'tag' );
+		}
+		return $links;
+	}
+}
+
+if ( ! function_exists( 'db_acct_signout_url' ) ) {
+	/** A sign-out link that works before any script has loaded. */
+	function db_acct_signout_url() {
+		return add_query_arg( 'db_signout', wp_create_nonce( 'db_signout' ), home_url( '/' ) );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( ! isset( $_GET['db_signout'] ) || ! function_exists( 'db_wl_end_session' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		return;
+	}
+	if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['db_signout'] ) ), 'db_signout' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		db_wl_end_session();
+	}
+	nocache_headers();
+	wp_safe_redirect( home_url( '/' ) );
+	exit;
+}, 1 );
+
+if ( ! function_exists( 'db_acct_icon' ) ) {
+	function db_acct_icon( $key ) {
+		$p = array(
+			'heart' => '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>',
+			'bell'  => '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+			'chat'  => '<path d="M4 5h16v11H9l-5 4z"/>',
+			'swap'  => '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+			'spark' => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.500 2.500M15.500 15.500L18 18M6 18l2.500-2.500M15.500 8.500L18 6"/>',
+			'user'  => '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+			'tag'   => '<path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.500" cy="7.500" r="1.500"/>',
+			'out'   => '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/>',
+		);
+		return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.900" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ( $p[ $key ] ?? '' ) . '</svg>';
+	}
+}
+
+if ( ! function_exists( 'db_header_account_html' ) ) {
+	/**
+	 * Signed out: Sign in and Create account. Signed in: one "My account" button
+	 * with a dropdown of the account sections and Sign out at the bottom.
+	 * Signed-in pages bypass the page cache, so the state is read here.
+	 */
+	function db_header_account_html() {
+		$email = function_exists( 'db_wl_email' ) ? db_wl_email() : '';
+		if ( '' === $email ) {
+			return '<a class="db-hd-link" href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-db-acct="signin">Sign in</a>'
+				. '<a class="db-hd-cta" href="' . esc_url( home_url( '/register/' ) ) . '" data-db-acct="register">Create account</a>';
+		}
+		$row     = function_exists( 'db_acct_row' ) ? db_acct_row( $email ) : null;
+		$name    = trim( (string) ( $row['full_name'] ?? '' ) );
+		$first   = '' !== $name ? strtok( $name, ' ' ) : '';
+		$initial = strtoupper( mb_substr( '' !== $name ? $name : $email, 0, 1 ) );
+		$unread  = 0;
+		global $wpdb;
+		if ( function_exists( 'db_acct_time_ago' ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$unread = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}db_wl_notes WHERE email = %s AND read_at IS NULL", $email ) );
+		}
+		$h  = '<div class="db-hd-acct">'
+			. '<button type="button" class="db-hd-acct-btn" aria-expanded="false" aria-controls="db-hd-acct-menu"><span class="db-hd-av" aria-hidden="true">' . esc_html( $initial ) . '</span><span class="db-hd-acct-l">' . ( '' !== $first ? esc_html( $first ) : 'My account' ) . '</span>'
+			. ( $unread ? '<span class="db-hd-dot"><span class="screen-reader-text">, ' . (int) $unread . ' new alerts</span></span>' : '' )
+			. '<svg class="db-hd-chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.500 4.500 6 8l3.500-3.500" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/></svg></button>'
+			. '<div class="db-hd-acct-menu" id="db-hd-acct-menu">'
+			. '<div class="db-hd-acct-who"><span class="db-hd-av db-hd-av--lg" aria-hidden="true">' . esc_html( $initial ) . '</span><span><strong>' . ( '' !== $name ? esc_html( $name ) : 'Signed in' ) . '</strong><span>' . esc_html( $email ) . '</span></span></div>'
+			. '<a class="db-hd-acct-main" href="' . esc_url( home_url( '/my-wishlist/' ) ) . '">My account overview <span aria-hidden="true">&rarr;</span></a><ul>';
+		foreach ( db_acct_menu_links() as $l ) {
+			$badge = ( 'Alerts' === $l[0] && $unread ) ? '<span class="db-hd-badge">' . (int) $unread . ' new</span>' : '';
+			$h    .= '<li><a href="' . esc_url( $l[1] ) . '"><i>' . db_acct_icon( $l[2] ) . '</i><span>' . esc_html( $l[0] ) . '</span>' . $badge . '</a></li>';
+		}
+		$h .= '</ul><a class="db-hd-acct-out" href="' . esc_url( db_acct_signout_url() ) . '"><i>' . db_acct_icon( 'out' ) . '</i><span>Sign out</span></a></div></div>';
+		return $h;
+	}
+}
+
+if ( ! function_exists( 'db_header_search_hints' ) ) {
+	/**
+	 * What the search panel shows before anything is typed: the most viewed
+	 * available names this week, the newest listings and the main categories.
+	 * Cached for an hour; available names only (from the domain index).
+	 */
+	function db_header_search_hints() {
+		$c = get_transient( 'db_search_hints' );
+		if ( is_array( $c ) ) {
+			return $c;
+		}
+		$index = function_exists( 'db_domain_index' ) ? (array) db_domain_index() : array();
+		$by_id = array();
+		foreach ( $index as $r ) {
+			$by_id[ (int) $r['id'] ] = $r;
+		}
+		$pick = static function ( $r ) {
+			return array( 'n' => (string) $r['n'], 'u' => (string) $r['u'], 'p' => (int) ( $r['p'] ?? 0 ) );
+		};
+		$popular = array();
+		if ( function_exists( 'db_hits_query' ) && $by_id ) {
+			$res = db_hits_query( '', 'd7', 'desc', 40, 0 );
+			foreach ( (array) $res['rows'] as $row ) {
+				$id = (int) $row->ID;
+				if ( isset( $by_id[ $id ] ) && (int) $row->d7_h > 0 ) {
+					$popular[] = $pick( $by_id[ $id ] );
+				}
+				if ( count( $popular ) >= 6 ) {
+					break;
+				}
+			}
+		}
+		if ( count( $popular ) < 6 ) {
+			$priced = array_filter( $index, static function ( $r ) { return (int) ( $r['p'] ?? 0 ) > 0; } );
+			usort( $priced, static function ( $a, $b ) { return (int) $b['p'] <=> (int) $a['p']; } );
+			foreach ( $priced as $r ) {
+				if ( count( $popular ) >= 6 ) {
+					break;
+				}
+				if ( ! in_array( $r['n'], array_column( $popular, 'n' ), true ) ) {
+					$popular[] = $pick( $r );
+				}
+			}
+		}
+		$ids = array_keys( $by_id );
+		rsort( $ids );
+		$newest = array();
+		foreach ( array_slice( $ids, 0, 12 ) as $id ) {
+			if ( ! in_array( $by_id[ $id ]['n'], array_column( $popular, 'n' ), true ) ) {
+				$newest[] = $pick( $by_id[ $id ] );
+			}
+			if ( count( $newest ) >= 4 ) {
+				break;
+			}
+		}
+		$cats = array();
+		foreach ( $index as $r ) {
+			foreach ( (array) ( $r['c'] ?? array() ) as $cat ) {
+				$k = (string) $cat[0];
+				if ( ! isset( $cats[ $k ] ) ) {
+					$cats[ $k ] = array( 'n' => $k, 'u' => (string) $cat[1], 'c' => 0 );
+				}
+				$cats[ $k ]['c']++;
+			}
+		}
+		uasort( $cats, static function ( $a, $b ) { return $b['c'] <=> $a['c']; } );
+		$out = array(
+			'popular' => $popular,
+			'newest'  => $newest,
+			'cats'    => array_values( array_slice( $cats, 0, 8 ) ),
+			'total'   => count( $index ),
+			'all'     => home_url( '/all-domains/' ),
+		);
+		set_transient( 'db_search_hints', $out, HOUR_IN_SECONDS );
+		return $out;
+	}
+}
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'db/v1', '/account-menu', array(
+		'methods'             => WP_REST_Server::READABLE,
+		'permission_callback' => '__return_true',
+		'callback'            => function () {
+			$signed = function_exists( 'db_wl_email' ) && '' !== db_wl_email();
+			$res    = new WP_REST_Response( array( 'signedIn' => $signed, 'html' => $signed ? db_header_account_html() : '' ), 200 );
+			$res->header( 'Cache-Control', 'private, no-store, max-age=0' );
+			return $res;
+		},
+	) );
+	register_rest_route( 'db/v1', '/search-hints', array(
+		'methods'             => WP_REST_Server::READABLE,
+		'permission_callback' => '__return_true',
+		'callback'            => function () {
+			$res = new WP_REST_Response( db_header_search_hints(), 200 );
+			$res->header( 'Cache-Control', 'public, max-age=600' );
+			return $res;
+		},
+	) );
+} );
+add_action( 'updated_post_meta', function ( $mid, $pid, $key ) {
+	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state' ), true ) ) {
+		delete_transient( 'db_search_hints' );
+	}
+}, 10, 3 );
+add_action( 'save_post_domain', function () {
+	delete_transient( 'db_search_hints' );
+} );
+
 
 if ( ! function_exists( 'db_header_print' ) ) {
 	function db_header_print() {
@@ -286,6 +496,149 @@ add_action( 'wp_footer', function () {
 	<?php
 }, 80 );
 
+add_action( 'wp_footer', function () {
+	if ( is_admin() || is_customize_preview() ) {
+		return;
+	}
+	?>
+<script data-no-delay>
+(function () {
+	/* Account dropdown: click or keyboard toggles, Escape and outside clicks close. */
+	var wire = function (ac) {
+		var btn = ac.querySelector('.db-hd-acct-btn'), menu = ac.querySelector('.db-hd-acct-menu'), hoverT;
+		var setA = function (open) { ac.classList.toggle('is-open', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+		var hoverAt = 0;
+		btn.addEventListener('click', function () { if (Date.now() - hoverAt < 600) { setA(true); return; } setA(!ac.classList.contains('is-open')); });
+		ac.addEventListener('mouseenter', function () { if (window.matchMedia('(hover: hover)').matches) { clearTimeout(hoverT); if (!ac.classList.contains('is-open')) { hoverAt = Date.now(); } setA(true); } });
+		ac.addEventListener('mouseleave', function () { if (window.matchMedia('(hover: hover)').matches) { hoverT = setTimeout(function () { setA(false); }, 160); } });
+		ac.addEventListener('focusout', function (e) { if (!ac.contains(e.relatedTarget)) { setA(false); } });
+		document.addEventListener('click', function (e) { if (!ac.contains(e.target)) { setA(false); } });
+		ac.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && ac.classList.contains('is-open')) { setA(false); btn.focus(); }
+			if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && ac.classList.contains('is-open')) {
+				var links = [].slice.call(menu.querySelectorAll('a')), i = links.indexOf(document.activeElement);
+				e.preventDefault(); i = e.key === 'ArrowDown' ? (i + 1) % links.length : (i <= 0 ? links.length - 1 : i - 1); links[i].focus();
+			}
+		});
+	};
+	var ac0 = document.querySelector('.db-hd-acct');
+	if (ac0) { wire(ac0); }
+	/* A cached signed-out page reached a signed-in visitor: swap in the account menu. */
+	var loading = false;
+	window.dbHdAcctLoad = function () {
+		if (loading || document.querySelector('.db-hd-acct')) { return; }
+		var right = document.querySelector('.db-hd-right'), si = right && right.querySelector('[data-db-acct=signin]');
+		if (!si) { return; }
+		loading = true;
+		fetch('<?php echo esc_url_raw( rest_url( 'db/v1/account-menu' ) ); ?>', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+			if (!j || !j.signedIn || !j.html || document.querySelector('.db-hd-acct')) { return; }
+			var reg = right.querySelector('[data-db-acct=register]');
+			var tmp = document.createElement('div'); tmp.innerHTML = j.html;
+			var el = tmp.firstElementChild; si.parentNode.replaceChild(el, si); if (reg) { reg.remove(); }
+			wire(el);
+		}).catch(function () {});
+	};
+	if (/(?:^|;\s*)db_in=1/.test(document.cookie)) { window.dbHdAcctLoad(); }
+
+	/* Search panel: popular and new names on focus, live matches as you type. */
+	var f = document.querySelector('.db-hd-search');
+	if (!f) { return; }
+	var q = f.querySelector('#db-hd-q'), panel = f.querySelector('.db-hd-sp'), body = panel.querySelector('[data-sp-body]');
+	var hints = null, index = null, active = -1, timer;
+	var money = function (p) { return p > 0 ? '$' + Number(p).toLocaleString('en-US') : 'Make an offer'; };
+	var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+	var get = function (url) { return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); };
+	var loadHints = function () { return hints ? Promise.resolve(hints) : get(f.getAttribute('data-hints')).then(function (j) { hints = j || {}; return hints; }).catch(function () { hints = {}; return hints; }); };
+	var loadIndex = function () { return index ? Promise.resolve(index) : get(f.getAttribute('data-index')).then(function (j) { index = (j || []).map(function (r) { return { n: String(r.n || ''), u: r.u, p: +r.p || 0, k: String(r.k || '').toLowerCase(), c: (r.c || []).map(function (c) { return String(c[0]).toLowerCase(); }).join(' ') }; }); return index; }).catch(function () { index = []; return index; }); };
+	var items = function () { return [].slice.call(body.querySelectorAll('a')); };
+	var setActive = function (i) {
+		var list = items(); list.forEach(function (a) { a.classList.remove('is-active'); a.removeAttribute('aria-selected'); });
+		active = list.length ? (i + list.length) % list.length : -1;
+		if (active >= 0) { list[active].classList.add('is-active'); list[active].setAttribute('aria-selected', 'true'); list[active].scrollIntoView({ block: 'nearest' }); q.setAttribute('aria-activedescendant', list[active].id); }
+		else { q.removeAttribute('aria-activedescendant'); }
+	};
+	var uid = 0;
+	var link = function (r, cls) { uid++; return '<li role="none"><a id="db-hd-o' + uid + '" role="option" href="' + esc(r.u) + '"' + (cls ? ' class="' + cls + '"' : '') + '>'; };
+	var renderHints = function (h) {
+		var html = '';
+		if (h.popular && h.popular.length) {
+			html += '<section><h3><span class="db-hd-live" aria-hidden="true"></span>Popular this week</h3><ul class="db-hd-sp-grid" role="listbox" aria-label="Popular domains">';
+			h.popular.forEach(function (r) { html += link(r) + '<b>' + esc(r.n) + '</b><span>' + money(r.p) + '</span></a></li>'; });
+			html += '</ul></section>';
+		}
+		if (h.newest && h.newest.length) {
+			html += '<section><h3>Just listed</h3><ul class="db-hd-sp-list" role="listbox" aria-label="New domains">';
+			h.newest.forEach(function (r) { html += link(r) + '<b>' + esc(r.n) + '</b><span>' + money(r.p) + '</span></a></li>'; });
+			html += '</ul></section>';
+		}
+		if (h.cats && h.cats.length) {
+			html += '<section><h3>Browse by category</h3><ul class="db-hd-sp-chips" role="listbox" aria-label="Categories">';
+			h.cats.forEach(function (c) { html += link(c) + esc(c.n) + ' <small>' + c.c + '</small></a></li>'; });
+			html += '</ul></section>';
+		}
+		if (h.all) { html += '<a class="db-hd-sp-all" href="' + esc(h.all) + '">See all ' + (h.total || '') + ' available domains</a>'; }
+		body.innerHTML = html || '<p class="db-hd-sp-load">Type a word to search our domains.</p>';
+		active = -1;
+	};
+	var mark = function (name, term) {
+		var i = name.toLowerCase().indexOf(term);
+		return i < 0 ? esc(name) : esc(name.slice(0, i)) + '<mark>' + esc(name.slice(i, i + term.length)) + '</mark>' + esc(name.slice(i + term.length));
+	};
+	var renderResults = function (term) {
+		var t = term.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').trim();
+		var bare = t.replace(/\.[a-z.]*$/, '');
+		var scored = [];
+		index.forEach(function (r) {
+			var n = r.n.toLowerCase(), s = -1;
+			if (n === t) { s = 0; } else if (n.indexOf(t) === 0) { s = 1; } else if (n.indexOf(t) > 0) { s = 2; } else if (bare && r.k.indexOf(bare) >= 0) { s = 3; } else if (r.c.indexOf(t) >= 0) { s = 4; }
+			if (s >= 0) { scored.push([s, n.length, r]); }
+		});
+		scored.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+		var top = scored.slice(0, 8), html = '';
+		if (top.length) {
+			html += '<section><h3><span class="db-hd-live" aria-hidden="true"></span>' + scored.length + ' match' + (scored.length === 1 ? '' : 'es') + ' for “' + esc(term) + '”</h3><ul class="db-hd-sp-list" role="listbox" aria-label="Matching domains">';
+			top.forEach(function (x) { html += link(x[2]) + '<b>' + mark(x[2].n, t) + '</b><span>' + money(x[2].p) + '</span></a></li>'; });
+			html += '</ul></section>';
+			if (scored.length > top.length) { html += '<a class="db-hd-sp-all" href="' + esc(f.action + '?s=' + encodeURIComponent(term) + '&post_type=domain') + '">See all ' + scored.length + ' results</a>'; }
+		} else {
+			html += '<p class="db-hd-sp-empty">No listed name matches “' + esc(term) + '” yet. Try a shorter word, <a href="' + esc((hints && hints.all) || '/all-domains/') + '">browse every domain</a>, or ask us to find one with the <a href="/find-a-domain/">domain finder</a>.</p>';
+			if (hints && hints.popular && hints.popular.length) {
+				html += '<section><h3>Popular right now</h3><ul class="db-hd-sp-grid" role="listbox" aria-label="Popular domains">';
+				hints.popular.slice(0, 4).forEach(function (r) { html += link(r) + '<b>' + esc(r.n) + '</b><span>' + money(r.p) + '</span></a></li>'; });
+				html += '</ul></section>';
+			}
+		}
+		body.innerHTML = html;
+		active = -1;
+	};
+	var update = function () {
+		var term = q.value.trim();
+		if (term.length < 2) { loadHints().then(function (h) { if (q.value.trim().length < 2) { renderHints(h); } }); return; }
+		Promise.all([loadIndex(), loadHints()]).then(function () { if (q.value.trim() === term) { renderResults(term); } });
+	};
+	var open = function () { if (!panel.hidden) { return; } panel.hidden = false; f.classList.add('is-open'); q.setAttribute('aria-expanded', 'true'); update(); loadIndex(); };
+	var close = function () { panel.hidden = true; f.classList.remove('is-open'); q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); active = -1; };
+	q.addEventListener('focus', open);
+	q.addEventListener('click', open);
+	q.addEventListener('input', function () { open(); clearTimeout(timer); timer = setTimeout(update, 90); });
+	q.addEventListener('keydown', function (e) {
+		if (e.key === 'ArrowDown') { e.preventDefault(); open(); setActive(active + 1); }
+		else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+		else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); items()[active].click(); }
+		else if (e.key === 'Escape') { close(); q.blur(); }
+	});
+	f.addEventListener('focusout', function (e) { if (!f.contains(e.relatedTarget)) { setTimeout(function () { if (!f.contains(document.activeElement)) { close(); } }, 120); } });
+	document.addEventListener('mousedown', function (e) { if (!f.contains(e.target)) { close(); } });
+	document.addEventListener('keydown', function (e) {
+		var tag = (document.activeElement && document.activeElement.tagName) || '';
+		if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(tag) && !(document.activeElement && document.activeElement.isContentEditable)) { e.preventDefault(); q.focus(); }
+	});
+	f.addEventListener('submit', function (e) { if (!q.value.trim()) { e.preventDefault(); q.focus(); } });
+}());
+</script>
+	<?php
+}, 81 );
+
 add_action( 'wp_enqueue_scripts', function () {
 	$css = <<<'CSS'
 .db-hd { display: none; }
@@ -329,10 +682,75 @@ add_action( 'wp_enqueue_scripts', function () {
 	html body .db-hd .db-hd-top::after { content: ""; position: absolute; left: 18px; right: 18px; bottom: 16px; height: 2px; border-radius: 2px; background: #0b7a75; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
 	html body .db-hd .db-hd-top:hover::after, html body .db-hd .db-hd-item.is-open .db-hd-top::after, html body .db-hd .db-hd-item:focus-within .db-hd-top::after { transform: scaleX(1); }
 	.db-hd-right { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
-	.db-hd-search { position: relative; display: flex; align-items: center; margin: 0 6px 0 0; }
-	html body .db-hd .db-hd-search input[type=search] { width: 190px; height: 40px; margin: 0; padding: 0 40px 0 16px; border: 1px solid rgba(17,24,39,.14) !important; border-radius: 999px !important; background: rgba(17,24,39,.04) !important; box-shadow: none !important; font-size: 14.5px; color: #111827; transition: width .2s ease, background .2s ease, border-color .2s ease; }
-	html body .db-hd .db-hd-search input[type=search]:focus { width: 250px; background: #fff !important; border-color: #111827 !important; outline: 0; }
-	html body .db-hd .db-hd-search button { position: absolute; right: 2px; top: 2px; width: 36px; height: 36px; min-height: 0; padding: 0; border: 0 !important; border-radius: 50% !important; background: transparent !important; color: #111827 !important; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: none !important; }
+	/* Search: pill with icon, Search button, and a panel of popular names and live results. */
+	.db-hd-search { position: relative; display: flex; align-items: center; margin: 0 8px 0 0; }
+	html body .db-hd .db-hd-search input[type=search] { width: 240px; height: 44px; margin: 0; padding: 0 92px 0 42px; border: 1.5px solid #dfe3ea !important; border-radius: 999px !important; background: #f4f6f9 !important; box-shadow: none !important; font-size: 15px; color: #0f172a; transition: width .25s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+	html body .db-hd .db-hd-search input[type=search]::placeholder { color: #667085; }
+	html body .db-hd .db-hd-search input[type=search]::-webkit-search-cancel-button { display: none; }
+	html body .db-hd .db-hd-search.is-open input[type=search], html body .db-hd .db-hd-search input[type=search]:focus { width: 340px; background: #fff !important; border-color: #0f1b2d !important; box-shadow: 0 0 0 4px rgba(181,230,29,.35) !important; outline: 0; }
+	.db-hd-sicon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #0f1b2d; display: flex; pointer-events: none; }
+	html body .db-hd .db-hd-sgo { position: absolute; right: 4px; top: 4px; height: 36px; min-height: 0; padding: 0 16px; border: 0 !important; border-radius: 999px !important; background: #0f1b2d !important; color: #fff !important; font-size: 14px; font-weight: 700; letter-spacing: .01em; cursor: pointer; box-shadow: none !important; transition: background .15s ease, color .15s ease; }
+	html body .db-hd .db-hd-sgo:hover { background: #b5e61d !important; color: #0f1b2d !important; }
+	.db-hd-kbd { position: absolute; right: 86px; top: 50%; transform: translateY(-50%); min-width: 22px; height: 22px; padding: 0 6px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; color: #667085; font: 600 12px/20px ui-monospace, monospace; text-align: center; }
+	.db-hd-search.is-open .db-hd-kbd, .db-hd-search:focus-within .db-hd-kbd { display: none; }
+	.db-hd-sp { position: absolute; top: calc(100% + 12px); right: -120px; width: min(620px, calc(100vw - 40px)); max-height: calc(100vh - 110px); overflow: auto; padding: 0; border: 1px solid #e4e7ec; border-radius: 22px; background: #fff; box-shadow: 0 30px 70px -20px rgba(15,23,42,.35); z-index: 5; }
+	.db-hd-sp-in { padding: 20px 22px 8px; }
+	html body .db-hd .db-hd-sp h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #5b6472; }
+	.db-hd-sp h3 .db-hd-live { width: 8px; height: 8px; border-radius: 50%; background: #65a30d; box-shadow: 0 0 0 0 rgba(101,163,13,.6); animation: dbhdpulse 1.8s infinite; }
+	@keyframes dbhdpulse { 70% { box-shadow: 0 0 0 8px rgba(101,163,13,0); } 100% { box-shadow: 0 0 0 0 rgba(101,163,13,0); } }
+	.db-hd-sp section + section { margin-top: 18px; }
+	.db-hd-sp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+	.db-hd-sp-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+	.db-hd-sp li { margin: 0; }
+	html body .db-hd .db-hd-sp-grid a { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid #e4e7ec; border-radius: 14px; background: #fff; text-decoration: none !important; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+	html body .db-hd .db-hd-sp-grid a:hover, html body .db-hd .db-hd-sp-grid a.is-active { border-color: #0f1b2d; transform: translateY(-1px); box-shadow: 0 8px 20px -10px rgba(15,23,42,.35); }
+	html body .db-hd .db-hd-sp-grid b { font-size: 15.5px; font-weight: 800; color: #0f172a; letter-spacing: -.01em; overflow-wrap: anywhere; }
+	html body .db-hd .db-hd-sp-grid span { font-size: 13px; color: #3f6212; font-weight: 700; }
+	html body .db-hd .db-hd-sp-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; text-decoration: none !important; color: #0f172a; }
+	html body .db-hd .db-hd-sp-list a:hover, html body .db-hd .db-hd-sp-list a.is-active { background: #f1f6e4; }
+	html body .db-hd .db-hd-sp-list b { font-size: 15.5px; font-weight: 700; color: #0f172a; overflow-wrap: anywhere; }
+	html body .db-hd .db-hd-sp-list b mark { background: #e3f5b0; color: inherit; border-radius: 3px; padding: 0 1px; }
+	html body .db-hd .db-hd-sp-list span { flex: none; font-size: 14px; font-weight: 700; color: #3f6212; }
+	.db-hd-sp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+	html body .db-hd .db-hd-sp-chips a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1.5px solid #dfe3ea; border-radius: 999px; color: #0f172a; font-size: 14px; font-weight: 600; text-decoration: none !important; }
+	html body .db-hd .db-hd-sp-chips a small { color: #667085; font-size: 12px; font-weight: 600; }
+	html body .db-hd .db-hd-sp-chips a:hover, html body .db-hd .db-hd-sp-chips a.is-active { border-color: #0f1b2d; background: #0f1b2d; color: #fff; }
+	html body .db-hd .db-hd-sp-chips a:hover small, html body .db-hd .db-hd-sp-chips a.is-active small { color: #b5e61d; }
+	html body .db-hd .db-hd-sp-empty { margin: 4px 0 8px; padding: 14px; border-radius: 14px; background: #f6f7f9; color: #344054; font-size: 14.5px; line-height: 1.5; }
+	html body .db-hd .db-hd-sp-empty a { color: #3f6212; font-weight: 700; }
+	html body .db-hd .db-hd-sp-all { display: inline-flex; margin: 8px 0 4px; color: #0f172a; font-size: 14.5px; font-weight: 700; text-decoration: underline !important; text-underline-offset: 3px; }
+	html body .db-hd .db-hd-sp-load { margin: 0 0 12px; color: #667085; font-size: 14px; }
+	html body .db-hd .db-hd-sp-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 10px 0 0; padding: 12px 22px; border-top: 1px solid #eef1f4; background: #fafbfc; border-radius: 0 0 22px 22px; font-size: 13px; color: #667085; }
+	html body .db-hd .db-hd-sp-foot a { color: #3f6212; font-weight: 700; text-decoration: none !important; }
+	.db-hd-sp-foot kbd { display: inline-block; min-width: 20px; margin: 0 2px; padding: 0 5px; border: 1px solid #d0d5dd; border-radius: 5px; background: #fff; font: 600 11px/18px ui-monospace, monospace; text-align: center; color: #344054; }
+	/* Account dropdown. */
+	.db-hd-acct { position: relative; }
+	html body .db-hd .db-hd-acct-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; min-height: 0; padding: 0 12px 0 4px; border: 1.5px solid #dfe3ea !important; border-radius: 999px !important; background: #fff !important; color: #0f172a !important; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: none !important; position: relative; }
+	html body .db-hd .db-hd-acct-btn:hover, html body .db-hd .db-hd-acct.is-open .db-hd-acct-btn { border-color: #0f1b2d !important; }
+	html body .db-hd .db-hd-av { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #0f1b2d; color: #b5e61d; font-size: 15px; font-weight: 900; }
+	html body .db-hd .db-hd-av--lg { width: 44px; height: 44px; font-size: 18px; flex: none; }
+	.db-hd-acct-l { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.db-hd-chev { transition: transform .2s ease; }
+	.db-hd-acct.is-open .db-hd-chev { transform: rotate(180deg); }
+	.db-hd-dot { position: absolute; left: 30px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: #e11d48; border: 2px solid #fff; }
+	.db-hd-acct-menu { position: absolute; right: 0; top: calc(100% + 10px); width: 300px; padding: 8px; border: 1px solid #e4e7ec; border-radius: 20px; background: #fff; box-shadow: 0 30px 60px -20px rgba(15,23,42,.35); visibility: hidden; opacity: 0; transform: translateY(-6px); transition: opacity .16s ease, transform .16s ease, visibility 0s linear .16s; }
+	.db-hd-acct.is-open .db-hd-acct-menu { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+	.db-hd-acct-who { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #f6f8f2; }
+	.db-hd-acct-who > span:last-child { min-width: 0; display: grid; }
+	html body .db-hd .db-hd-acct-who strong { font-size: 15px; font-weight: 800; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	html body .db-hd .db-hd-acct-who span span { font-size: 13px; color: #5b6472; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	html body .db-hd .db-hd-acct-main { display: flex; justify-content: space-between; margin: 8px 4px 4px; padding: 10px 10px; border-radius: 12px; background: #0f1b2d; color: #fff !important; font-size: 14.5px; font-weight: 700; text-decoration: none !important; }
+	html body .db-hd .db-hd-acct-main:hover { background: #1e2f47; }
+	.db-hd-acct-menu ul { margin: 4px 0; padding: 0; list-style: none; display: grid; }
+	.db-hd-acct-menu li { margin: 0; }
+	html body .db-hd .db-hd-acct-menu ul a, html body .db-hd .db-hd-acct-out { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px; color: #0f172a !important; font-size: 15px; font-weight: 600; text-decoration: none !important; }
+	html body .db-hd .db-hd-acct-menu i { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: #f1f5f4; color: #0f1b2d; font-style: normal; }
+	html body .db-hd .db-hd-acct-menu ul a:hover, html body .db-hd .db-hd-acct-menu ul a:focus-visible { background: #f1f6e4; }
+	html body .db-hd .db-hd-acct-menu ul a:hover i { background: #b5e61d; }
+	html body .db-hd .db-hd-badge { margin-left: auto; padding: 2px 8px; border-radius: 999px; background: #ffe4e6; color: #be123c; font-size: 12px; font-weight: 800; }
+	html body .db-hd .db-hd-acct-out { margin-top: 4px; border-top: 1px solid #eef1f4; border-radius: 0 0 12px 12px; padding-top: 12px; color: #b42318 !important; }
+	html body .db-hd .db-hd-acct-out i { background: #fff1f0; color: #b42318; }
+	html body .db-hd .db-hd-acct-out:hover { background: #fff5f4; }
 	html body .db-hd .db-hd-link { display: inline-flex; align-items: center; height: 40px; padding: 0 14px; border-radius: 999px; color: #111827 !important; font-size: 15px; font-weight: 600; text-decoration: none !important; white-space: nowrap; box-shadow: none; }
 	html body .db-hd .db-hd-link:hover { background: rgba(17,24,39,.06); }
 	html body .db-hd .db-hd-cta { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; background: #111827; color: #fff !important; font-size: 15px; font-weight: 600; text-decoration: none !important; white-space: nowrap; transition: background .15s ease; }
@@ -341,10 +759,11 @@ add_action( 'wp_enqueue_scripts', function () {
 	.db-hd a:focus-visible, .db-hd button:focus-visible { outline: 3px solid #0b7a75; outline-offset: 2px; }
 }
 @media (min-width: 992px) and (max-width: 1280px) {
-	html body .db-hd .db-hd-search input[type=search] { width: 40px; padding: 0 0 0 40px; color: transparent; cursor: pointer; }
-	html body .db-hd .db-hd-search input[type=search]::placeholder { color: transparent; }
-	html body .db-hd .db-hd-search input[type=search]:focus { width: 210px; padding: 0 40px 0 16px; color: #111827; cursor: text; }
-	html body .db-hd .db-hd-search input[type=search]:focus::placeholder { color: #6b7280; }
+	html body .db-hd .db-hd-search input[type=search] { width: 170px; padding-right: 16px; }
+	html body .db-hd .db-hd-sgo, .db-hd-kbd { display: none; }
+	html body .db-hd .db-hd-search.is-open input[type=search], html body .db-hd .db-hd-search input[type=search]:focus { width: 260px; }
+	.db-hd-sp { right: -60px; }
+	.db-hd-acct-l { display: none; }
 	html body .db-hd .db-hd-top { padding: 0 13px; }
 	html body .db-hd .db-hd-top::after { left: 13px; right: 13px; }
 	.db-hd-in { gap: 12px; }
@@ -357,7 +776,7 @@ add_action( 'wp_enqueue_scripts', function () {
 html body.db-ui-active .db-bc-bar nav.db-breadcrumbs { margin: 0 !important; padding: 10px 0 !important; max-width: none !important; width: auto !important; background: none !important; border: 0 !important; font-size: 13.5px; }
 html body.db-ui-active .db-bc-bar nav.db-breadcrumbs ol { margin: 0 !important; padding: 0 !important; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; }
 html body.db-ui-active .db-bc-bar nav.db-breadcrumbs a { display: inline-block; padding: 4px 0; }
-@media (prefers-reduced-motion: reduce) { .db-hd, .db-hd-mega, .db-hd-top svg, .db-hd-search input { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .db-hd, .db-hd-mega, .db-hd-top svg, .db-hd-search input, .db-hd-acct-menu, .db-hd-chev { transition: none !important; } .db-hd-sp h3 .db-hd-live { animation: none; } }
 CSS;
 	if ( function_exists( 'db_external_style' ) && db_external_style( 'header', $css ) ) {
 		return;

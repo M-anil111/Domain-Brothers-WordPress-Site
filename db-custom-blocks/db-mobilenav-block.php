@@ -231,6 +231,10 @@ add_action( 'wp_footer', function () {
 	}
 	/* Account links: Sign in / Create account (My account / Sign out once signed in). */
 	.db-desk-acct[hidden], .db-mnav-acct[hidden] { display: none !important; }
+	.db-mnav li.db-mnav-acct--in { margin-top: 14px; border-top: 1px solid rgba(157,199,251,.25); }
+	.db-mnav-acct-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #94bf1e; vertical-align: middle; }
+	.db-mnav .db-mnav-who { padding: 10px 12px 6px 30px; font-size: 13px; color: rgba(255,255,255,.7); overflow-wrap: anywhere; }
+	.db-mnav .db-mnav-sub a.db-mnav-out { color: #fca5a5 !important; }
 	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--m-ink, #0a1628); color: #fff !important; box-shadow: none; }
 	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:hover, html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:focus-visible { background: #137a3e; color: #fff !important; box-shadow: none; }
 	/* Up to 1299px the extra button pushed the menu past the screen (iPad Pro 1024, small laptops). Sign in also creates accounts. */
@@ -294,8 +298,7 @@ add_action( 'wp_footer', function () {
 		s.addEventListener('click', function () { setOpen(false); });
 		n.addEventListener('click', function (e) { if (e.target.closest('a')) { setOpen(false); } });
 
-		var subToggle = document.querySelector('.db-mnav-subtoggle');
-		if (subToggle) {
+		document.querySelectorAll('.db-mnav-subtoggle').forEach(function (subToggle) {
 			var sub = document.getElementById(subToggle.getAttribute('aria-controls'));
 			subToggle.addEventListener('click', function (e) {
 				e.stopPropagation(); // don't let the "any link click closes the drawer" handler above see this
@@ -303,7 +306,7 @@ add_action( 'wp_footer', function () {
 				subToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 				if (sub) { sub.hidden = !open; }
 			});
-		}
+		});
 		document.addEventListener('keydown', function (e) {
 			if (!t.classList.contains('is-open')) { return; }
 			if (e.key === 'Escape') { setOpen(false); return; }
@@ -332,6 +335,22 @@ if ( ! function_exists( 'db_nav_account_items' ) ) {
 		$signin   = esc_url( home_url( '/sign-in/' ) );
 		$register = esc_url( home_url( '/register/' ) );
 		$cls      = 'drawer' === $where ? 'db-mnav-acct' : 'db-desk-acct';
+		$email    = function_exists( 'db_wl_email' ) ? db_wl_email() : '';
+		if ( '' !== $email && function_exists( 'db_acct_menu_links' ) ) {
+			// Signed in (these pages bypass the cache): one "My account" group, Sign out inside it.
+			$page = esc_url( home_url( '/my-wishlist/' ) );
+			if ( 'drawer' !== $where ) {
+				return '<li class="' . $cls . '"><a href="' . $page . '">My account</a></li>';
+			}
+			$h = '<li class="db-mnav-has-sub ' . $cls . ' db-mnav-acct--in"><div class="db-mnav-row"><a href="' . $page . '"><span class="db-mnav-acct-dot" aria-hidden="true"></span>My account</a>'
+				. '<button type="button" class="db-mnav-subtoggle" aria-expanded="false" aria-controls="db-mnav-sub-acct" aria-label="Show account menu"><span class="db-mnav-chevron" aria-hidden="true"></span></button></div>'
+				. '<ul id="db-mnav-sub-acct" class="db-mnav-sub" hidden><li class="db-mnav-who">' . esc_html( $email ) . '</li>';
+			foreach ( db_acct_menu_links() as $l ) {
+				$h .= '<li><a href="' . esc_url( $l[1] ) . '">' . esc_html( $l[0] ) . '</a></li>';
+			}
+			$url = function_exists( 'db_acct_signout_url' ) ? db_acct_signout_url() : home_url( '/my-wishlist/' );
+			return $h . '<li><a class="db-mnav-out" href="' . esc_url( $url ) . '">Sign out</a></li></ul></li>';
+		}
 		return '<li class="' . $cls . '"><a href="' . $signin . '" data-href="' . $signin . '" data-db-acct="signin">Sign in</a></li>'
 			. '<li class="' . $cls . ' ' . $cls . '--cta"><a href="' . $register . '" data-db-acct="register">Create account</a></li>'
 			. '<li class="' . $cls . '" hidden><a href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" data-db-acct="signout">Sign out</a></li>';

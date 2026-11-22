@@ -226,6 +226,10 @@ if ( ! function_exists( 'db_wl_start_session' ) ) {
 			) );
 		}
 		$_COOKIE[ DB_WL_COOKIE ] = $token;
+		if ( ! headers_sent() ) {
+			// Readable hint (no secret) so a cached page can tell the browser to load the account menu.
+			setcookie( 'db_in', '1', array( 'expires' => time() + DB_WL_SESSION_TTL, 'path' => '/', 'secure' => is_ssl(), 'httponly' => false, 'samesite' => 'Lax' ) );
+		}
 	}
 }
 
@@ -258,6 +262,7 @@ if ( ! function_exists( 'db_wl_end_session' ) ) {
 		}
 		if ( ! headers_sent() ) {
 			setcookie( DB_WL_COOKIE, '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
+			setcookie( 'db_in', '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => false, 'samesite' => 'Lax' ) );
 		}
 		unset( $_COOKIE[ DB_WL_COOKIE ] );
 	}
@@ -582,6 +587,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			if (kind === 'signout') { li.hidden = !state.signedIn; }
 		});
 		document.documentElement.classList.toggle('db-signed-in', state.signedIn);
+		if (state.signedIn && window.dbHdAcctLoad) { window.dbHdAcctLoad(); }
 	}
 	function goAccount() { if (location.pathname.indexOf('/my-wishlist') === 0) { window.location.reload(); } else { window.location.href = C.page; } }
 	document.addEventListener('click', function (e) {
