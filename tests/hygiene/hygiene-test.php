@@ -43,6 +43,11 @@ $only_sr = '<h1 class="screen-reader-text">Only</h1><h1 class="screen-reader-tex
 check( 'with no visible h1 nothing is changed', $only_sr === db_hyg_single_h1( $only_sr ) );
 check( 'a single h1 is untouched', '<h1>A</h1>' === db_hyg_single_h1( '<h1>A</h1>' ) );
 check( 'two visible h1s are left for the page to fix', '<h1>A</h1><h1>B</h1>' === db_hyg_single_h1( '<h1>A</h1><h1>B</h1>' ) );
+$ques = '<div class="ques_title">' . "\n" . '<h1>Questions? Email today</h1></div><main><h1 class="db-plan-h1">Choose your plan</h1></main>';
+$qfix = db_hyg_single_h1( $ques );
+check( 'the theme ques_title h1 becomes a paragraph when the page has its own h1', 1 === substr_count( $qfix, '<h1' ) && false !== strpos( $qfix, '<p class="db-ques-h">Questions? Email today</p>' ) );
+$qonly = '<div class="ques_title"><h1>Questions?</h1></div><h2>Other</h2>';
+check( 'a ques_title h1 that is the only h1 is kept', $qonly === db_hyg_single_h1( $qonly ) );
 
 // ---- llms.txt and security.txt
 $llms = db_hyg_llms_txt( 'https://example.test' );

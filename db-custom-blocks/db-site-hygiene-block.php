@@ -126,9 +126,16 @@ if ( ! function_exists( 'db_hyg_single_h1' ) ) {
 		if ( ! preg_match( '/<h1\b(?![^>]*screen-reader-text)[^>]*>/i', $html ) ) {
 			return $html;
 		}
-		return preg_replace_callback( '#<h1\b([^>]*screen-reader-text[^>]*)>(.*?)</h1>#is', static function ( $m ) {
+		$html = preg_replace_callback( '#<h1\b([^>]*screen-reader-text[^>]*)>(.*?)</h1>#is', static function ( $m ) {
 			return '<p' . $m[1] . '>' . $m[2] . '</p>';
 		}, $html );
+		// The theme's hidden "Questions? Email today" line (div.ques_title) is an h1 too. It is
+		// demoted only when the page has another h1 outside that box.
+		$without = preg_replace( '#<div\b[^>]*\bques_title\b[^>]*>\s*<h1\b.*?</h1>#is', '', $html );
+		if ( is_string( $without ) && preg_match( '/<h1\b(?![^>]*screen-reader-text)[^>]*>/i', $without ) ) {
+			$html = preg_replace( '#(<div\b[^>]*\bques_title\b[^>]*>\s*)<h1\b([^>]*)>(.*?)</h1>#is', '$1<p class="db-ques-h"$2>$3</p>', $html );
+		}
+		return $html;
 	}
 }
 

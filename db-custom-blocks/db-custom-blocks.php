@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.143.1
+ * Version:     3.144.3
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.143.1' );
+define( 'DB_BLOCKS_LOADED', '3.144.3' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -885,7 +885,7 @@ function db_plan_widget_html() {
 		data-buynow="<?php echo esc_attr( home_url( '/buy-now/' ) ); ?>">
 
 		<div class="db-plan-head">
-			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
+			<h1 class="db-plan-h1">Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h1>
 			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
 		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
@@ -913,7 +913,7 @@ function db_plan_widget_html() {
 	</div>
 	<style>
 		.db-plan{max-width:760px;margin:32px auto;padding:0 4px;font-family:inherit;color:#1a1a1a;}
-		.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
+		.db-plan-head h1,.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
 		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-bar{max-width:760px;margin:24px auto 0;padding:0 4px}.db-plan-bar .db-pa{margin-bottom:0}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
 		.db-plan-total{font-size:15px;color:#444;margin:0 0 20px;}
 		.db-plan-zero{display:inline-block;background:#e7f6ec;color:#137a3e;font-weight:600;padding:2px 10px;border-radius:999px;font-size:13px;}
