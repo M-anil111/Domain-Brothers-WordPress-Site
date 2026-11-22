@@ -253,7 +253,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	}
 	// Designer's tokens: navy #0f1b2d, lime #b5e61d, soft lime #eef8d2, line #e4e7ec, ink #0f172a, text #374151.
 	$hero = ( defined( 'DBR_ADR_URL' ) ) ? 'url("' . esc_url_raw( DBR_ADR_URL . 'assets/img/hero-domain.webp' ) . '")' : 'none';
-	$css  = '.dbpp{--n:#0f1b2d;--l:#b5e61d;--ls:#eef8d2;--li:#3f6212;--ln:#e4e7ec;--ink:#0f172a;--tx:#374151;--pn:#f1f3f6;display:grid;gap:clamp(34px,5vw,56px);margin:0 0 8px}'
+	$css  = '.dbpp{--n:#0f1b2d;--l:#b5e61d;--ls:#eef8d2;--li:#3f6212;--ln:#e4e7ec;--ink:#0f172a;--tx:#374151;--pn:#f1f3f6;display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(34px,5vw,56px);margin:0 0 8px}'
 		. '.dbpp h2{margin:0 0 18px;color:var(--ink);font-size:clamp(26px,3.2vw,38px);font-weight:900;line-height:1.1;letter-spacing:-.025em;text-align:left}'
 		. '.dbpp p{max-width:none}'
 		// Hero art (designer asset), only when the designer plugin is active.
