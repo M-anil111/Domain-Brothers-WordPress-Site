@@ -319,6 +319,9 @@ if ( ! function_exists( 'db_seller_recheck_run' ) ) {
 	 */
 	function db_seller_recheck_run() {
 		global $wpdb;
+		if ( ! db_seller_enabled() ) {
+			return 0; // no reminders or take-downs while "Sell with us" is off
+		}
 		$l    = db_seller_table( 'listings' );
 		$s    = db_seller_table( 'sellers' );
 		$now  = time();
@@ -1364,7 +1367,9 @@ add_action( 'admin_post_db_seller_toggle', function () {
 	$on = isset( $_POST['on'] ) && '1' === (string) $_POST['on'];
 	update_option( 'db_seller_on', $on ? '1' : '0' );
 	if ( ! $on ) {
-		wp_clear_scheduled_hook( 'db_seller_verify_cron' );
+		foreach ( array( 'db_seller_verify_cron', 'db_seller_recheck_cron', 'db_seller_expiry_cron' ) as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
 	}
 	do_action( 'db_page_cache_purge_all' );
 	do_action( 'litespeed_purge_all' );

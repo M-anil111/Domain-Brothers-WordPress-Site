@@ -203,7 +203,7 @@ if ( ! function_exists( 'db_seller_reliability_sweep' ) ) {
 	function db_seller_reliability_sweep() {
 		global $wpdb;
 		$out = array( 'reminders' => 0, 'strikes' => 0, 'suspended' => 0, 'transfer' => 0 );
-		if ( ! function_exists( 'db_deal_table' ) ) {
+		if ( ! function_exists( 'db_deal_table' ) || ( function_exists( 'db_seller_enabled' ) && ! db_seller_enabled() ) ) {
 			return $out;
 		}
 		$l     = db_seller_table( 'listings' );
@@ -323,6 +323,9 @@ if ( ! function_exists( 'db_seller_expiry_run' ) ) {
 	/** Live names expiring soon get a warning; expired names come down. Each name is looked up at most weekly. */
 	function db_seller_expiry_run( $limit = 40 ) {
 		global $wpdb;
+		if ( function_exists( 'db_seller_enabled' ) && ! db_seller_enabled() ) {
+			return array( 'warn' => 0, 'expired' => 0, 'looked_up' => 0 );
+		}
 		$l    = db_seller_table( 'listings' );
 		$s    = db_seller_table( 'sellers' );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
