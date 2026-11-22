@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.144.3
+ * Version:     3.144.5
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.144.3' );
+define( 'DB_BLOCKS_LOADED', '3.144.5' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -3277,8 +3277,6 @@ html body.db-ui-active a.db-home-viewall { display: inline-flex; align-items: ce
 html body.db-ui-active a.db-home-viewall:hover { text-decoration-color: #0f1b2d !important; }
 .db-ui-active .db-home-panel .View-all { display: none; }
 @media (max-width: 640px) { .db-ui-active .db-home-tools { width: 100%; justify-content: space-between; margin-left: 0; } }
-html body.home.db-ui-active #page#page #main#main.homepage-listing > .row { padding-top: 32px !important; }
-html body.home.db-ui-active.db-ui-active section.db-hp-hero.db-hp-hero.db-hp-hero { padding-bottom: 40px !important; } /* beats the shared layout's 80px section padding here only */
 .home.db-ui-active .db-home-tabs { margin-top: 0; }
 @media (min-width: 992px) { html body.home.db-ui-active #main.homepage-listing > .row > .col-lg-4 { margin-top: 0 !important; padding-top: 0 !important; } }
 
