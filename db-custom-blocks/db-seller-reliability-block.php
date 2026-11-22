@@ -103,6 +103,12 @@ if ( ! function_exists( 'db_seller_tell_buyer_broker' ) ) {
 		if ( ! $deal || ! is_email( $deal->buyer_email ) || ! function_exists( 'db_plan_send' ) || ! function_exists( 'db_plan_email_shell' ) ) {
 			return;
 		}
+		global $wpdb;
+		// One handover per deal: once a broker has it, the buyer is not emailed again.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		if ( (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . db_deal_table( 'events' ) . " WHERE deal_id = %d AND actor = 'system' AND action = 'note' AND message LIKE %s", (int) $deal->id, 'Broker took over%' ) ) ) {
+			return;
+		}
 		$texts = array(
 			'unresponsive' => 'The owner of <strong>' . esc_html( $deal->domain ) . '</strong> has not responded to your offer yet.',
 			'paused'       => 'The owner of <strong>' . esc_html( $deal->domain ) . '</strong> is away at the moment.',
