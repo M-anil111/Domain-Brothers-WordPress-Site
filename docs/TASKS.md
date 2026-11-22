@@ -1,6 +1,6 @@
 # Domain Brothers: complete task list
 
-Status on 2026-11-22, plugin 3.126.1 on beta (`https://beta.domainbrothers.com`).
+Status on 2026-11-22, plugin 3.127.2 on beta (`https://beta.domainbrothers.com`).
 `[x]` done and checked on beta · `[~]` built, final check outstanding · `[ ]` not started.
 Production (`www.domainbrothers.com`) has none of this until it is deployed there (it returned HTTP 500 at last check and is not in the connected hosting account).
 
@@ -191,6 +191,17 @@ Totals: see the summary table at the end.
 - [x] Cached signed-out pages swap in the account menu for signed-in visitors
 - [x] Signed-in pages never stored in a shared cache (LiteSpeed no-cache cookie `db_wl`)
 - [ ] Final browser re-test after the cache clear (dropdown on a cached page, sign out)
+
+**Payment plans tab (3.127)**
+- [x] Payment-plan checkout needs a free account: signed-out visitors go to sign-in (same code creates the account) with a note, then straight back to checkout
+- [x] Pay in full stays open to guests
+- [x] Account email stored on the payment and the plan, so the plan shows even if another receipt email is typed
+- [x] "Payment plans" tab (only when the account has a plan) and link in the header account menu
+- [x] Per plan: next payment amount and date, paid so far (n of N), remaining, progress bar, status (on track, payment declined, paid off)
+- [x] Full schedule table (paid, next, scheduled, declined and retrying), next row uses the real charge date
+- [x] Update payment card button; declined-payment warning with the card link
+- [x] Phone and desktop layout, axe clean
+- [ ] Real end-to-end check with a Stripe sandbox plan purchase (needs a person past Turnstile)
 
 **Profile tab (3.123.1)**
 - [x] Your details card: avatar initial, full name, phone, read-only sign-in email with note
