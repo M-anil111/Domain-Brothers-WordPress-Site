@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.131.4
+ * Version:     3.132.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.131.4' );
+define( 'DB_BLOCKS_LOADED', '3.132.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4776,6 +4776,73 @@ require_once __DIR__ . '/db-article-block.php';
 if ( is_readable( __DIR__ . '/db-seller-block.php' ) && is_readable( __DIR__ . '/db-seller-lib.php' ) ) {
 	require_once __DIR__ . '/db-seller-block.php';
 }
+/*
+ * "?domain=name" on an ordinary page (old contact and offer links) is read by
+ * WordPress as a request for the domain post of that name, which redirected
+ * the visitor away from the page (bug RS-1). On a page URL, the parameter is
+ * only data: drop it from the query so the page itself loads.
+ */
+add_filter( 'request', function ( $vars ) {
+	if ( isset( $vars['domain'], $_GET['domain'] ) && ! is_admin() ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$path = trim( (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( '' !== $path && 0 !== strpos( $path, 'domains/' ) && get_page_by_path( $path ) ) {
+			unset( $vars['domain'], $vars['post_type'], $vars['name'] );
+			$vars['pagename'] = $path;
+		}
+	}
+	return $vars;
+} );
+
+/* Contact links from domain pages ("?dom=name&topic=develop") fill in the form, in the server HTML. */
+add_filter( 'wpcf7_form_tag', function ( $tag ) {
+	if ( is_admin() || empty( $tag['name'] ) ) {
+		return $tag;
+	}
+	$dom = isset( $_GET['dom'] ) ? $_GET['dom'] : ( isset( $_GET['domain'] ) ? $_GET['domain'] : '' ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$dom = strtolower( preg_replace( '/[^a-z0-9.-]/i', '', sanitize_text_field( wp_unslash( (string) $dom ) ) ) );
+	if ( '' === $dom ) {
+		return $tag;
+	}
+	if ( 'contact-domain' === $tag['name'] ) {
+		$tag['values'] = array( $dom );
+	} elseif ( 'contact-msg' === $tag['name'] && isset( $_GET['topic'] ) && 'develop' === sanitize_key( wp_unslash( $_GET['topic'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$tag['values'] = array( 'I own ' . $dom . ' and would like help developing it (website, app or marketing).' );
+	}
+	return $tag;
+} );
+
+/*
+ * Form fields without a label (bug A-1): several service forms use
+ * placeholders only, so screen readers announced "edit text". Give every
+ * field that has no aria-label one, from its placeholder or a known name.
+ */
+add_filter( 'wpcf7_form_elements', function ( $html ) {
+	$names = array( 'contact-name' => 'Your name', 'contact-email' => 'Your email', 'contact-phone' => 'Phone number', 'contact-interest' => 'What you are interested in', 'contact-domain' => 'Domain name', 'contact-msg' => 'Your message', 'your-name' => 'Your name', 'your-email' => 'Your email', 'your-message' => 'Your message' );
+	return (string) preg_replace_callback( '/<(input|select|textarea)\b([^>]*)>/i', function ( $m ) use ( $names ) {
+		$attrs = $m[2];
+		if ( preg_match( '/\baria-label(ledby)?=/i', $attrs ) || preg_match( '/type="(hidden|submit|button|checkbox|radio)"/i', $attrs ) || ! preg_match( '/\bname="([^"]+)"/i', $attrs, $n ) ) {
+			return $m[0];
+		}
+		$label = '';
+		if ( preg_match( '/\bplaceholder="([^"]+)"/i', $attrs, $ph ) ) {
+			$label = html_entity_decode( $ph[1], ENT_QUOTES );
+		}
+		$key = preg_replace( '/\[\]$/', '', $n[1] );
+		if ( isset( $names[ $key ] ) ) {
+			$label = $names[ $key ];
+		}
+		if ( '' === trim( $label ) ) {
+			$label = ucfirst( trim( str_replace( array( '-', '_' ), ' ', $key ) ) );
+		}
+		$close = '>';
+		if ( '/' === substr( rtrim( $attrs ), -1 ) ) {
+			$attrs = substr( rtrim( $attrs ), 0, -1 );
+			$close = ' />';
+		}
+		return '<' . $m[1] . rtrim( $attrs ) . ' aria-label="' . esc_attr( $label ) . '"' . $close;
+	}, $html );
+}, 20 );
+
 if ( ! function_exists( 'db_on_canonical_host' ) ) {
 	/**
 	 * True when the request came in on the site's own host (the stored "home"
