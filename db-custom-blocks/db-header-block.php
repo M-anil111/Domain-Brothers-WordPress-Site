@@ -75,6 +75,7 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 					array(
 						'Domain services',
 						array(
+							( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ) ? array( 'Sell your domains', $u( '/sell-your-domains/' ), 'List names free, pay only when they sell' ) : null,
 							array( 'Domain brokerage', $u( '/domain-brokerage-services/' ), 'We negotiate the name you want' ),
 							array( 'Domain management', $u( '/domain-management-services/' ), 'Renewals, DNS and security handled' ),
 							array( 'Domain transfer', $u( '/domain-transfer/' ), 'Move a name between registrars' ),
@@ -213,7 +214,7 @@ if ( ! function_exists( 'db_header_html' ) ) {
 				. '<div class="db-hd-mega" id="' . $id . '"><div class="db-hd-mega-in">';
 			foreach ( $panel['cols'] as $col ) {
 				$h .= '<div class="db-hd-col"><p class="db-hd-h">' . esc_html( $col[0] ) . '</p><ul>';
-				foreach ( $col[1] as $link ) {
+				foreach ( array_filter( $col[1] ) as $link ) {
 					$out = 0 !== strpos( $link[1], home_url( '/' ) );
 					$h  .= '<li><a href="' . esc_url( $link[1] ) . '"' . ( $out ? ' target="_blank" rel="noopener"' : '' ) . '><i class="db-hd-ic">' . db_header_icon( $link[0] ) . '</i><span class="db-hd-tx"><strong>' . esc_html( $link[0] ) . '</strong><span>' . esc_html( $link[2] ) . '</span></span></a></li>';
 				}

@@ -1,6 +1,6 @@
 # Seller marketplace plan: list-your-domain service
 
-Status: plan only. Nothing in this document is built yet.
+Status: **phase 1 built** (plugin 3.120.2, 2026-11-22): seller setup, add names by paste, prices, DNS ownership check (TXT or CNAME, hourly for 72 hours plus on demand), admin review queue (Tools > Seller listings), trusted sellers publish instantly, approved names become normal listings, sellers can remove names. Live on beta only; production stays off until the seller agreement is approved by the owner's lawyer (decision 7) and option `db_seller_on` is set to `1`. Code: `db-custom-blocks/db-seller-block.php`, rules in `db-seller-lib.php`, tests in `tests/seller/seller-test.php`. Phases 2 to 5 are not built.
 
 Goal: let any domain owner create a free account, list names for sale on Domain Brothers, receive and negotiate offers, and get paid after a managed transfer. The reference products are Sedo (the 17 screenshots and the bulk-import file supplied), Afternic and Uniregistry Market. The function set follows them; the interface does not. Sedo's seller area is dense tables, tabbed forms and pop-up wizards from the 2000s. This plan keeps every capability and rebuilds the experience as a clean, spacious, card-based interface in the style of the new site header and account pages.
 
@@ -136,7 +136,7 @@ Each phase ships behind a switch, with offline tests for the rules (pricing, ver
 
 ## 8. Owner decisions (agreed 2026-11-18)
 
-Development is on hold until the owner asks to start.
+Phase 1 was started on 2026-11-22 at the owner's request.
 
 | # | Decision | Agreed |
 |---|---|---|

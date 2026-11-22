@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.119.1
+ * Version:     3.120.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.119.1' );
+define( 'DB_BLOCKS_LOADED', '3.120.2' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -4746,6 +4746,10 @@ require_once __DIR__ . '/db-alerts-block.php';
 require_once __DIR__ . '/db-article-block.php';
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
+// Seller marketplace phase 1: list your domains with us (switch: option db_seller_on; staging only by default).
+if ( is_readable( __DIR__ . '/db-seller-block.php' ) && is_readable( __DIR__ . '/db-seller-lib.php' ) ) {
+	require_once __DIR__ . '/db-seller-block.php';
+}
 // The designer's UI fixes (bundled from the standalone add-on; stands down while the add-on is active).
 if ( is_readable( __DIR__ . '/db-ui-fixes-block.php' ) && is_readable( __DIR__ . '/designer/ui-fixes/includes/html-filters.php' ) ) {
 	require_once __DIR__ . '/db-ui-fixes-block.php';
