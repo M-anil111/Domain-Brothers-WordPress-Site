@@ -77,7 +77,7 @@ add_action( 'wp_enqueue_scripts', static function () {
 	if ( dbux_is_all_domains_listing() ) {
 		wp_enqueue_script( 'dbux-listing-state', $base . 'listing-state.js', array(), DBUX_VERSION . '.' . (int) @filemtime( $dir . 'listing-state.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		wp_localize_script( 'dbux-listing-state', 'dbuxListing', array(
-			'indexUrl' => esc_url_raw( rest_url( 'db/v1/domain-index' ) ),
+			'indexUrl' => esc_url_raw( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) ) ),
 			'basePath' => wp_make_link_relative( get_permalink( get_queried_object_id() ) ),
 		) );
 	}

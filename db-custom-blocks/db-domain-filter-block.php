@@ -80,7 +80,9 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 				'k'  => strtolower( trim( (string) get_post_meta( $id, 'domain_keyword', true ) ) ),
 			);
 		}
-		set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS );
+		if ( ! function_exists( 'db_on_canonical_host' ) || db_on_canonical_host() ) {
+			set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS ); // never cache links built for a preview host
+		}
 		return $rows;
 	}
 }
@@ -117,7 +119,7 @@ add_action( 'wp_footer', function () {
 	if ( ! is_page( 'all-domains' ) ) {
 		return;
 	}
-	$endpoint = rest_url( 'db/v1/domain-index' );
+	$endpoint = add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) );
 	?>
 <style id="db-dfilter-css">
 .db-dfilter{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 16px;padding:14px;border:1px solid #e3e7ee;border-radius:10px;background:#f8fafc}

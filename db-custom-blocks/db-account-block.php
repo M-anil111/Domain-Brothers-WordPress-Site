@@ -719,7 +719,7 @@ if ( ! function_exists( 'db_acct_script' ) ) {
 			'api'   => esc_url_raw( rest_url( 'db/v1/' ) ),
 			'tab'   => $tab,
 			'offers' => esc_url_raw( add_query_arg( 'tab', 'offers', home_url( '/my-wishlist/' ) ) ),
-			'index'  => esc_url_raw( rest_url( 'db/v1/domain-index' ) ),
+			'index'  => esc_url_raw( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) ) ),
 		);
 		ob_start();
 		?>
