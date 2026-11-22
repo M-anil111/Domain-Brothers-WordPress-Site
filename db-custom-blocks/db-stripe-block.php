@@ -577,6 +577,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		} );
 		wp_enqueue_style( 'db-co-lato', 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap', [], null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 		add_action( 'wp_head', static function () {
+			ob_start();
 			?>
 <style id="db-checkout">
 /* Checkout content, isolated from the theme and db-design-block styles
@@ -772,6 +773,9 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 #db-co .co-topbar .db-pa-btn{padding:0 18px;gap:8px;background:#fff}
 #db-co .co-topbar .db-pa-note{padding:0 4px}
 </style>
+			<?php
+			db_external_style_tag( 'checkout', (string) ob_get_clean() );
+			?>
 			<?php
 		}, 120 );
 

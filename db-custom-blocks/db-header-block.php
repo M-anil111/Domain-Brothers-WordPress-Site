@@ -519,6 +519,7 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() || is_customize_preview() ) {
 		return;
 	}
+	ob_start();
 	?>
 <script data-no-delay>
 (function () {
@@ -683,6 +684,9 @@ add_action( 'wp_footer', function () {
 
 }());
 </script>
+	<?php
+	db_external_script( 'header', (string) ob_get_clean() );
+	?>
 	<?php
 }, 81 );
 

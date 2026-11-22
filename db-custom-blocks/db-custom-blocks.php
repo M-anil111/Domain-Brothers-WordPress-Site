@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.138.0
+ * Version:     3.139.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.138.0' );
+define( 'DB_BLOCKS_LOADED', '3.139.2' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1867,20 +1867,49 @@ if ( ! function_exists( 'db_external_script' ) ) {
 			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
 			return;
 		}
-		$js     = trim( $m[1] );
-		$upload = wp_upload_dir();
-		$dir    = $upload['basedir'] . '/db-blocks';
-		$file   = $dir . '/' . $handle . '-' . substr( md5( $js ), 0, 10 ) . '.js';
-		if ( ! empty( $upload['error'] ) || ( ! file_exists( $file ) && ( ! wp_mkdir_p( $dir ) || false === file_put_contents( $file, $js ) ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+		$url = db_external_file( $handle, trim( $m[1] ), 'js' );
+		echo '' === $url ? $html : '<script id="db-' . esc_attr( $handle ) . '" src="' . esc_url( $url ) . '"></script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller or escaped here.
+	}
+}
+
+if ( ! function_exists( 'db_external_style_tag' ) ) {
+	/**
+	 * Same as db_external_script() for a <style> block: printed as a cached stylesheet link so
+	 * repeat visits do not download it inside every page (bug P-6). Falls back to inline.
+	 */
+	function db_external_style_tag( string $handle, string $html ) : void {
+		if ( ! preg_match( '#^\s*<style\b[^>]*>(.*)</style>\s*$#is', $html, $m ) ) {
 			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
 			return;
 		}
-		foreach ( (array) glob( $dir . '/' . $handle . '-*.js' ) as $old ) {
-			if ( $old !== $file ) {
-				@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		$url = db_external_file( $handle, trim( $m[1] ), 'css' );
+		echo '' === $url ? $html : '<link rel="stylesheet" id="db-' . esc_attr( $handle ) . '-css" href="' . esc_url( $url ) . '" media="all">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller or escaped here.
+	}
+}
+
+if ( ! function_exists( 'db_external_file' ) ) {
+	/**
+	 * Writes $body to uploads/db-blocks/<handle>-<hash>.<ext> once and returns its URL, or ''
+	 * when uploads cannot be written. Older versions of the same handle are removed.
+	 */
+	function db_external_file( string $handle, string $body, string $ext ) : string {
+		$upload = wp_upload_dir();
+		if ( ! empty( $upload['error'] ) || '' === $body ) {
+			return '';
+		}
+		$dir  = $upload['basedir'] . '/db-blocks';
+		$file = $dir . '/' . $handle . '-' . substr( md5( $body ), 0, 10 ) . '.' . $ext;
+		if ( ! file_exists( $file ) ) {
+			if ( ! wp_mkdir_p( $dir ) || false === file_put_contents( $file, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+				return '';
+			}
+			foreach ( (array) glob( $dir . '/' . $handle . '-*.' . $ext ) as $old ) {
+				if ( $old !== $file ) {
+					@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				}
 			}
 		}
-		echo '<script id="db-' . esc_attr( $handle ) . '" src="' . esc_url( $upload['baseurl'] . '/db-blocks/' . basename( $file ) ) . '"></script>' . "\n";
+		return $upload['baseurl'] . '/db-blocks/' . basename( $file );
 	}
 }
 

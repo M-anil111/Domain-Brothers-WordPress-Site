@@ -126,6 +126,7 @@ add_action( 'wp_footer', function () {
 	</nav>
 	<div id="db-mnav-scrim" class="db-mnav-scrim" hidden></div>
 
+	<?php ob_start(); ?>
 	<style>
 	/* The drawer sits off-screen via a translateX on a position:fixed box,
 	   not a negative offset — some browsers still count that post-transform
@@ -245,7 +246,11 @@ add_action( 'wp_footer', function () {
 	.db-mnav li.db-mnav-acct--cta a { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0; padding: 0 20px; border-radius: 999px; background: #94bf1e; color: #0a1628 !important; font-weight: 700; }
 	html.db-signed-in .db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) a::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #94bf1e; vertical-align: middle; }
 	</style>
+	<?php
+	db_external_style_tag( 'mobilenav', (string) ob_get_clean() );
+	?>
 
+	<?php ob_start(); ?>
 	<script>
 	(function () {
 		'use strict';
@@ -321,6 +326,9 @@ add_action( 'wp_footer', function () {
 		});
 	})();
 	</script>
+	<?php
+	db_external_script( 'mobilenav', (string) ob_get_clean() );
+	?>
 	<?php
 }, 100 );
 
