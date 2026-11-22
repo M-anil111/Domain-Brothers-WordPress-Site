@@ -105,9 +105,15 @@ if ( ! function_exists( 'db_connect_call' ) ) {
 			return $fn( $client );
 		} catch ( \Stripe\Exception\ApiErrorException $e ) {
 			error_log( 'db-connect: ' . $what . ' failed: ' . $e->getMessage() . ' (request ' . (string) $e->getRequestId() . ')' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			if ( function_exists( 'db_log' ) ) {
+				db_log( 'connect', 'error', $what . ' failed: ' . $e->getMessage(), array( 'request' => (string) $e->getRequestId(), 'code' => (string) $e->getStripeCode() ), 'db_connect_call' );
+			}
 			return new WP_Error( 'db_connect_api', 'Stripe said: ' . $e->getMessage() );
 		} catch ( \Throwable $e ) {
 			error_log( 'db-connect: ' . $what . ' failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			if ( function_exists( 'db_log' ) ) {
+				db_log( 'connect', 'error', $what . ' failed: ' . $e->getMessage(), array(), 'db_connect_call' );
+			}
 			return new WP_Error( 'db_connect_error', 'Something went wrong talking to Stripe. Please try again.' );
 		}
 	}
