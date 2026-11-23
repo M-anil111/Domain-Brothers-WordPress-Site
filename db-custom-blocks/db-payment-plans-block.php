@@ -129,7 +129,7 @@ if ( ! function_exists( 'db_pp_sections' ) ) {
 		$s['card'] = array( 'Paying by card', '<p>Card payments are taken by Stripe, a third-party payment provider. You enter your card details into Stripe\'s payment form. Domain Brothers does not receive or store the card number, and the secure form works the same for a single payment and for a plan.</p>'
 			. '<ul class="dbpp-list"><li>Use a card that is yours or that you are authorised to use, and give accurate billing details.</li>'
 			. '<li>Your bank may ask you to confirm a payment (for example with a code or in your banking app). A payment that is not confirmed is not completed.</li>'
-			. '<li>Each payment is confirmed by email with a receipt link. Receipt links are signed and expire.</li></ul>' );
+			. '<li>Each payment is confirmed by email, and Stripe emails a receipt to the address you give at checkout.</li></ul>' );
 
 		$s['full'] = array( 'Paying in full', '<p>You pay the listed price once. When the payment is confirmed we begin the transfer of the domain to you. The domain is yours to move once the transfer completes; see "After the final payment" below.</p>' );
 
