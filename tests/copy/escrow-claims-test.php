@@ -10,9 +10,10 @@
 
 $root    = dirname( __DIR__, 2 );
 // Claims about this business, anywhere on the site.
-$claims  = '/escrow[- ](protected|backed|secure|safe)|held (in|securely in|with us in) escrow|secure escrow|escrow services|escrow (transfer|handling|protection)|escrow-protected|all (domain )?transactions include escrow|escrow arrangement|we (use|offer|provide|hold) escrow/i';
+$claims  = '/escrow[- ](protected|backed|secure|safe)|held (in|securely in|with us in) escrow|secure escrow|escrow (transfer|handling|protection)|escrow-protected|all (domain )?transactions include escrow|escrow arrangement|we (use|offer|provide|hold) escrow/i';
 // Escrow tied to us in the same sentence is a claim. General buyer advice ("pay through escrow") is not.
 $tied    = '/\b(we|our|us|domain brothers)\b[^.!?]{0,80}\bescrow\b|\bescrow\b[^.!?]{0,60}\b(we|our|domain brothers)\b/i';
+$denial  = '/\\b(does not|doesn\'t|do not|is not|not an?)\\b[^.!?]{0,40}\\bescrow\\b|\\bescrow\\b[^.!?|]{0,80}\\?|guide to[^.!?]{0,60}escrow|escrow-explained/i';
 $files   = array_merge(
 	glob( $root . '/db-custom-blocks/*.php' ),
 	glob( $root . '/db-custom-blocks/cluster/*.html' ),
@@ -25,6 +26,11 @@ foreach ( $files as $f ) {
 	}
 	$lines = file( $f, FILE_IGNORE_NEW_LINES );
 	foreach ( $lines as $i => $line ) {
+		// A denial ("Domain Brothers does not offer escrow"), a question ("Is domain escrow safe?")
+		// or a link to the escrow guide is not a claim.
+		if ( preg_match( $denial, $line ) ) {
+			continue;
+		}
 		$hit = preg_match( $claims, $line, $m ) ? $m[0] : '';
 		if ( '' === $hit && preg_match( $tied, $line, $m ) ) {
 			$hit = $m[0];
