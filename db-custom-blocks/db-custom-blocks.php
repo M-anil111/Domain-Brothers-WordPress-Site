@@ -1138,7 +1138,11 @@ function db_plan_takeover( $html ) {
 	// below): db_plan_widget_html() uses ob_start(), which is a fatal inside
 	// an output-buffer handler and would blank the whole page.
 	$widget = isset( $GLOBALS['db_plan_widget_prebuilt'] ) ? (string) $GLOBALS['db_plan_widget_prebuilt'] : '';
-	if ( ! is_string( $html ) || '' === $widget || false !== strpos( $html, 'id="db-plan"' ) ) { return $html; }
+	if ( ! is_string( $html ) ) { return $html; }
+	// The theme template hard-codes a phone-input library that is not in the theme (two 404s on
+	// every plan page) and that this page does not use (QA report DB-03, CK-21).
+	$html = preg_replace( '#<link[^>]+intlTelInput\.css[^>]*>\s*|<script[^>]+intlTelInput\.js[^>]*>\s*</script>\s*#i', '', $html );
+	if ( '' === $widget || false !== strpos( $html, 'id="db-plan"' ) ) { return $html; }
 	$open = stripos( $html, '<main' );
 	$oend = false === $open ? false : strpos( $html, '>', $open );
 	$close = strripos( $html, '</main>' );
