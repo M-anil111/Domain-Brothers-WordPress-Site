@@ -476,6 +476,19 @@ add_action( 'wp_footer', function () {
 	var hd = document.getElementById('db-hd');
 	if (!hd) { return; }
 	if (hd.parentNode !== document.body || hd !== document.body.firstElementChild) { document.body.insertBefore(hd, document.body.firstChild); }
+	// Phone, tablet and 200% zoom: the search and menu buttons are printed in the footer and only
+	// look like part of the header (position:fixed), so they were the last Tab stops on the page
+	// (bug register batch 2, AX-2). Put them, and the panels they open, right after the header.
+	var hoist = function () {
+		// Right after the skip link when the theme prints one (it stays the first stop), else after the header.
+		var after = document.querySelector('a.skip-link') || hd;
+		['.db-ms-btn', '#db-ms', '#db-mnav-toggle', '#db-mnav'].forEach(function (sel) {
+			var el = document.querySelector(sel);
+			if (el && el !== after && !el.contains(after)) { if (after.nextSibling !== el) { after.parentNode.insertBefore(el, after.nextSibling); } after = el; }
+		});
+	};
+	hoist();
+	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', hoist); }
 	var items = Array.prototype.slice.call(hd.querySelectorAll('.db-hd-item'));
 	function set(item, open) {
 		item.classList.toggle('is-open', open);
