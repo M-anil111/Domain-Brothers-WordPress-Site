@@ -590,7 +590,7 @@ if ( ! function_exists( 'db_pages_all_layout' ) ) {
 		}
 		$n    = (int) $m[2][0];
 		$head = '<section class="dbl-head"><p class="dbp-eyebrow">Marketplace</p><h1 class="dbl-title">Premium domains for sale</h1>'
-			. '<p class="dbl-intro">Buy in full, pay monthly or make an offer. <strong>' . $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ' available.</strong></p>'
+			. '<p class="dbl-intro"><strong>' . $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ' available.</strong></p>'
 			. str_replace( '<a href="' . esc_url( $links['all'] ) . '">All domains</a>', '<a href="' . esc_url( $links['all'] ) . '" aria-current="page">All domains</a>', db_pages_listing_chips( '', $links ) ) . '</section>';
 		return substr_replace( $html, $head, $m[0][1], strlen( $m[0][0] ) );
 	}
