@@ -210,6 +210,9 @@ if ( ! function_exists( 'db_stripe_lookup_domain_price' ) ) {
 		if ( 0 !== strcasecmp( $post->post_title, $domain ) ) {
 			return null; // WP_Query's 'title' can loosely match — require exact.
 		}
+		if ( '' !== (string) $post->post_password ) {
+			return null; // Password-protected listings are private everywhere else; agreed deals use their own token (SC-17).
+		}
 
 		$raw   = (string) get_post_meta( $post->ID, 'domain_price', true );
 		$clean = preg_replace( '/[^0-9.]/', '', $raw );
