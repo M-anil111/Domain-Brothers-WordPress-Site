@@ -988,3 +988,32 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
+
+if ( ! function_exists( 'db_mail_subject_marker' ) ) {
+	/**
+	 * Pure: the marker added to an email subject. '[beta] ' on staging; '[TEST] ' on sale and plan
+	 * emails while Stripe is in test mode. A QA checkout on beta mailed 'DOMAIN SOLD' to the owner,
+	 * identical to a real sale (bug register batch 2, AD-6).
+	 */
+	function db_mail_subject_marker( $subject, $staging, $test_mode ) {
+		$subject = (string) $subject;
+		$mark    = '';
+		if ( $test_mode && ! $staging && preg_match( '/sold|sale|payment|plan|installment|instalment|paid/i', $subject ) ) {
+			$mark = '[TEST] ';
+		}
+		if ( $staging ) {
+			$mark = '[beta] ';
+		}
+		return ( '' === $mark || 0 === strpos( $subject, $mark ) ) ? $subject : $mark . $subject;
+	}
+}
+
+add_filter( 'wp_mail', function ( $args ) {
+	if ( ! is_array( $args ) || ! isset( $args['subject'] ) ) {
+		return $args;
+	}
+	$staging = function_exists( 'db_wl_is_staging' ) && db_wl_is_staging();
+	$test    = function_exists( 'db_stripe_mode' ) && 'test' === db_stripe_mode();
+	$args['subject'] = db_mail_subject_marker( $args['subject'], $staging, $test );
+	return $args;
+}, 5 );
