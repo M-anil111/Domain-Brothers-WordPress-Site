@@ -107,7 +107,9 @@ if ( ! function_exists( 'db_render_news_cached' ) ) {
 		$key   = 'db_news_html_' . (int) $limit;
 		$saved = get_option( $key );
 		if ( is_array( $saved ) && isset( $saved['html'], $saved['ts'] ) ) {
-			if ( time() - (int) $saved['ts'] > DB_NEWS_TTL && ! wp_next_scheduled( 'db_news_refresh', array( (int) $limit ) ) ) {
+			// A copy built by another plugin version may have old markup (AX-15): rebuilt in the background too.
+			$old_build = defined( 'DB_BLOCKS_LOADED' ) && ( $saved['v'] ?? '' ) !== DB_BLOCKS_LOADED;
+			if ( ( $old_build || time() - (int) $saved['ts'] > DB_NEWS_TTL ) && ! wp_next_scheduled( 'db_news_refresh', array( (int) $limit ) ) ) {
 				wp_schedule_single_event( time(), 'db_news_refresh', array( (int) $limit ) );
 			}
 			// The stored copy may be from yesterday: the date line is always today's.
@@ -125,7 +127,7 @@ if ( ! function_exists( 'db_news_refresh' ) ) {
 		$html = db_render_news( (int) $limit );
 		$key  = 'db_news_html_' . (int) $limit;
 		if ( '' !== $html || ! get_option( $key ) ) {
-			update_option( $key, array( 'html' => $html, 'ts' => time() ), false );
+			update_option( $key, array( 'html' => $html, 'ts' => time(), 'v' => defined( 'DB_BLOCKS_LOADED' ) ? DB_BLOCKS_LOADED : '' ), false );
 		}
 		if ( '' === $html ) {
 			$old = get_option( $key );
