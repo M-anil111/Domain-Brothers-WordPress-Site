@@ -203,6 +203,11 @@ if ( ! function_exists( 'db_transfer_admin_page' ) ) {
 				$plain = (string) db_epp_decrypt( $row->code_enc );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 				$wpdb->update( $t, array( 'viewed_at' => current_time( 'mysql', true ), 'viewed_by' => get_current_user_id() ), array( 'id' => $reveal ) );
+				// Every reveal is kept, not just the last one (AC-22): request, admin and time,
+				// newest first, capped at 500 entries.
+				$log = (array) get_option( 'db_transfer_reveals', array() );
+				array_unshift( $log, array( 'id' => $reveal, 'user' => get_current_user_id(), 'at' => current_time( 'mysql', true ) ) );
+				update_option( 'db_transfer_reveals', array_slice( $log, 0, 500 ), false );
 			}
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -223,7 +228,20 @@ if ( ! function_exists( 'db_transfer_admin_page' ) ) {
 			$who  = $r->viewed_by ? get_userdata( (int) $r->viewed_by ) : null;
 			echo '<tr><td>' . (int) $r->id . '</td><td>' . esc_html( $r->domain ) . '</td><td>' . esc_html( $r->order_no ) . '</td><td>' . esc_html( $r->email ) . '</td><td>' . esc_html( $r->unlock_ok ) . '</td><td>' . esc_html( $r->created_at ) . ' UTC</td><td>' . $code . '</td><td>' . ( $r->viewed_at ? esc_html( $r->viewed_at ) . ' UTC' . ( $who ? ' by ' . esc_html( $who->user_login ) : '' ) : '&ndash;' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput -- $code built from escaped parts.
 		}
-		echo '</tbody></table></div>';
+		echo '</tbody></table>';
+		$log = (array) get_option( 'db_transfer_reveals', array() );
+		echo '<h2>Reveal log</h2>';
+		if ( ! $log ) {
+			echo '<p>No codes have been revealed yet.</p>';
+		} else {
+			echo '<table class="widefat striped" style="max-width:640px"><thead><tr><th>Request #</th><th>Revealed by</th><th>When (UTC)</th></tr></thead><tbody>';
+			foreach ( array_slice( $log, 0, 100 ) as $e ) {
+				$u = get_userdata( (int) ( $e['user'] ?? 0 ) );
+				echo '<tr><td>' . (int) ( $e['id'] ?? 0 ) . '</td><td>' . esc_html( $u ? $u->user_login : 'user ' . (int) ( $e['user'] ?? 0 ) ) . '</td><td>' . esc_html( (string) ( $e['at'] ?? '' ) ) . '</td></tr>';
+			}
+			echo '</tbody></table><p class="description">The latest 100 of up to 500 recorded reveals.</p>';
+		}
+		echo '</div>';
 	}
 }
 
