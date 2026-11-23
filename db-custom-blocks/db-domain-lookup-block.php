@@ -292,10 +292,93 @@ if ( ! function_exists( 'db_lk_ssl' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_ip_public' ) ) {
+	/** Pure: true for a public unicast address (not private, reserved, loopback, link-local or CGNAT). */
+	function db_lk_ip_public( $ip ) {
+		$ip = (string) $ip;
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return false;
+		}
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			$n = ip2long( $ip );
+			// 100.64.0.0/10 (carrier-grade NAT) and 0.0.0.0/8 are not covered by the flags above.
+			if ( ( $n & 0xFFC00000 ) === ( ip2long( '100.64.0.0' ) & 0xFFC00000 ) || ( $n >> 24 ) === 0 ) {
+				return false;
+			}
+			return true;
+		}
+		$lc = strtolower( $ip );
+		// IPv4-mapped IPv6 and NAT64 forms of private addresses, unique-local and link-local.
+		return ! preg_match( '/^(::ffff:|64:ff9b::|fc|fd|fe[89ab])/', $lc );
+	}
+}
+
+if ( ! function_exists( 'db_lk_safe_get' ) ) {
+	/**
+	 * GET a URL on the visitor's behalf without reaching internal addresses (TL-15). The host's
+	 * A and AAAA records are resolved once; if any is not public the request is refused; the
+	 * connection is then pinned to the checked address, so a DNS answer that changes between the
+	 * check and the connect (rebinding) cannot redirect it. No redirects are followed here.
+	 *
+	 * @return array|WP_Error
+	 */
+	function db_lk_safe_get( $url, array $args ) {
+		$p    = wp_parse_url( $url );
+		$host = strtolower( (string) ( $p['host'] ?? '' ) );
+		$port = (int) ( $p['port'] ?? ( 'http' === ( $p['scheme'] ?? '' ) ? 80 : 443 ) );
+		if ( '' === $host || ! in_array( $p['scheme'] ?? '', array( 'http', 'https' ), true ) || ! in_array( $port, array( 80, 443 ), true ) ) {
+			return new WP_Error( 'db_lk_url', 'Only web addresses on ports 80 and 443 are checked.' );
+		}
+		$ips = array();
+		if ( filter_var( trim( $host, '[]' ), FILTER_VALIDATE_IP ) ) {
+			$ips[] = trim( $host, '[]' );
+		} else {
+			foreach ( (array) @dns_get_record( $host, DNS_A | DNS_AAAA ) as $r ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				if ( ! empty( $r['ip'] ) ) {
+					$ips[] = $r['ip'];
+				} elseif ( ! empty( $r['ipv6'] ) ) {
+					$ips[] = $r['ipv6'];
+				}
+			}
+			if ( ! $ips ) {
+				$v4 = gethostbyname( $host );
+				if ( $v4 !== $host ) {
+					$ips[] = $v4;
+				}
+			}
+		}
+		if ( ! $ips ) {
+			return new WP_Error( 'db_lk_dns', 'The name does not resolve.' );
+		}
+		foreach ( $ips as $ip ) {
+			if ( ! db_lk_ip_public( $ip ) ) {
+				return new WP_Error( 'db_lk_private', 'That address points to a private network, so it is not checked.' );
+			}
+		}
+		$pin = null;
+		foreach ( $ips as $ip ) {
+			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				$pin = $ip;
+				break;
+			}
+		}
+		$pin   = $pin ? $pin : '[' . $ips[0] . ']';
+		$hook  = static function ( $handle ) use ( $host, $port, $pin ) {
+			if ( defined( 'CURLOPT_RESOLVE' ) ) {
+				curl_setopt( $handle, CURLOPT_RESOLVE, array( $host . ':' . $port . ':' . $pin ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			}
+		};
+		add_action( 'http_api_curl', $hook );
+		$res = wp_remote_get( $url, array_merge( $args, array( 'redirection' => 0, 'reject_unsafe_urls' => true ) ) );
+		remove_action( 'http_api_curl', $hook );
+		return $res;
+	}
+}
+
 if ( ! function_exists( 'db_lk_site' ) ) {
 	/**
 	 * How the website answers: the redirect chain, final status, response headers and security headers.
-	 * Each hop is fetched with wp_safe_remote_get, which refuses private and reserved addresses.
+	 * Each hop is fetched with db_lk_safe_get(): A and AAAA checked once, connection pinned (TL-15).
 	 *
 	 * @return array<string,mixed>
 	 */
@@ -305,10 +388,10 @@ if ( ! function_exists( 'db_lk_site' ) ) {
 		$hops = array();
 		$res  = null;
 		for ( $i = 0; $i < 6; $i++ ) {
-			$res = wp_safe_remote_get( $url, array( 'timeout' => 6, 'redirection' => 0, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
-			if ( is_wp_error( $res ) && 0 === $i ) {
+			$res = db_lk_safe_get( $url, array( 'timeout' => 6, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
+			if ( is_wp_error( $res ) && 0 === $i && 'db_lk_private' !== $res->get_error_code() ) {
 				$url = 'http://' . $name . '/';
-				$res = wp_safe_remote_get( $url, array( 'timeout' => 6, 'redirection' => 0, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
+				$res = db_lk_safe_get( $url, array( 'timeout' => 6, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
 			}
 			if ( is_wp_error( $res ) ) {
 				break;
