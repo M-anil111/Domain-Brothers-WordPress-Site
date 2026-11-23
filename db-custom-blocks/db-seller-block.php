@@ -727,6 +727,10 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 				if ( $c['option'] === $own[ $id ]['option_type'] && $c['price'] === (int) $own[ $id ]['price'] && $c['min_offer'] === (int) $own[ $id ]['min_offer'] && (int) $c['exclusive'] === (int) $own[ $id ]['exclusive'] && 'rejected' !== $own[ $id ]['review_status'] ) {
 					continue;
 				}
+				if ( db_seller_sale_in_progress( $own[ $id ]['domain'] ) ) {
+					$msgs[] = array( 'warn', $own[ $id ]['domain'] . ': a buyer has an accepted offer or a payment plan, so the price and the exclusive option are fixed until the sale ends.' );
+					continue;
+				}
 				db_seller_apply_row( $own[ $id ], $c );
 				++$saved;
 			}
@@ -922,6 +926,10 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 					$msgs[] = array( 'bad', $r['domain'] . ': ' . implode( ' ', $err ) );
 					continue;
 				}
+				if ( db_seller_sale_in_progress( $r['domain'] ) ) {
+					$msgs[] = array( 'warn', $r['domain'] . ': a sale is in progress, so its price is fixed until it ends.' );
+					continue;
+				}
 				db_seller_apply_row( $r, $c );
 				++$done;
 			}
@@ -981,6 +989,30 @@ if ( ! function_exists( 'db_seller_category_options' ) ) {
 		}
 		asort( $out );
 		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_seller_sale_in_progress' ) ) {
+	/**
+	 * True while a buyer holds an accepted offer or the name is sold or reserved on a payment plan.
+	 * The price and the exclusive (10%) option are then fixed, because the payout reads the
+	 * listing's terms when the money arrives (SL-15).
+	 */
+	function db_seller_sale_in_progress( $domain ) {
+		global $wpdb;
+		$domain = strtolower( trim( (string) $domain ) );
+		if ( '' === $domain ) {
+			return false;
+		}
+		if ( function_exists( 'db_stripe_domain_taken' ) && db_stripe_domain_taken( $domain ) ) {
+			return true;
+		}
+		if ( ! function_exists( 'db_deal_table' ) ) {
+			return false;
+		}
+		$t = db_deal_table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE domain = %s AND state = 'accepted'", $domain ) ) > 0;
 	}
 }
 
