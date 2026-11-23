@@ -145,7 +145,7 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$label = array( 'standard' => 'For sale', 'offer' => 'Open to offers', 'sold' => 'Sold', 'not_for_sale' => 'Not for sale' )[ $state ] ?? 'For sale';
-		$h     = '<aside class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
+		$h     = '<section class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
 		if ( 'standard' === $state && $price > 0 ) {
 			$urls = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
 			$h   .= '<p class="db-dd-side-price">' . esc_html( db_usd( $price ) ) . '</p>';
@@ -161,7 +161,7 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		} else {
 			$h .= '<p class="db-dd-side-sub">This domain is not available right now.</p><a class="db-dd-side-btn db-dd-side-btn--ghost" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other domains</a>';
 		}
-		$h .= '<ul class="db-dd-side-list"><li>Secure Stripe payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></aside>';
+		$h .= '<ul class="db-dd-side-list"><li>Secure Stripe payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></section>'; // part of the listing, not a separate landmark (AX-21)
 		return $h;
 	}
 }
