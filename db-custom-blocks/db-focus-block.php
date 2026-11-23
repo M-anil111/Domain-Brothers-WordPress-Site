@@ -167,8 +167,8 @@ if ( ! function_exists( 'db_focus_section_html' ) ) {
 		$title = isset( $def['steps_title'] ) ? $def['steps_title'] : 'How it works, in four steps';
 		$html .= '<h3 class="dbx-steps-h">' . esc_html( $title ) . '</h3><ol class="dbx-steps">';
 		foreach ( $steps as $i => $step ) {
-			$alt   = ucfirst( $kw ) . ' step ' . ( $i + 1 ) . ': ' . strtolower( $step[1] );
-			$html .= '<li><img src="' . esc_url( $base_url . $step[0] . '.svg' ) . '" alt="' . esc_attr( $alt ) . '" width="96" height="96" loading="lazy" decoding="async">'
+			// Decorative: the step title is right next to it, so the image has an empty alt (AX-18).
+			$html .= '<li><img src="' . esc_url( $base_url . $step[0] . '.svg' ) . '" alt="" width="96" height="96" loading="lazy" decoding="async">'
 				. '<strong>' . esc_html( $step[1] ) . '</strong><span>' . wp_kses( $step[2], array() ) . '</span></li>';
 		}
 		$html .= '</ol>';
