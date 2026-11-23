@@ -72,9 +72,36 @@ if ( ! function_exists( 'db_ts_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ts_broken' ) ) {
+	/**
+	 * True when a site key and a stored secret exist but the secret cannot be decrypted (for
+	 * example after the salts were rotated). Turnstile then fails closed instead of quietly
+	 * switching off (SC-16). With no keys saved at all, Turnstile is simply off.
+	 */
+	function db_ts_broken() {
+		if ( db_ts_test_mode() ) {
+			return false;
+		}
+		$stored = (string) ( db_ts_settings()['secret'] ?? '' );
+		return '' !== db_ts_site_key() && '' !== $stored && '' === (string) db_smtp_decrypt( $stored );
+	}
+}
+
+add_action( 'admin_notices', function () {
+	if ( current_user_can( 'manage_options' ) && function_exists( 'db_ts_broken' ) && db_ts_broken() ) {
+		echo '<div class="notice notice-error"><p><strong>Turnstile secret cannot be read</strong> (the WordPress salts may have changed). Sign-in, offer and contact forms are refusing submissions until you save the Turnstile secret key again.</p></div>';
+	}
+} );
+
 if ( ! function_exists( 'db_ts_verify' ) ) {
-	/** True when Turnstile is off, or the token is valid. Fails closed when Cloudflare cannot be reached. */
+	/** True when Turnstile is off, or the token is valid. Fails closed when Cloudflare cannot be reached or the secret is unreadable. */
 	function db_ts_verify( $token, $ip = '' ) {
+		if ( db_ts_broken() ) {
+			if ( function_exists( 'db_wh_log_limited' ) ) {
+				db_wh_log_limited( 'turnstile', 'DB Turnstile: secret cannot be decrypted; refusing form submissions until it is saved again.' );
+			}
+			return false;
+		}
 		if ( ! db_ts_enabled() ) {
 			return true;
 		}
