@@ -181,7 +181,9 @@ if ( ! function_exists( 'db_log' ) ) {
 		try {
 			$level   = in_array( $level, array( 'error', 'warning', 'notice', 'info' ), true ) ? $level : 'error';
 			$source  = substr( preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $source ) ), 0, 24 );
-			$message = mb_substr( db_log_redact( trim( preg_replace( '/\s+/', ' ', (string) $message ) ) ), 0, 1000 );
+			// Server paths (they include the hosting account directory) are stripped from the message
+			// as well as from the place (SC-7).
+			$message = mb_substr( db_log_redact( trim( preg_replace( '/\s+/', ' ', str_replace( ABSPATH, '', (string) $message ) ) ) ), 0, 1000 );
 			$place   = mb_substr( db_log_redact( str_replace( ABSPATH, '', (string) $place ) ), 0, 255 );
 			$fp      = db_log_fingerprint( $source, $level, $message, $place );
 			$now     = gmdate( 'Y-m-d H:i:s' );
@@ -240,7 +242,10 @@ add_action( 'init', function () {
 		}
 		$level = db_log_level_of( $errno );
 		// Notices and deprecations from third-party code are too noisy to keep; ours are kept.
-		if ( 'notice' !== $level || false !== strpos( (string) $errfile, 'db-custom-blocks' ) ) {
+		// Warnings from the DomainFolio theme are known and cannot be fixed here (the theme is not
+		// edited): they were logged on every page view and buried real problems (SC-7).
+		$theme_noise = 'error' !== $level && false !== strpos( str_replace( '\\', '/', (string) $errfile ), '/themes/DomainFolio/' );
+		if ( ! $theme_noise && ( 'notice' !== $level || false !== strpos( (string) $errfile, 'db-custom-blocks' ) ) ) {
 			db_log( 'php', $level, $errstr, array(), $errfile . ':' . $errline );
 		}
 		return $prev ? call_user_func( $prev, $errno, $errstr, $errfile, $errline ) : false;
