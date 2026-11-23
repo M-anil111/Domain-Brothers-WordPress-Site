@@ -1171,7 +1171,7 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised. Payouts are sent by bank transfer; Stripe payouts for sellers in the United States will follow.' ),
 			array( 'What does exclusive mean?', 'You do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and the lower ' . $excl . '% commission.' ),
 			array( 'Can I list my names elsewhere too?', 'Yes, unless you choose exclusive. Remove a name at any time from your seller page.' ),
-			array( 'Who can sell?', 'Sellers in the United States and Canada, for now. Prices are in US dollars.' ),
+			array( 'Who can sell?', 'Sellers in the United States and Canada, for now. Prices are in US dollars. Every seller, in Canada or the United States, is paid by bank transfer for now. Sellers in the United States can also connect a Stripe account for future payouts.' ),
 			array( 'What if a name sells somewhere else?', 'Choose "I sold it elsewhere" on that name in your seller page and it comes down at once, with no penalty.' ),
 		), 'dbsl-faq' );
 		$h .= '<div class="dblp-card" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:40px"><div><h3 style="margin:0 0 4px">Ready to list?</h3><p style="margin:0">It takes a few minutes. Read the <a href="' . esc_url( home_url( '/seller-agreement/' ) ) . '">seller agreement</a> first.</p></div><a class="dblp-btn" href="' . esc_url( $cta ) . '">Create your seller account</a></div>';
