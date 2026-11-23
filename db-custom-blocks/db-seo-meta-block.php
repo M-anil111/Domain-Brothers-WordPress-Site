@@ -528,9 +528,10 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 			if ( ! $post instanceof WP_Post ) {
 				return null;
 			}
-			$desc = has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content;
+			$desc = has_excerpt( $post ) ? get_the_excerpt( $post ) : db_seo_prose_only( $post->post_content );
 			$desc = db_seo_trim_desc( $desc );
-			if ( '' === $desc ) {
+			// Text that is mostly prices or table cells is not a description (SE-7).
+			if ( '' === $desc || preg_match_all( '/\$\s?\d|\bBuy Now\b/i', $desc ) >= 3 ) {
 				$desc = sprintf(
 					'%s at Domain Brothers, a premium domain marketplace offering step-by-step transfers and 0%% interest payment plans on every listing.',
 					$post->post_title
@@ -924,3 +925,16 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_seo_promote_archive_h1' );
 }, 20 );
+
+
+if ( ! function_exists( 'db_seo_prose_only' ) ) {
+	/**
+	 * Pure: post content without tables, lists, shortcodes, scripts and figure captions, so the
+	 * fallback description starts with real sentences. Six 'Top 10' posts shared one description
+	 * made of their price tables (bug register batch 2, SE-7).
+	 */
+	function db_seo_prose_only( $html ) {
+		$html = (string) preg_replace( '#<(table|ul|ol|script|style|figure|figcaption)\b.*?</\1>#is', ' ', (string) $html );
+		return (string) preg_replace( '/\[[^\]]{1,200}\]/', ' ', $html );
+	}
+}

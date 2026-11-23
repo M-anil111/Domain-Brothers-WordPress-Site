@@ -51,5 +51,6 @@ ok( false === strpos( $out, '<script>' ) && false === strpos( $out, '</title>' )
 $GLOBALS['DEF'] = array( 'title' => 'Terms &amp; Conditions | Domain Brothers' );
 ok( 'Terms &amp; Conditions | Domain Brothers' === $cb( '' ), 'existing entities are not double-encoded' );
 
+ok( 'Intro text. Closing.' === trim( preg_replace( '/\s+/', ' ', db_seo_prose_only( 'Intro text.<table><tr><td>Depending.ca</td><td>$3,000</td><td>Buy Now</td></tr></table><ul><li>x</li></ul>[quads id="1"] Closing.' ) ) ), 'SE-7: fallback description skips tables, lists and shortcodes' );
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );
