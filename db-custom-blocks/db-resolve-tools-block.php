@@ -173,12 +173,12 @@ add_action( 'rest_api_init', function () {
 				$res->header( 'Cache-Control', 'no-store' );
 				return $res;
 			};
-			$raw  = strtolower( trim( (string) $req->get_param( 'd' ) ) );
-			$raw  = rtrim( explode( '/', preg_replace( '#^https?://#', '', $raw ) )[0], '.' ); // the host as typed, www included (TL-3)
-			$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
+			// The same input rule as the domain lookup: trailing dots and accented names work (TL-22).
+			$in   = function_exists( 'db_lk_input_name' ) ? db_lk_input_name( (string) $req->get_param( 'd' ) ) : array( 'name' => '', 'error' => 'Enter a domain name such as example.com.' );
+			$name = $in['name'];
 			$type = strtoupper( (string) ( $req->get_param( 'type' ) ? $req->get_param( 'type' ) : 'A' ) );
 			if ( '' === $name ) {
-				return $send( array( 'error' => 'Enter a domain name such as example.com.' ), 400 );
+				return $send( array( 'error' => $in['error'] ), 400 );
 			}
 			if ( ! isset( db_rs_types()[ $type ] ) ) {
 				return $send( array( 'error' => 'Choose a record type from the list.' ), 400 );

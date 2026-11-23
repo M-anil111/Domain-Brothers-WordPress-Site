@@ -652,6 +652,35 @@ if ( ! function_exists( 'db_lk_estimate' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_input_name' ) ) {
+	/**
+	 * What a visitor typed, as a domain name: scheme, path, query, port and a trailing dot are
+	 * dropped (www is kept: TL-3), and accented names become their punycode form. One rule for the
+	 * lookup, the DNS tools and the extension checker (TL-22).
+	 *
+	 * @return array{name:string,error:string}
+	 */
+	function db_lk_input_name( $typed ) {
+		$raw = function_exists( 'mb_strtolower' ) ? mb_strtolower( trim( (string) $typed ) ) : strtolower( trim( (string) $typed ) );
+		$raw = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $raw );        // scheme
+		$raw = preg_replace( '#[/?\#].*$#s', '', $raw );                 // path, query, fragment
+		$raw = preg_replace( '#:\d+$#', '', $raw );                      // port
+		$raw = rtrim( $raw, '.' );                                       // trailing dot
+		if ( preg_match( '/[^\x20-\x7e]/', $raw ) ) {
+			$ascii = function_exists( 'idn_to_ascii' ) ? idn_to_ascii( $raw, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46 ) : false;
+			if ( ! is_string( $ascii ) || '' === $ascii ) {
+				return array( 'name' => '', 'error' => 'Enter names with accents or non-Latin letters in their xn-- (punycode) form.' );
+			}
+			$raw = $ascii;
+		}
+		$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
+		if ( '' === $name && preg_match( '/^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+xn--[a-z0-9-]{1,59}$/', $raw ) ) {
+			$name = $raw; // punycode extension, e.g. .xn--p1ai
+		}
+		return '' === $name ? array( 'name' => '', 'error' => 'Enter a domain name such as example.com.' ) : array( 'name' => $name, 'error' => '' );
+	}
+}
+
 if ( ! function_exists( 'db_lk_parts' ) ) {
 	/** Every part a lookup can return. */
 	function db_lk_parts() {
@@ -752,31 +781,16 @@ add_action( 'rest_api_init', function () {
 		'permission_callback' => '__return_true',
 		'args'                => array( 'd' => array( 'required' => true, 'type' => 'string' ), 'parts' => array( 'required' => false, 'type' => 'string' ) ),
 		'callback'            => function ( WP_REST_Request $req ) {
-			$raw = mb_strtolower( trim( (string) $req->get_param( 'd' ) ) );
-			$raw = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $raw );        // scheme
-			$raw = preg_replace( '#[/?\#].*$#s', '', $raw );                 // path, query, fragment
-			$raw = preg_replace( '#:\d+$#', '', $raw );                      // port
-			$raw = rtrim( $raw, '.' );                                       // trailing dot (www is kept: TL-3)
 			$send = static function ( $data, $code = 200 ) {
 				$res = new WP_REST_Response( $data, $code );
 				$res->header( 'Cache-Control', 'no-store' );
 				return $res;
 			};
-			if ( preg_match( '/[^\x20-\x7e]/', $raw ) ) {
-				// Names with accents or non-Latin letters are looked up in their punycode (xn--) form.
-				$ascii = function_exists( 'idn_to_ascii' ) ? idn_to_ascii( $raw, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46 ) : false;
-				if ( ! is_string( $ascii ) || '' === $ascii ) {
-					return $send( array( 'error' => 'Enter names with accents or non-Latin letters in their xn-- (punycode) form.' ), 400 );
-				}
-				$raw = $ascii;
+			$in = db_lk_input_name( (string) $req->get_param( 'd' ) );
+			if ( '' !== $in['error'] ) {
+				return $send( array( 'error' => $in['error'] ), 400 );
 			}
-			$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
-			if ( '' === $name && preg_match( '/^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+xn--[a-z0-9-]{1,59}$/', $raw ) ) {
-				$name = $raw; // punycode extension, e.g. .xn--p1ai
-			}
-			if ( '' === $name ) {
-				return $send( array( 'error' => 'Enter a domain name such as example.com.' ), 400 );
-			}
+			$name = $in['name'];
 			$want  = array_filter( array_map( 'sanitize_key', explode( ',', (string) $req->get_param( 'parts' ) ) ) );
 			$bad   = array_diff( $want, db_lk_parts() );
 			if ( $bad ) {
