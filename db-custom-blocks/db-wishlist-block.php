@@ -623,7 +623,9 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			cf.addEventListener('submit', function (e) {
 				e.preventDefault(); tell('Checking…');
 				api('verify', 'POST', { email: mail, code: cf.code.value, post: addId }).then(function (j) {
-					if (j.ok) { tell(addId ? 'You are signed in and the domain is saved.' : 'You are signed in.'); window.location.href = nextUrl || C.page; } else { tell(j.message || 'That code did not work.', true); }
+					// Say "saved" only when the server saved it (or it was already saved): an unpublished
+					// name or a full wishlist is not saved (AC-17).
+					if (j.ok) { var kept = addId && (j.added === 'added' || (j.saved || []).map(Number).indexOf(addId) > -1); tell(!addId ? 'You are signed in.' : (kept ? 'You are signed in and the domain is saved.' : 'You are signed in. We could not save that domain.'), addId && !kept); window.location.href = nextUrl || C.page; } else { tell(j.message || 'That code did not work.', true); }
 				}).catch(function () { tell('Could not reach the server. Try again.', true); });
 			});
 			cf.querySelector('[data-back]').addEventListener('click', function () { cf.hidden = true; ef.hidden = false; ef.email.focus(); tell(''); });
