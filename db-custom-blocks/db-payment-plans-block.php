@@ -134,7 +134,7 @@ if ( ! function_exists( 'db_pp_sections' ) ) {
 		$s['full'] = array( 'Paying in full', '<p>You pay the listed price once. When the payment is confirmed we begin the transfer of the domain to you. The domain is yours to move once the transfer completes; see "After the final payment" below.</p>' );
 
 		$s['plans'] = array( 'Payment plans', '<p>A payment plan spreads the price over ' . esc_html( db_pp_list( $terms ) ) . ' equal monthly instalments. The first instalment is taken when you accept the plan. Each later instalment is charged automatically to the card on file, one month after the previous one. You see the full schedule and these terms before you accept, and your acceptance is recorded with the plan.</p>'
-			. '<div class="dbpp-table-wrap"><table class="dbpp-table"><thead><tr><th scope="col">Plan length</th><th scope="col">Interest</th><th scope="col">Total you pay</th><th scope="col">Each month on a $5,000 name</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
+			. '<div class="dbpp-table-wrap" role="region" tabindex="0" aria-label="Plan lengths compared, scrolls sideways on small screens"><table class="dbpp-table"><thead><tr><th scope="col">Plan length</th><th scope="col">Interest</th><th scope="col">Total you pay</th><th scope="col">Each month on a $5,000 name</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
 			. '<p class="dbpp-small">Interest is a fixed charge added to the price when the plan is set up. It is not a daily or compounding rate, and it does not grow if you are late. The calculator above shows the figures for any price.</p>' );
 
 		$s['missed'] = array( 'If a payment is declined', '<p>We email you before an instalment is due' . ( $remind ? ' (about ' . (int) $remind . ' days ahead)' : '' ) . ' and again if a payment is declined. A declined payment is retried automatically' . ( $retries ? ' ' . count( $retries ) . ' more times, ' . esc_html( $retry_txt ) : '' ) . '. Every decline email carries a secure link, valid for 21 days, to Stripe\'s page where you can update the card.</p>'
@@ -300,7 +300,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		. '.dbpp-n{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;min-width:38px;height:30px;padding:0 8px;border-radius:7px;background:var(--l);color:var(--n);font-size:15px;font-weight:800}'
 		. '.dbpp-steps strong{color:var(--ink);font-size:18px;line-height:1.3}.dbpp-steps li>span:last-child{color:var(--tx);font-size:15.5px;line-height:1.55}'
 		// Table.
-		. '.dbpp-table-wrap{overflow-x:auto;border:1px solid var(--ln);border-radius:16px}.dbpp-table{width:100%;min-width:560px;margin:0;border-collapse:collapse;background:#fff}'
+		. '.dbpp-table-wrap{overflow-x:auto;border:1px solid var(--ln);border-radius:16px}.dbpp-table-wrap:focus-visible{outline:3px solid #0b6b36;outline-offset:2px}.dbpp-table{width:100%;min-width:560px;margin:0;border-collapse:collapse;background:#fff}'
 		. '.dbpp-table th,.dbpp-table td{padding:16px 20px;border-bottom:1px solid var(--ln);text-align:left;font-size:16px;line-height:1.45;color:var(--tx)}.dbpp-table tr:last-child>*{border-bottom:0}'
 		. '.dbpp-table thead th{background:var(--n);color:#fff;font-weight:800}.dbpp-table tbody th{color:var(--ink);font-weight:800;background:var(--pn);width:24%}'
 		// Terms.
