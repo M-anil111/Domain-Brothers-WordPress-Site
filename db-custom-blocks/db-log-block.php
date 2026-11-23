@@ -466,13 +466,16 @@ if ( ! function_exists( 'db_log_send_digest' ) ) {
 		if ( ! $rows || get_option( 'db_log_digest_sent' ) === $day ) {
 			return;
 		}
-		update_option( 'db_log_digest_sent', $day, false );
 		$li = '';
 		foreach ( $rows as $r ) {
 			$li .= '<li><strong>[' . esc_html( $r['source'] ) . ']</strong> ' . esc_html( $r['message'] ) . ' <em>(' . (int) $r['hits'] . '&times;' . ( '' !== $r['place'] ? ', ' . esc_html( $r['place'] ) : '' ) . ')</em></li>';
 		}
 		$to = (string) get_option( 'db_log_digest_to', get_option( 'admin_email' ) );
-		wp_mail( $to, 'Domain Brothers: errors on ' . $day, '<p>Errors recorded yesterday (most frequent first):</p><ul>' . $li . '</ul><p><a href="' . esc_url( admin_url( 'tools.php?page=db-log&day=' . $day ) ) . '">Open the error log</a></p>', array( 'Content-Type: text/html; charset=UTF-8' ) );
+		// Marked sent only when the mail goes out, so a failed send is retried next run (AD-13).
+		$sent = wp_mail( $to, 'Domain Brothers: errors on ' . $day, '<p>Errors recorded yesterday (most frequent first):</p><ul>' . $li . '</ul><p><a href="' . esc_url( admin_url( 'tools.php?page=db-log&day=' . $day ) ) . '">Open the error log</a></p>', array( 'Content-Type: text/html; charset=UTF-8' ) );
+		if ( $sent ) {
+			update_option( 'db_log_digest_sent', $day, false );
+		}
 	}
 }
 
