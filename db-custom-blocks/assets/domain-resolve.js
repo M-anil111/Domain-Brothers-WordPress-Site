@@ -1,6 +1,15 @@
 (function () {
   var C = window.DBRS || {}, f = document.getElementById("dbrs-form"), o = document.getElementById("dbrs-out");
   if (!f || !o) { return; }
+  // A blocked request (firewall 403), a rate limit or the host's busy page is not JSON: say what
+  // happened instead of blaming the visitor's connection (TL-25).
+  function readJson(r) {
+    var why = r.status === 403 ? "The request was blocked by the site firewall. Check the name and try again."
+      : (r.status === 429 ? "Too many lookups in a short time. Try again in a minute."
+      : (r.status >= 500 ? "The server is busy. Try again in a minute." : "The lookup failed (HTTP " + r.status + ")."));
+    if ((r.headers.get("content-type") || "").indexOf("json") < 0) { return Promise.resolve({ ok: false, j: { error: why } }); }
+    return r.json().then(function (j) { return { ok: r.ok, j: j }; }, function () { return { ok: false, j: { error: why } }; });
+  }
   function el(t, c, x) { var e = document.createElement(t); if (c) { e.className = c; } if (x !== undefined) { e.textContent = x; } return e; }
   function card(title, rows, wide) {
     var c = el("div", "dblk-card" + (wide ? " is-wide" : "")); c.appendChild(el("h3", "", title));
@@ -41,7 +50,7 @@
       var q = "?d=" + encodeURIComponent(v) + "&type=" + encodeURIComponent(f.type.value) + "&resolver=" + encodeURIComponent(f.resolver ? f.resolver.value : (C.resolver || "all"));
       req = fetch(C.ep + q, { headers: { Accept: "application/json" } });
     }
-    req.then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    req.then(readJson)
       .then(function (x) { if (!x.ok) { err((x.j && (x.j.error || x.j.message)) || "The request failed."); } else if (C.mode === "cert") { renderCert(x.j); } else { renderResolve(x.j); } })
       .catch(function () { err("The request could not be completed. Check your connection and try again."); })
       .then(function () { busy(b, false); });

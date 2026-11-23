@@ -2,6 +2,15 @@
   var f = document.getElementById("dblk-form"), o = document.getElementById("dblk-out");
   if (!f || !o) { return; }
   var C = window.DBLK || {}, EP = C.ep, EXT = C.ext, SHOW = C.show || [], PARTS = C.parts || [], AUTOEXT = !!C.autoext;
+  // A blocked request (firewall 403), a rate limit or the host's busy page is not JSON: say what
+  // happened instead of blaming the visitor's connection (TL-25).
+  function readJson(r) {
+    var why = r.status === 403 ? "The request was blocked by the site firewall. Check the name and try again."
+      : (r.status === 429 ? "Too many lookups in a short time. Try again in a minute."
+      : (r.status >= 500 ? "The server is busy. Try again in a minute." : "The lookup failed (HTTP " + r.status + ")."));
+    if ((r.headers.get("content-type") || "").indexOf("json") < 0) { return Promise.resolve({ ok: false, j: { error: why } }); }
+    return r.json().then(function (j) { return { ok: r.ok, j: j }; }, function () { return { ok: false, j: { error: why } }; });
+  }
 
   function el(t, c, x) { var e = document.createElement(t); if (c) { e.className = c; } if (x !== undefined) { e.textContent = x; } return e; }
   function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
@@ -154,7 +163,7 @@
       xb.addEventListener("click", function () {
         xb.disabled = true; xb.textContent = "Checking...";
         fetch(EXT + "?d=" + encodeURIComponent(nm.label), { headers: { Accept: "application/json" } })
-          .then(function (rs) { return rs.json().then(function (q) { return { ok: rs.ok, q: q }; }); })
+          .then(function (rs) { return readJson(rs).then(function (x) { return { ok: x.ok, q: x.j }; }); })
           .then(function (x) {
             xb.remove();
             if (!x.ok) { xp.textContent = (x.q && (x.q.error || x.q.message)) || "The check failed."; return; }
@@ -178,7 +187,7 @@
     if (v.indexOf(".") < 0) { v += ".com"; f.d.value = v; }
     var b = f.querySelector("button"); b.disabled = true; b.textContent = "Looking up..."; o.textContent = "";
     fetch(EP + "?d=" + encodeURIComponent(v) + (PARTS.length ? "&parts=" + PARTS.join(",") : ""), { headers: { Accept: "application/json" } })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(readJson)
       .then(function (x) { if (!x.ok) { o.appendChild(el("div", "dblk-err", (x.j && (x.j.error || x.j.message)) || "Lookup failed.")); } else { render(x.j); } })
       .catch(function () { o.appendChild(el("div", "dblk-err", "The lookup could not be completed. Check your connection and try again.")); })
       .then(function () { b.disabled = false; b.textContent = C.button || "Look up"; });
