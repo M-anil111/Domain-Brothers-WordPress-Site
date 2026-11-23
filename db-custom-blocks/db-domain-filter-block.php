@@ -73,6 +73,7 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 			$rows[] = array(
 				'id' => (int) $id,
 				'n'  => $name,
+				'd'  => function_exists( 'db_domain_display' ) ? db_domain_display( get_the_title( $id ) ) : $name, // shown name (LS-16)
 				'u'  => get_permalink( $id ),
 				'p'  => $price,
 				'c'  => $cats,
@@ -194,7 +195,7 @@ add_action( 'wp_footer', function () {
 	}
 
 	function card(r) {
-		var name = r.n.charAt(0).toUpperCase() + r.n.slice(1), hash = 0, i;
+		var name = r.d || (r.n.charAt(0).toUpperCase() + r.n.slice(1)), hash = 0, i;
 		for (i = 0; i < name.length; i++) { hash = (hash * 31 + name.charCodeAt(i)) % 360; }
 		var letter = (name.replace(/[^a-zA-Z0-9]/, '')[0] || '?').toUpperCase();
 		var price = r.p > 0
@@ -210,7 +211,7 @@ add_action( 'wp_footer', function () {
 
 	function row(r) {
 		var cats = r.c.map(function (c) { return '<a href="' + esc(c[1]) + '" rel="tag">' + esc(c[0]) + '</a>'; }).join(', ');
-		var name = r.n.charAt(0).toUpperCase() + r.n.slice(1);
+		var name = r.d || (r.n.charAt(0).toUpperCase() + r.n.slice(1));
 		var price = r.p > 0 ? '<span class="badge-price"> ' + money(r.p) + ' </span>' : '<span class="badge-price"> Make an offer </span>';
 		return '<tr><td class="data-domain"><a href="' + esc(r.u) + '" rel="bookmark" title="' + esc(r.n) + '">' + esc(name) + '</a></td>' +
 			'<td class="data-domain mbl_hd">' + cats + '</td>' +

@@ -914,6 +914,30 @@ if ( ! function_exists( 'db_usd' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_domain_display' ) ) {
+	/**
+	 * A domain name as shown to visitors: the name keeps its stored casing (OttawaBroker, fatality)
+	 * and the extension is lower case (.ky, not .Ky), so a card reads the same filtered or not
+	 * (LS-16). Pure.
+	 */
+	function db_domain_display( $title ) {
+		$title = trim( wp_strip_all_tags( (string) $title ) );
+		$dot   = strpos( $title, '.' );
+		if ( false === $dot || preg_match( '/\s/', $title ) ) {
+			return $title;
+		}
+		$label = substr( $title, 0, $dot );
+		return $label . strtolower( substr( $title, $dot ) );
+	}
+}
+// Domain listing titles use the same display form everywhere the theme prints them (LS-16).
+add_filter( 'the_title', function ( $title, $id = 0 ) {
+	if ( $id && ! is_admin() && 'domain' === get_post_type( $id ) ) {
+		return db_domain_display( $title );
+	}
+	return $title;
+}, 10, 2 );
+
 if ( ! function_exists( 'db_newtab_hint' ) ) {
 	/**
 	 * Adds a hidden " (opens in a new tab)" to every link with target="_blank" that does not
