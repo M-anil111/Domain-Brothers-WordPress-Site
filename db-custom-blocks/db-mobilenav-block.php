@@ -101,6 +101,9 @@ add_action( 'wp_footer', function () {
 				<img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="200" height="54" decoding="async">
 			</a>
 			<ul>
+				<?php if ( function_exists( 'db_mnav_panels_html' ) && '' !== ( $db_panels = db_mnav_panels_html() ) ) : ?>
+					<?php echo $db_panels; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
+				<?php else : ?>
 				<?php foreach ( $links as $label => $href ) : ?>
 					<?php if ( 'Services' === $label ) : ?>
 						<li class="db-mnav-has-sub">
@@ -120,6 +123,7 @@ add_action( 'wp_footer', function () {
 						<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
 					<?php endif; ?>
 				<?php endforeach; ?>
+				<?php endif; ?>
 				<?php echo db_nav_account_items( 'drawer' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
 			</ul>
 		</div>
@@ -207,6 +211,8 @@ add_action( 'wp_footer', function () {
 	.db-mnav-sub { list-style: none; margin: 0; padding: 0 0 6px; background: rgba(0,0,0,.16); }
 	.db-mnav-sub li { border-bottom: none; opacity: 1 !important; transform: none !important; }
 	.db-mnav-sub a { padding: 12px 12px 12px 30px; font-size: 15px; font-weight: 500; }
+	.db-mnav-subtoggle.db-mnav-subtoggle--wide { flex: 1; width: auto; display: flex; align-items: center; justify-content: space-between; padding: 14px 12px; text-align: left; color: inherit; font: inherit; font-size: 17px; font-weight: 700; }
+	.db-mnav-subhead { padding: 12px 12px 4px 30px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .7 !important; }
 	.db-mnav-scrim {
 		/* Below #wpadminbar (99999) so a logged-in admin's bar stays usable. */
 		position: fixed; inset: 0; z-index: 99998; background: rgba(6,14,28,.5);
@@ -418,3 +424,43 @@ add_action( 'template_redirect', function () {
 		exit;
 	}
 }, 0 );
+
+
+if ( ! function_exists( 'db_mnav_panels_html' ) ) {
+	/**
+	 * The phone drawer, built from the same panels as the desktop mega menu (db_header_panels()),
+	 * so the finder, collections, wishlist, domain services, About and Contact are reachable on a
+	 * phone too (bug register batch 2, LS-10). One expandable section per panel.
+	 */
+	function db_mnav_panels_html() {
+		if ( ! function_exists( 'db_header_panels' ) ) {
+			return '';
+		}
+		$h = '';
+		foreach ( (array) db_header_panels() as $i => $panel ) {
+			$label = (string) ( $panel['label'] ?? '' );
+			if ( '' === $label ) {
+				continue;
+			}
+			$id    = 'db-mnav-sub-' . sanitize_key( $label );
+			$items = '';
+			foreach ( (array) ( $panel['cols'] ?? array() ) as $col ) {
+				$links = array_filter( (array) ( $col[1] ?? array() ) );
+				if ( ! $links ) {
+					continue;
+				}
+				$items .= '<li class="db-mnav-subhead" aria-hidden="true">' . esc_html( (string) ( $col[0] ?? '' ) ) . '</li>';
+				foreach ( $links as $l ) {
+					$items .= '<li><a href="' . esc_url( (string) $l[1] ) . '">' . esc_html( (string) $l[0] ) . '</a></li>';
+				}
+			}
+			if ( ! empty( $panel['card'][3] ) ) {
+				$items .= '<li><a href="' . esc_url( (string) $panel['card'][3] ) . '">' . esc_html( (string) $panel['card'][2] ) . '</a></li>';
+			}
+			$h .= '<li class="db-mnav-has-sub"><div class="db-mnav-row"><button type="button" class="db-mnav-subtoggle db-mnav-subtoggle--wide" aria-expanded="false" aria-controls="' . esc_attr( $id ) . '">'
+				. '<span class="db-mnav-sublabel">' . esc_html( $label ) . '</span><span class="db-mnav-chevron" aria-hidden="true"></span></button></div>'
+				. '<ul id="' . esc_attr( $id ) . '" class="db-mnav-sub" hidden>' . $items . '</ul></li>';
+		}
+		return $h;
+	}
+}
