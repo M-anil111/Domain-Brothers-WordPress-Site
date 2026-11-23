@@ -345,10 +345,19 @@ add_action( 'rest_api_init', function () {
 			$row  = db_acct_row( $email ) ?: array();
 			if ( array_key_exists( 'name', $d ) ) {
 				$name = db_reg_clean_name( $d['name'] );
-				if ( '' === $name ) {
+				// An empty name is fine when none is stored yet: people who signed in with a code
+				// have none, and could not save their newsletter choice (bug register batch 2, AC-8).
+				$typed = trim( (string) $d['name'] );
+				if ( '' === $name && ( '' !== $typed || '' !== (string) ( $row['full_name'] ?? '' ) ) ) {
 					return $send( array( 'ok' => false, 'message' => 'Enter your full name.' ), 400 );
 				}
-				$data['full_name'] = $name;
+				if ( '' !== $name ) {
+					$data['full_name'] = $name;
+				}
+			}
+			if ( ! empty( $d['accept_terms'] ) && '' === (string) ( $row['consent_version'] ?? '' ) ) {
+				$data['consent_version'] = DB_POLICY_VERSION; // AC-7: consent recorded from Profile
+				$data['consent_at']      = $now;
 			}
 			if ( array_key_exists( 'phone', $d ) ) {
 				$phone = db_reg_clean_phone( $d['phone'] );
