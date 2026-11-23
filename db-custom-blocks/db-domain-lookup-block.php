@@ -288,9 +288,24 @@ if ( ! function_exists( 'db_lk_ssl' ) ) {
 				$covers = true;
 			}
 		}
+		// A second connection that checks the chain and the name, as a browser does: a self-signed
+		// or untrusted certificate read as valid before (TL-19).
+		$ca       = ABSPATH . WPINC . '/certificates/ca-bundle.crt';
+		$vctx     = stream_context_create( array( 'ssl' => array( 'verify_peer' => true, 'verify_peer_name' => true, 'SNI_enabled' => true, 'peer_name' => $name, 'cafile' => file_exists( $ca ) ? $ca : null ) ) );
+		$vfp      = @stream_socket_client( 'ssl://' . $ip . ':443', $verrno, $verrstr, 4, STREAM_CLIENT_CONNECT, $vctx ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		$trusted  = (bool) $vfp;
+		if ( $vfp ) {
+			fclose( $vfp );
+		}
+		$why = '';
+		if ( ! $trusted ) {
+			$why = ( (int) ( $cert['validTo_time_t'] ?? 0 ) < time() ) ? 'expired' : ( ( isset( $cert['issuer']['CN'], $cert['subject']['CN'] ) && $cert['issuer']['CN'] === $cert['subject']['CN'] ) ? 'self-signed' : 'not issued by a trusted authority, or it does not match this name' );
+		}
 		return array(
-			'state'  => 'ok',
-			'issuer' => sanitize_text_field( (string) ( $cert['issuer']['O'] ?? $cert['issuer']['CN'] ?? '' ) ),
+			'state'   => 'ok',
+			'trusted' => $trusted,
+			'why'     => $why,
+			'issuer'  => sanitize_text_field( (string) ( $cert['issuer']['O'] ?? $cert['issuer']['CN'] ?? '' ) ),
 			'from'   => $from ? gmdate( 'Y-m-d', $from ) : '',
 			'to'     => $to ? gmdate( 'Y-m-d', $to ) : '',
 			'days'   => $to ? (int) floor( ( $to - time() ) / DAY_IN_SECONDS ) : null,

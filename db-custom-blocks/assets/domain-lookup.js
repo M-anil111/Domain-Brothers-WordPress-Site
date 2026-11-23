@@ -113,7 +113,7 @@
     // SSL
     var sl = j.ssl || {};
     if (sl.state === "ok") {
-      c = add(card("SSL certificate", [["Issuer", sl.issuer || "Not shown"], ["Valid from", sl.from], ["Expires", sl.to + (sl.days !== null ? " (" + (sl.days < 0 ? "expired" : sl.days + " days left") + ")" : "")], ["Covers this name", sl.covers ? "Yes" : "No"]]));
+      c = add(card("SSL certificate", [["Trusted by browsers", sl.trusted === false ? "No: " + (sl.why || "the certificate could not be verified") : (sl.trusted ? "Yes" : "Not checked")], ["Issuer", sl.issuer || "Not shown"], ["Valid from", sl.from], ["Expires", sl.to + (sl.days !== null ? " (" + (sl.days < 0 ? "expired" : sl.days + " days left") + ")" : "")], ["Covers this name", sl.covers ? "Yes" : "No"]]));
       if (sl.days !== null && sl.days >= 0 && sl.days < 30) { note(c, "This certificate expires within 30 days. Renew it before visitors see a browser warning."); }
     } else {
       add(card("SSL certificate", "No certificate was found on port 443. The site may not use HTTPS."));
