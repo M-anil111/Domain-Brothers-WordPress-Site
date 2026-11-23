@@ -307,7 +307,7 @@ add_filter( 'db_hp_sections', function ( $html ) {
 	$d = get_transient( 'db_pulse' );
 	if ( ! is_array( $d ) ) {
 		$idx  = function_exists( 'db_lk_index' ) ? db_lk_index() : array( 'ask' => array() );
-		$sold = function_exists( 'db_sold_listings' ) ? count( db_sold_listings() ) : 0;
+		$sold = function_exists( 'db_sold_public_count' ) ? db_sold_public_count() : 0;
 		$d    = db_pulse_compute( (array) ( $idx['ask'] ?? array() ), $sold );
 		set_transient( 'db_pulse', $d, HOUR_IN_SECONDS );
 	}
