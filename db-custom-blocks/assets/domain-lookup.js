@@ -75,7 +75,10 @@
 
     // Website: chain, headers, security headers, summary
     var st = j.site || {};
-    if (st.state === "ok") {
+    if (st.state === "unreachable") {
+      // A redirect whose target failed: say so instead of showing the 3xx as the answer (TL-14).
+      c = add(card("Website response", [["Result", "The redirect target did not answer"], ["Failed at", st.final || "Not shown"], ["Reason", st.error || "No response"]].concat((st.hops || []).map(function (x, i) { return ["Step " + (i + 1), (x.code ? x.code + "  " : "failed  ") + x.url]; }))));
+    } else if (st.state === "ok") {
       if (SHOW.indexOf("Redirect chain") > -1) {
         c = add(card("Redirect chain", (st.hops || []).map(function (x, i) { return ["Step " + (i + 1), x.code + "  " + x.url]; })));
         note(c, (st.hops || []).length > 1 ? "The address redirects before it settles. Each extra step adds delay." : "No redirect: the address answers directly.");

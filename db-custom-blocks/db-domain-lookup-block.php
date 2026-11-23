@@ -394,6 +394,11 @@ if ( ! function_exists( 'db_lk_site' ) ) {
 				$res = db_lk_safe_get( $url, array( 'timeout' => 6, 'limit_response_size' => 20000, 'user-agent' => $ua ) );
 			}
 			if ( is_wp_error( $res ) ) {
+				// A redirect whose target fails: record that hop, so the 3xx is not reported as the
+				// final answer with empty headers (bug register batch 2, TL-14).
+				if ( $hops ) {
+					$hops[] = array( 'url' => esc_url_raw( $url ), 'code' => 0, 'error' => sanitize_text_field( mb_substr( $res->get_error_message(), 0, 140 ) ) );
+				}
 				break;
 			}
 			$code   = (int) wp_remote_retrieve_response_code( $res );
@@ -426,6 +431,16 @@ if ( ! function_exists( 'db_lk_site' ) ) {
 				$v            = is_array( $h[ $k ] ) ? implode( ', ', $h[ $k ] ) : (string) $h[ $k ];
 				$shown[ $k ] = sanitize_text_field( function_exists( 'mb_substr' ) ? mb_substr( $v, 0, 180 ) : substr( $v, 0, 180 ) );
 			}
+		}
+		if ( 0 === (int) $last['code'] ) {
+			return array(
+				'state'  => 'unreachable',
+				'code'   => 0,
+				'https'  => 0 === strpos( $last['url'], 'https://' ),
+				'final'  => $last['url'],
+				'error'  => (string) ( $last['error'] ?? '' ),
+				'hops'   => $hops,
+			);
 		}
 		return array(
 			'state'   => 'ok',
@@ -474,19 +489,48 @@ if ( ! function_exists( 'db_lk_name' ) ) {
 	/** Plain facts about the name itself. @return array<string,mixed> */
 	function db_lk_name( $name ) {
 		list( $label, $ext ) = db_lk_split( $name );
-		$core   = str_replace( '-', '', $label );
-		$vowels = preg_match_all( '/[aeiouy]/i', $core );
-		$run    = preg_match( '/[^aeiouy0-9]{5,}/i', $core );
+		$idn = 0 === strpos( $label, 'xn--' );
+		// Accented and non-Latin names are measured as people read them, not in their xn-- form
+		// (bücher.com was 13 characters with 3 hyphens; bug register batch 2, TL-7).
+		$shown = $label;
+		if ( $idn && function_exists( 'idn_to_utf8' ) ) {
+			$u = idn_to_utf8( $label, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46 );
+			if ( is_string( $u ) && '' !== $u ) {
+				$shown = $u;
+			}
+		}
+		$len    = function_exists( 'mb_strlen' ) ? mb_strlen( $shown, 'UTF-8' ) : strlen( $shown );
+		$core   = str_replace( '-', '', $shown );
+		$vowels = preg_match_all( '/[aeiouyàáâãäåæèéêëìíîïòóôõöøùúûüýÿœ]/iu', $core );
+		$run    = preg_match( '/[^aeiouyàáâãäåæèéêëìíîïòóôõöøùúûüýÿœ0-9]{5,}/iu', $core );
+		$letters = (bool) preg_match( '/^\p{L}+$/u', $core );
 		return array(
-			'label'     => $label,
-			'length'    => strlen( $label ),
+			'label'     => $shown,
+			'length'    => $len,
 			'extension' => $ext,
-			'hyphens'   => substr_count( $label, '-' ),
-			'digits'    => preg_match_all( '/[0-9]/', $label ),
-			'idn'       => 0 === strpos( $label, 'xn--' ),
-			'readable'  => strlen( $core ) > 0 && $vowels > 0 && ! $run,
-			'type'      => ctype_digit( $core ) ? 'numeric' : ( ctype_alpha( $core ) ? 'letters only' : 'letters and numbers' ),
+			'hyphens'   => substr_count( $shown, '-' ),
+			'digits'    => preg_match_all( '/[0-9]/', $shown ),
+			'idn'       => $idn,
+			'readable'  => '' !== $core && $vowels > 0 && ! $run,
+			'type'      => ctype_digit( $core ) ? 'numeric' : ( $letters ? 'letters only' : 'letters and numbers' ),
 		);
+	}
+}
+
+if ( ! function_exists( 'db_lk_registrable' ) ) {
+	/**
+	 * Pure: the registrable domain of a host (maps.google.com -> google.com, www.bbc.co.uk ->
+	 * bbc.co.uk), from the common two-level suffixes. The registry, age, name and price checks run
+	 * on it; DNS, certificate and website checks keep the host typed (TL-3, TL-6).
+	 */
+	function db_lk_registrable( $host ) {
+		$labels = explode( '.', strtolower( trim( (string) $host, '.' ) ) );
+		if ( count( $labels ) <= 2 ) {
+			return implode( '.', $labels );
+		}
+		$two  = implode( '.', array_slice( $labels, -2 ) );
+		$sfx2 = (array) apply_filters( 'db_lk_two_level_suffixes', array( 'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au', 'co.nz', 'org.nz', 'co.za', 'com.br', 'com.mx', 'co.jp', 'ne.jp', 'or.jp', 'co.in', 'net.in', 'org.in', 'firm.in', 'gen.in', 'co.kr', 'com.cn', 'com.hk', 'com.sg', 'com.tr', 'com.ar', 'com.co', 'co.il', 'com.ky', 'org.ky', 'com.ng', 'com.ph', 'com.my', 'co.id', 'com.pk', 'qc.ca', 'on.ca', 'bc.ca', 'ab.ca' ) );
+		return in_array( $two, $sfx2, true ) ? implode( '.', array_slice( $labels, -3 ) ) : $two;
 	}
 }
 
@@ -552,7 +596,7 @@ if ( ! function_exists( 'db_lk_stats' ) ) {
 	 */
 	function db_lk_stats( array $rows, $name ) {
 		list( $label, $ext ) = db_lk_split( $name );
-		$len                 = strlen( $label );
+		$len                 = (int) db_lk_name( $name )['length']; // characters as read, not the xn-- form (TL-7)
 		$sets                = array(
 			array( 'same length and extension (' . $len . ' characters, .' . $ext . ')', static function ( $s ) use ( $len, $ext ) { return $s['len'] === $len && $s['ext'] === $ext; } ),
 			array( 'same extension (.' . $ext . ')', static function ( $s ) use ( $ext ) { return $s['ext'] === $ext; } ),
@@ -622,13 +666,14 @@ if ( ! function_exists( 'db_lk_collect' ) ) {
 	 * @param string[] $parts Requested parts (empty = all).
 	 * @return array<string,mixed>
 	 */
-	function db_lk_collect( $name, array $parts ) {
+	function db_lk_collect( $name, array $parts, $host = '' ) {
+		$host  = '' !== (string) $host ? (string) $host : $name; // DNS, certificate and website checks (TL-3)
 		$all   = db_lk_parts();
 		$parts = $parts ? array_values( array_intersect( $all, $parts ) ) : $all;
 		if ( in_array( 'host', $parts, true ) && ! in_array( 'dns', $parts, true ) ) {
 			$parts[] = 'dns';
 		}
-		$key  = 'db_lk3_' . md5( $name );
+		$key  = 'db_lk3_' . md5( $host === $name ? $name : $host . '|' . $name );
 		$data = get_transient( $key );
 		$data = is_array( $data ) ? $data : array( 'domain' => $name, 'done' => array() );
 		foreach ( $parts as $part ) {
@@ -640,19 +685,19 @@ if ( ! function_exists( 'db_lk_collect' ) ) {
 					$data['registry'] = db_lk_registry( $name );
 					break;
 				case 'dns':
-					$data['dns'] = db_lk_dns( $name );
+					$data['dns'] = db_lk_dns( $host );
 					break;
 				case 'ssl':
-					$data['ssl'] = db_lk_ssl( $name );
+					$data['ssl'] = db_lk_ssl( $host );
 					break;
 				case 'site':
-					$data['site'] = db_lk_site( $name );
+					$data['site'] = db_lk_site( $host );
 					break;
 				case 'dmarc':
-					$data['dmarc'] = db_lk_mailauth( $name );
+					$data['dmarc'] = db_lk_mailauth( $host );
 					break;
 				case 'host':
-					$data['host'] = db_lk_host( $data['dns'] ?? db_lk_dns( $name ) );
+					$data['host'] = db_lk_host( $data['dns'] ?? db_lk_dns( $host ) );
 					break;
 				case 'archive':
 					$data['archive'] = db_lk_archive( $name );
@@ -709,7 +754,7 @@ add_action( 'rest_api_init', function () {
 			$raw = preg_replace( '#^[a-z][a-z0-9+.-]*://#', '', $raw );        // scheme
 			$raw = preg_replace( '#[/?\#].*$#s', '', $raw );                 // path, query, fragment
 			$raw = preg_replace( '#:\d+$#', '', $raw );                      // port
-			$raw = rtrim( preg_replace( '#^www\.#', '', $raw ), '.' );       // www and trailing dot
+			$raw = rtrim( $raw, '.' );                                       // trailing dot (www is kept: TL-3)
 			$send = static function ( $data, $code = 200 ) {
 				$res = new WP_REST_Response( $data, $code );
 				$res->header( 'Cache-Control', 'no-store' );
@@ -735,15 +780,23 @@ add_action( 'rest_api_init', function () {
 			if ( $bad ) {
 				return $send( array( 'error' => 'Unknown parts: ' . implode( ', ', $bad ) . '. Use any of: ' . implode( ', ', db_lk_parts() ) . '.' ), 400 );
 			}
+			// The host typed (www.x.com, maps.x.com) is checked for DNS, certificate and website; the
+			// registrable domain for the registry, age, name and prices (TL-3, TL-6).
+			$host = $name;
+			$name = db_lk_registrable( $host );
 			// A result already in the cache costs nothing, so it does not count against the limit (TL-16).
-			$cached = get_transient( 'db_lk3_' . md5( $name ) );
+			$cached = get_transient( 'db_lk3_' . md5( $host === $name ? $name : $host . '|' . $name ) );
 			$need   = $want ? $want : db_lk_parts();
 			$fresh  = is_array( $cached ) && ! array_diff( $need, (array) ( $cached['done'] ?? array() ) );
 			$ip     = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
 			if ( ! $fresh && function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
-			$data  = db_lk_collect( $name, $want );
+			$data  = db_lk_collect( $name, $want, $host );
+			if ( $host !== $name ) {
+				$data['host_checked'] = $host;
+				$data['subdomain_of'] = $name;
+			}
 			return $send( $data );
 		},
 	) );
