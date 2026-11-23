@@ -594,10 +594,10 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 					<div class="tablenav-pages">
 						<span class="displaying-num"><?php echo esc_html( number_format( $total ) ); ?> items</span>
 						<?php if ( $total_pages > 1 ) : ?>
-							<?php for ( $p = 1; $p <= $total_pages; $p++ ) : ?>
-								<a href="<?php echo esc_url( add_query_arg( 'paged', $p, $base_url . ( $filter_status ? '&status=' . rawurlencode( $filter_status ) : '' ) ) ); ?>"
-								   class="<?php echo $p === $paged ? 'button button-primary' : 'button'; ?>"><?php echo esc_html( $p ); ?></a>
-							<?php endfor; ?>
+							<?php
+							// A few links around the current page instead of one button per page (AD-10).
+							echo paginate_links( array( 'base' => add_query_arg( 'paged', '%#%', $base_url . ( $filter_status ? '&status=' . rawurlencode( $filter_status ) : '' ) ), 'format' => '', 'current' => $paged, 'total' => $total_pages, 'end_size' => 1, 'mid_size' => 2 ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+							?>
 						<?php endif; ?>
 					</div>
 				</div>

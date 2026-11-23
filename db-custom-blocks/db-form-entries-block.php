@@ -145,15 +145,24 @@ if ( ! function_exists( 'db_form_entries_page' ) ) {
 		$form  = isset( $_GET['form'] ) ? absint( $_GET['form'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
 		$forms = (array) $wpdb->get_results( "SELECT form_id, form_title, COUNT(*) AS n FROM {$t} GROUP BY form_id, form_title ORDER BY n DESC" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = (array) $wpdb->get_results( $form ? $wpdb->prepare( "SELECT * FROM {$t} WHERE form_id = %d ORDER BY id DESC LIMIT 200", $form ) : "SELECT * FROM {$t} ORDER BY id DESC LIMIT 200" );
+		// Paged 100 at a time so every entry can be read, not only the newest 200 (AD-10).
+		$per   = 100;
+		$paged = max( 1, isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 1 ); // phpcs:ignore WordPress.Security.NonceVerification
+		$total = (int) ( $form ? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE form_id = %d", $form ) ) : $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$pages = max( 1, (int) ceil( $total / $per ) );
+		$paged = min( $paged, $pages );
+		$off   = ( $paged - 1 ) * $per;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = (array) $wpdb->get_results( $form ? $wpdb->prepare( "SELECT * FROM {$t} WHERE form_id = %d ORDER BY id DESC LIMIT %d OFFSET %d", $form, $per, $off ) : $wpdb->prepare( "SELECT * FROM {$t} ORDER BY id DESC LIMIT %d OFFSET %d", $per, $off ) );
 		$base = admin_url( 'tools.php?page=db-form-entries' );
+		$pager = $pages > 1 ? '<p>' . esc_html( number_format( $total ) ) . ' entries. ' . paginate_links( array( 'base' => add_query_arg( array_filter( array( 'form' => $form, 'paged' => '%#%' ) ), $base ), 'format' => '', 'current' => $paged, 'total' => $pages, 'end_size' => 1, 'mid_size' => 3 ) ) . '</p>' : '';
 		echo '<div class="wrap"><h1>Form entries</h1><p>Every Contact Form 7 submission, saved before the email is sent. Transfer codes appear masked; the codes themselves are on Tools &gt; Transfer codes.</p><p>';
 		echo '<a href="' . esc_url( $base ) . '"' . ( $form ? '' : ' style="font-weight:700"' ) . '>All</a>';
 		foreach ( $forms as $f ) {
 			echo ' &middot; <a href="' . esc_url( add_query_arg( 'form', (int) $f->form_id, $base ) ) . '"' . ( (int) $f->form_id === $form ? ' style="font-weight:700"' : '' ) . '>' . esc_html( $f->form_title ) . ' (' . (int) $f->n . ')</a>';
 		}
 		$csv = wp_nonce_url( add_query_arg( array( 'action' => 'db_form_entries_csv', 'form' => $form ), admin_url( 'admin-post.php' ) ), 'db_form_entries_csv' );
-		echo '</p><p><a class="button" href="' . esc_url( $csv ) . '">Download CSV</a></p>';
+		echo '</p><p><a class="button" href="' . esc_url( $csv ) . '">Download CSV</a>' . ( ! $form && $total > 5000 ? ' <span class="description">The CSV for all forms holds the newest 5,000 entries; pick one form above to export all of its entries.</span>' : '' ) . '</p>' . $pager; // phpcs:ignore WordPress.Security.EscapeOutput
 		echo '<table class="widefat striped"><thead><tr><th>#</th><th>Received (UTC)</th><th>Form</th><th>Email</th><th>Fields</th></tr></thead><tbody>';
 		if ( ! $rows ) {
 			echo '<tr><td colspan="5">No entries yet.</td></tr>';
@@ -166,6 +175,6 @@ if ( ! function_exists( 'db_form_entries_page' ) ) {
 			}
 			echo '<tr><td>' . (int) $r->id . '</td><td>' . esc_html( $r->created_at ) . '</td><td>' . esc_html( $r->form_title ) . '<br><small>' . esc_html( $r->page_url ) . '</small></td><td>' . esc_html( $r->email ) . '</td><td>' . $list . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput -- $list built from escaped parts.
 		}
-		echo '</tbody></table></div>';
+		echo '</tbody></table>' . $pager . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 }

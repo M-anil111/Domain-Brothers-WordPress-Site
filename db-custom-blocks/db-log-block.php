@@ -619,11 +619,9 @@ if ( ! function_exists( 'db_log_admin_page' ) ) {
 		echo '</tbody></table>';
 		$pages = (int) ceil( $total / $per );
 		if ( $pages > 1 ) {
-			echo '<p>' . esc_html( number_format( $total ) ) . ' entries. Page ';
-			for ( $i = 1; $i <= min( $pages, 40 ); $i++ ) {
-				echo $i === $f['paged'] ? '<strong>' . (int) $i . '</strong> ' : '<a href="' . esc_url( add_query_arg( array_merge( array_filter( $f ), array( 'paged' => $i ) ), $base ) ) . '">' . (int) $i . '</a> ';
-			}
-			echo '</p>';
+			// Every page is reachable: numbered links around the current page with first, last,
+			// previous and next, instead of only the first 40 pages (AD-10).
+			echo '<p>' . esc_html( number_format( $total ) ) . ' entries. ' . paginate_links( array( 'base' => add_query_arg( array_merge( array_filter( $f ), array( 'paged' => '%#%' ) ), $base ), 'format' => '', 'current' => $f['paged'], 'total' => $pages, 'end_size' => 1, 'mid_size' => 3 ) ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 
 		// Archives.
