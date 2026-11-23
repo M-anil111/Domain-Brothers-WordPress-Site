@@ -45,7 +45,7 @@ if ( ! function_exists( 'db_seller_deals' ) ) {
 		$l = db_seller_table( 'listings' );
 		$d = db_deal_table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT d.* FROM {$d} d JOIN {$l} l ON l.domain = d.domain AND l.review_status = 'approved' WHERE l.seller_id = %d ORDER BY FIELD(d.state, 'open', 'countered', 'accepted') DESC, d.updated_at DESC LIMIT 100", (int) $seller_id ) );
+		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT d.* FROM {$d} d JOIN {$l} l ON l.domain = d.domain AND l.review_status = 'approved' AND d.created_at >= l.created_at WHERE l.seller_id = %d ORDER BY FIELD(d.state, 'open', 'countered', 'accepted') DESC, d.updated_at DESC LIMIT 100", (int) $seller_id ) );
 		return array_map( 'db_deal_expire_if_due', $rows );
 	}
 }
@@ -123,7 +123,9 @@ if ( ! function_exists( 'db_seller_offer_post' ) ) {
 			return array( array( 'bad', 'That offer was not found.' ) );
 		}
 		$listing = db_seller_listing_for_domain( $deal->domain );
-		if ( ! $listing || (int) $listing['seller_id'] !== (int) $seller['id'] ) {
+		// Only offers made since this seller listed the name: a new owner who proved ownership saw
+		// and could accept the previous seller's negotiations (bug register batch 2, SL-7).
+		if ( ! $listing || (int) $listing['seller_id'] !== (int) $seller['id'] || ( ! empty( $listing['created_at'] ) && strtotime( (string) $deal->created_at . ' UTC' ) < strtotime( (string) $listing['created_at'] . ' UTC' ) ) ) {
 			return array( array( 'bad', 'That offer is not on one of your names.' ) );
 		}
 		$deal    = db_deal_expire_if_due( $deal );
