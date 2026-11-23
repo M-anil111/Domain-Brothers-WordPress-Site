@@ -1060,8 +1060,23 @@ function db_plan_widget_html() {
 				b.className='db-plan-term'+(m===active?' is-active':'');
 				b.setAttribute('aria-pressed',m===active?'true':'false');
 				b.innerHTML='<span class="t-months">'+m+' months</span><span class="t-per">'+money(per)+'/mo</span><span class="t-per">'+(rateOf(m)?rateOf(m)+'% interest':'0% interest')+'</span>';
-				b.addEventListener('click',function(){active=m;renderTerms();renderSummary();});
+				b.setAttribute('data-m',m);
+				// Update the existing buttons instead of rebuilding them, so keyboard focus stays on
+				// the chosen term (QA report DB-18); arrow keys move between terms.
+				b.addEventListener('click',function(){active=m;markTerms();renderSummary();});
+				b.addEventListener('keydown',function(e){
+					var k=e.key,all=[].slice.call(wrap.querySelectorAll('.db-plan-term')),i=all.indexOf(b),j=-1;
+					if(k==='ArrowRight'||k==='ArrowDown'){j=(i+1)%all.length;}else if(k==='ArrowLeft'||k==='ArrowUp'){j=(i-1+all.length)%all.length;}else if(k==='Home'){j=0;}else if(k==='End'){j=all.length-1;}
+					if(j>-1){e.preventDefault();all[j].focus();}
+				});
 				wrap.appendChild(b);
+			});
+		}
+		function markTerms(){
+			[].forEach.call(root.querySelectorAll('.db-plan-term'),function(b){
+				var on=+b.getAttribute('data-m')===active;
+				b.classList.toggle('is-active',on);
+				b.setAttribute('aria-pressed',on?'true':'false');
 			});
 		}
 		function renderSummary(){
