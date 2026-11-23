@@ -230,6 +230,11 @@ add_action( 'add_post_meta', function ( $post_id, $key, $value ) {
 
 // A new offer (never the amount, never who).
 add_action( 'db_crm_lead_created', function ( $lead_id, $data ) {
+	// Only offers made on the site: leads the team types in (phone, referral, back-filled history)
+	// emailed every follower about an offer that never came through (bug register batch 2, AD-7).
+	if ( 'offer_form' !== ( $data['source'] ?? 'offer_form' ) ) { // unset means a site offer (the stored default)
+		return;
+	}
 	if ( empty( $data['domain'] ) || empty( $data['offer_amount'] ) || ! function_exists( 'db_listing_post_for_domain' ) ) {
 		return;
 	}
