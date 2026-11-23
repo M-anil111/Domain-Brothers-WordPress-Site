@@ -215,6 +215,9 @@ if ( ! function_exists( 'db_seller_status' ) ) {
 	function db_seller_status( array $row ) {
 		$review = isset( $row['review_status'] ) ? $row['review_status'] : 'draft';
 		$verify = isset( $row['verify_status'] ) ? $row['verify_status'] : 'pending';
+		if ( 'sold' === $review ) {
+			return array( 'Sold', 'ok' );
+		}
 		if ( 'approved' === $review ) {
 			return array( 'Live', 'ok' );
 		}

@@ -143,7 +143,7 @@ if ( ! function_exists( 'db_seller_payout_create' ) ) {
 	 */
 	function db_seller_payout_create( $domain, $gross, $kind = 'full', $pi_id = '', $state = 'waiting_transfer' ) {
 		global $wpdb;
-		$l = function_exists( 'db_seller_listing_for_domain' ) ? db_seller_listing_for_domain( $domain ) : null;
+		$l = db_seller_listing_for_sale( $domain );
 		if ( ! $l ) {
 			return 0;
 		}
@@ -188,11 +188,45 @@ if ( ! function_exists( 'db_seller_payout_mail' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_seller_listing_for_sale' ) ) {
+	/** The seller listing behind a sale: live, or already marked sold (later plan payments). */
+	function db_seller_listing_for_sale( $domain ) {
+		global $wpdb;
+		$l = db_seller_table( 'listings' );
+		$s = db_seller_table( 'sellers' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT l.*, s.email AS seller_email, s.status AS seller_status FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.domain = %s AND l.review_status IN ('approved','sold') ORDER BY FIELD(l.review_status,'approved','sold'), l.id DESC LIMIT 1", strtolower( trim( (string) $domain ) ) ), ARRAY_A );
+		return is_array( $row ) ? $row : null;
+	}
+}
+
+if ( ! function_exists( 'db_seller_listing_mark_sold' ) ) {
+	/**
+	 * Closes a seller listing once its sale is complete. 'sold' is final: the ownership re-check,
+	 * expiry warnings, claims, offers, pricing and pointing all work on 'approved' listings only,
+	 * so the seller is no longer emailed about (or able to act on) a name the buyer now owns
+	 * (bug register batch 2, SL-3).
+	 */
+	function db_seller_listing_mark_sold( $domain ) {
+		global $wpdb;
+		$row = function_exists( 'db_seller_listing_for_domain' ) ? db_seller_listing_for_domain( $domain ) : null;
+		if ( ! $row ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->update( db_seller_table( 'listings' ), array( 'review_status' => 'sold', 'offline_reason' => '', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => (int) $row['id'] ) );
+		if ( function_exists( 'db_seller_audit' ) ) {
+			db_seller_audit( (int) $row['seller_id'], strtolower( (string) $domain ), 'sold', 'Sale complete: the listing is closed.', 'system' );
+		}
+		return true;
+	}
+}
+
 /* Sales from Stripe: full payments and payment plans. */
 add_action( 'db_order_event', function ( $kind, $data ) {
 	global $wpdb;
 	$domain = strtolower( (string) ( $data['domain'] ?? '' ) );
-	if ( '' === $domain || ! function_exists( 'db_seller_listing_for_domain' ) || ! db_seller_listing_for_domain( $domain ) ) {
+	if ( '' === $domain || ! db_seller_listing_for_sale( $domain ) ) {
 		return;
 	}
 	$pi   = (string) ( $data['pi_id'] ?? '' );
@@ -202,6 +236,7 @@ add_action( 'db_order_event', function ( $kind, $data ) {
 	}
 	if ( 'full' === $kind ) {
 		db_seller_payout_create( $domain, (float) ( $data['amount_usd'] ?? 0 ), 'full', $pi );
+		db_seller_listing_mark_sold( $domain );
 		return;
 	}
 	if ( 'plan_installment' !== $kind ) {
@@ -214,7 +249,7 @@ add_action( 'db_order_event', function ( $kind, $data ) {
 		$id   = db_seller_payout_create( $domain, $amount, 'plan', $pi, 'collecting' );
 		$open = db_seller_payout_get( $id );
 	} else {
-		$l     = db_seller_listing_for_domain( $domain );
+		$l     = db_seller_listing_for_sale( $domain );
 		$split = db_seller_payout_split( (float) $open['gross'] + $amount, ! empty( $open['exclusive'] ) );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update( $wpdb->prefix . 'db_seller_payouts', array( 'gross' => $split['gross'], 'commission' => $split['commission'], 'net' => $split['net'], 'pi_ids' => trim( $open['pi_ids'] . ',' . $pi, ',' ), 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => (int) $open['id'] ) );
@@ -224,6 +259,7 @@ add_action( 'db_order_event', function ( $kind, $data ) {
 	}
 	if ( $open && $months > 0 && $n >= $months && 'collecting' === $open['state'] ) {
 		db_seller_payout_apply( $open, 'plan_done', '', 'system' );
+		db_seller_listing_mark_sold( $domain ); // the seller holds the name until the plan is paid
 	}
 }, 30, 2 );
 

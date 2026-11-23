@@ -184,4 +184,6 @@ check( 'transfer: reminders day 1 and 2, strike day 3', '' === db_seller_transfe
 check( 'rdap expiry parsed from events', 1798761600 === db_seller_rdap_expiry( '{"events":[{"eventAction":"registration","eventDate":"2020-01-01T00:00:00Z"},{"eventAction":"expiration","eventDate":"2027-01-01T00:00:00Z"}]}' ) && 0 === db_seller_rdap_expiry( 'not json' ) );
 check( 'expiry: warn within 30 days, down when expired, nothing when unknown', 'warn' === db_seller_expiry_action( $n + 10 * $d, $n, 30 ) && 'expired' === db_seller_expiry_action( $n - 1, $n, 30 ) && '' === db_seller_expiry_action( $n + 40 * $d, $n, 30 ) && '' === db_seller_expiry_action( 0, $n, 30 ) );
 
+check( 'a completed sale shows as Sold, not Live (SL-3)', 'Sold' === db_seller_status( array( 'review_status' => 'sold' ) )[0] );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
