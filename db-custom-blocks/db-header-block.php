@@ -228,11 +228,11 @@ if ( ! function_exists( 'db_header_html' ) ) {
 			. '<form class="db-hd-search" role="search" method="get" action="' . $home . '" data-hints="' . esc_url( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/search-hints' ) ) ) . '" data-index="' . esc_url( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) ) ) . '">'
 			. '<label class="screen-reader-text" for="db-hd-q">Search domains</label>'
 			. '<span class="db-hd-sicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-3.600-3.600" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>'
-			. '<input id="db-hd-q" type="search" name="s" placeholder="Search domains" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-hd-sp" enterkeyhint="search">'
+			. '<input id="db-hd-q" type="search" name="s" placeholder="Search domains" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-hd-spl" enterkeyhint="search">'
 			. '<input type="hidden" name="post_type" value="domain">'
 			. '<kbd class="db-hd-kbd" aria-hidden="true">/</kbd>'
 			. '<button type="submit" class="db-hd-sgo" aria-label="Search">Search</button>'
-			. '<div class="db-hd-sp" id="db-hd-sp" hidden><div class="db-hd-sp-in" data-sp-body><p class="db-hd-sp-load">Loading popular names…</p></div>'
+			. '<div class="db-hd-sp" id="db-hd-sp" hidden><div class="db-hd-sp-in" id="db-hd-spl" aria-label="Search suggestions" data-sp-body><p class="db-hd-sp-load">Loading popular names…</p></div>'
 			. '<p class="db-hd-sp-foot"><span><kbd>↑</kbd><kbd>↓</kbd> to move, <kbd>Enter</kbd> to open</span><a href="' . esc_url( home_url( '/find-a-domain/' ) ) . '">Not sure? Try the domain finder <span aria-hidden="true">&rarr;</span></a></p></div>'
 			. '</form>'
 			. db_header_account_html()
@@ -573,9 +573,9 @@ add_action( 'wp_footer', function () {
 	echo '<button type="button" class="db-ms-btn" aria-label="Search domains" aria-expanded="false" aria-controls="db-ms"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.200"/><path d="M20 20l-3.600-3.600" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round"/></svg></button>'
 		. '<div class="db-ms" id="db-ms" role="dialog" aria-modal="true" aria-label="Search domains" hidden><div class="db-ms-in">'
 		. '<form class="db-ms-form" role="search" method="get" action="' . $home . '" data-hints="' . esc_url( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/search-hints' ) ) ) . '" data-index="' . esc_url( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) ) ) . '">'
-		. '<div class="db-ms-bar"><label class="screen-reader-text" for="db-ms-q">Search domains</label><input id="db-ms-q" type="search" name="s" placeholder="Search premium domains" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-ms-sp" enterkeyhint="search"><input type="hidden" name="post_type" value="domain">'
+		. '<div class="db-ms-bar"><label class="screen-reader-text" for="db-ms-q">Search domains</label><input id="db-ms-q" type="search" name="s" placeholder="Search premium domains" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="db-ms-spl" enterkeyhint="search"><input type="hidden" name="post_type" value="domain">'
 		. '<button type="button" class="db-ms-close">Cancel</button></div>'
-		. '<div class="db-hd-sp" id="db-ms-sp"><div class="db-hd-sp-in" data-sp-body><p class="db-hd-sp-load">Loading popular names…</p></div></div>'
+		. '<div class="db-hd-sp" id="db-ms-sp"><div class="db-hd-sp-in" id="db-ms-spl" aria-label="Search suggestions" data-sp-body><p class="db-hd-sp-load">Loading popular names…</p></div></div>'
 		. '</form></div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
 }, 79 );
 
@@ -637,7 +637,28 @@ add_action( 'wp_footer', function () {
 	var get = function (url) { return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }); };
 	var loadHints = function () { return hints ? Promise.resolve(hints) : get(f.getAttribute('data-hints')).then(function (j) { hints = j || {}; return hints; }).catch(function () { hints = {}; return hints; }); };
 	var loadIndex = function () { return index ? Promise.resolve(index) : get(f.getAttribute('data-index')).then(function (j) { index = (j || []).map(function (r) { return { n: String(r.n || ''), u: r.u, p: +r.p || 0, k: String(r.k || '').toLowerCase(), c: (r.c || []).map(function (c) { return String(c[0]).toLowerCase(); }).join(' ') }; }); return index; }).catch(function () { index = []; return index; }); };
-	var items = function () { return [].slice.call(body.querySelectorAll('a')); };
+	var items = function () { return [].slice.call(body.querySelectorAll('a[role=option]')); };
+	/* AX-14: the combobox controls one listbox (the panel body). Each section is a group of
+	   options, and "See all" is an option too, so aria-activedescendant always names an option.
+	   Messages with ordinary links (no results) leave the body without the listbox role. */
+	var msg = document.createElement('div');
+	msg.className = 'db-hd-sp-in db-hd-sp-msg'; msg.hidden = true;
+	body.parentNode.insertBefore(msg, body);
+	var wire = function () {
+		[].forEach.call(body.querySelectorAll('ul[role=listbox]'), function (ul) {
+			var sec = ul.closest('section'), h = sec && sec.querySelector('h3');
+			ul.setAttribute('role', 'none');
+			if (sec) { sec.setAttribute('role', 'group'); sec.setAttribute('aria-label', h ? h.textContent.trim() : (ul.getAttribute('aria-label') || '')); }
+			if (h) { h.setAttribute('aria-hidden', 'true'); }
+			ul.removeAttribute('aria-label');
+		});
+		[].forEach.call(body.querySelectorAll('a.db-hd-sp-all'), function (a) { uid++; a.id = pre + uid; a.setAttribute('role', 'option'); });
+		// The "no match" message has ordinary links, so it sits just above the listbox, not in it.
+		var empty = body.querySelector('.db-hd-sp-empty');
+		msg.innerHTML = ''; msg.hidden = !empty;
+		if (empty) { msg.appendChild(empty); }
+		if (body.querySelector('a[role=option]')) { body.setAttribute('role', 'listbox'); } else { body.removeAttribute('role'); }
+	};
 	var setActive = function (i) {
 		var list = items(); list.forEach(function (a) { a.classList.remove('is-active'); a.removeAttribute('aria-selected'); });
 		active = list.length ? (i + list.length) % list.length : -1;
@@ -664,6 +685,7 @@ add_action( 'wp_footer', function () {
 		}
 		if (h.all) { html += '<a class="db-hd-sp-all" href="' + esc(h.all) + '">See all ' + (h.total || '') + ' available domains</a>'; }
 		body.innerHTML = html || '<p class="db-hd-sp-load">Type a word to search our domains.</p>';
+		wire();
 		active = -1;
 	};
 	var mark = function (name, term) {
@@ -695,6 +717,7 @@ add_action( 'wp_footer', function () {
 			}
 		}
 		body.innerHTML = html;
+		wire();
 		active = -1;
 		// Screen readers hear how many names matched, or that none did (AX-10).
 		clearTimeout(sayT);
@@ -820,6 +843,8 @@ add_action( 'wp_enqueue_scripts', function () {
 	.db-hd-search.is-open .db-hd-kbd, .db-hd-search:focus-within .db-hd-kbd { display: none; }
 	.db-hd-sp { position: absolute; top: calc(100% + 12px); right: 0; width: min(640px, calc(100vw - 40px)); max-height: calc(100vh - 110px); overflow: auto; padding: 0; border: 1px solid #e4e7ec; border-radius: 22px; background: #fff; box-shadow: 0 30px 70px -20px rgba(15,23,42,.35); z-index: 5; }
 	.db-hd-sp-in { padding: 20px 22px 8px; }
+	.db-hd-sp-msg { padding-bottom: 0; }
+	.db-hd-sp-msg[hidden] { display: none; }
 	html body .db-hd .db-hd-sp h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #5b6472; }
 	.db-hd-sp h3 .db-hd-live { width: 8px; height: 8px; border-radius: 50%; background: #65a30d; box-shadow: 0 0 0 0 rgba(101,163,13,.6); animation: dbhdpulse 1.8s infinite; }
 	@keyframes dbhdpulse { 70% { box-shadow: 0 0 0 8px rgba(101,163,13,0); } 100% { box-shadow: 0 0 0 0 rgba(101,163,13,0); } }
