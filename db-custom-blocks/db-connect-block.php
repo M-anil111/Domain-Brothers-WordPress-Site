@@ -638,19 +638,8 @@ if ( ! function_exists( 'db_connect_store_body' ) ) {
 		if ( is_wp_error( $products ) ) {
 			return $h . '<p class="dbcs-msg dbcs-bad" role="alert">' . esc_html( $products->get_error_message() ) . '</p></div>';
 		}
-		// Every connected account, with a readable name (from our sellers table).
-		global $wpdb;
-		$col  = 'test' === db_connect_mode() ? 'connect_test' : 'connect_live';
-		$t    = db_seller_table( 'sellers' );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$accs = (array) $wpdb->get_results( "SELECT id, legal_name, company, {$col} AS acct FROM {$t} WHERE {$col} <> '' ORDER BY id DESC LIMIT 200", ARRAY_A );
-		$name = array();
-		foreach ( $accs as $a ) {
-			$name[ $a['acct'] ] = '' !== $a['company'] ? $a['company'] : $a['legal_name'];
-		}
-		$h .= '<h2>Sellers</h2>' . ( $accs ? '<ul class="dbcs-acc">' . implode( '', array_map( static function ( $a ) use ( $name ) {
-			return '<li>' . esc_html( $name[ $a['acct'] ] ) . '</li>';
-		}, $accs ) ) . '</ul>' : '<p>No sellers have connected a Stripe account yet.</p>' );
+		// No seller directory and no seller names: sellers are told their details are never shown
+		// to buyers, and the list printed company or legal names to anyone (SL-12).
 		$h .= '<h2>Products</h2>';
 		if ( ! $products ) {
 			return $h . '<p>No products yet. Create one in WP Admin &gt; Tools &gt; Stripe Connect.</p></div>';
@@ -667,7 +656,7 @@ if ( ! function_exists( 'db_connect_store_body' ) ) {
 			$h .= '<li class="dbcs-card"><h3>' . esc_html( $p['name'] ) . '</h3>'
 				. ( '' !== $p['description'] ? '<p>' . esc_html( $p['description'] ) . '</p>' : '' )
 				. '<span class="dbcs-price">' . esc_html( db_connect_money( $p['amount'], $p['currency'] ) ) . '</span>'
-				. '<span class="dbcs-by">Sold by ' . esc_html( $name[ $p['account'] ] ?? 'a Domain Brothers seller' ) . '</span>'
+				. '<span class="dbcs-by">Sold by a Domain Brothers seller</span>'
 				. ( empty( $ready[ $p['account'] ] )
 					? '<button type="button" class="dbcs-btn" disabled aria-disabled="true">Seller is finishing setup</button></li>'
 					: '<form method="post" action="' . esc_url( home_url( '/connect-store/' ) ) . '">' . wp_nonce_field( 'db_connect_buy', '_dbcs', true, false )
