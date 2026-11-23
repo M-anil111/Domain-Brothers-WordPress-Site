@@ -2138,6 +2138,18 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 
 if ( ! function_exists( 'db_stripe_on_payment_failed' ) ) {
 	function db_stripe_on_payment_failed( string $domain, string $customer_email, float $amount_usd ) : void {
+		// Only checkout attempts reach this (a full purchase or plan instalment 1): the buyer is on
+		// the page and Stripe shows the decline there, and there is no reservation to keep. The old
+		// "update your payment method to keep your reservation" email went out on every declined
+		// attempt with a link to the home page (bug register batch 2, CK-11). Now: a log line, and
+		// one team email per name and buyer per hour.
+		error_log( sprintf( 'DB Stripe: checkout payment declined — %s — %s — $%s', $domain, $customer_email ?: 'unknown buyer', number_format( $amount_usd, 2 ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$once = 'db_co_declined_' . md5( $domain . '|' . strtolower( $customer_email ) );
+		if ( get_transient( $once ) ) {
+			return;
+		}
+		set_transient( $once, 1, HOUR_IN_SECONDS );
+		$customer_email = ''; // no buyer email for a declined checkout attempt
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );
