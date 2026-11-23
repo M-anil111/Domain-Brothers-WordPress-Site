@@ -61,8 +61,16 @@ if ( ! function_exists( 'db_rs_parse' ) ) {
 			$answers[] = substr( trim( (string) $a['data'], '" ' ), 0, 255 );
 			$ttl       = null === $ttl ? (int) ( isset( $a['TTL'] ) ? $a['TTL'] : 0 ) : min( $ttl, (int) ( isset( $a['TTL'] ) ? $a['TTL'] : 0 ) );
 		}
+		// Compared in full and normalised (order, case, trailing dot); cut only for display (TL-5).
+		$all = array();
+		foreach ( (array) ( isset( $json['Answer'] ) ? $json['Answer'] : array() ) as $a ) {
+			if ( (int) ( isset( $a['type'] ) ? $a['type'] : 0 ) === $want[ $type ] && isset( $a['data'] ) ) {
+				$all[] = rtrim( strtolower( str_replace( '" "', '', trim( (string) $a['data'], '" ' ) ) ), '.' );
+			}
+		}
+		sort( $all );
 		$answers = array_slice( $answers, 0, 12 );
-		return array( 'ok' => 0 === $rcode, 'status' => isset( $names[ $rcode ] ) ? $names[ $rcode ] : 'Error ' . $rcode, 'answers' => $answers, 'ttl' => $ttl );
+		return array( 'ok' => 0 === $rcode, 'rcode' => $rcode, 'status' => isset( $names[ $rcode ] ) ? $names[ $rcode ] : 'Error ' . $rcode, 'answers' => $answers, 'all' => array_values( array_unique( $all ) ), 'ttl' => $ttl );
 	}
 }
 
@@ -75,18 +83,41 @@ if ( ! function_exists( 'db_rs_summary' ) ) {
 	 */
 	function db_rs_summary( array $results ) {
 		$sets = array();
+		$nx   = 0;
+		$fail = 0;
+		$ttl  = null;
 		foreach ( $results as $r ) {
-			if ( $r['ok'] ) {
-				$a = $r['answers'];
+			if ( ! empty( $r['ok'] ) ) {
+				$a = isset( $r['all'] ) ? (array) $r['all'] : (array) $r['answers'];
 				sort( $a );
 				$sets[] = implode( '|', $a );
+				if ( null !== ( $r['ttl'] ?? null ) ) {
+					$ttl = null === $ttl ? (int) $r['ttl'] : max( $ttl, (int) $r['ttl'] );
+				}
+			} elseif ( 3 === (int) ( $r['rcode'] ?? ( 'Name does not exist' === ( $r['status'] ?? '' ) ? 3 : -1 ) ) ) {
+				++$nx;
+			} else {
+				++$fail;
 			}
+		}
+		$n = count( $results );
+		// A resolver saying the name does not exist next to one with records is a real gap (TL-4).
+		if ( $sets && $nx ) {
+			return array( 'agree' => false, 'text' => 'Some resolvers find this name and others say it does not exist. A new or changed delegation is still spreading; check again after a few minutes.' );
+		}
+		if ( $nx && $nx === $n ) {
+			return array( 'agree' => true, 'text' => 'All resolvers say the name does not exist.' );
 		}
 		if ( count( $sets ) < 2 ) {
 			return array( 'agree' => true, 'text' => count( $sets ) ? 'One resolver answered, so there is nothing to compare.' : 'No resolver returned an answer.' );
 		}
 		if ( 1 === count( array_unique( $sets ) ) ) {
 			return array( 'agree' => true, 'text' => '' === $sets[0] ? 'All resolvers agree: no records of this type.' : 'All resolvers agree. The records have spread.' );
+		}
+		// Different but non-empty answers everywhere: large sites answer by location, so this is
+		// not proof of a change still spreading (TL-5).
+		if ( ! in_array( '', $sets, true ) ) {
+			return array( 'agree' => false, 'text' => 'The resolvers return different answers. Large sites often answer by location, so this can be normal. If you changed these records recently, compare again after ' . ( null !== $ttl ? 'the time to live (' . $ttl . ' seconds)' : 'a few minutes' ) . '.' );
 		}
 		return array( 'agree' => false, 'text' => 'The resolvers return different answers. A recent change may still be spreading, or each is holding an older copy until its time to live ends.' );
 	}
@@ -125,7 +156,7 @@ add_action( 'rest_api_init', function () {
 				return $res;
 			};
 			$raw  = strtolower( trim( (string) $req->get_param( 'd' ) ) );
-			$raw  = preg_replace( '#^www\.#', '', explode( '/', preg_replace( '#^https?://#', '', $raw ) )[0] );
+			$raw  = rtrim( explode( '/', preg_replace( '#^https?://#', '', $raw ) )[0], '.' ); // the host as typed, www included (TL-3)
 			$name = function_exists( 'db_tools_valid_domain' ) ? db_tools_valid_domain( $raw ) : '';
 			$type = strtoupper( (string) ( $req->get_param( 'type' ) ? $req->get_param( 'type' ) : 'A' ) );
 			if ( '' === $name ) {

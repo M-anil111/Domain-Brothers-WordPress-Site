@@ -59,5 +59,14 @@ check( 'expired certificates say so', 'Expired 3 days ago' === array_column( $ex
 $future = db_rs_cert_rows( array( 'validFrom_time_t' => 5000, 'validTo_time_t' => 9000 ), 1000 );
 check( 'not-yet-valid certificates say so', 'Not valid yet' === array_column( $future, 1, 0 )['Status'] );
 
+
+$ok  = function ( $a ) { return array( 'ok' => true, 'rcode' => 0, 'status' => 'OK', 'answers' => $a, 'all' => $a, 'ttl' => 300 ); };
+$nxr = array( 'ok' => false, 'rcode' => 3, 'status' => 'Name does not exist', 'answers' => array(), 'ttl' => null );
+check( 'TL-4: one resolver with records and one NXDOMAIN is a disagreement', false === db_rs_summary( array( 'a' => $ok( array( '1.2.3.4' ) ), 'b' => $ok( array( '1.2.3.4' ) ), 'c' => $nxr ) )['agree'] );
+check( 'TL-4: all NXDOMAIN says the name does not exist', 'All resolvers say the name does not exist.' === db_rs_summary( array( 'a' => $nxr, 'b' => $nxr, 'c' => $nxr ) )['text'] );
+$p1 = db_rs_parse( array( 'Status' => 0, 'Answer' => array( array( 'type' => 16, 'data' => '"b"', 'TTL' => 60 ), array( 'type' => 16, 'data' => '"A"', 'TTL' => 60 ) ) ), 'TXT' );
+$p2 = db_rs_parse( array( 'Status' => 0, 'Answer' => array( array( 'type' => 16, 'data' => '"a"', 'TTL' => 60 ), array( 'type' => 16, 'data' => '"b"', 'TTL' => 60 ) ) ), 'TXT' );
+check( 'TL-5: order and case do not count as a difference', true === db_rs_summary( array( 'x' => $p1, 'y' => $p2 ) )['agree'] );
+check( 'TL-5: different non-empty answers mention location-based answers', false !== strpos( db_rs_summary( array( 'x' => $ok( array( '1.1.1.1' ) ), 'y' => $ok( array( '2.2.2.2' ) ) ) )['text'], 'by location' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
