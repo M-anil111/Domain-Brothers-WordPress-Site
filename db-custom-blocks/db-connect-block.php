@@ -413,11 +413,17 @@ if ( ! function_exists( 'db_connect_webhook' ) ) {
 		} catch ( \Throwable $e ) {
 			return new WP_REST_Response( array( 'error' => 'Invalid signature or payload.' ), 400 );
 		}
+		// Stripe can deliver the same event more than once; handle each id once (SL-22).
+		$seen_key = 'db_connect_evt_' . md5( (string) $note->id );
+		if ( get_transient( $seen_key ) ) {
+			return new WP_REST_Response( array( 'received' => true, 'duplicate' => true ), 200 );
+		}
 		try {
 			// 2. Fetch the full event to see what happened, then act on its type.
 			$event = $client->v2->core->events->retrieve( $note->id );
 			$acct  = (string) ( $event->related_object->id ?? '' );
 			db_connect_handle_event( (string) $event->type, $acct );
+			set_transient( $seen_key, 1, 3 * DAY_IN_SECONDS );
 		} catch ( \Throwable $e ) {
 			error_log( 'db-connect: event ' . $note->id . ' could not be handled: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			return new WP_REST_Response( array( 'error' => 'Could not handle the event; Stripe will retry.' ), 500 );
@@ -439,7 +445,13 @@ if ( ! function_exists( 'db_connect_handle_event' ) ) {
 			// Requirements changed (often new rules from regulators or card networks): ask the
 			// seller to finish whatever Stripe now needs, if anything is due.
 			$st = db_connect_status( $account_id );
-			if ( ! is_wp_error( $st ) && ! $st['complete'] && function_exists( 'db_seller_mail' ) ) {
+			// Email only when the account goes from complete (or unknown) to needing details, not
+			// on every requirements update while it is incomplete (SL-22).
+			$was = db_connect_last_state( $account_id );
+			if ( ! is_wp_error( $st ) ) {
+				db_connect_last_state( $account_id, array( 'complete' => (bool) $st['complete'] ) );
+			}
+			if ( ! is_wp_error( $st ) && ! $st['complete'] && false !== ( $was['complete'] ?? null ) && function_exists( 'db_seller_mail' ) ) {
 				db_seller_mail( (string) $seller['email'], 'Stripe needs more information to pay you', '<p>Stripe has asked for more details before it can send your sale proceeds.</p><p><a href="' . esc_url( $page ) . '">Open your seller page</a> and choose <strong>Continue onboarding</strong>.</p>' );
 			}
 			db_connect_audit( $seller, 'connect_requirements', is_wp_error( $st ) ? 'status unavailable' : (string) $st['requirements'] );
@@ -447,14 +459,34 @@ if ( ! function_exists( 'db_connect_handle_event' ) ) {
 		}
 		if ( 'v2.core.account[configuration.recipient].capability_status_updated' === $type ) {
 			// The transfers capability changed: tell the seller when they can be paid.
-			$st = db_connect_status( $account_id );
-			if ( ! is_wp_error( $st ) && $st['ready'] && function_exists( 'db_seller_mail' ) ) {
+			$st  = db_connect_status( $account_id );
+			$was = db_connect_last_state( $account_id );
+			if ( ! is_wp_error( $st ) ) {
+				db_connect_last_state( $account_id, array( 'ready' => (bool) $st['ready'] ) );
+			}
+			if ( ! is_wp_error( $st ) && $st['ready'] && true !== ( $was['ready'] ?? null ) && function_exists( 'db_seller_mail' ) ) {
 				db_seller_mail( (string) $seller['email'], 'You are ready to receive payments', '<p>Your Stripe account is set up. Payouts are still sent by bank transfer for now; we will email you before they move to Stripe.</p>' );
 			}
 			db_connect_audit( $seller, 'connect_capability', is_wp_error( $st ) ? 'status unavailable' : (string) $st['transfers'] );
 			return;
 		}
 		db_connect_audit( $seller, 'connect_event', $type );
+	}
+}
+
+if ( ! function_exists( 'db_connect_last_state' ) ) {
+	/**
+	 * The last account state we told the seller about ('ready', 'complete'), per connected
+	 * account. With $merge, stores those keys and returns the new state.
+	 */
+	function db_connect_last_state( $account_id, ?array $merge = null ) {
+		$key   = 'db_connect_state_' . md5( (string) $account_id );
+		$state = (array) get_option( $key, array() );
+		if ( null !== $merge ) {
+			$state = array_merge( $state, $merge );
+			update_option( $key, $state, false );
+		}
+		return $state;
 	}
 }
 
