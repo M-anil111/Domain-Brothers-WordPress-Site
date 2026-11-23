@@ -97,7 +97,19 @@ if ( class_exists( 'ZipArchive' ) ) {
 	$z->close();
 	$x = db_seller_xlsx_table( $f ); unlink( $f );
 	check( 'XLSX first sheet is read (shared strings and numbers)', is_array( $x ) && 'gamma.io' === $x[1][0] && '4200' === $x[1][1] );
+	// SL-17: cells without r, and a first sheet stored as sheet2.xml.
+	$f = tempnam( sys_get_temp_dir(), 'x' ) . '.xlsx';
+	$z = new ZipArchive(); $z->open( $f, ZipArchive::CREATE );
+	$z->addFromString( 'xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Names" sheetId="2" r:id="rId5"/></sheets></workbook>' );
+	$z->addFromString( 'xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="x" Target="styles.xml"/><Relationship Id="rId5" Type="x" Target="worksheets/sheet2.xml"/></Relationships>' );
+	$z->addFromString( 'xl/worksheets/sheet2.xml', '<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row><c t="inlineStr"><is><t>Domain Name</t></is></c><c t="inlineStr"><is><t>Price</t></is></c></row><row><c t="inlineStr"><is><t>delta.io</t></is></c><c><v>2500</v></c></row></sheetData></worksheet>' );
+	$z->close();
+	$x = db_seller_xlsx_table( $f ); unlink( $f );
+	check( 'SL-17: cells without r keep their columns and the first sheet is found via workbook.xml', is_array( $x ) && array( 'Domain Name', 'Price' ) === $x[0] && array( 'delta.io', '2500' ) === $x[1] );
 } else { echo "SKIP xlsx (no ZipArchive)\n"; }
+check( 'SL-17: first sheet path from workbook rels, with safe fallback', 'xl/worksheets/sheet2.xml' === db_seller_xlsx_first_sheet( '<sheets><sheet name="A" sheetId="1" r:id="rId3"/></sheets>', '<Relationship Id="rId3" Target="/xl/worksheets/sheet2.xml"/>' ) && 'xl/worksheets/sheet1.xml' === db_seller_xlsx_first_sheet( false, false ) && 'xl/worksheets/sheet1.xml' === db_seller_xlsx_first_sheet( '<sheet r:id="a"/>', '<Relationship Id="a" Target="../../etc/x"/>' ) );
+$q = db_seller_csv_table( "Domain Name,Notes,Price\r\nalpha.com,\"note\nmore\",900\r\n\r\nbeta.com,plain,1200\r\n" );
+check( 'SL-17: a quoted CSV cell with a line break stays one row', 3 === count( $q ) && "note\nmore" === $q[1][1] && '900' === $q[1][2] && 'beta.com' === $q[2][0] );
 
 // Phase 2: checks, guidance, exclusive, details.
 check( 'ordinary names pass the blocked check', '' === db_seller_blocked( 'brightpath.ca' ) );

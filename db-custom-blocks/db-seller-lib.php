@@ -367,17 +367,45 @@ if ( ! function_exists( 'db_seller_csv_table' ) ) {
 	/** CSV text (comma, semicolon or tab separated; UTF-8 with or without BOM) to a table. */
 	function db_seller_csv_table( $text ) {
 		$text  = preg_replace( '/^\xEF\xBB\xBF/', '', (string) $text );
-		$lines = preg_split( '/\r\n|\r|\n/', $text );
-		$first = (string) ( $lines[0] ?? '' );
+		$first = (string) preg_split( '/\r\n|\r|\n/', $text, 2 )[0];
 		$sep   = substr_count( $first, ';' ) > substr_count( $first, ',' ) ? ';' : ( substr_count( $first, "\t" ) > substr_count( $first, ',' ) ? "\t" : ',' );
+		// Read through a stream with fgetcsv so a quoted cell may hold a line break (SL-17).
+		$fh = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		fwrite( $fh, preg_replace( '/\r\n?/', "\n", $text ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+		rewind( $fh );
 		$table = array();
-		foreach ( $lines as $l ) {
-			if ( '' === trim( $l ) ) {
+		while ( false !== ( $row = fgetcsv( $fh, 0, $sep, '"', '\\' ) ) ) {
+			if ( array( null ) === $row || '' === trim( implode( '', $row ) ) ) {
 				continue;
 			}
-			$table[] = str_getcsv( $l, $sep, '"', '\\' );
+			$table[] = $row;
 		}
+		fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		return $table;
+	}
+}
+
+if ( ! function_exists( 'db_seller_xlsx_first_sheet' ) ) {
+	/**
+	 * Path inside the XLSX zip of the workbook's first sheet, read from workbook.xml and its
+	 * relationships, so a workbook whose first sheet is stored as sheet2.xml still reads (SL-17).
+	 */
+	function db_seller_xlsx_first_sheet( $workbook, $rels ) {
+		$fallback = 'xl/worksheets/sheet1.xml';
+		if ( ! is_string( $workbook ) || ! is_string( $rels ) || ! preg_match( '/<(?:\w+:)?sheet\b[^>]*\br:id="([^"]+)"/', $workbook, $m ) ) {
+			return $fallback;
+		}
+		if ( ! preg_match_all( '/<(?:\w+:)?Relationship\b[^>]*>/', $rels, $all ) ) {
+			return $fallback;
+		}
+		foreach ( $all[0] as $tag ) {
+			if ( preg_match( '/\bId="' . preg_quote( $m[1], '/' ) . '"/', $tag ) && preg_match( '/\bTarget="([^"]+)"/', $tag, $t ) ) {
+				$target = ltrim( str_replace( '\\', '/', $t[1] ), '/' );
+				$target = 0 === strpos( $target, 'xl/' ) ? $target : 'xl/' . $target;
+				return false === strpos( $target, '..' ) ? $target : $fallback;
+			}
+		}
+		return $fallback;
 	}
 }
 
@@ -409,7 +437,7 @@ if ( ! function_exists( 'db_seller_xlsx_table' ) ) {
 				}
 			}
 		}
-		$sheet = $zip->getFromName( 'xl/worksheets/sheet1.xml' );
+		$sheet = $zip->getFromName( db_seller_xlsx_first_sheet( $zip->getFromName( 'xl/workbook.xml' ), $zip->getFromName( 'xl/_rels/workbook.xml.rels' ) ) );
 		$zip->close();
 		if ( false === $sheet ) {
 			return null;
@@ -421,13 +449,19 @@ if ( ! function_exists( 'db_seller_xlsx_table' ) ) {
 		$table = array();
 		foreach ( $x->sheetData->row as $row ) {
 			$cells = array();
+			$next  = 0;
 			foreach ( $row->c as $c ) {
 				$ref = (string) $c['r'];
-				$letters = preg_replace( '/\d+/', '', $ref );
+				$letters = preg_replace( '/[^A-Z]/', '', strtoupper( $ref ) );
 				$idx = 0;
 				foreach ( str_split( $letters ) as $ch ) {
 					$idx = $idx * 26 + ( ord( $ch ) - 64 );
 				}
+				// The r attribute is optional: without it a cell follows the previous one (SL-17).
+				if ( 0 === $idx ) {
+					$idx = $next + 1;
+				}
+				$next = $idx;
 				$type = (string) $c['t'];
 				$val  = 'inlineStr' === $type ? (string) $c->is->t : (string) $c->v;
 				if ( 's' === $type ) {
