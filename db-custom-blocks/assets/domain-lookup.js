@@ -171,6 +171,13 @@
             xb.remove();
             if (!x.ok) { xp.textContent = (x.q && (x.q.error || x.q.message)) || "The check failed."; return; }
             xp.textContent = "";
+            // The extension the visitor typed comes first, from the registry lookup this page already
+            // ran; it was missing whenever it is not one of the popular extensions (TL-23).
+            var own = String(nm.extension || "").replace(/^\./, ""), rg = j.registry || {};
+            if (own && !x.q.results.some(function (it) { return it.ext === own; })) {
+              var st = rg.state === "ok" ? "taken" : (rg.state === "none" ? "free" : "unknown");
+              x.q.results.unshift({ ext: own, state: st });
+            }
             x.q.results.forEach(function (it) { xp.appendChild(el("span", "dblk-pill dblk-" + it.state, "." + it.ext + ": " + (it.state === "free" ? "no record found" : (it.state === "taken" ? "registered" : "cannot be checked")))); });
             xc.appendChild(el("p", "dblk-hint", "No record found means the registry shows no registration. Confirm with a registrar before relying on it."));
           })
