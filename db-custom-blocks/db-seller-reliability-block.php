@@ -191,8 +191,8 @@ if ( ! function_exists( 'db_seller_reactivate' ) ) {
 
 /* ------------------------------------------------ the hourly offer sweep */
 
-remove_action( 'db_seller_verify_cron', 'db_seller_offer_sweep', 20 ); // replaced by the schedule below
-add_action( 'db_seller_verify_cron', 'db_seller_reliability_sweep', 21 );
+remove_action( 'db_seller_ops_cron', 'db_seller_offer_sweep', 20 ); // replaced by the schedule below
+add_action( 'db_seller_ops_cron', 'db_seller_reliability_sweep', 21 );
 
 if ( ! function_exists( 'db_seller_reliability_sweep' ) ) {
 	/**
@@ -203,7 +203,9 @@ if ( ! function_exists( 'db_seller_reliability_sweep' ) ) {
 	function db_seller_reliability_sweep() {
 		global $wpdb;
 		$out = array( 'reminders' => 0, 'strikes' => 0, 'suspended' => 0, 'transfer' => 0 );
-		if ( ! function_exists( 'db_deal_table' ) || ( function_exists( 'db_seller_enabled' ) && ! db_seller_enabled() ) ) {
+		// Runs whether or not "Sell with us" is on: offers and transfers on names already live still
+		// need reminders and takeovers (SL-13).
+		if ( ! function_exists( 'db_deal_table' ) ) {
 			return $out;
 		}
 		$l     = db_seller_table( 'listings' );

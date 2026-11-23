@@ -326,7 +326,7 @@ if ( ! function_exists( 'db_seller_payout_apply' ) ) {
 }
 
 /* Hourly: transfers with no dispute after 14 days become due (already scheduled by due_at); nothing else moves on its own. */
-add_action( 'db_seller_verify_cron', function () {
+add_action( 'db_seller_ops_cron', function () {
 	global $wpdb;
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}db_seller_payouts WHERE state = 'waiting_confirm' AND due_at IS NOT NULL AND due_at <= %s LIMIT 100", current_time( 'mysql', true ) ), ARRAY_A );

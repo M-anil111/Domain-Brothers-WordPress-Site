@@ -218,7 +218,7 @@ if ( ! function_exists( 'db_seller_offers_css' ) ) {
 }
 
 /* Hourly: remind sellers about offers waiting for them, close abandoned ones. */
-add_action( 'db_seller_verify_cron', 'db_seller_offer_sweep', 20 );
+add_action( 'db_seller_ops_cron', 'db_seller_offer_sweep', 20 );
 if ( ! function_exists( 'db_seller_offer_sweep' ) ) {
 	function db_seller_offer_sweep() {
 		global $wpdb;

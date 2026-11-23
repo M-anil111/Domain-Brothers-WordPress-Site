@@ -285,6 +285,12 @@ add_action( 'init', function () {
 	if ( db_seller_enabled() && ! wp_next_scheduled( 'db_seller_verify_cron' ) ) {
 		wp_schedule_event( time() + 300, 'hourly', 'db_seller_verify_cron' );
 	}
+	// Payouts, transfer deadlines and offer reminders on names already live keep running when
+	// "Sell with us" is switched off, as the admin banner says (SL-13): their own hourly hook,
+	// scheduled whenever the seller tables exist.
+	if ( '' !== (string) get_option( 'db_seller_db_ver', '' ) && ! wp_next_scheduled( 'db_seller_ops_cron' ) ) {
+		wp_schedule_event( time() + 600, 'hourly', 'db_seller_ops_cron' );
+	}
 } );
 
 add_action( 'db_seller_verify_cron', function () {
