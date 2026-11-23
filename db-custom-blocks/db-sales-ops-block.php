@@ -374,7 +374,13 @@ if ( ! function_exists( 'db_ops_reminders_run' ) ) {
 	function db_ops_reminders_run() {
 		global $wpdb;
 		$t    = $wpdb->prefix . 'db_checkout_reminders';
-		$cut  = gmdate( 'Y-m-d H:i:s', time() - DB_OPS_REMINDER_DELAY );
+		// created_at is written with current_time( 'mysql' ) (site time), so the cutoff is site time too;
+		// a UTC cutoff sent the reminder hours early or late depending on the site's time zone.
+		$cut  = wp_date( 'Y-m-d H:i:s', time() - DB_OPS_REMINDER_DELAY );
+		// Rows nobody could send (an unknown payment id) are closed instead of blocking the queue.
+		$old  = wp_date( 'Y-m-d H:i:s', time() - 3 * DAY_IN_SECONDS );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET status = 'expired' WHERE status = 'pending' AND created_at < %s", $old ) );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$rows = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$t} WHERE status = 'pending' AND created_at < %s ORDER BY id ASC LIMIT 20", $cut ) );
 		$keys = function_exists( 'db_stripe_keys' ) ? db_stripe_keys() : array();
@@ -384,9 +390,16 @@ if ( ! function_exists( 'db_ops_reminders_run' ) ) {
 				$res = wp_remote_get( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $r->pi_id ), array(
 					'headers' => array( 'Authorization' => 'Bearer ' . $keys['sec'] ), 'timeout' => 15,
 				) );
-				$pi  = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res ), true );
+				$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
+				$pi   = is_wp_error( $res ) ? null : json_decode( wp_remote_retrieve_body( $res ), true );
+				if ( $code >= 400 && $code < 500 ) {
+					// Unknown or foreign payment id: close the row so it never blocks real reminders.
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					$wpdb->update( $t, array( 'status' => 'invalid', 'sent_at' => current_time( 'mysql' ) ), array( 'id' => (int) $r->id ), array( '%s', '%s' ), array( '%d' ) );
+					continue;
+				}
 				if ( ! is_array( $pi ) || empty( $pi['status'] ) ) {
-					continue; // Try again next run.
+					continue; // Stripe unreachable: try again next run.
 				}
 				$pi_status = (string) $pi['status'];
 				$domain    = (string) ( $pi['metadata']['domain'] ?? '' );
@@ -398,7 +411,10 @@ if ( ! function_exists( 'db_ops_reminders_run' ) ) {
 				} elseif ( '' !== $domain && function_exists( 'db_listing_post_for_domain' ) ) {
 					$post = db_listing_post_for_domain( $domain );
 					if ( $post && db_listing_is_sellable( $post ) ) {
-						$checkout = home_url( '/buy-now/?d=' . rawurlencode( $domain ) );
+						// The checkout needs the base64 d/p pair; a plain ?d= redirected the buyer to All Domains.
+						$checkout = function_exists( 'db_dd_checkout_urls' ) && function_exists( 'db_listing_price' ) && db_listing_price( $post->ID ) > 0
+							? db_dd_checkout_urls( $domain, db_listing_price( $post->ID ) )['buy']
+							: get_permalink( $post );
 						$stop     = add_query_arg( array( 'db_ops_stop' => rawurlencode( $r->pi_id ), 'e' => rawurlencode( $r->email ), 'k' => db_ops_reminder_stop_sig( $r->pi_id, $r->email ) ), home_url( '/' ) );
 						$sent     = db_ops_send( 'checkout_reminder', $r->email, array(
 							'domain' => $domain, 'amount' => '$' . number_format( $amount, 2 ), 'checkout_url' => $checkout, 'stop_url' => $stop,
