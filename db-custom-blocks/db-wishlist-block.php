@@ -600,7 +600,10 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		if (box) {
 			if (addId) {
 				var note = document.createElement('p'); note.className = 'db-au-note'; note.setAttribute('role', 'status');
-				note.textContent = 'Sign in to save ' + (qs.get('name') || 'this domain') + ' to your wishlist. New here? The same code creates your account.';
+				// Only a domain name is shown: free text in ?name= was a spoofing vector (AC-16).
+				var nm = String(qs.get('name') || '').trim();
+				if (nm.length > 80 || !/^[a-z0-9](?:[a-z0-9-]{0,62}\.)+[a-z]{2,24}$/i.test(nm)) { nm = 'this domain'; }
+				note.textContent = 'Sign in to save ' + nm + ' to your wishlist. New here? The same code creates your account.';
 				var first = box.querySelector('form'); if (first) { first.parentNode.insertBefore(note, first); }
 			}
 			var ef = box.querySelector('[data-step=email]'), cf = box.querySelector('[data-step=code]'), m = box.querySelector('.db-au-msg'), mail = '';
