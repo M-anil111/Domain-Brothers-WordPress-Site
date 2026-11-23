@@ -8,7 +8,7 @@
  * DB plugin stored it in plain text in the database. Now:
  *   1. When the form is submitted, the code fields (EPPCode, DomainEPPCode) are
  *      taken out of the submission and replaced with a masked value
- *      ("Received, ends in ab12"). The email and Contact Form DB only ever see
+ *      ("Received (stored encrypted)"). The email and Contact Form DB only ever see
  *      the masked value.
  *   2. After the form passes validation and is sent, the real code is stored
  *      encrypted (AES-256-GCM, key derived from the site's secret salts, the
@@ -81,10 +81,13 @@ if ( ! function_exists( 'db_transfer_is_form' ) ) {
 }
 
 if ( ! function_exists( 'db_transfer_mask' ) ) {
-	/** "Received, ends in ab12" (or a fixed text for very short codes). */
+	/**
+	 * What the email and form entries show instead of the code. No characters of the code: the
+	 * email goes to an outside mailbox, and the last four gave away half of an 8-character code
+	 * (AC-15). The hint stays on Tools > Transfer codes.
+	 */
 	function db_transfer_mask( $code ) {
-		$code = (string) $code;
-		return strlen( $code ) >= 8 ? 'Received, ends in ' . substr( $code, -4 ) . ' (stored encrypted)' : 'Received (stored encrypted)';
+		return 'Received (stored encrypted)';
 	}
 }
 
