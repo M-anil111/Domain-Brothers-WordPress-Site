@@ -398,7 +398,11 @@ add_action( 'template_redirect', function () {
 	if ( ! defined( 'DB_PC_CANDIDATE' ) || ! db_pc_request() || is_user_logged_in() ) {
 		return;
 	}
-	if ( is_preview() || is_search() || is_404() || is_feed() || is_robots() || is_trackback() || is_customize_preview() || ( is_singular() && post_password_required() ) ) {
+	// No is_404() here: the plugin's own routes (/domain-tools/, the 17 tool pages, /payment-terms/,
+	// /trust-center/ ...) are a 404 to WordPress at this point and only become 200 pages when they
+	// render, so they were never cached (about 1 s of PHP per view; bug register batch 2, TL-13).
+	// db_pc_capture() saves only a finished 200 page, so real 404s are still never stored.
+	if ( is_preview() || is_search() || is_feed() || is_robots() || is_trackback() || is_customize_preview() || ( is_singular() && post_password_required() ) ) {
 		return;
 	}
 	header( 'X-DB-Cache: MISS' );
