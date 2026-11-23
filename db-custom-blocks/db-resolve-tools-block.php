@@ -193,6 +193,9 @@ add_action( 'rest_api_init', function () {
 			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'resolve|' . $ip, 30, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
+			if ( function_exists( 'db_lk_site_allow' ) && ! db_lk_site_allow( 'resolve' ) ) {
+				return $send( array( 'error' => 'The lookup tools are busy right now. Please try again in a minute.' ), 503 );
+			}
 			$ck   = 'db_rs_' . md5( $name . '|' . $type . '|' . implode( ',', $keys ) );
 			$data = get_transient( $ck );
 			if ( ! is_array( $data ) ) {
@@ -219,6 +222,9 @@ add_action( 'rest_api_init', function () {
 			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
 			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'cert|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many requests. Please wait a few minutes and try again.' ), 429 );
+			}
+			if ( function_exists( 'db_lk_site_allow' ) && ! db_lk_site_allow( 'cert' ) ) {
+				return $send( array( 'error' => 'The lookup tools are busy right now. Please try again in a minute.' ), 503 );
 			}
 			$body = $req->get_json_params();
 			$pem  = is_array( $body ) && isset( $body['pem'] ) ? (string) $body['pem'] : '';

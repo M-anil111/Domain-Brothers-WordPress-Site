@@ -668,6 +668,26 @@ if ( ! function_exists( 'db_lk_comparables' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_site_allow' ) ) {
+	/**
+	 * Site-wide budget for the free tools, on top of the per-visitor limits (SC-12). Each uncached
+	 * call can hold a PHP worker for many seconds, and random names always miss the cache, so a few
+	 * visitors could use up the host's process limit. Admins are never counted. Per minute by default;
+	 * the db_lk_site_limits filter changes the numbers.
+	 */
+	function db_lk_site_allow( $tool ) {
+		if ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		$limits = (array) apply_filters( 'db_lk_site_limits', array( 'lookup' => 40, 'lookup-ext' => 12, 'resolve' => 60, 'cert' => 40, 'estimate-day' => 150 ) );
+		if ( ! isset( $limits[ $tool ] ) || ! function_exists( 'db_wl_allow' ) ) {
+			return true;
+		}
+		$window = '-day' === substr( $tool, -4 ) ? DAY_IN_SECONDS : MINUTE_IN_SECONDS;
+		return db_wl_allow( 'site|' . $tool, (int) $limits[ $tool ], $window );
+	}
+}
+
 if ( ! function_exists( 'db_lk_estimate' ) ) {
 	/**
 	 * Optional computer estimate; only when a Replicate token is saved.
@@ -677,6 +697,10 @@ if ( ! function_exists( 'db_lk_estimate' ) ) {
 	function db_lk_estimate( $name ) {
 		$token = (string) get_option( 'db_replicate_token', '' );
 		if ( '' === $token ) {
+			return null;
+		}
+		// A paid call: capped per day for the whole site, so random names cannot run up the bill (SC-12).
+		if ( ! db_lk_site_allow( 'estimate-day' ) ) {
 			return null;
 		}
 		$res = wp_remote_post( 'https://api.replicate.com/v1/predictions', array(
@@ -897,6 +921,9 @@ add_action( 'rest_api_init', function () {
 			if ( ! $fresh && function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
+			if ( ! $fresh && ! db_lk_site_allow( 'lookup' ) ) {
+				return $send( array( 'error' => 'The lookup tools are busy right now. Please try again in a minute.' ), 503 );
+			}
 			$data  = db_lk_collect( $name, $want, $host );
 			if ( $host !== $name ) {
 				$data['host_checked'] = $host;
@@ -982,6 +1009,9 @@ add_action( 'rest_api_init', function () {
 			$ip   = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
 			if ( ! is_array( $data ) && function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup-ext|' . $ip, 6, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many checks. Please wait a few minutes and try again.' ), 429 );
+			}
+			if ( ! is_array( $data ) && ! db_lk_site_allow( 'lookup-ext' ) ) {
+				return $send( array( 'error' => 'The lookup tools are busy right now. Please try again in a minute.' ), 503 );
 			}
 			if ( ! is_array( $data ) ) {
 				$data = array( 'label' => $label, 'results' => db_lk_extensions( $label ) );
