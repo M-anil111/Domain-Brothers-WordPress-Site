@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.145.7
+ * Version:     3.146.2
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.145.7' );
+define( 'DB_BLOCKS_LOADED', '3.146.2' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1309,8 +1309,13 @@ if ( ! function_exists( 'db_offer_resolved_form_id' ) ) {
 	}
 }
 
-add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
-	if ( ! db_is_offer_form( $contact_form ) ) { return; }
+// The buyer's acknowledgement (with their private offer page link) goes out whether or not the
+// team email succeeded: CF7 fires wpcf7_mail_sent only on success, so a mail failure left the buyer
+// with nothing although the lead was saved (bug register batch 2, AD-4). Once per submission.
+$db_offer_ack = function ( $contact_form ) {
+	static $done = false;
+	if ( $done || ! db_is_offer_form( $contact_form ) ) { return; }
+	$done = true;
 	$submission = class_exists( 'WPCF7_Submission' ) ? WPCF7_Submission::get_instance() : null;
 	if ( ! $submission ) { return; }
 	$data = $submission->get_posted_data();
@@ -1339,7 +1344,9 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 			wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
 		}
 	}
-}, 20, 1 ); // after the CRM lead (and its offer page) exists
+};
+add_action( 'wpcf7_mail_sent', $db_offer_ack, 20, 1 ); // after the CRM lead (and its offer page) exists
+add_action( 'wpcf7_mail_failed', $db_offer_ack, 20, 1 );
 
 add_action( 'wp_footer', function () {
 	$form_id  = db_offer_resolved_form_id();
