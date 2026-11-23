@@ -577,6 +577,9 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 			}
 			// Callback, not '$1' . $html: any "$<digit>" in the hero (a price)
 			// would be expanded as a backreference.
+			// The theme's hidden "brothers of the web" block still carried an old phone number, an
+			// "over 10 years" claim and a Facebook iframe; crawlers read hidden text (SE-19).
+			$html = db_strip_div_by_class( $html, 'brothers-content' );
 			$hero = db_hp_hero_html();
 			return preg_replace_callback( '/<body[^>]*>/i', function ( $m ) use ( $hero ) {
 				return $m[0] . $hero;
@@ -591,6 +594,23 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 		$GLOBALS['db_hero_rendered'] = true;
 		echo db_hp_hero_html();
 	} );
+}
+
+if ( ! function_exists( 'db_strip_div_by_class' ) ) {
+	/** Removes the first <div> carrying $class, with everything inside it (nested divs counted). Pure. */
+	function db_strip_div_by_class( $html, $class ) {
+		if ( ! preg_match( '/<div\b[^>]*class="[^"]*\b' . preg_quote( $class, '/' ) . '\b[^"]*"[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$start = $m[0][1];
+		$pos   = $start + strlen( $m[0][0] );
+		$depth = 1;
+		while ( $depth > 0 && preg_match( '#<(/?)div\b[^>]*>#i', $html, $t, PREG_OFFSET_CAPTURE, $pos ) ) {
+			$depth += '' === $t[1][0] ? 1 : -1;
+			$pos    = $t[0][1] + strlen( $t[0][0] );
+		}
+		return $depth > 0 ? $html : substr( $html, 0, $start ) . substr( $html, $pos );
+	}
 }
 
 if ( ! function_exists( 'db_hp_css' ) ) {
