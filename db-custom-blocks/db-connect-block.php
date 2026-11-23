@@ -155,6 +155,29 @@ if ( ! function_exists( 'db_connect_create_account' ) ) {
 		if ( '' !== $existing ) {
 			return $existing; // one account per seller per mode
 		}
+		// One create at a time per seller: double clicks used to make two accounts (SL-21).
+		$lock = 'db_connect_lock_' . (int) $seller['id'] . '_' . db_connect_mode();
+		$held = (int) get_option( $lock, 0 );
+		if ( $held && $held < time() - 60 ) {
+			delete_option( $lock ); // stale lock from a request that died
+		}
+		if ( ! add_option( $lock, time(), '', 'no' ) ) {
+			return new WP_Error( 'db_connect_busy', 'Your payout account is being set up. Please wait a few seconds and try again.' );
+		}
+		$fresh = function_exists( 'db_seller_get' ) ? db_seller_get( (string) $seller['email'] ) : null;
+		if ( is_array( $fresh ) && '' !== db_connect_account_id( $fresh ) ) {
+			delete_option( $lock );
+			return db_connect_account_id( $fresh );
+		}
+		$result = db_connect_create_account_locked( $seller );
+		delete_option( $lock );
+		return $result;
+	}
+}
+
+if ( ! function_exists( 'db_connect_create_account_locked' ) ) {
+	/** Creates the connected account; call only through db_connect_create_account(), which holds the lock. */
+	function db_connect_create_account_locked( array $seller ) {
 		$country = strtolower( (string) $seller['country'] );
 		if ( 'us' !== $country ) {
 			// Stripe does not allow a recipient-only account (stripe_transfers without card payments)
@@ -327,7 +350,13 @@ add_action( 'template_redirect', function () {
 			exit;
 		}
 	}
-	$acc = db_connect_create_account( $seller );
+	// Stripe's refresh link (a GET without our token) only renews the link for an account that
+	// already exists; creating an account needs the POST with the CSRF token (SL-21).
+	$acc = $is_post ? db_connect_create_account( $seller ) : db_connect_account_id( $seller );
+	if ( '' === $acc ) {
+		wp_safe_redirect( $back );
+		exit;
+	}
 	$url = is_wp_error( $acc ) ? $acc : db_connect_account_link( $acc );
 	if ( is_wp_error( $url ) ) {
 		db_seller_flash( $email, array( array( 'bad', $url->get_error_message() ) ) );

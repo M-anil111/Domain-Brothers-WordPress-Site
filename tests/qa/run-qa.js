@@ -67,7 +67,7 @@ const PAGES = [
 	['about', '/about-us/'],
 	['faqs', '/faqs/'],
 	['contact', '/contact-us/'],
-	['offer', '/offer/'],
+	['offer', '/make-an-offer/'],
 	['privacy', '/privacy-policy/'],
 	['sold', '/sold/'],
 	['epp', '/epp-guidelines/'],
