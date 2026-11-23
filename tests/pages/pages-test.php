@@ -13,6 +13,10 @@ define( 'MINUTE_IN_SECONDS', 60 );
 function get_option( $k, $d = false ) { return isset( $GLOBALS['t_options'][ $k ] ) ? $GLOBALS['t_options'][ $k ] : $d; }
 function update_option( $k, $v ) { $GLOBALS['t_options'][ $k ] = $v; return true; }
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
+// db_usd() lives in the main plugin file, which this test does not load: take the real function.
+if ( preg_match( "/if \\( ! function_exists\\( 'db_usd' \\) \\) \\{.*?\n}\n/s", file_get_contents( __DIR__ . '/../../db-custom-blocks/db-custom-blocks.php' ), $db_usd_src ) ) {
+	eval( $db_usd_src[0] ); // phpcs:ignore Squiz.PHP.Eval
+}
 require __DIR__ . '/../../db-custom-blocks/db-pages-block.php';
 $pass = 0; $fail = 0;
 function check( $n, $ok ) { global $pass, $fail; if ( $ok ) { $pass++; echo "PASS $n\n"; } else { $fail++; echo "FAIL $n\n"; } }
