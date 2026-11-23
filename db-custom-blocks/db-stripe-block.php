@@ -333,7 +333,7 @@ add_action( 'template_redirect', static function () {
 		);
 	}
 
-	$pi = db_stripe_create_payment_intent( $domain, $price, $months );
+	$pi = db_stripe_checkout_pi( $domain, $price, $months );
 	db_stripe_render_checkout_page( $domain, $price, $months, $pi );
 	exit;
 } );
@@ -474,7 +474,8 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 		if ( $http_code !== 200 || empty( $data['client_secret'] ) ) {
 			$stripe_msg = $data['error']['message'] ?? 'An unexpected error occurred.';
 			error_log( 'DB Stripe: Stripe API error ' . $http_code . ' — ' . $stripe_msg );
-			return [ 'error' => $stripe_msg ];
+			// Stripe's own wording (API names, account details) is for the log, not the buyer.
+			return [ 'error' => 'We could not start the payment. Please refresh the page or contact sales@domainbrothers.com.' ];
 		}
 
 		return [
@@ -484,6 +485,128 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 		];
 	}
 }
+
+// ─── One PaymentIntent per buyer and listing; cancel the rest after a sale ───────
+
+if ( ! function_exists( 'db_stripe_pi_cache_key' ) ) {
+	/** Pure: transient key for a visitor's open checkout of one listing at one price and term. */
+	function db_stripe_pi_cache_key( string $mode, string $visitor, string $domain, int $months, float $price, array $meta = [] ) : string {
+		ksort( $meta );
+		return 'db_co_pi_' . md5( $mode . '|' . $visitor . '|' . strtolower( $domain ) . '|' . $months . '|' . (int) round( $price * 100 ) . '|' . wp_json_encode( $meta ) );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_pi_open_status' ) ) {
+	/** Pure: true for PaymentIntent statuses a buyer can still pay. */
+	function db_stripe_pi_open_status( string $status ) : bool {
+		return in_array( $status, [ 'requires_payment_method', 'requires_confirmation', 'requires_action' ], true );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_checkout_pi' ) ) {
+	/**
+	 * The PaymentIntent for this visitor's checkout. Every /buy-now/ view used to create a new one
+	 * (and a Customer for plans), so refreshes, bots and link previews piled up Stripe objects and
+	 * one visitor could hold many open payments for a name (bug register batch 2). Now a visitor
+	 * reuses their open PaymentIntent for 30 minutes, new ones are limited per IP address, and
+	 * every open PaymentIntent is tracked per name so a sale can cancel the others.
+	 */
+	function db_stripe_checkout_pi( string $domain, float $price, int $months ) : array {
+		$mode    = db_stripe_is_test() ? 'test' : 'live';
+		$visitor = isset( $_COOKIE['db_co_v'] ) && is_string( $_COOKIE['db_co_v'] ) && preg_match( '/^[A-Za-z0-9]{24}$/', $_COOKIE['db_co_v'] ) ? $_COOKIE['db_co_v'] : '';
+		if ( '' === $visitor ) {
+			$visitor = wp_generate_password( 24, false, false );
+			if ( ! headers_sent() ) {
+				setcookie( 'db_co_v', $visitor, [ 'expires' => time() + DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ] );
+			}
+		}
+		// Extra metadata (an accepted offer's lead and deal ids) is part of the key, so an offer
+		// checkout never reuses a plain checkout's PaymentIntent at the same price.
+		$key    = db_stripe_pi_cache_key( $mode, $visitor, $domain, $months, $price, (array) apply_filters( 'db_stripe_pi_metadata', [], $domain ) );
+		$cached = get_transient( $key );
+		$keys   = db_stripe_keys();
+		if ( is_array( $cached ) && ! empty( $cached['pi_id'] ) && ! empty( $keys['sec'] ) ) {
+			$r  = wp_remote_get( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( (string) $cached['pi_id'] ), [
+				'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'] ],
+				'timeout' => 10,
+			] );
+			$st = is_wp_error( $r ) ? '' : (string) ( json_decode( (string) wp_remote_retrieve_body( $r ), true )['status'] ?? '' );
+			if ( db_stripe_pi_open_status( $st ) ) {
+				return $cached;
+			}
+		}
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'co-pi:' . $ip, 15, HOUR_IN_SECONDS ) ) {
+			return [ 'error' => 'Too many checkout attempts from your connection. Please wait a little and try again, or contact sales@domainbrothers.com.' ];
+		}
+		$pi = db_stripe_create_payment_intent( $domain, $price, $months );
+		if ( empty( $pi['error'] ) && ! empty( $pi['pi_id'] ) ) {
+			set_transient( $key, $pi, 30 * MINUTE_IN_SECONDS );
+			db_stripe_track_open_pi( $domain, (string) $pi['pi_id'] );
+		}
+		return $pi;
+	}
+}
+
+if ( ! function_exists( 'db_stripe_track_open_pi' ) ) {
+	/** Remembers an open checkout PaymentIntent for a name (two days, at most 50 per name). */
+	function db_stripe_track_open_pi( string $domain, string $pi_id ) : void {
+		$all = (array) get_option( 'db_co_open_pis', [] );
+		$k   = strtolower( $domain );
+		$now = time();
+		foreach ( $all as $d => $list ) {
+			$all[ $d ] = array_filter( (array) $list, static function ( $ts ) use ( $now ) {
+				return (int) $ts > $now - 2 * DAY_IN_SECONDS;
+			} );
+			if ( ! $all[ $d ] ) {
+				unset( $all[ $d ] );
+			}
+		}
+		$all[ $k ]           = isset( $all[ $k ] ) ? (array) $all[ $k ] : [];
+		$all[ $k ][ $pi_id ] = $now;
+		$all[ $k ]           = array_slice( $all[ $k ], -50, null, true );
+		update_option( 'db_co_open_pis', $all, false );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_cancel_other_pis' ) ) {
+	/**
+	 * After a name is sold (full payment, or the first payment of a plan), cancels every other open
+	 * checkout PaymentIntent for it, so a second buyer who already had the checkout open cannot pay
+	 * for a name that is gone. db_stripe_flag_conflict() still catches a payment that lands in the
+	 * same seconds (bug register batch 2, CK, double sale).
+	 */
+	function db_stripe_cancel_other_pis( string $domain, string $paid_pi ) : int {
+		$all  = (array) get_option( 'db_co_open_pis', [] );
+		$k    = strtolower( $domain );
+		$list = isset( $all[ $k ] ) ? array_keys( (array) $all[ $k ] ) : [];
+		unset( $all[ $k ] );
+		update_option( 'db_co_open_pis', $all, false );
+		$keys = db_stripe_keys();
+		$n    = 0;
+		foreach ( $list as $pi ) {
+			if ( $pi === $paid_pi || empty( $keys['sec'] ) ) {
+				continue;
+			}
+			$r = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( (string) $pi ) . '/cancel', [
+				'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'], 'Content-Type' => 'application/x-www-form-urlencoded' ],
+				'body'    => [ 'cancellation_reason' => 'abandoned' ],
+				'timeout' => 10,
+			] );
+			if ( ! is_wp_error( $r ) && 200 === (int) wp_remote_retrieve_response_code( $r ) ) {
+				$n++;
+			}
+		}
+		return $n;
+	}
+}
+
+add_action( 'db_order_event', static function ( $type, $data ) {
+	$data = (array) $data;
+	if ( 'full' === $type || ( 'plan_installment' === $type && 1 === (int) ( $data['installment'] ?? 0 ) ) ) {
+		db_stripe_cancel_other_pis( (string) ( $data['domain'] ?? '' ), (string) ( $data['pi_id'] ?? '' ) );
+	}
+}, 20, 2 );
 
 // ─── Checkout page HTML render ─────────────────────────────────────────────────
 
@@ -1215,11 +1338,6 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 		}
 		$pi_id = $m[1];
 
-		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php).
-		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
-			db_ops_reminder_opt_in( $pi_id, $email );
-		}
-
 		$keys = db_stripe_keys();
 		if ( empty( $keys['sec'] ) ) {
 			return new WP_REST_Response( [ 'error' => 'Payment system not configured.' ], 500 );
@@ -1240,6 +1358,13 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 		}
 		if ( ! in_array( (string) ( $pi['status'] ?? '' ), [ 'requires_payment_method', 'requires_confirmation', 'requires_action' ], true ) ) {
 			return new WP_REST_Response( [ 'error' => 'This payment can no longer be changed.' ], 409 );
+		}
+
+		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php). Recorded only
+		// after Stripe has confirmed the client secret: before, any request with a made-up secret
+		// queued a reminder row, or sent a real payment's reminder to another address (batch 2, CK).
+		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
+			db_ops_reminder_opt_in( $pi_id, $email );
 		}
 
 		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), [
