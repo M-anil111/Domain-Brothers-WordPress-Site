@@ -517,7 +517,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		if ( function_exists( 'db_domain_index' ) ) {
 			$tlds = array();
 			foreach ( (array) db_domain_index() as $row ) {
-				$dot = strrpos( (string) $row['n'], '.' );
+				$dot = strpos( (string) $row['n'], '.' ); // first dot, as the All Domains filter uses (.co.uk, not .uk; LS-18)
 				if ( false !== $dot ) {
 					$t          = substr( $row['n'], $dot );
 					$tlds[ $t ] = ( $tlds[ $t ] ?? 0 ) + 1;
