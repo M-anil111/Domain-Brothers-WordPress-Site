@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.150.6
+ * Version:     3.150.8
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,8 +35,33 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.150.6' );
+define( 'DB_BLOCKS_LOADED', '3.150.8' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
+
+/*
+ * Query parameters this plugin reads are all single values. Sent as arrays (?d[]=x) several of
+ * them reached string functions and threw a TypeError: an HTTP 500 on any URL, on demand, which
+ * also filled the fatal log and sent alert emails (bug register batch 2, SC-8). They are dropped
+ * here, before any hook runs. Tests: tests/security/query-arrays-test.php.
+ */
+if ( ! function_exists( 'db_scalar_query_keys' ) ) {
+	function db_scalar_query_keys() {
+		return array( '_wpnonce', 'alerts', 'amt', 'auth', 'author', 'bad', 'broker', 'bulk_done', 'c', 'cancelled', 'cleared', 'commit', 'connect', 'd', 'db_ads_preview', 'db_clear', 'db_create_webhook', 'db_crm_export', 'db_db_maint', 'db_db_report', 'db_domain_inventory', 'db_epp', 'db_exit_test', 'db_fix_post_images', 'db_fix_services_page', 'db_fullcss', 'db_mailtest', 'db_make_service_pages', 'db_manifest', 'db_news_refresh', 'db_nodelay', 'db_ops_stop', 'db_perf', 'db_purge_cache', 'db_seo_setup', 'db_signout', 'db_stripe_log', 'db_stripe_wh', 'db_sw', 'db_timing', 'db_update_card', 'deal', 'deleted', 'dom', 'domain', 'done', 'e', 'edit', 'err', 'f', 'form', 'from', 'go', 'handle', 'id', 'imported', 'inq', 'k', 'kind', 'lead', 'lead_deleted', 'lead_id', 'lead_saved', 'lis', 'mode', 'months', 'msg', 'newsletter', 'offer', 'order', 'orderby', 'p', 'paged', 'payment_intent', 'plan_months', 'platform', 'q', 'ref', 'reset', 's', 'saved', 'session_id', 'sig', 'smtp_saved', 'statement', 'status', 'step', 't', 'tab', 'template', 'to', 'topic', 'tpl', 'type', 'view' );
+	}
+}
+if ( ! function_exists( 'db_drop_array_query_values' ) ) {
+	/** Pure: removes array values for the given keys. */
+	function db_drop_array_query_values( array $q, array $keys ) {
+		foreach ( $keys as $k ) {
+			if ( isset( $q[ $k ] ) && ! is_scalar( $q[ $k ] ) ) {
+				unset( $q[ $k ] );
+			}
+		}
+		return $q;
+	}
+}
+$_GET     = db_drop_array_query_values( $_GET, db_scalar_query_keys() ); // phpcs:ignore WordPress.Security.NonceVerification
+$_REQUEST = db_drop_array_query_values( $_REQUEST, db_scalar_query_keys() ); // phpcs:ignore WordPress.Security.NonceVerification
 
 /*
  * Who writes the SEO tags in <head>. When Rank Math is active and the site is

@@ -660,7 +660,8 @@ if ( ! function_exists( 'db_plan_purge_webhook_claims' ) ) {
 /* ─── "Update my card": signed link -> Stripe Billing Portal ────────────────── */
 
 add_action( 'template_redirect', function () {
-	if ( empty( $_GET['db_update_card'] ) || empty( $_GET['d'] ) || empty( $_GET['t'] ) ) {
+	// Array values (?d[]=x) made rawurldecode() throw a TypeError: a 500 on any URL (SC-8).
+	if ( empty( $_GET['db_update_card'] ) || empty( $_GET['d'] ) || empty( $_GET['t'] ) || ! is_string( $_GET['d'] ) || ! is_string( $_GET['t'] ) || ( isset( $_GET['e'] ) && ! is_scalar( $_GET['e'] ) ) ) {
 		return;
 	}
 	nocache_headers();
