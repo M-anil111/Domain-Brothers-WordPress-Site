@@ -1803,8 +1803,7 @@ add_action( 'wp_head', function () {
 		$list_state   = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'standard';
 		$product      = array( '@type' => 'Product', 'name' => $domain_name,
 			'description' => ( 'sold' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' has been sold.' : ( 'not_for_sale' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' is not for sale.' : 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.' ) ),
-			'url' => esc_url( $domain_url ),
-			'brand' => array( '@type' => 'Brand', 'name' => $site_name ) );
+			'url' => esc_url( $domain_url ) ); // no brand: a domain is not a Domain Brothers brand; we are the seller (SE-23)
 		// Product rich results need an Offer with a price and an image (RS-11). Names that are
 		// offer-only, sold or not for sale have no price to state, so they get no Product markup.
 		$price = $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ? (float) preg_replace( '/[^0-9.]/', '', $domain_price ) : 0.0;
