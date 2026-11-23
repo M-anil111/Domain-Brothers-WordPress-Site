@@ -215,6 +215,12 @@ if ( ! function_exists( 'db_lk_archive' ) ) {
 			}
 		}
 		if ( 200 === $r['code'] && is_array( $r['json'] ) && ! $rows ) {
+			// No 200 captures. A site whose captures are all redirects (maps.google.com) is still in
+			// the archive, so check without the status filter before saying there is nothing (TL-17).
+			$any = db_lk_http( 'https://web.archive.org/cdx/search/cdx?url=' . rawurlencode( $name ) . '&output=json&fl=timestamp,statuscode&limit=1', array(), 10 );
+			if ( is_array( $any['json'] ) && count( $any['json'] ) > 1 ) {
+				return array( 'state' => 'redirects', 'url' => 'https://web.archive.org/web/*/' . rawurlencode( $name ) );
+			}
 			return array( 'state' => 'none' );
 		}
 		// Fallback: the latest capture only.
