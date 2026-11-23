@@ -502,7 +502,8 @@ add_action( 'rest_api_init', function () {
 			}
 			$lead = db_crm_create_lead( array(
 				'domain'       => $domain,
-				'name'         => ucfirst( (string) strstr( $email, '@', true ) ),
+				// The saved full name, when there is one (AC-20); the email's local part only as a fallback.
+				'name'         => ( function_exists( 'db_acct_row' ) && '' !== trim( (string) ( ( db_acct_row( $email ) ?: array() )['full_name'] ?? '' ) ) ) ? trim( (string) db_acct_row( $email )['full_name'] ) : ucfirst( (string) strstr( $email, '@', true ) ),
 				'email'        => $email,
 				'offer_amount' => $amount,
 				'message'      => $msg,
