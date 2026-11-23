@@ -370,3 +370,104 @@ add_action( 'pre_get_posts', function ( $q ) {
 		$q->set( $k, $v );
 	}
 } );
+
+if ( ! function_exists( 'db_ad_only_for_sale_vars' ) ) {
+	/**
+	 * Pure: the sold and not-for-sale exclusion of db_ad_fix_query_vars() without its paging
+	 * changes, for list queries that must keep their own size (the home page sections).
+	 */
+	function db_ad_only_for_sale_vars( array $qv, $for_sale_ids = null ) {
+		$fixed = db_ad_fix_query_vars( $qv, $for_sale_ids );
+		foreach ( array( 'posts_per_page', 'paged', 'no_found_rows' ) as $k ) {
+			if ( array_key_exists( $k, $qv ) ) {
+				$fixed[ $k ] = $qv[ $k ];
+			} else {
+				unset( $fixed[ $k ] );
+			}
+		}
+		return $fixed;
+	}
+}
+
+// The theme's home sections (Featured Top Domains, Newly Added, Latest Addition for ...) listed
+// sold names as "Open to offers", and their offer buttons pointed at another listing (bug register
+// batch 2, LS-1 and LS-2). Same rule as All Domains: only names in the for-sale index.
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || $q->is_main_query() || ! did_action( 'template_redirect' ) || ! function_exists( 'is_front_page' ) || ! is_front_page() ) {
+		return;
+	}
+	$pt = $q->get( 'post_type' );
+	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
+		return;
+	}
+	$for_sale = function_exists( 'db_domain_index' ) ? array_map( static function ( $r ) {
+		return (int) $r['id'];
+	}, db_domain_index() ) : null;
+	foreach ( db_ad_only_for_sale_vars( $q->query_vars, $for_sale ) as $k => $v ) {
+		$q->set( $k, $v );
+	}
+} );
+
+if ( ! function_exists( 'db_ad_clean_rows_html' ) ) {
+	/**
+	 * Pure: in theme list tables, drops rows for names that are not for sale and makes every link
+	 * in a row point at the row's own listing (LS-1, LS-2).
+	 *
+	 * @param string   $html     Page HTML.
+	 * @param string[] $unsold   Listing slugs that are sold or not for sale.
+	 * @param string   $base     Listing URL prefix, e.g. https://example.test/domains/.
+	 * @return string
+	 */
+	function db_ad_clean_rows_html( $html, array $unsold, $base ) {
+		if ( ! is_string( $html ) || false === stripos( $html, '<tr' ) ) {
+			return $html;
+		}
+		$q    = preg_quote( rtrim( (string) $base, '/' ) . '/', '#' );
+		$drop = array_flip( array_map( 'strtolower', $unsold ) );
+		return (string) preg_replace_callback( '#<tr\b[^>]*>.*?</tr>#is', static function ( $m ) use ( $q, $drop ) {
+			if ( ! preg_match_all( '#href=([\'"])' . $q . '([a-z0-9-]+)/?\1#i', $m[0], $links ) ) {
+				return $m[0];
+			}
+			$own = strtolower( $links[2][0] );
+			if ( isset( $drop[ $own ] ) ) {
+				return '';
+			}
+			return (string) preg_replace_callback( '#(href=([\'"]))' . $q . '([a-z0-9-]+)(/?)\2#i', static function ( $l ) use ( $own ) {
+				return strtolower( $l[3] ) === $own ? $l[0] : str_replace( $l[3], $own, $l[0] );
+			}, $m[0] );
+		}, $html );
+	}
+}
+
+if ( ! function_exists( 'db_ad_unsold_slugs' ) ) {
+	/** Slugs of published listings that are sold or not for sale (cached for 10 minutes). */
+	function db_ad_unsold_slugs() {
+		$c = get_transient( 'db_ad_unsold_slugs' );
+		if ( is_array( $c ) ) {
+			return $c;
+		}
+		$ids  = get_posts( array( 'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'no_found_rows' => true, 'suppress_filters' => true ) );
+		$out  = array();
+		foreach ( $ids as $id ) {
+			if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( $id ), array( 'sold', 'not_for_sale' ), true ) ) {
+				$out[] = get_post_field( 'post_name', $id );
+			}
+		}
+		set_transient( 'db_ad_unsold_slugs', $out, 10 * MINUTE_IN_SECONDS );
+		return $out;
+	}
+}
+add_action( 'updated_post_meta', static function ( $mid, $pid, $key ) {
+	if ( in_array( $key, array( 'db_listing_state', 'domain_status' ), true ) ) {
+		delete_transient( 'db_ad_unsold_slugs' );
+	}
+}, 10, 3 );
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_front_page() ) {
+		return;
+	}
+	ob_start( static function ( $html ) {
+		return db_ad_clean_rows_html( $html, db_ad_unsold_slugs(), home_url( '/domains/' ) );
+	} );
+}, -998 ); // before any route that renders and exits; inside the page cache's buffer

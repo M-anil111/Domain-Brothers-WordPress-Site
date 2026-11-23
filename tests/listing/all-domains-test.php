@@ -42,5 +42,15 @@ $keys = array_map( static function ( $c ) { return $c['key'] ?? 'group'; }, $p['
 check( 'price view drops the Domain_owner condition (seller names count)', ! in_array( 'Domain_owner', $keys, true ) );
 check( 'price view keeps its price and status conditions, adds no second status rule, adds the listing-state rule', array( 'domain_price', 'domain_status', 'group' ) === $keys && 'db_listing_state' === end( $p['meta_query'] )[0]['key'] );
 
+$b = 'https://example.test/domains/';
+$rows = "<table><tr><td><a href='{$b}sold-com/'>sold.com</a></td><td><a href='{$b}sold-com/'>Make an Offer</a></td></tr>"
+	. "<tr><td><a href='{$b}ezshop-ca/'>ezshop.ca</a></td><td><a href='{$b}slykar-com/'>Make an Offer</a></td></tr>"
+	. "<tr><td><a href=\"{$b}good-com/\">good.com</a></td><td><a href=\"{$b}good-com/\">Buy</a></td></tr><tr><th>Name</th></tr></table>";
+$out = db_ad_clean_rows_html( $rows, array( 'sold-com' ), $b );
+check( 'home rows: a sold name\'s row is removed', false === strpos( $out, 'sold-com' ) );
+check( 'home rows: an offer button pointing at another listing is repointed to its own row (LS-2)', false === strpos( $out, 'slykar-com' ) && 2 === substr_count( $out, 'ezshop-ca' ) );
+check( 'home rows: correct rows and header rows are unchanged', false !== strpos( $out, "<tr><td><a href=\"{$b}good-com/\">good.com</a></td><td><a href=\"{$b}good-com/\">Buy</a></td></tr><tr><th>Name</th></tr>" ) );
+check( 'home rows: front-page query keeps its own page size', 8 === db_ad_only_for_sale_vars( array( 'post_type' => 'domain', 'posts_per_page' => 8 ), array( 1, 2 ) )['posts_per_page'] && array( 1, 2 ) === db_ad_only_for_sale_vars( array( 'posts_per_page' => 8 ), array( 1, 2 ) )['post__in'] );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
