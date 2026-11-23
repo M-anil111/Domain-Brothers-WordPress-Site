@@ -277,7 +277,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		. '.dbpp-facts strong{font-size:17px;line-height:1.3}.dbpp-facts span{color:var(--tx);font-size:15px;line-height:1.55}'
 		. '.dbpp-list{display:grid;gap:10px;margin:0 0 14px;padding:0;list-style:none}.dbpp-list li{position:relative;margin:0;padding-left:30px;color:var(--tx);font-size:17px;line-height:1.65}'
 		. '.dbpp-list li::before{content:"\2713";position:absolute;left:0;top:.2em;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--l);color:var(--n);font-size:11px;font-weight:900}'
-		. '@media(max-width:1100px){.dbpp-layout{grid-template-columns:minmax(0,1fr)}.dbpp-toc{position:sticky;top:64px;z-index:20;max-height:none;padding:10px 14px;box-shadow:0 8px 22px -14px rgba(12,20,36,.45)}.dbpp-toc details:not([open]) ol{display:none}.dbpp-toc ol{max-height:50vh;overflow:auto}.dbpp-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+		. '@media(max-width:1100px){.dbpp-layout{grid-template-columns:minmax(0,1fr)}.dbpp-toc{position:static;top:auto;z-index:auto;max-height:none;padding:10px 14px;box-shadow:0 8px 22px -14px rgba(12,20,36,.45)}.dbpp-toc details:not([open]) ol{display:none}.dbpp-toc ol{max-height:50vh;overflow:auto}.dbpp-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}'
 		. '@media(max-width:560px){.dbpp-facts{grid-template-columns:minmax(0,1fr)}}'
 		// Calculator.
 		. '.dbpp-calc{padding:clamp(22px,3.4vw,36px);border:1px solid var(--ln);border-radius:24px;background:var(--pn)}'
