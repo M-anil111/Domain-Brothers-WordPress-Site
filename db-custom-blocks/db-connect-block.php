@@ -527,6 +527,7 @@ if ( ! function_exists( 'db_connect_create_product' ) ) {
 		if ( ! preg_match( '/^acct_[A-Za-z0-9]+$/', (string) $account_id ) || ! db_connect_seller_by_account( $account_id ) ) {
 			return new WP_Error( 'db_connect_account', 'Choose a connected seller account.' );
 		}
+		delete_transient( 'db_connect_products_' . db_connect_mode() ); // the new product shows at once
 		return db_connect_call( 'create product', static function ( $stripe ) use ( $name, $description, $cents, $currency, $account_id ) {
 			$params = array(
 				'name'               => $name,
@@ -554,6 +555,12 @@ if ( ! function_exists( 'db_connect_products' ) ) {
 	 * @return array|WP_Error List of arrays: id, name, description, amount, currency, account.
 	 */
 	function db_connect_products() {
+		// Cached for 5 minutes: the storefront called Stripe on every uncached visit (SL-20).
+		$ckey   = 'db_connect_products_' . db_connect_mode();
+		$cached = get_transient( $ckey );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
 		$list = db_connect_call( 'list products', static function ( $stripe ) {
 			return $stripe->products->all( array( 'active' => true, 'limit' => 100, 'expand' => array( 'data.default_price' ) ) );
 		} );
@@ -576,7 +583,31 @@ if ( ! function_exists( 'db_connect_products' ) ) {
 				'account'     => $acct,
 			);
 		}
+		set_transient( $ckey, $out, 5 * MINUTE_IN_SECONDS );
 		return $out;
+	}
+}
+
+if ( ! function_exists( 'db_connect_product_offered' ) ) {
+	/** True when a product's connected account belongs to an active seller (SL-20: no orphan products). */
+	function db_connect_product_offered( array $p ) {
+		$seller = function_exists( 'db_connect_seller_by_account' ) ? db_connect_seller_by_account( (string) $p['account'] ) : null;
+		return $seller && 'active' === ( $seller['status'] ?? '' );
+	}
+}
+
+if ( ! function_exists( 'db_connect_ready_cached' ) ) {
+	/** Whether an account can receive transfers, cached for 5 minutes per account (SL-20). */
+	function db_connect_ready_cached( $account_id ) {
+		$k = 'db_connect_ready_' . md5( (string) $account_id );
+		$v = get_transient( $k );
+		if ( false !== $v ) {
+			return '1' === (string) $v;
+		}
+		$st = db_connect_status( $account_id );
+		$ok = ! is_wp_error( $st ) && $st['ready'];
+		set_transient( $k, $ok ? '1' : '0', 5 * MINUTE_IN_SECONDS );
+		return $ok;
 	}
 }
 
@@ -608,7 +639,7 @@ if ( ! function_exists( 'db_connect_checkout' ) ) {
 			return $all;
 		}
 		foreach ( $all as $p ) {
-			if ( $p['id'] === $product_id ) {
+			if ( $p['id'] === $product_id && db_connect_product_offered( $p ) ) {
 				$product = $p;
 			}
 		}
@@ -703,6 +734,7 @@ if ( ! function_exists( 'db_connect_store_body' ) ) {
 		if ( is_wp_error( $products ) ) {
 			return $h . '<p class="dbcs-msg dbcs-bad" role="alert">' . esc_html( $products->get_error_message() ) . '</p></div>';
 		}
+		$products = array_values( array_filter( $products, 'db_connect_product_offered' ) );
 		// No seller directory and no seller names: sellers are told their details are never shown
 		// to buyers, and the list printed company or legal names to anyone (SL-12).
 		$h .= '<h2>Products</h2>';
@@ -713,8 +745,7 @@ if ( ! function_exists( 'db_connect_store_body' ) ) {
 		// seller's status is read (live, once per seller on this page) before offering Buy now.
 		$ready = array();
 		foreach ( array_unique( wp_list_pluck( $products, 'account' ) ) as $acct ) {
-			$st             = db_connect_status( $acct );
-			$ready[ $acct ] = ! is_wp_error( $st ) && $st['ready'];
+			$ready[ $acct ] = db_connect_ready_cached( $acct );
 		}
 		$h .= '<ul class="dbcs-grid">';
 		foreach ( $products as $p ) {
