@@ -252,6 +252,9 @@ if ( ! function_exists( 'db_tools_pay_html' ) ) {
 			return '';
 		}
 		$rows = db_tools_pay_rows( $f['price'] );
+		if ( function_exists( 'db_plan_offered' ) && ! db_plan_offered( $f['price'] ) ) {
+			return ''; // one way to pay under the plan floor: nothing to compare (CK-15)
+		}
 		if ( ! $rows ) {
 			return '';
 		}

@@ -322,6 +322,11 @@ add_action( 'template_redirect', static function () {
 		wp_safe_redirect( function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $domain, $price )['plan'] : home_url( '/all-domains/' ), 302 );
 		exit;
 	}
+	if ( $is_plan && ! $deal_ctx && function_exists( 'db_plan_offered' ) && ! db_plan_offered( $price ) ) {
+		// Plans start at the plan floor (CK-15): take this buyer to the pay-in-full checkout.
+		wp_safe_redirect( db_dd_checkout_urls( $domain, $price )['buy'], 302 );
+		exit;
+	}
 	$months     = $is_plan ? $months_raw : 0;
 
 	// Never take a second buyer's money for a name that is already sold or on
@@ -638,6 +643,9 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		// first configured term.
 		$plan_terms = function_exists( 'db_plan_terms' ) ? array_map( 'intval', (array) db_plan_terms() ) : [ 3, 6, 9, 12 ];
 		$alt_months = $is_plan ? $months : ( in_array( 6, $plan_terms, true ) ? 6 : (int) reset( $plan_terms ) );
+		if ( ! $is_plan && function_exists( 'db_plan_offered' ) && ! db_plan_offered( $price ) ) {
+			$alt_months = 0; // no "Pay less up front" under the plan floor (CK-15)
+		}
 		$alt_first  = $alt_months > 0 ? db_stripe_installment_cents( $price, $alt_months, 1 ) / 100 : 0.0;
 		$alt_rate   = function_exists( 'db_plan_rate' ) ? (float) db_plan_rate( $alt_months ) : 0.0;
 		$alt_total  = function_exists( 'db_plan_total_cents' ) ? db_plan_total_cents( $price, $alt_months ) / 100 : $price;

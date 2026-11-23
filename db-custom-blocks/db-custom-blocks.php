@@ -883,6 +883,16 @@ if ( ! function_exists( 'db_plan_b64' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_plan_offered' ) ) {
+	/**
+	 * Whether a price can be paid monthly. The FAQ and listing cards promise plans from
+	 * DB_DEAL_MIN_PLAN_AMOUNT ($600); every chooser, link and charge path uses this (CK-15).
+	 */
+	function db_plan_offered( $price ) {
+		return (float) $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? (float) DB_DEAL_MIN_PLAN_AMOUNT : 600.0 );
+	}
+}
+
 /**
  * Plan-chooser widget markup (or '' when ?d=/?p= don't carry a valid price).
  * Split out of the_content so the plan page can also render it when the
@@ -907,7 +917,7 @@ function db_plan_widget_html() {
 		if ( null === $listed ) { return ''; }
 		$price = $listed;
 	}
-	if ( $price <= 0 ) { return ''; }
+	if ( $price <= 0 || ! db_plan_offered( $price ) ) { return ''; } // under the plan floor: the listing offers Buy now
 
 	$terms = db_plan_terms();
 	$cur   = DB_PLAN_CURRENCY;
