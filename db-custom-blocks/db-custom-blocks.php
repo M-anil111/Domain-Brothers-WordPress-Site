@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.148.2
+ * Version:     3.149.0
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.148.2' );
+define( 'DB_BLOCKS_LOADED', '3.149.0' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -1757,7 +1757,7 @@ add_action( 'wp_head', function () {
 			if ( $image ) {
 				$product['image'] = esc_url( $image );
 			}
-			db_aeo_emit( $product );
+			db_aeo_emit( apply_filters( 'db_aeo_product', $product ) );
 		}
 	}
 
@@ -1788,7 +1788,7 @@ add_action( 'wp_head', function () {
 				$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => $term->name, 'item' => esc_url( get_term_link( $term ) ) );
 			}
 		} elseif ( is_singular( 'domain' ) ) {
-			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'Domain Listings', 'item' => esc_url( home_url( '/domains/' ) ) );
+			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'All Domains', 'item' => esc_url( home_url( '/all-domains/' ) ) );
 			$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title(), 'item' => esc_url( get_permalink() ) );
 		} elseif ( is_singular( 'post' ) ) {
 			// Blog posts under /news/ fell through both branches below (not
@@ -4797,6 +4797,7 @@ require_once __DIR__ . '/db-mobilenav-block.php';
    ============================================================ */
 require_once __DIR__ . '/db-safety-block.php';
 require_once __DIR__ . '/db-crawl-block.php'; // canonical URLs, crawl traps, faceted noindex, robots.txt
+require_once __DIR__ . '/db-schema-block.php'; // Rank Math JSON-LD repairs (logo, author, relative ids, breadcrumbs)
 if ( is_readable( __DIR__ . '/db-log-block.php' ) ) {
 	require_once __DIR__ . '/db-log-block.php'; // log manager: Tools > Error log
 }
