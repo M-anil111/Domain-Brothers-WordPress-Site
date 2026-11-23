@@ -400,7 +400,9 @@ if ( ! function_exists( 'db_seller_publish' ) ) {
 			$prow = (int) get_post_meta( $taken, 'db_seller_listing', true );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$pst  = $prow ? (string) $wpdb->get_var( $wpdb->prepare( 'SELECT review_status FROM ' . db_seller_table( 'listings' ) . ' WHERE id = %d', $prow ) ) : '';
-			if ( $prev && $prev !== (int) $listing['seller_id'] && 'removed' === $pst ) {
+			// The same seller relisting a name they removed, marked sold elsewhere or had taken down
+			// reuses the page too (SL-4): only a page whose listing is still live blocks a new one.
+			if ( ( $prev && $prev !== (int) $listing['seller_id'] && 'removed' === $pst ) || ( $prev === (int) $listing['seller_id'] && in_array( $pst, array( 'removed', 'rejected' ), true ) && 'publish' !== get_post_status( $taken ) ) ) {
 				$reuse = (int) $taken;
 			} else {
 				return 'A listing for this name already exists (post ' . $taken . ').';
