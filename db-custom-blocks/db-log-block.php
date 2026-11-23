@@ -301,10 +301,20 @@ add_action( 'rest_api_init', function () {
 		'methods'             => 'POST',
 		'permission_callback' => '__return_true',
 		'callback'            => function ( WP_REST_Request $r ) {
+			// Exact same-site Origin (browsers send it on every POST). A prefix match let
+			// https://<site>.evil.example through, and a missing Origin skipped the check (SC-6).
 			$origin = (string) $r->get_header( 'origin' );
-			if ( '' !== $origin && 0 !== strpos( $origin, home_url() ) ) {
+			$oh     = strtolower( (string) wp_parse_url( $origin, PHP_URL_HOST ) );
+			if ( '' === $oh || $oh !== strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) ) {
 				return new WP_REST_Response( null, 204 );
 			}
+			// Site-wide cap for browser reports, so a script cannot push real errors out of the log.
+			$mk = 'db_log_js_min_' . gmdate( 'YmdHi' );
+			$mn = (int) get_transient( $mk );
+			if ( $mn >= 30 ) {
+				return new WP_REST_Response( null, 204 );
+			}
+			set_transient( $mk, $mn + 1, 2 * MINUTE_IN_SECONDS );
 			$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 			$key = 'db_log_js_' . md5( $ip . gmdate( 'YmdH' ) );
 			$n   = (int) get_transient( $key );
