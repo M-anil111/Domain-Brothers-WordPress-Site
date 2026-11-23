@@ -603,7 +603,7 @@ if ( ! function_exists( 'db_sales_handle_save' ) ) {
 			'label'      => substr( db_finder_summary( $c ), 0, 160 ),
 			'criteria'   => wp_json_encode( $c ),
 			'seen'       => wp_json_encode( $ids ),
-			'created_at' => current_time( 'mysql' ),
+			'created_at' => current_time( 'mysql', true ), // UTC, as every reader expects (AD-5)
 		), array( '%s', '%s', '%s', '%s', '%s' ) );
 		db_funnel_track( 'saved_search' );
 		db_sales_back( array( 'saved' => '1' ) );
@@ -633,7 +633,7 @@ add_action( 'db_sales_cron', function () {
 				'post_id'    => $post_id,
 				'kind'       => 'match',
 				'message'    => substr( 'New match for your search (' . $row->label . '): ' . strtolower( $p->post_title ), 0, 255 ),
-				'created_at' => current_time( 'mysql' ),
+				'created_at' => current_time( 'mysql', true ), // UTC: shown as '5 hr ago' when new (AD-5)
 				'emailed'    => 0,
 				'tries'      => 0,
 			), array( '%s', '%d', '%s', '%s', '%s', '%d', '%d' ) );
