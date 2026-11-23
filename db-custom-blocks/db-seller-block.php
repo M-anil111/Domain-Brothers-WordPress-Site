@@ -1129,7 +1129,7 @@ if ( ! function_exists( 'db_seller_landing_body' ) ) {
 		$h .= db_lp_faq( 'Questions about selling', array(
 			array( 'Who negotiates with buyers?', 'You do, from your seller dashboard: accept, counter or decline each offer. An offer below your minimum is answered automatically. Our brokers see every offer and take over if you do not answer in time.' ),
 			array( 'How fast must I answer offers and transfer a sold name?', db_seller_rules_sentence() ),
-			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised. Sellers in the United States can be paid through Stripe.' ),
+			array( 'How do I get paid?', 'The buyer pays Domain Brothers first, and payment is confirmed before you transfer the name. You are paid the sale price minus commission 7 days after the buyer confirms control, or 14 days after the transfer if no dispute is raised. Payouts are sent by bank transfer; Stripe payouts for sellers in the United States will follow.' ),
 			array( 'What does exclusive mean?', 'You do not list the name anywhere else while it is with us. It gets an "Exclusive" badge on its page and the lower ' . $excl . '% commission.' ),
 			array( 'Can I list my names elsewhere too?', 'Yes, unless you choose exclusive. Remove a name at any time from your seller page.' ),
 			array( 'Who can sell?', 'Sellers in the United States and Canada, for now. Prices are in US dollars.' ),
