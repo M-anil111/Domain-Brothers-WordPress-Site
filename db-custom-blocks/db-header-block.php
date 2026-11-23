@@ -715,7 +715,10 @@ add_action( 'wp_footer', function () {
 		document.addEventListener('mousedown', function (e) { if (!f.contains(e.target)) { close(); } });
 		document.addEventListener('keydown', function (e) {
 			var tag = (document.activeElement && document.activeElement.tagName) || '';
-			if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(tag) && !(document.activeElement && document.activeElement.isContentEditable)) { e.preventDefault(); q.focus(); }
+			// '/' jumps to search only when nothing on the page has focus, never from inside the main
+			// content, and never with a modifier key, so speech input and typing are not hijacked (AX-19).
+			var ae = document.activeElement, idle = !ae || ae === document.body || ae === document.documentElement;
+			if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && idle && !/INPUT|TEXTAREA|SELECT/.test(tag)) { e.preventDefault(); q.focus(); }
 		});
 	}
 	f.addEventListener('submit', function (e) { if (!q.value.trim()) { e.preventDefault(); q.focus(); } });
