@@ -40,9 +40,9 @@ if ( ! function_exists( 'db_lk_http' ) ) {
 	 * @param array  $headers Extra request headers.
 	 * @return array{code:int,json:array|null}
 	 */
-	function db_lk_http( $url, array $headers = array() ) {
+	function db_lk_http( $url, array $headers = array(), $timeout = 6 ) {
 		$res = wp_remote_get( $url, array(
-			'timeout'     => 6,
+			'timeout'     => max( 1, (int) $timeout ),
 			'redirection' => 4,
 			'headers'     => array_merge( array( 'Accept' => 'application/json', 'User-Agent' => 'DomainBrothers-DomainTools/1.0 (+https://www.domainbrothers.com)' ), $headers ),
 		) );
@@ -179,7 +179,7 @@ if ( ! function_exists( 'db_lk_archive' ) ) {
 	/** @return array<string,mixed> */
 	function db_lk_archive( $name ) {
 		// The capture index, one row per year: first and latest capture and the years with captures.
-		$r    = db_lk_http( 'https://web.archive.org/cdx/search/cdx?url=' . rawurlencode( $name ) . '&output=json&fl=timestamp&collapse=timestamp:4&filter=statuscode:200&limit=60' );
+		$r    = db_lk_http( 'https://web.archive.org/cdx/search/cdx?url=' . rawurlencode( $name ) . '&output=json&fl=timestamp&collapse=timestamp:4&filter=statuscode:200&limit=60', array(), 15 ); // popular sites took over 6 s (TL-11)
 		$rows = is_array( $r['json'] ) ? array_slice( $r['json'], 1 ) : array(); // first row is the header
 		if ( 200 === $r['code'] && $rows ) {
 			$years = array();
@@ -195,6 +195,13 @@ if ( ! function_exists( 'db_lk_archive' ) ) {
 				$first = reset( $years );
 				$last  = end( $years );
 				$span  = (int) substr( $last, 0, 4 ) - (int) substr( $first, 0, 4 ) + 1;
+				// The yearly index gives the first capture of each year; the latest capture itself is
+				// the last row of the uncollapsed index (TL-12).
+				$lr = db_lk_http( 'https://web.archive.org/cdx/search/cdx?url=' . rawurlencode( $name ) . '&output=json&fl=timestamp&filter=statuscode:200&limit=-1', array(), 12 );
+				$lt = is_array( $lr['json'] ) ? (string) ( end( $lr['json'] )[0] ?? '' ) : '';
+				if ( preg_match( '/^\d{8}/', $lt ) && $lt > $last ) {
+					$last = $lt;
+				}
 				return array(
 					'state' => 'ok',
 					'first' => $fmt( $first ),
@@ -219,9 +226,10 @@ if ( ! function_exists( 'db_lk_archive' ) ) {
 		}
 		$ts = (string) $snap['timestamp'];
 		return array(
-			'state' => 'ok',
-			'date'  => substr( $ts, 0, 4 ) . '-' . substr( $ts, 4, 2 ) . '-' . substr( $ts, 6, 2 ),
-			'url'   => 'https://web.archive.org/web/*/' . rawurlencode( $name ),
+			'state'    => 'ok',
+			'date'     => substr( $ts, 0, 4 ) . '-' . substr( $ts, 4, 2 ) . '-' . substr( $ts, 6, 2 ),
+			'url'      => 'https://web.archive.org/web/*/' . rawurlencode( $name ),
+			'fallback' => 1, // the full index timed out: not cached, asked again next time (TL-9)
 		);
 	}
 }
@@ -576,9 +584,17 @@ if ( ! function_exists( 'db_lk_collect' ) ) {
 					$data['estimate'] = db_lk_estimate( $name );
 					break;
 			}
-			$data['done'][] = $part;
+			// A provider that failed is asked again next time instead of caching the failure for six
+			// hours (TL-9), and "Checked" moves only when something was actually fetched (TL-8).
+			$res = $data[ $part ] ?? null;
+			if ( ! ( is_array( $res ) && 'unavailable' === ( $res['state'] ?? '' ) ) && ! ( is_array( $res ) && ! empty( $res['fallback'] ) ) ) {
+				$data['done'][] = $part;
+			}
+			$fetched = true;
 		}
-		$data['checked'] = gmdate( 'Y-m-d H:i' ) . ' UTC';
+		if ( ! empty( $fetched ) || empty( $data['checked'] ) ) {
+			$data['checked'] = gmdate( 'Y-m-d H:i' ) . ' UTC';
+		}
 		set_transient( $key, $data, 6 * HOUR_IN_SECONDS );
 		$empty = array(
 			'registry'    => array( 'state' => 'skipped' ),
@@ -636,8 +652,12 @@ add_action( 'rest_api_init', function () {
 			if ( $bad ) {
 				return $send( array( 'error' => 'Unknown parts: ' . implode( ', ', $bad ) . '. Use any of: ' . implode( ', ', db_lk_parts() ) . '.' ), 400 );
 			}
-			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
-			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
+			// A result already in the cache costs nothing, so it does not count against the limit (TL-16).
+			$cached = get_transient( 'db_lk3_' . md5( $name ) );
+			$need   = $want ? $want : db_lk_parts();
+			$fresh  = is_array( $cached ) && ! array_diff( $need, (array) ( $cached['done'] ?? array() ) );
+			$ip     = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
+			if ( ! $fresh && function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup|' . $ip, 20, 10 * MINUTE_IN_SECONDS ) ) {
 				return $send( array( 'error' => 'Too many lookups. Please wait a few minutes and try again.' ), 429 );
 			}
 			$data  = db_lk_collect( $name, $want );
@@ -716,12 +736,12 @@ add_action( 'rest_api_init', function () {
 			if ( ! preg_match( '/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $label ) ) {
 				return $send( array( 'error' => 'Enter a name such as example.' ), 400 );
 			}
-			$ip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
-			if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup-ext|' . $ip, 6, 10 * MINUTE_IN_SECONDS ) ) {
-				return $send( array( 'error' => 'Too many checks. Please wait a few minutes and try again.' ), 429 );
-			}
 			$key  = 'db_lk_ext_' . md5( $label );
 			$data = get_transient( $key );
+			$ip   = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
+			if ( ! is_array( $data ) && function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'lookup-ext|' . $ip, 6, 10 * MINUTE_IN_SECONDS ) ) {
+				return $send( array( 'error' => 'Too many checks. Please wait a few minutes and try again.' ), 429 );
+			}
 			if ( ! is_array( $data ) ) {
 				$data = array( 'label' => $label, 'results' => db_lk_extensions( $label ) );
 				set_transient( $key, $data, 2 * HOUR_IN_SECONDS );
