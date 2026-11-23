@@ -27,7 +27,7 @@ if ( ! function_exists( 'db_ad_export_array' ) ) {
 	 * @param array  $orders Rows with domain, kind, price, paid, plan_months, status, created_at.
 	 * @return array
 	 */
-	function db_ad_export_array( $email, array $row, array $saved, array $orders ) {
+	function db_ad_export_array( $email, array $row, array $saved, array $orders, array $extra = array() ) {
 		$profile = json_decode( (string) ( $row['profile'] ?? '' ), true );
 		$out     = array(
 			'exported_at' => gmdate( 'c' ),
@@ -54,6 +54,39 @@ if ( ! function_exists( 'db_ad_export_array' ) ) {
 				'plan_months' => (int) ( $o['plan_months'] ?? 0 ),
 				'status'      => (string) ( $o['status'] ?? '' ),
 				'date'        => (string) ( $o['created_at'] ?? '' ),
+			);
+		}
+		// Alerts, offers and the alert-email setting are personal data too (AC-14). Deal tokens
+		// are left out: they work like passwords for the checkout link.
+		$out['email_alerts'] = ! array_key_exists( 'email_alerts', $extra ) || ! empty( $extra['email_alerts'] );
+		$out['alerts']       = array();
+		foreach ( (array) ( $extra['alerts'] ?? array() ) as $a ) {
+			$out['alerts'][] = array(
+				'kind'    => (string) ( $a['kind'] ?? '' ),
+				'message' => (string) ( $a['message'] ?? '' ),
+				'date'    => (string) ( $a['created_at'] ?? '' ),
+				'read'    => (string) ( $a['read_at'] ?? '' ),
+			);
+		}
+		$out['offers'] = array();
+		foreach ( (array) ( $extra['offers'] ?? array() ) as $d ) {
+			$msgs = array();
+			foreach ( (array) ( $d['events'] ?? array() ) as $e ) {
+				$msgs[] = array(
+					'from'    => (string) ( $e['actor'] ?? '' ),
+					'action'  => (string) ( $e['action'] ?? '' ),
+					'amount'  => round( (float) ( $e['amount'] ?? 0 ), 2 ),
+					'message' => (string) ( $e['message'] ?? '' ),
+					'date'    => (string) ( $e['created_at'] ?? '' ),
+				);
+			}
+			$out['offers'][] = array(
+				'domain'   => (string) ( $d['domain'] ?? '' ),
+				'amount'   => round( (float) ( $d['amount'] ?? 0 ), 2 ),
+				'state'    => (string) ( $d['state'] ?? '' ),
+				'started'  => (string) ( $d['created_at'] ?? '' ),
+				'updated'  => (string) ( $d['updated_at'] ?? '' ),
+				'messages' => $msgs,
 			);
 		}
 		return $out;
@@ -125,8 +158,23 @@ add_action( 'rest_api_init', function () {
 				$ot     = db_orders_table();
 				$orders = (array) $wpdb->get_results( $wpdb->prepare( "SELECT domain, kind, price, paid, plan_months, status, created_at FROM {$ot} WHERE buyer_email = %s ORDER BY id DESC", $email ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			}
-			$row = function_exists( 'db_acct_row' ) ? ( db_acct_row( $email ) ?: array() ) : array();
-			return $send( array( 'ok' => true, 'data' => db_ad_export_array( $email, $row, $saved, $orders ) ) );
+			$row   = function_exists( 'db_acct_row' ) ? ( db_acct_row( $email ) ?: array() ) : array();
+			$extra = array(
+				'alerts' => (array) $wpdb->get_results( $wpdb->prepare( "SELECT kind, message, created_at, read_at FROM {$wpdb->prefix}db_wl_notes WHERE email = %s ORDER BY id DESC", $email ), ARRAY_A ), // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				'offers' => array(),
+			);
+			if ( function_exists( 'db_acct_emails_on' ) ) {
+				$extra['email_alerts'] = (bool) db_acct_emails_on( $email );
+			}
+			if ( function_exists( 'db_deal_table' ) ) {
+				$dt = db_deal_table();
+				$et = db_deal_table( 'events' );
+				foreach ( (array) $wpdb->get_results( $wpdb->prepare( "SELECT id, domain, amount, state, created_at, updated_at FROM {$dt} WHERE LOWER(buyer_email) = %s ORDER BY id DESC", strtolower( $email ) ), ARRAY_A ) as $d ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$d['events']       = (array) $wpdb->get_results( $wpdb->prepare( "SELECT actor, action, amount, message, created_at FROM {$et} WHERE deal_id = %d ORDER BY id ASC", (int) $d['id'] ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$extra['offers'][] = $d;
+				}
+			}
+			return $send( array( 'ok' => true, 'data' => db_ad_export_array( $email, $row, $saved, $orders, $extra ) ) );
 		},
 	) );
 

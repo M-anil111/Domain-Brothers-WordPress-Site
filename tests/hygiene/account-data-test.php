@@ -18,6 +18,15 @@ check( 'saved domains listed', array( 'a.com', 'b.ca' ) === $out['saved_domains'
 check( 'order numbers are typed', 1000.0 === $out['orders'][0]['price'] && 6 === $out['orders'][0]['plan_months'] );
 check( 'ip hash is not exported', false === strpos( $json, 'aaaaaaaa' ) );
 check( 'payment ids are not exported', false === strpos( $json, 'pi_secret' ) );
+$full = db_ad_export_array( 'sam@example.test', array(), array(), array(), array(
+	'email_alerts' => false,
+	'alerts'       => array( array( 'kind' => 'match', 'message' => 'New match: a.com', 'created_at' => '2026-03-01', 'read_at' => '' ) ),
+	'offers'       => array( array( 'id' => 9, 'token' => 'tok_secret', 'domain' => 'a.com', 'amount' => '900', 'state' => 'countered', 'created_at' => '2026-03-02', 'updated_at' => '2026-03-03', 'events' => array( array( 'actor' => 'buyer', 'action' => 'offer', 'amount' => '900', 'message' => 'Hi', 'created_at' => '2026-03-02' ) ) ) ),
+) );
+check( 'AC-14: alerts are exported', 'New match: a.com' === $full['alerts'][0]['message'] );
+check( 'AC-14: offers and their messages are exported', 'countered' === $full['offers'][0]['state'] && 'Hi' === $full['offers'][0]['messages'][0]['message'] );
+check( 'AC-14: the alert-email setting is exported', false === $full['email_alerts'] );
+check( 'AC-14: deal tokens are never exported', false === strpos( json_encode( $full ), 'tok_secret' ) );
 check( 'empty row still exports cleanly', is_object( db_ad_export_array( 'x@example.test', array(), array(), array() )['account']['profile_answers'] ) );
 check( 'confirm matches ignoring case and spaces', db_ad_confirm_ok( 'sam@example.test', '  SAM@Example.test ' ) );
 check( 'confirm rejects other text', ! db_ad_confirm_ok( 'sam@example.test', 'sam' ) && ! db_ad_confirm_ok( 'sam@example.test', '' ) );
