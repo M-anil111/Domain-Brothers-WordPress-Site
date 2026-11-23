@@ -95,7 +95,9 @@ if ( ! function_exists( 'db_plan_schedule' ) ) {
 			$state  = $i <= $paid ? 'paid' : ( $i === $next ? ( 'past_due' === ( $plan['status'] ?? '' ) ? 'overdue' : 'next' ) : 'scheduled' );
 			$rows[] = array(
 				'n'       => $i,
-				'due'     => 1 === $i ? $start : (int) db_plan_add_months( $start, $i - 1 ),
+				// The next payment shows the stored charge date the daily run uses, so the page and
+				// the charge can never disagree (QA report 2026-11-23, DB-10).
+				'due'     => 1 === $i ? $start : ( $i === $next && (int) ( $plan['next_charge_ts'] ?? 0 ) > 0 ? (int) $plan['next_charge_ts'] : (int) db_plan_add_months( $start, $i - 1 ) ),
 				'amount'  => db_stripe_installment_cents( $price, $months, $i, db_plan_rate_of( $plan ) ) / 100,
 				'state'   => $state,
 				'paid_ts' => (int) ( $hist[ $i - 1 ]['ts'] ?? 0 ),
