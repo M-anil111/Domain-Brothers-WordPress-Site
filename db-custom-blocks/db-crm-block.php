@@ -1563,3 +1563,34 @@ add_filter( 'wpcf7_validate', function ( $result, $tags ) {
 	}
 	return $result;
 }, 20, 2 );
+
+// Offers only for names that can be bought: the domain comes from a hidden field the visitor can
+// edit, so a sold, reserved or not-for-sale listing is refused here, on the server (CK-23).
+// Names that are not listed at all stay allowed: a broker can still source them.
+add_filter( 'wpcf7_validate', function ( $result, $tags ) {
+	if ( ! function_exists( 'db_offer_value' ) || ! function_exists( 'db_listing_post_for_domain' ) || ! function_exists( 'db_listing_is_sellable' ) ) {
+		return $result;
+	}
+	$form = class_exists( 'WPCF7_ContactForm' ) ? WPCF7_ContactForm::get_current() : null;
+	if ( function_exists( 'db_is_offer_form' ) && ! db_is_offer_form( $form ) ) {
+		return $result;
+	}
+	$domain = strtolower( db_offer_value( wp_unslash( $_POST ), 'domain' ) ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$post   = '' !== $domain ? db_listing_post_for_domain( $domain ) : null;
+	if ( ! $post || db_listing_is_sellable( $post ) ) {
+		return $result;
+	}
+	$target = null;
+	foreach ( (array) $tags as $tag ) {
+		$name   = is_object( $tag ) ? $tag->name : ( $tag['name'] ?? '' );
+		$target = $target ? $target : $tag;
+		if ( in_array( $name, db_offer_field_map()['domain'], true ) ) {
+			$target = $tag;
+			break;
+		}
+	}
+	if ( $target ) {
+		$result->invalidate( $target, $post->post_title . ' is not available for offers. Browse other names on our All Domains page.' );
+	}
+	return $result;
+}, 21, 2 );
