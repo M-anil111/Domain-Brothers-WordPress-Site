@@ -471,3 +471,35 @@ add_action( 'template_redirect', function () {
 		return db_ad_clean_rows_html( $html, db_ad_unsold_slugs(), home_url( '/domains/' ) );
 	} );
 }, -998 ); // before any route that renders and exits; inside the page cache's buffer
+
+if ( ! function_exists( 'db_ad_heading_count_html' ) ) {
+	/** Pure: replaces the number in the archive heading's "<span>N Domains</span>". */
+	function db_ad_heading_count_html( $html, $n ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		$n = (int) $n;
+		return (string) preg_replace( '#(<h1\b[^>]*class=["\'][^"\']*page-title[^>]*>.*?<span>)\d+\s+Domains?(</span>)#is', '${1}' . $n . ( 1 === $n ? ' Domain' : ' Domains' ) . '${2}', $html, 1 );
+	}
+}
+
+// Category headings counted every published name, sold ones included ("Business Names - 98
+// Domains" while 76 are listed; bug register batch 2, LS-6). The number is now the names for sale
+// in that category, the same set the list shows.
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_tax( 'domain_category' ) || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	$term = get_queried_object();
+	if ( ! $term instanceof WP_Term ) {
+		return;
+	}
+	$for_sale = array_map( static function ( $r ) {
+		return (int) $r['id'];
+	}, db_domain_index() );
+	$in_term  = get_objects_in_term( (int) $term->term_id, 'domain_category' );
+	$n        = is_array( $in_term ) ? count( array_intersect( array_map( 'intval', $in_term ), $for_sale ) ) : 0;
+	ob_start( static function ( $html ) use ( $n ) {
+		return db_ad_heading_count_html( $html, $n );
+	} );
+}, -996 );

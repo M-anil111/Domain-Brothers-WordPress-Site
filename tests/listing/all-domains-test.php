@@ -52,5 +52,6 @@ check( 'home rows: an offer button pointing at another listing is repointed to i
 check( 'home rows: correct rows and header rows are unchanged', false !== strpos( $out, "<tr><td><a href=\"{$b}good-com/\">good.com</a></td><td><a href=\"{$b}good-com/\">Buy</a></td></tr><tr><th>Name</th></tr>" ) );
 check( 'home rows: front-page query keeps its own page size', 8 === db_ad_only_for_sale_vars( array( 'post_type' => 'domain', 'posts_per_page' => 8 ), array( 1, 2 ) )['posts_per_page'] && array( 1, 2 ) === db_ad_only_for_sale_vars( array( 'posts_per_page' => 8 ), array( 1, 2 ) )['post__in'] );
 
+check( 'LS-6: the category heading shows the for-sale count', false !== strpos( db_ad_heading_count_html( '<h1 class="page-title" style="x">Business Names &mdash; <span>98 Domains</span></h1>', 76 ), '<span>76 Domains</span>' ) && false !== strpos( db_ad_heading_count_html( '<h1 class="page-title">X <span>3 Domains</span></h1>', 1 ), '<span>1 Domain</span>' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
