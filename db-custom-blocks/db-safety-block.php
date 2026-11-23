@@ -89,6 +89,7 @@ if ( ! function_exists( 'db_safety_record_fatal' ) ) {
 		foreach ( $log as $i => $prev ) {
 			if ( isset( $prev['file'], $prev['line'] ) && $prev['file'] === $entry['file'] && $prev['line'] === $entry['line'] ) {
 				$entry['count'] = isset( $prev['count'] ) ? (int) $prev['count'] + 1 : 2;
+				$entry['first'] = isset( $prev['first'] ) ? $prev['first'] : ( isset( $prev['time'] ) ? $prev['time'] : $entry['time'] );
 				unset( $log[ $i ] );
 				break;
 			}

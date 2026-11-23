@@ -11,7 +11,7 @@ function check( $name, $ok ) { global $pass, $fail; if ( $ok ) { $pass++; echo "
 
 $t0  = strtotime( '2026-11-20 10:00:00 UTC' );
 $log = array(
-	array( 'time' => '2026-11-20 12:00:00', 'uri' => '/pay/', 'msg' => "Uncaught Error:\n  boom", 'file' => '/home/u/public_html/wp-content/plugins/db-custom-blocks/x.php', 'line' => 42, 'count' => 3 ),
+	array( 'time' => '2026-11-20 12:00:00', 'uri' => '/pay/', 'msg' => "Uncaught Error:\n  boom", 'file' => '/home/u/public_html/wp-content/plugins/db-custom-blocks/x.php', 'line' => 42, 'count' => 3, 'first' => '2026-11-20 11:00:00' ),
 	array( 'time' => '2026-11-20 09:00:00', 'uri' => '/old/', 'msg' => 'old problem', 'file' => '/a/b.php', 'line' => 1 ),
 );
 check( 'nothing new means no alert', null === db_alert_body( $log, strtotime( '2026-11-20 13:00:00 UTC' ), 'beta.example.test' ) );
@@ -28,6 +28,18 @@ check( 'two new entries use the plural', false !== strpos( $all['subject'], '2 n
 $many = array();
 for ( $i = 0; $i < 8; $i++ ) { $many[] = array( 'time' => '2026-11-20 12:0' . $i . ':00', 'msg' => 'm' . $i, 'file' => 'f.php', 'line' => $i, 'uri' => '/' ); }
 check( 'more than five are summarised', false !== strpos( db_alert_body( $many, 0, 'h' )['body'], '... and 3 more.' ) );
+
+// AD-1: a recurring fatal is mailed as new once, then at most once a day as "still happening".
+$rec  = array( array( 'time' => '2026-11-20 14:00:00', 'msg' => 'string * int', 'file' => '/t/payment-successful.php', 'line' => 121, 'uri' => '/payment-successful/', 'count' => 48, 'first' => '2026-11-19 08:00:00' ) );
+$now1 = strtotime( '2026-11-20 14:05:00 UTC' );
+$r1   = db_alert_body( $rec, strtotime( '2026-11-20 13:00:00 UTC' ), 'h', array(), $now1 );
+check( 'a repeat of a known error is a daily reminder, not a new error', null !== $r1 && false !== strpos( $r1['subject'], 'still happening' ) && false === strpos( $r1['subject'], 'new' ) );
+$r2   = db_alert_body( $rec, strtotime( '2026-11-20 13:59:00 UTC' ), 'h', $r1['seen'], $now1 + 3600 );
+check( 'the same repeat one hour later sends nothing', null === $r2 );
+$r3   = db_alert_body( $rec, strtotime( '2026-11-20 13:59:00 UTC' ), 'h', $r1['seen'], $now1 + 86400 );
+check( 'a day later it is mentioned again', null !== $r3 );
+$fresh = array( array( 'time' => '2026-11-20 14:00:00', 'msg' => 'new bug', 'file' => '/t/n.php', 'line' => 9, 'uri' => '/', 'count' => 4, 'first' => '2026-11-20 13:30:00' ) );
+check( 'an error first seen since the last alert is new even if it already repeated', false !== strpos( db_alert_body( $fresh, strtotime( '2026-11-20 13:00:00 UTC' ), 'h', array(), $now1 )['subject'], '1 new PHP fatal error' ) );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
