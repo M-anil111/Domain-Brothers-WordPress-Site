@@ -460,11 +460,17 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
-add_action( 'updated_post_meta', function ( $mid, $pid, $key ) {
-	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state' ), true ) ) {
-		delete_transient( 'db_search_hints' );
-	}
-}, 10, 3 );
+// Added and deleted meta count too: marking a name sold adds db_listing_state for the first
+// time, which left it in 'Popular' and 'Just listed' for up to an hour (LS-17).
+foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta' ) as $db_hd_meta_hook ) {
+	add_action( $db_hd_meta_hook, function ( $mid, $pid, $key ) {
+		if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state' ), true ) ) {
+			delete_transient( 'db_search_hints' );
+			delete_transient( 'db_pages_set_counts' );
+		}
+	}, 10, 3 );
+}
+unset( $db_hd_meta_hook );
 add_action( 'save_post_domain', function () {
 	delete_transient( 'db_search_hints' );
 } );
