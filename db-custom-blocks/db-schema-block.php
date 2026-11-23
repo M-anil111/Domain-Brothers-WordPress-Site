@@ -221,3 +221,52 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_schema_strip_theme_person' );
 }, 97 );
+
+if ( ! function_exists( 'db_schema_missing_theme_image' ) ) {
+	/** True for a URL inside the active theme whose file does not exist (a 404 when shared). */
+	function db_schema_missing_theme_image( $url ) {
+		$base = trailingslashit( get_template_directory_uri() );
+		$url  = (string) $url;
+		if ( 0 !== strpos( preg_replace( '#^https?:#', '', $url ), preg_replace( '#^https?:#', '', $base ) ) ) {
+			return false;
+		}
+		$rel = substr( preg_replace( '#^https?:#', '', strtok( $url, '?' ) ), strlen( preg_replace( '#^https?:#', '', $base ) ) );
+		return '' !== $rel && ! file_exists( trailingslashit( get_template_directory() ) . $rel );
+	}
+}
+
+if ( ! function_exists( 'db_schema_default_image' ) ) {
+	/** The site's default share image. */
+	function db_schema_default_image() {
+		$att = (int) get_option( 'db_og_default_attachment' );
+		$url = $att ? (string) wp_get_attachment_url( $att ) : '';
+		return '' !== $url ? $url : ( function_exists( 'db_aeo_og_image' ) ? db_aeo_og_image() : '' );
+	}
+}
+
+// og:image, twitter:image and the schema's ImageObject on /acquire-social-media-handles/ pointed to
+// a theme image that no longer exists (HTTP 404). Missing theme images fall back to the default
+// share image (bug register batch 2, SE-9).
+foreach ( array( 'rank_math/opengraph/facebook/image', 'rank_math/opengraph/twitter/image' ) as $db_hook ) {
+	add_filter( $db_hook, static function ( $url ) {
+		return db_schema_missing_theme_image( $url ) && '' !== db_schema_default_image() ? db_schema_default_image() : $url;
+	} );
+}
+unset( $db_hook );
+add_filter( 'rank_math/json_ld', static function ( $data ) {
+	if ( ! is_array( $data ) ) {
+		return $data;
+	}
+	$fix = static function ( $v ) use ( &$fix ) {
+		if ( ! is_array( $v ) ) {
+			return ( is_string( $v ) && db_schema_missing_theme_image( $v ) && '' !== db_schema_default_image() ) ? db_schema_default_image() : $v;
+		}
+		foreach ( $v as $k => $x ) {
+			if ( in_array( $k, array( 'url', 'contentUrl', 'image', '@id' ), true ) || is_array( $x ) ) {
+				$v[ $k ] = $fix( $x );
+			}
+		}
+		return $v;
+	};
+	return $fix( $data );
+}, 1000 );
