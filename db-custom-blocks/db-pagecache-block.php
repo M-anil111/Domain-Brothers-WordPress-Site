@@ -249,7 +249,33 @@ register_deactivation_hook( dirname( __FILE__ ) . '/db-custom-blocks.php', funct
 	db_speed_ini_sync();
 	delete_option( 'db_speed_switches' );
 	delete_option( 'db_speed_dropins_sig' );
+	// Remove every scheduled event of this plugin, so none is left running without its code (AD-11).
+	db_pc_clear_plugin_crons();
 } );
+
+if ( ! function_exists( 'db_pc_clear_plugin_crons' ) ) {
+	/** Unschedules every cron event whose hook starts with db_. */
+	function db_pc_clear_plugin_crons() {
+		$hooks = array();
+		foreach ( (array) _get_cron_array() as $events ) {
+			foreach ( array_keys( (array) $events ) as $hook ) {
+				if ( 0 === strpos( (string) $hook, 'db_' ) ) {
+					$hooks[ $hook ] = true;
+				}
+			}
+		}
+		foreach ( array_keys( $hooks ) as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
+	}
+}
+
+// db_news_refresh_event has no handler left in the plugin; an old copy kept it scheduled hourly (AD-11).
+add_action( 'init', function () {
+	if ( ! has_action( 'db_news_refresh_event' ) && wp_next_scheduled( 'db_news_refresh_event' ) ) {
+		wp_clear_scheduled_hook( 'db_news_refresh_event' );
+	}
+}, 99 );
 
 /* ------------------------------------------------------------- purging */
 
