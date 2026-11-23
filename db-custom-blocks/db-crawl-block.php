@@ -443,3 +443,23 @@ add_action( 'template_redirect', function () {
 		return db_crawl_strip_home_redirect( $html, home_url( '/' ) );
 	} );
 }, 98 );
+
+/* ------------------------------------------------ archive and search fixes */
+
+// The theme's /domains/ archive links every name to /<name>/detail/ (a 301 to an unrelated post)
+// and counts sold names; All Domains is the list buyers use (bug register batch 2, LS-5).
+add_action( 'template_redirect', function () {
+	if ( db_crawl_is_front_request() && is_post_type_archive( 'domain' ) && ! is_search() ) {
+		wp_safe_redirect( home_url( '/all-domains/' ), 301 );
+		exit;
+	}
+}, 1 );
+
+// Site search without post_type finds domains too: the 404 form, the theme's search form and the
+// SearchAction schema all search the whole site, and a buyer typing a name found nothing (LS-7).
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || ! $q->is_main_query() || ! $q->is_search() || '' !== (string) $q->get( 'post_type' ) ) {
+		return;
+	}
+	$q->set( 'post_type', array( 'domain', 'post', 'page' ) );
+} );
