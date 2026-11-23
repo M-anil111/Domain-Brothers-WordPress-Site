@@ -369,8 +369,10 @@ if ( ! function_exists( 'db_connect_webhook' ) ) {
 	function db_connect_webhook( WP_REST_Request $request ) {
 		$secret = db_connect_wh_secret();
 		if ( '' === $secret ) {
-			error_log( 'db-connect: webhook received but no signing secret is set (option db_connect_wh_secret_' . db_connect_mode() . ').' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			return new WP_REST_Response( array( 'error' => 'Signing secret not configured.' ), 500 );
+			if ( function_exists( 'db_wh_log_limited' ) ) {
+				db_wh_log_limited( 'connect', 'db-connect: webhook received but no signing secret is set (option db_connect_wh_secret_' . db_connect_mode() . ').' );
+			}
+			return new WP_REST_Response( array( 'error' => 'Not available.' ), 503 );
 		}
 		$client = db_connect_client();
 		if ( is_wp_error( $client ) ) {

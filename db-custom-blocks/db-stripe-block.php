@@ -1392,11 +1392,31 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_wh_log_limited' ) ) {
+	/**
+	 * Writes a webhook failure to the PHP error log at most once per IP per hour, so unsigned
+	 * calls from anywhere cannot flood the log (SC-15). Repeats are counted in the same line.
+	 */
+	function db_wh_log_limited( $kind, $message ) {
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$key = 'db_whlog_' . md5( $kind . '|' . $ip . '|' . gmdate( 'YmdH' ) );
+		$n   = (int) get_transient( $key );
+		set_transient( $key, $n + 1, HOUR_IN_SECONDS );
+		if ( 0 === $n ) {
+			error_log( $message . ' (further failures from this address this hour are not logged)' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
+	}
+}
+
 // ─── Init fallback webhook (?db_stripe_wh=1) ──────────────────────────────────
 
 add_action( 'init', static function () {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! isset( $_GET['db_stripe_wh'] ) || '1' !== $_GET['db_stripe_wh'] ) {
+		return;
+	}
+	// Stripe only POSTs; a GET on any URL with this parameter is ignored (SC-15).
+	if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		return;
 	}
 	db_stripe_handle_webhook( null );
@@ -1430,8 +1450,8 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 		$event  = $secret ? db_stripe_verify_webhook_sig( $payload, $sig_header, $secret ) : null;
 
 		if ( null === $event ) {
-			error_log( 'DB Stripe: Webhook signature verification failed.' );
-			return db_stripe_wh_respond( $request, [ 'error' => 'Invalid signature.' ], 400 );
+			db_wh_log_limited( 'stripe', 'DB Stripe: Webhook signature verification failed.' );
+			return db_stripe_wh_respond( $request, [ 'error' => 'Bad request.' ], 400 );
 		}
 
 		$event_id   = (string) ( $event['id'] ?? '' );
