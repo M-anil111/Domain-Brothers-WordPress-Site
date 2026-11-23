@@ -89,3 +89,78 @@ add_filter( 'wp_sitemaps_taxonomies', function ( $taxonomies ) {
 	unset( $taxonomies['post_tag'] );
 	return $taxonomies;
 } );
+
+/*
+ * Monthly "Top 10 Domains" lists from 2017-2018 (SE-14). Their names link to "javascript:void(0)",
+ * the Buy Now cells do nothing, and the 10% discounts and final prices are long gone. The posts stay
+ * online as an archive: noindex, follow and out of the sitemap; names still for sale link to their
+ * page, the rest say they are no longer listed; a note above the list gives its month.
+ */
+if ( ! function_exists( 'db_index_is_top10_archive' ) ) {
+	function db_index_is_top10_archive( $post ) {
+		$post = get_post( $post );
+		return $post instanceof WP_Post && 'post' === $post->post_type
+			&& (bool) preg_match( '/^top-10-(domains-of-[a-z]+(-\d+)?|premium-domains)$/', (string) $post->post_name );
+	}
+}
+
+if ( ! function_exists( 'db_index_top10_content' ) ) {
+	/**
+	 * Rewrites one archived Top-10 list. Pure: $live maps a domain name to its live URL or ''.
+	 *
+	 * @param string   $html  Post content.
+	 * @param callable $live  fn( string $name ): string.
+	 * @param string   $month For example "July 2018".
+	 */
+	function db_index_top10_content( $html, $live, $month ) {
+		$html = preg_replace_callback( '#<tr\b[^>]*>(.*?)</tr>#is', function ( $m ) use ( $live ) {
+			$row = $m[0];
+			if ( ! preg_match( '#<a\b[^>]*href=["\']\s*javascript:[^"\']*["\'][^>]*>(.*?)</a>#is', $row, $a ) ) {
+				return $row;
+			}
+			$name = trim( wp_strip_all_tags( $a[1] ) );
+			$url  = '' !== $name ? (string) call_user_func( $live, $name ) : '';
+			$row  = str_replace( $a[0], '' !== $url ? '<a href="' . esc_url( $url ) . '">' . esc_html( $name ) . '</a>' : esc_html( $name ), $row );
+			return preg_replace( '#<span class="buy-now-dmn">\s*Buy Now\s*</span>#i', '' !== $url ? '<a class="buy-now-dmn" href="' . esc_url( $url ) . '">See today&rsquo;s price</a>' : '<span class="buy-now-dmn is-gone">No longer listed</span>', $row );
+		}, (string) $html );
+		// Any other dead javascript: link keeps its text only.
+		$html = preg_replace( '#<a\b[^>]*href=["\']\s*javascript:[^"\']*["\'][^>]*>(.*?)</a>#is', '$1', $html );
+		$note = '<p class="db-archive-note"><strong>From our archive' . ( '' !== $month ? ' (' . esc_html( $month ) . ')' : '' ) . '.</strong> The discounts and prices below were offered at the time and no longer apply. '
+			. 'See <a href="' . esc_url( home_url( '/all-domains/' ) ) . '">every domain for sale today</a>.</p>';
+		return $note . $html;
+	}
+}
+
+add_filter( 'the_content', function ( $content ) {
+	if ( is_admin() || ! is_singular( 'post' ) || ! in_the_loop() || ! is_main_query() || ! db_index_is_top10_archive( get_the_ID() ) ) {
+		return $content;
+	}
+	$live = function ( $name ) {
+		$ids = get_posts( array( 'post_type' => 'domain', 'post_status' => 'publish', 'title' => $name, 'posts_per_page' => 1, 'fields' => 'ids', 'no_found_rows' => true ) );
+		return $ids ? (string) get_permalink( (int) $ids[0] ) : '';
+	};
+	$month = (string) preg_replace( '/^Top 10 Domains of\s*/i', '', get_the_title() );
+	return db_index_top10_content( $content, $live, preg_match( '/\d{4}$/', $month ) ? $month : '' );
+}, 9 );
+
+add_filter( 'wp_robots', function ( $robots ) {
+	if ( is_singular( 'post' ) && db_index_is_top10_archive( get_queried_object() ) ) {
+		$robots['noindex'] = true;
+		$robots['follow']  = true;
+		unset( $robots['index'], $robots['nofollow'] );
+	}
+	return $robots;
+}, 26 );
+
+// Rank Math head and sitemap. Priority 25: the staging rule (30) still wins on beta.
+add_filter( 'rank_math/frontend/robots', static function ( $robots ) {
+	if ( is_array( $robots ) && is_singular( 'post' ) && db_index_is_top10_archive( get_queried_object() ) ) {
+		$robots['index']  = 'noindex';
+		$robots['follow'] = 'follow';
+	}
+	return $robots;
+}, 25 );
+
+add_filter( 'rank_math/sitemap/entry', function ( $url, $type, $post ) {
+	return ( 'post' === $type && is_object( $post ) && isset( $post->ID ) && db_index_is_top10_archive( $post->ID ) ) ? false : $url;
+}, 10, 3 );

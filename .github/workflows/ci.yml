@@ -53,7 +53,7 @@ jobs:
                    tests/security/forms-test.php tests/security/test-data-test.php \
                    tests/hygiene/hygiene-test.php tests/hygiene/learn-test.php \
                    tests/hygiene/resolve-test.php tests/hygiene/alert-test.php tests/hygiene/similar-test.php tests/hygiene/events-test.php tests/hygiene/account-data-test.php tests/hygiene/hero-test.php tests/domain/domain-tools-test.php tests/domain/lookup-dns-test.php tests/security/query-arrays-test.php tests/security/offer-token-test.php tests/security/money-test.php tests/hygiene/page-actions-test.php tests/hygiene/offer-page-test.php tests/designer/ui-fixes-test.php tests/seller/seller-test.php \
-                   tests/seo/crawl-test.php tests/seo/schema-test.php tests/a11y/home-landmark-test.php; do
+                   tests/seo/crawl-test.php tests/seo/schema-test.php tests/a11y/home-landmark-test.php tests/seo/top10-archive-test.php; do
             echo "== $t"
             php "$t" || fail=1
           done
