@@ -81,5 +81,6 @@ ok( array( 'year' => 0, 'registrar' => '' ) === db_tools_rdap_parse( 'not json' 
 $bad = db_tools_rdap_parse( json_encode( array( 'events' => array( array( 'eventAction' => 'registration', 'eventDate' => '2999-01-01T00:00:00Z' ) ) ) ) );
 ok( 0 === $bad['year'], 'a registration year in the future is ignored' );
 
+
 echo $fails ? "\n$fails FAILED\n" : "\nALL PASSED\n";
 exit( $fails ? 1 : 0 );

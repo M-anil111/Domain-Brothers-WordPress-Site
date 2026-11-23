@@ -102,6 +102,19 @@ if ( ! function_exists( 'db_lk_registry' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_display_rows' ) ) {
+	/** Pure: at most $max rows for display, with "and N more" when some were left out. */
+	function db_lk_display_rows( array $rows, $max ) {
+		$rows = array_values( $rows );
+		if ( count( $rows ) <= $max ) {
+			return $rows;
+		}
+		$shown   = array_slice( $rows, 0, $max );
+		$shown[] = 'and ' . ( count( $rows ) - $max ) . ' more';
+		return $shown;
+	}
+}
+
 if ( ! function_exists( 'db_lk_dns' ) ) {
 	/** @return array<string,mixed> */
 	function db_lk_dns( $name ) {
@@ -115,12 +128,16 @@ if ( ! function_exists( 'db_lk_dns' ) ) {
 					$rows[] = sanitize_text_field( trim( (string) $a['data'], '" ' ) );
 				}
 			}
-			$out[ $type ] = array_slice( $rows, 0, 6 );
+			if ( 'TXT' === $type ) {
+				// SPF is looked for in the whole answer: cutting TXT to six rows first reported
+				// "Not found" for domains with many TXT records (bug register batch 2, TL-2).
+				$out['SPF'] = (bool) array_filter( $rows, static function ( $t ) { return 0 === stripos( $t, 'v=spf1' ); } );
+			}
+			$out[ $type ] = db_lk_display_rows( $rows, 10 );
 			if ( 'A' === $type ) {
 				$out['AD'] = ! empty( $r['json']['AD'] );
 			}
 		}
-		$out['SPF'] = (bool) array_filter( $out['TXT'], static function ( $t ) { return 0 === stripos( $t, 'v=spf1' ); } );
 		unset( $out['TXT'] );
 		return $out;
 	}
