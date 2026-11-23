@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.150.20
+ * Version:     3.150.21
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.150.20' );
+define( 'DB_BLOCKS_LOADED', '3.150.21' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -944,7 +944,7 @@ function db_plan_widget_html() {
 			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
 		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
-		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
+		<div class="db-plan-terms" role="group" aria-label="Payment terms"></div><?php // toggle buttons, not half-built tabs (AX-11) ?>
 		<div class="db-plan-summary">
 			<div class="db-plan-monthly">
 				<span class="db-plan-monthly-label">Monthly payment</span>
@@ -1037,8 +1037,7 @@ function db_plan_widget_html() {
 				var b=document.createElement('button');
 				b.type='button';
 				b.className='db-plan-term'+(m===active?' is-active':'');
-				b.setAttribute('role','tab');
-				b.setAttribute('aria-selected',m===active?'true':'false');
+				b.setAttribute('aria-pressed',m===active?'true':'false');
 				b.innerHTML='<span class="t-months">'+m+' months</span><span class="t-per">'+money(per)+'/mo</span><span class="t-per">'+(rateOf(m)?rateOf(m)+'% interest':'0% interest')+'</span>';
 				b.addEventListener('click',function(){active=m;renderTerms();renderSummary();});
 				wrap.appendChild(b);
@@ -3903,7 +3902,7 @@ add_action( 'wp_footer', function () {
 				bWrap.className = 'db-browse-tabs';
 				var bBar = document.createElement('div');
 				bBar.className = 'db-browse-tabbar';
-				bBar.setAttribute('role', 'tablist');
+				bBar.setAttribute('role', 'group'); // toggle buttons, not tabs without panels (AX-11)
 				bWrap.appendChild(bBar);
 				browseSections[0].parentNode.insertBefore(bWrap, browseSections[0]);
 				browseSections.forEach(function (sec, i) {
@@ -3913,14 +3912,13 @@ add_action( 'wp_footer', function () {
 					btn.type = 'button';
 					btn.className = 'db-browse-tab' + (i === 0 ? ' is-active' : '');
 					btn.textContent = text;
-					btn.setAttribute('role', 'tab');
-					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+										btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
 					btn.addEventListener('click', function () {
 						bBar.querySelectorAll('.db-browse-tab').forEach(function (b) {
-							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+							b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false');
 						});
 						browseSections.forEach(function (s) { s.classList.remove('is-active'); });
-						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						btn.classList.add('is-active'); btn.setAttribute('aria-pressed', 'true');
 						sec.classList.add('is-active');
 					});
 					bBar.appendChild(btn);
@@ -3958,7 +3956,7 @@ add_action( 'wp_footer', function () {
 				hWrap.className = 'db-home-tabs';
 				var hBar = document.createElement('div');
 				hBar.className = 'db-home-tabbar';
-				hBar.setAttribute('role', 'tablist');
+				hBar.setAttribute('role', 'group'); // toggle buttons, not tabs without panels (AX-11)
 				hBar.setAttribute('aria-label', 'Domain lists');
 				// One header row: tabs on the left; View all and the List/Grid switch on the right.
 				var hHead = document.createElement('div');
@@ -3982,14 +3980,13 @@ add_action( 'wp_footer', function () {
 					btn.type = 'button';
 					btn.className = 'db-home-tab' + (i === 0 ? ' is-active' : '');
 					btn.textContent = label;
-					btn.setAttribute('role', 'tab');
-					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+										btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
 					btn.addEventListener('click', function () {
 						hBar.querySelectorAll('.db-home-tab').forEach(function (b) {
-							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+							b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false');
 						});
 						homeDomainCols.forEach(function (c) { c.classList.remove('is-active'); });
-						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						btn.classList.add('is-active'); btn.setAttribute('aria-pressed', 'true');
 						col.classList.add('is-active');
 						syncAll(col);
 					});
