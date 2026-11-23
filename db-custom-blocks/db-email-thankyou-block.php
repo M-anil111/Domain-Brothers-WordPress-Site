@@ -587,7 +587,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$html .= '<div class="db-ty-timeline" role="list">';
 			$steps = array(
 				array( 'n' => 1, 'label' => 'Payment confirmed',               'sub' => 'just now',                'done' => true ),
-				array( 'n' => 2, 'label' => 'Transfer initiated',              'sub' => 'within 24 hours',         'done' => false ),
+				array( 'n' => 2, 'label' => 'Transfer initiated',              'sub' => 'within 1&ndash;2 business days', 'done' => false ),
 				array( 'n' => 3, 'label' => 'Authorization email sent to you', 'sub' => 'approve with one click',  'done' => false ),
 				array( 'n' => 4, 'label' => 'Domain live in your account',     'sub' => '2&ndash;5 days',          'done' => false ),
 			);
