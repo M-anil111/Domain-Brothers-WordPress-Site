@@ -42,7 +42,8 @@ ok( null === t( 'paid', 'buyer', 'decline' ) && null === t( 'accepted', 'buyer',
 
 // Payment.
 ok( 'paid' === t( 'accepted', 'system', 'paid' ), 'payment closes an agreed deal' );
-ok( null === t( 'declined', 'system', 'paid' ) && null === t( 'expired', 'system', 'paid' ) && null === t( 'paid', 'system', 'paid' ), 'payment cannot close a declined, expired or already paid deal' );
+ok( null === t( 'declined', 'system', 'paid' ) && null === t( 'paid', 'system', 'paid' ), 'payment cannot close a declined or already paid deal' );
+ok( 'paid' === t( 'expired', 'system', 'paid' ), 'CK-26: a payment captured after the offer expired still closes the deal as paid' );
 ok( null === t( 'open', 'stranger', 'accept' ) && null === t( 'open', 'seller', 'delete' ), 'unknown actors and actions do nothing' );
 
 // Amounts.

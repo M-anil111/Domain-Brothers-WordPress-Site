@@ -316,7 +316,9 @@ if ( ! function_exists( 'db_deal_transition' ) ) {
 			if ( 'offer' === $action && $can_restart ) {
 				return 'open';
 			}
-		} elseif ( 'system' === $actor && 'paid' === $action && in_array( $state, array( 'accepted', 'countered', 'open' ), true ) ) {
+		} elseif ( 'system' === $actor && 'paid' === $action && in_array( $state, array( 'accepted', 'countered', 'open', 'expired' ), true ) ) {
+			// 'expired' too: an offer can expire between opening checkout and paying, and a captured
+			// payment is final, so the deal must close as paid (CK-26).
 			return 'paid';
 		}
 		return null;
