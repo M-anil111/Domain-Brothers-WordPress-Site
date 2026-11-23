@@ -191,4 +191,8 @@ check( 'expiry: warn within 30 days, down when expired, nothing when unknown', '
 
 check( 'a completed sale shows as Sold, not Live (SL-3)', 'Sold' === db_seller_status( array( 'review_status' => 'sold' ) )[0] );
 
+check( 'SL-16: a 20% cut moves the minimum with the price', 720 === db_seller_scale_min( 900, 1000, 800 ) );
+check( 'SL-16: the minimum stays below the new price', db_seller_scale_min( 999, 1000, 500 ) < 500 && db_seller_scale_min( 999, 1000, 500 ) > 0 );
+check( 'SL-16: no minimum stays no minimum', 0 === db_seller_scale_min( 0, 1000, 800 ) );
+
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

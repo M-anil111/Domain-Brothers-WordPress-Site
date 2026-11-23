@@ -516,6 +516,20 @@ if ( ! function_exists( 'db_seller_adjust_price' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_seller_scale_min' ) ) {
+	/**
+	 * The private minimum after a price change: scaled by the same ratio, kept below the new price
+	 * and above zero, so the auto-counter keeps working (SL-16). No minimum stays no minimum.
+	 */
+	function db_seller_scale_min( $min, $old_price, $new_price ) {
+		$min = (int) $min; $old_price = (int) $old_price; $new_price = (int) $new_price;
+		if ( $min <= 0 || $old_price <= 0 || $new_price <= 1 ) {
+			return 0;
+		}
+		return max( 1, min( $new_price - 1, (int) round( $min * $new_price / $old_price ) ) );
+	}
+}
+
 /* ------------------------------------------------------------------ phase 2: checks, guidance, exclusive */
 
 if ( ! defined( 'DB_SELLER_EXCLUSIVE_PCT' ) ) {

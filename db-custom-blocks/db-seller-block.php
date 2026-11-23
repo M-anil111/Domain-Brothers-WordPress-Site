@@ -908,7 +908,12 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 						continue;
 					}
 					$np = db_seller_adjust_price( (int) $r['price'], (float) ( $p['pct'] ?? 0 ) );
-					$c  = array( 'option' => $r['option_type'], 'price' => $np, 'min_offer' => (int) $r['min_offer'] < $np ? (int) $r['min_offer'] : 0 );
+					// The private minimum moves with the price instead of being erased (SL-16).
+					$nm = db_seller_scale_min( (int) $r['min_offer'], (int) $r['price'], $np );
+					$c  = array( 'option' => $r['option_type'], 'price' => $np, 'min_offer' => $nm );
+					if ( (int) $r['min_offer'] && $nm !== (int) $r['min_offer'] ) {
+						$msgs[] = array( 'ok', $r['domain'] . ': minimum offer changed to $' . number_format( $nm ) . ' to match the new price.' );
+					}
 				} else {
 					return array( array( 'warn', 'Choose an action.' ) );
 				}
