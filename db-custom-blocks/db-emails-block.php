@@ -292,10 +292,18 @@ if ( ! function_exists( 'db_mail_wrap' ) ) {
 // Every HTML email also carries a plain-text version.
 add_action( 'phpmailer_init', function ( $m ) {
 	if ( 'text/html' === $m->ContentType && '' === (string) $m->AltBody ) {
-		$t = preg_replace( '#<(br|/p|/h[1-6]|/li|/tr)\s*/?>#i', "\n", (string) $m->Body );
-		$t = preg_replace( '#<style.*?</style>#is', '', $t );
-		$t = preg_replace( '#<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', '$2 ($1)', $t );
-		$m->AltBody = trim( preg_replace( "/\n{3,}/", "\n\n", html_entity_decode( wp_strip_all_tags( $t ), ENT_QUOTES, 'UTF-8' ) ) );
+		// Without the head, the title and the hidden preview line (it began every text version with
+		// the subject and 20 spacer characters), cells separated, links kept as "label (url)" (batch 2, AD-3).
+		$t = preg_replace( '#<(div|span|p)\b[^>]*display\s*:\s*none[^>]*>.*?</\1>#is', '', (string) $m->Body );
+		$t = preg_replace_callback( '#<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', static function ( $a ) {
+			$label = trim( wp_strip_all_tags( $a[2] ) );
+			return '' === $label ? '' : $label . ' (' . $a[1] . ')'; // an image-only link (the logo) adds nothing
+		}, (string) $t );
+		// Detail rows are a label and a value in two block spans: "Amount: $8,000.00", not "Amount$8,000.00".
+		$t = preg_replace( '#(<span[^>]*display\s*:\s*block[^>]*>.*?</span>)\s*(?=<span[^>]*display\s*:\s*block)#is', '$1: ', (string) $t );
+		$t = db_mail_html_to_text( (string) $t );
+		$t = preg_replace( '/[\x{2007}\x{034F}\x{200B}\x{200C}\x{00A0}]+/u', ' ', (string) $t );
+		$m->AltBody = trim( (string) preg_replace( "/[ \t]+\n/", "\n", (string) $t ) );
 	}
 } );
 
