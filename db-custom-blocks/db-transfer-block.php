@@ -117,14 +117,15 @@ add_filter( 'wpcf7_posted_data', function ( $data ) {
 	return $data;
 }, 5 );
 
-// Only a submission that passed validation and was sent is stored.
-add_action( 'wpcf7_mail_sent', function ( $form ) {
+// Stored once the submission passed validation, before the email goes out: storing on
+// wpcf7_mail_sent lost the code whenever the email failed (bug register batch 2, AC-11).
+add_action( 'wpcf7_before_send_mail', function ( $form ) {
 	$p = $GLOBALS['db_transfer_pending'];
 	$GLOBALS['db_transfer_pending'] = null;
 	if ( ! db_transfer_is_form( $form ) || ! is_array( $p ) || '' === $p['code'] ) {
 		return;
 	}
-	$clean = function_exists( 'db_epp_clean_code' ) ? db_epp_clean_code( $p['code'] ) : trim( $p['code'] );
+	$clean = function_exists( 'db_epp_clean_code' ) ? db_epp_clean_code( db_transfer_unspace( $p['code'] ) ) : trim( $p['code'] );
 	$enc   = ( null !== $clean && function_exists( 'db_epp_encrypt' ) ) ? db_epp_encrypt( $clean ) : false;
 	if ( false === $enc ) {
 		if ( function_exists( 'db_log_error' ) ) {
@@ -368,3 +369,31 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_style( 'db-transfer' );
 	wp_add_inline_style( 'db-transfer', $css );
 }, 114 );
+
+
+if ( ! function_exists( 'db_transfer_unspace' ) ) {
+	/** Pure: removes the spaces and line breaks that copy and paste adds to a transfer code (AC-11). */
+	function db_transfer_unspace( $code ) {
+		return (string) preg_replace( '/\s+/u', '', (string) $code );
+	}
+}
+
+// A code that still cannot be stored is refused with a message, instead of being dropped while the
+// email and the form entry said 'Received, stored encrypted' (AC-11).
+add_filter( 'wpcf7_validate', function ( $result, $tags ) {
+	$form = class_exists( 'WPCF7_ContactForm' ) ? WPCF7_ContactForm::get_current() : null;
+	if ( ! db_transfer_is_form( $form ) || ! function_exists( 'db_epp_clean_code' ) ) {
+		return $result;
+	}
+	foreach ( (array) $tags as $tag ) {
+		$name = is_object( $tag ) ? $tag->name : ( $tag['name'] ?? '' );
+		if ( ! in_array( $name, array( 'EPPCode', 'DomainEPPCode' ), true ) ) {
+			continue;
+		}
+		$raw = isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ? wp_unslash( $_POST[ $name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		if ( '' !== trim( $raw ) && null === db_epp_clean_code( db_transfer_unspace( $raw ) ) ) {
+			$result->invalidate( $tag, 'Paste the transfer code exactly as your registrar shows it (up to 120 characters).' );
+		}
+	}
+	return $result;
+}, 20, 2 );
