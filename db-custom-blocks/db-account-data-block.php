@@ -202,7 +202,7 @@ add_action( 'rest_api_init', function () {
 			if ( ! headers_sent() ) {
 				setcookie( 'db_in', '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'samesite' => 'Lax' ) ); // signed-in hint (AC-9)
 			}
-			delete_transient( 'db_reg_' . md5( $email ) );
+			delete_transient( function_exists( 'db_reg_pending_key' ) ? db_reg_pending_key( $email ) : 'db_reg_' . md5( $email ) );
 			error_log( 'DB account: self-service deletion completed.' ); // No address in the log.
 			return $send( array( 'ok' => true, 'message' => 'Your account and saved domains are deleted.' ) );
 		},

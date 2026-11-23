@@ -268,7 +268,9 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'Please check the highlighted fields.', 'errors' => $err ), 400 );
 			}
 			if ( ! $bot ) {
-				set_transient( 'db_reg_' . md5( $email ), array(
+				// Kept for this browser only, so a stranger typing the same address cannot replace the
+				// name, phone or newsletter choice that verify saves as the consent record (SC-18).
+				set_transient( db_reg_pending_key( $email ), array(
 					'name'       => $name,
 					'phone'      => (string) $phone,
 					'newsletter' => ! empty( $d['newsletter'] ) ? 1 : 0,
@@ -299,7 +301,7 @@ add_action( 'rest_api_init', function () {
 			if ( ! db_wl_check_code( $email, $d['code'] ?? '' ) ) {
 				return $send( array( 'ok' => false, 'message' => 'That code did not work. Check it, or ask for a new one.' ), 400 );
 			}
-			$pending = get_transient( 'db_reg_' . md5( $email ) );
+			$pending = get_transient( db_reg_pending_key( $email ) );
 			$row     = db_acct_row( $email );
 			if ( is_array( $pending ) ) {
 				$now  = current_time( 'mysql', true );
@@ -313,7 +315,7 @@ add_action( 'rest_api_init', function () {
 					'consent_ip_hash' => $ip_hash(),
 				);
 				db_acct_upsert( $email, $data );
-				delete_transient( 'db_reg_' . md5( $email ) );
+				delete_transient( db_reg_pending_key( $email ) );
 				$row = db_acct_row( $email );
 				/** Fires when someone completes sign-up. A mailing tool can hook this for newsletter opt-ins. */
 				do_action( 'db_account_registered', $email, $row );

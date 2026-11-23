@@ -74,6 +74,18 @@ add_action( 'init', function () {
 		) {$cs};" );
 		update_option( 'db_wl_table_version', DB_WL_TABLE_VERSION );
 	}
+	// SC-18: one code per address and browser, so a code someone else asks for never replaces yours.
+	if ( '1' !== get_option( 'db_wl_codes_sid' ) ) {
+		global $wpdb;
+		$t = $wpdb->prefix . 'db_wl_codes';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$has = $wpdb->get_var( "SHOW COLUMNS FROM {$t} LIKE 'sid'" );
+		$ok  = $has ? true : false !== $wpdb->query( "ALTER TABLE {$t} ADD COLUMN sid CHAR(32) NOT NULL DEFAULT '' AFTER email, DROP PRIMARY KEY, ADD PRIMARY KEY (email, sid)" );
+		// phpcs:enable
+		if ( $ok ) {
+			update_option( 'db_wl_codes_sid', '1', true );
+		}
+	}
 	if ( ! wp_next_scheduled( 'db_wl_purge' ) ) {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'db_wl_purge' );
 	}
@@ -187,22 +199,59 @@ if ( ! function_exists( 'db_wl_same_origin' ) ) {
 
 /* ───────────────────────────── 3. Codes and sessions ──────────────────── */
 
+if ( ! function_exists( 'db_wl_sid' ) ) {
+	/**
+	 * A random id for this browser (httpOnly cookie db_sid, one day). Codes and pending sign-up
+	 * details are kept per address and per browser, so a stranger who types your address cannot
+	 * replace them or use up your code (SC-18).
+	 */
+	function db_wl_sid() {
+		static $sid = null;
+		if ( null !== $sid ) {
+			return $sid;
+		}
+		$c = isset( $_COOKIE['db_sid'] ) ? (string) $_COOKIE['db_sid'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( preg_match( '/^[a-f0-9]{32}$/', $c ) ) {
+			$sid = $c;
+			return $sid;
+		}
+		$sid = bin2hex( random_bytes( 16 ) );
+		if ( ! headers_sent() ) {
+			setcookie( 'db_sid', $sid, array( 'expires' => time() + DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
+		}
+		$_COOKIE['db_sid'] = $sid;
+		return $sid;
+	}
+}
+
+if ( ! function_exists( 'db_reg_pending_key' ) ) {
+	/** Transient key of a pending sign-up: the address and the browser that started it (SC-18). */
+	function db_reg_pending_key( $email ) {
+		return 'db_reg_' . md5( strtolower( (string) $email ) . '|' . db_wl_sid() );
+	}
+}
+
 if ( ! function_exists( 'db_wl_send_code' ) ) {
 	/** Issues a code for $email. Returns false when rate limited (the caller still answers the same way). */
 	function db_wl_send_code( $email ) {
 		global $wpdb;
-		if ( ! db_wl_allow( 'email:' . $email, 5, HOUR_IN_SECONDS ) || ! db_wl_allow( 'ip:' . db_wl_ip(), 20, HOUR_IN_SECONDS ) ) {
+		// Five an hour for this address from this browser, so someone else's requests do not use up
+		// yours; a looser cap per address stops the inbox being flooded (SC-18).
+		$sid = db_wl_sid();
+		if ( ! db_wl_allow( 'email:' . $email . '|' . $sid, 5, HOUR_IN_SECONDS ) || ! db_wl_allow( 'email-all:' . $email, 25, HOUR_IN_SECONDS ) || ! db_wl_allow( 'ip:' . db_wl_ip(), 20, HOUR_IN_SECONDS ) ) {
 			return false;
 		}
 		$code = (string) random_int( 100000, 999999 );
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery
-		$wpdb->replace( $wpdb->prefix . 'db_wl_codes', array(
+		$row  = array(
 			'email'      => $email,
 			'code_hash'  => db_wl_hash( $email . '|' . $code ),
 			'attempts'   => 0,
 			'expires_at' => time() + DB_WL_CODE_TTL,
-		) );
-		// phpcs:enable
+		);
+		if ( '1' === get_option( 'db_wl_codes_sid' ) ) {
+			$row['sid'] = $sid;
+		}
+		$wpdb->replace( $wpdb->prefix . 'db_wl_codes', $row ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		if ( db_wl_is_staging() ) {
 			set_transient( 'db_wl_dbg_' . md5( $email ), $code, DB_WL_CODE_TTL ); // read back only by the admin-only staging test route
 		}
@@ -224,24 +273,29 @@ if ( ! function_exists( 'db_wl_check_code' ) ) {
 			return false;
 		}
 		// Per address, across codes: a new code resets the per-code counter, this one is not (AC-13).
-		if ( ! db_wl_allow( 'verify-email:' . strtolower( (string) $email ), 10, HOUR_IN_SECONDS ) ) {
+		// Counted per browser too (SC-18): wrong guesses from elsewhere cannot lock the owner out, and
+		// they could only ever be checked against codes that other browser asked for.
+		$by  = '1' === get_option( 'db_wl_codes_sid' );
+		$sid = $by ? db_wl_sid() : '';
+		if ( ! db_wl_allow( 'verify-email:' . strtolower( (string) $email ) . '|' . $sid, 10, HOUR_IN_SECONDS ) ) {
 			return false;
 		}
 		$t = $wpdb->prefix . 'db_wl_codes';
+		$w = $by ? $wpdb->prepare( ' AND sid = %s', $sid ) : '';
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		// Claim one guess atomically before comparing: parallel guesses each need their own claim,
 		// so at most five are ever checked against one code (AC-13).
-		$claimed = $wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s AND attempts < 5 AND expires_at >= %d", $email, time() ) );
+		$claimed = $wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s AND attempts < 5 AND expires_at >= %d", $email, time() ) . $w );
 		if ( ! $claimed ) {
-			$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND ( attempts >= 5 OR expires_at < %d )", $email, time() ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND ( attempts >= 5 OR expires_at < %d )", $email, time() ) . $w );
 			return false;
 		}
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s", $email ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s", $email ) . $w );
 		if ( ! $row || ! hash_equals( $row->code_hash, db_wl_hash( $email . '|' . $code ) ) ) {
 			return false;
 		}
 		// A code works once: only the request that deletes it signs in.
-		if ( ! $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND code_hash = %s", $email, $row->code_hash ) ) ) {
+		if ( ! $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND code_hash = %s", $email, $row->code_hash ) . $w ) ) {
 			return false;
 		}
 		// phpcs:enable
@@ -393,7 +447,7 @@ add_action( 'rest_api_init', function () {
 			// A sign-up that already passed the check at /register/ (its pending record exists) may ask
 			// for a new code from the code step, where no fresh check can be solved: at most 3 times in
 			// 30 minutes (bug register batch 2, AC-2).
-			$resend = '' !== $email && false !== get_transient( 'db_reg_' . md5( $email ) ) && db_wl_allow( 'reg-resend:' . $email, 3, 30 * MINUTE_IN_SECONDS );
+			$resend = '' !== $email && false !== get_transient( db_reg_pending_key( $email ) ) && db_wl_allow( 'reg-resend:' . $email, 3, 30 * MINUTE_IN_SECONDS );
 			if ( ! $resend && function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
 				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
 			}
