@@ -225,6 +225,13 @@ add_action( 'template_redirect', function () {
 		if ( false !== strpos( $html, 'db-news-live' ) ) {
 			return $html; // already inserted (defensive, shouldn't recurse)
 		}
+		// Page 2 and later list older posts only: the live feed (the same 8 stories on all 308 pages)
+		// and an unnumbered H1 made every archive page a duplicate (SE-13).
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		if ( $paged > 1 ) {
+			$html = preg_replace( '#(<h1 class="db-an-h1">)([^<]*)(</h1>)#', '$1$2, page ' . $paged . '$3', $html, 1 );
+			return db_news_own_cards( $html );
+		}
 		$news_html = db_render_news_cached( 8 );
 		if ( '' === $news_html ) {
 			return $html; // all feeds unreachable this request — leave the archive as-is
