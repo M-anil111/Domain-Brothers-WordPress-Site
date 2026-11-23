@@ -1702,6 +1702,14 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 			$plan['rate_pct'] = isset( $meta['rate_pct'] ) && is_numeric( $meta['rate_pct'] ) ? (float) $meta['rate_pct'] : db_plan_rate_legacy( $total_months );
 		}
 		$plan['customer_email']    = $customer_email ?: ( $plan['customer_email'] ?? '' );
+		// The signed-in account that started the plan, saved with the plan itself: the order-event
+		// hook ran before this save (instalment 1 had no plan yet) and its later save was overwritten
+		// by this in-memory copy, so plans paid with another receipt email never showed under
+		// My account > Payment plans (bug register batch 2, CK-8).
+		$acct_email = isset( $meta['account_email'] ) ? strtolower( sanitize_email( (string) $meta['account_email'] ) ) : '';
+		if ( '' !== $acct_email ) {
+			$plan['account_email'] = $acct_email;
+		}
 		$plan['customer_id']       = $customer ?: (string) ( $plan['customer_id'] ?? '' );
 		$plan['payment_method']    = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
 		$plan['paid_installments'] = $installment_num;
