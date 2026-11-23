@@ -79,6 +79,8 @@ add_action( 'wp_enqueue_scripts', static function () {
 		wp_localize_script( 'dbux-listing-state', 'dbuxListing', array(
 			'indexUrl' => esc_url_raw( add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) ) ),
 			'basePath' => wp_make_link_relative( get_permalink( get_queried_object_id() ) ),
+			// Names for sale, so page 1 does not download itself again to count them (LS-14).
+			'total'    => function_exists( 'db_domain_index' ) ? count( (array) db_domain_index() ) : 0,
 		) );
 	}
 }, 100 );

@@ -182,6 +182,10 @@
 
 		// ---- totals across pages -------------------------------------------
 		function computeTotals() {
+			// The server gives the number of names for sale; on an unfiltered page 1 that is the
+			// total, so the page is not fetched a second time (290 KB) just to count (LS-14).
+			var given = window.dbuxListing && parseInt(window.dbuxListing.total, 10);
+			if (given > 0 && page === 1 && !arrivedFiltered) { return Promise.resolve({ total: given, offset: 0 }); }
 			// The rendered page no longer carries the theme's pagination links
 			// (the card UI replaces that markup), so read the page count from the
 			// server HTML of page 1 and walk the remaining pages from there.
