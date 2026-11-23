@@ -33,6 +33,10 @@ for ( $i = 0; $i < 5; $i++ ) { $big = db_sl_add( $big, 'popular term', 1, 500 );
 for ( $i = 0; $i < DB_SEARCH_LOG_MAX + 20; $i++ ) { $big = db_sl_add( $big, 'rare term ' . $i, 0, 1000 + $i ); }
 check( 'log is capped', count( $big ) <= DB_SEARCH_LOG_MAX );
 check( 'the most searched term survives the cap', isset( $big['popular term'] ) && 5 === $big['popular term']['n'] );
+$full = array();
+for ( $i = 0; $i < DB_SEARCH_LOG_MAX; $i++ ) { $full = db_sl_add( $full, 'old term ' . $i, 1, 1000 ); $full = db_sl_add( $full, 'old term ' . $i, 1, 1000 ); }
+$full = db_sl_add( $full, 'brand new term', 1, 1000 + 120 * 86400 );
+check( 'AD-8: a new term is kept once every stored term has two older searches', isset( $full['brand new term'] ) );
 
 // ---- glossary
 $terms = db_gl_terms();

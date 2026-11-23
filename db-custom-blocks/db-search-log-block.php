@@ -55,9 +55,14 @@ if ( ! function_exists( 'db_sl_add' ) ) {
 		$row['last'] = (int) $now;
 		$log[ $t ]   = $row;
 		if ( count( $log ) > DB_SEARCH_LOG_MAX ) {
-			// Drop the least searched, oldest terms.
-			uasort( $log, static function ( $a, $b ) {
-				return array( $b['n'], $b['last'] ) <=> array( $a['n'], $a['last'] );
+			// Keep the terms with the highest decayed count: each search counts half as much every
+			// 30 days. Ranking by raw count always cut the newest term once every stored term had
+			// two searches, so new demand was never recorded (AD-8); popular terms still stay.
+			$score = static function ( $r ) use ( $now ) {
+				return (int) $r['n'] * pow( 0.5, max( 0, (int) $now - (int) $r['last'] ) / ( 30 * 86400 ) );
+			};
+			uasort( $log, static function ( $a, $b ) use ( $score ) {
+				return array( $score( $b ), $b['last'] ) <=> array( $score( $a ), $a['last'] );
 			} );
 			$log = array_slice( $log, 0, DB_SEARCH_LOG_MAX, true );
 		}
@@ -66,8 +71,8 @@ if ( ! function_exists( 'db_sl_add' ) ) {
 }
 
 add_action( 'template_redirect', function () {
-	if ( is_admin() || ! is_search() ) {
-		return;
+	if ( is_admin() || ! is_search() || is_paged() ) {
+		return; // page 2, 3 ... of the same search is not a new search (AD-8)
 	}
 	$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? (string) wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	if ( '' === $ua || preg_match( '/bot|crawl|spider|slurp|curl|python|wget/i', $ua ) ) {
