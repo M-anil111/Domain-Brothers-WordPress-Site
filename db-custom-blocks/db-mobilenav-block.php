@@ -290,6 +290,13 @@ add_action( 'wp_footer', function () {
 			// inert keeps the closed drawer out of the tab order even in
 			// browsers that still paint it during the slide-out transition.
 			if (open) { n.removeAttribute('inert'); } else { n.setAttribute('inert', ''); }
+			// The page behind the open drawer is inert too, so screen-reader swipe navigation stays
+			// in the menu (AX-16). Only siblings this code made inert are released on close.
+			Array.prototype.forEach.call(document.body.children, function (el) {
+				if (el === n || el === t || el.contains(n) || el.contains(t) || /^(SCRIPT|STYLE|LINK|NOSCRIPT)$/.test(el.tagName)) { return; }
+				if (open) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-db-mnav-inert', ''); } }
+				else if (el.hasAttribute('data-db-mnav-inert')) { el.removeAttribute('inert'); el.removeAttribute('data-db-mnav-inert'); }
+			});
 			if (open) {
 				lastFocus = document.activeElement;
 				s.hidden = false;
