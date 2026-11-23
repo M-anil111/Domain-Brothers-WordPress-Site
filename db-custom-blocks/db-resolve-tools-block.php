@@ -19,6 +19,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! function_exists( 'db_rs_clean_data' ) ) {
+	/**
+	 * One DNS answer as text. TXT data arrives as quoted strings ("v=spf1 " "-all"): the parts are
+	 * joined without quotes. Other types keep their data as given, so a CAA answer keeps both
+	 * quotes (0 issue "letsencrypt.org"); trimming quotes off the whole string left one (TL-21).
+	 */
+	function db_rs_clean_data( $data, $type_num ) {
+		$data = trim( (string) $data );
+		if ( 16 !== (int) $type_num ) {
+			return $data;
+		}
+		if ( preg_match_all( '/"((?:[^"\\\\]|\\\\.)*)"/', $data, $m ) && $m[1] ) {
+			return stripslashes( implode( '', $m[1] ) );
+		}
+		return trim( $data, '"' );
+	}
+}
+
 if ( ! function_exists( 'db_rs_resolvers' ) ) {
 	/** @return array<string,array{label:string,url:string,accept:string}> */
 	function db_rs_resolvers() {
@@ -58,14 +76,14 @@ if ( ! function_exists( 'db_rs_parse' ) ) {
 			if ( (int) ( isset( $a['type'] ) ? $a['type'] : 0 ) !== $want[ $type ] || ! isset( $a['data'] ) ) {
 				continue; // skips the CNAME chain that comes before the final answer.
 			}
-			$answers[] = substr( trim( (string) $a['data'], '" ' ), 0, 255 );
+			$answers[] = substr( db_rs_clean_data( (string) $a['data'], $want[ $type ] ), 0, 255 );
 			$ttl       = null === $ttl ? (int) ( isset( $a['TTL'] ) ? $a['TTL'] : 0 ) : min( $ttl, (int) ( isset( $a['TTL'] ) ? $a['TTL'] : 0 ) );
 		}
 		// Compared in full and normalised (order, case, trailing dot); cut only for display (TL-5).
 		$all = array();
 		foreach ( (array) ( isset( $json['Answer'] ) ? $json['Answer'] : array() ) as $a ) {
 			if ( (int) ( isset( $a['type'] ) ? $a['type'] : 0 ) === $want[ $type ] && isset( $a['data'] ) ) {
-				$all[] = rtrim( strtolower( str_replace( '" "', '', trim( (string) $a['data'], '" ' ) ) ), '.' );
+				$all[] = rtrim( strtolower( db_rs_clean_data( (string) $a['data'], $want[ $type ] ) ), '.' );
 			}
 		}
 		sort( $all );

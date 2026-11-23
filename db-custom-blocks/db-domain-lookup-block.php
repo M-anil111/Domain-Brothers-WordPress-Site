@@ -157,7 +157,7 @@ if ( ! function_exists( 'db_lk_dns' ) ) {
 			foreach ( (array) ( $r['json']['Answer'] ?? array() ) as $a ) {
 				$want = array( 'A' => 1, 'AAAA' => 28, 'MX' => 15, 'NS' => 2, 'TXT' => 16 );
 				if ( (int) ( $a['type'] ?? 0 ) === $want[ $type ] && isset( $a['data'] ) ) {
-					$rows[] = sanitize_text_field( trim( (string) $a['data'], '" ' ) );
+					$rows[] = sanitize_text_field( function_exists( 'db_rs_clean_data' ) ? db_rs_clean_data( (string) $a['data'], $want[ $type ] ) : trim( (string) $a['data'], '" ' ) );
 				}
 			}
 			if ( 'TXT' === $type ) {
