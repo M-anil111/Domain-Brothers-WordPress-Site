@@ -1002,7 +1002,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<p class="co-terms"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
 						<label class="co-agree" for="co-agree">
 							<input type="checkbox" id="co-agree" required aria-describedby="co-agree-err">
-							<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment stays unpaid <?php echo esc_html( (string) $grace_days ); ?> days after its due date the plan ends and installments already paid are not refunded.</span>
+							<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment is still unpaid <?php echo esc_html( (string) $grace_days ); ?> days after the first declined attempt the plan ends and installments already paid are not refunded.</span>
 						</label>
 						<p class="co-field-err" id="co-agree-err" style="margin-left:26px">Please confirm you agree to the payment plan terms.</p>
 <?php endif; ?>
