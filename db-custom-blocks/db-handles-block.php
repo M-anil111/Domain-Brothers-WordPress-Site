@@ -42,7 +42,8 @@ if ( ! function_exists( 'db_handles_platforms' ) ) {
 
 if ( ! function_exists( 'db_handles_clean' ) ) {
 	/**
-	 * Normalises a requested handle: letters, digits, dot and underscore, 1 to 40 characters.
+	 * Normalises a requested handle: letters, digits, dot, underscore and hyphen (YouTube and
+	 * LinkedIn allow hyphens; dropping them sent brokers the wrong handle, AC-21), 1 to 40 characters.
 	 *
 	 * @param string $raw Raw input.
 	 * @return string Empty when nothing usable remains.
@@ -50,8 +51,8 @@ if ( ! function_exists( 'db_handles_clean' ) ) {
 	function db_handles_clean( $raw ) {
 		$h = strtolower( trim( (string) $raw ) );
 		$h = ltrim( $h, '@' );
-		$h = preg_replace( '/[^a-z0-9._]/', '', $h );
-		return substr( (string) $h, 0, 40 );
+		$h = preg_replace( '/[^a-z0-9._-]/', '', $h );
+		return trim( substr( (string) $h, 0, 40 ), '-' );
 	}
 }
 
