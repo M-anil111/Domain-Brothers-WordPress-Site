@@ -550,6 +550,19 @@ if ( ! function_exists( 'db_lk_split' ) ) {
 	}
 }
 
+// The price index is rebuilt when a listing's price or sale changes, not only every 12 hours (TL-27).
+foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta' ) as $db_lk_hook ) {
+	add_action( $db_lk_hook, static function ( $mid, $pid, $key ) {
+		if ( in_array( $key, array( 'domain_price', 'db_sold_price', 'db_listing_state', 'domain_status' ), true ) ) {
+			delete_transient( 'db_lk_index' );
+		}
+	}, 10, 3 );
+}
+unset( $db_lk_hook );
+add_action( 'save_post_domain', static function () {
+	delete_transient( 'db_lk_index' );
+} );
+
 if ( ! function_exists( 'db_lk_index' ) ) {
 	/**
 	 * Recorded sale prices and current asking prices, by length and extension.

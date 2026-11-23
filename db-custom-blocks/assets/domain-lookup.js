@@ -151,7 +151,9 @@
     // Comparables
     var m = (j.comparables || {}).sold || {}, n = (j.comparables || {}).ask || {};
     if (SHOW.indexOf("Comparable sales at Domain Brothers") > -1 || !SHOW.length) {
-      add(m.state === "ok" ? card("Comparable sales at Domain Brothers", [["Basis", m.basis], ["Names sold", String(m.count)], ["Median price", money(m.median)], ["Range", money(m.low) + " to " + money(m.high)]]) : card("Comparable sales at Domain Brothers", "Too few similar names have a recorded sale price to show a fair comparison."));
+      // Shown only when enough similar sales have a recorded price; otherwise the card always said
+      // there was too little data (TL-27).
+      if (m.state === "ok") { add(card("Comparable sales at Domain Brothers", [["Basis", m.basis], ["Names sold", String(m.count)], ["Median price", money(m.median)], ["Range", money(m.low) + " to " + money(m.high)]])); }
       if (n.state === "ok") { add(card("Similar names for sale now (asking prices)", [["Basis", n.basis], ["Names listed", String(n.count)], ["Median asking price", money(n.median)], ["Range", money(n.low) + " to " + money(n.high)]])); }
     }
 
