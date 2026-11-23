@@ -388,12 +388,20 @@ add_action( 'admin_post_db_orders_import', function () {
 		foreach ( $plan['history'] as $h ) {
 			$paid += (float) ( $h['amount_usd'] ?? 0 );
 		}
-		$ps   = (string) ( $plan['status'] ?? 'active' );
-		$mode = ( 0 === strpos( $o->option_name, 'db_stripe_test_' ) ) ? 'test' : 'live';
+		$ps    = (string) ( $plan['status'] ?? 'active' );
+		$mode  = ( 0 === strpos( $o->option_name, 'db_stripe_test_' ) ) ? 'test' : 'live';
+		$email = sanitize_email( (string) ( $plan['customer_email'] ?? '' ) );
+		// A plan bought through a negotiated offer is a custom offer, as on the live path (AD-14):
+		// the plan record has no lead id, so find the buyer's paid or accepted deal for the name.
+		$lead_id = 0;
+		if ( function_exists( 'db_deal_table' ) && '' !== $email ) {
+			$dt      = db_deal_table();
+			$lead_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT lead_id FROM {$dt} WHERE domain = %s AND LOWER(buyer_email) = %s AND state IN ('paid','accepted') ORDER BY id DESC LIMIT 1", strtolower( (string) $plan['domain'] ), strtolower( $email ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$ok = $wpdb->query( $wpdb->prepare(
-			"INSERT IGNORE INTO {$t} (created_at, mode, domain, kind, price, paid, plan_months, buyer_email, pi_id, status) VALUES (%s,%s,%s,'plan',%f,%f,%d,%s,%s,%s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			gmdate( 'Y-m-d H:i:s', (int) ( $first['ts'] ?? time() ) ), $mode, strtolower( (string) $plan['domain'] ), (float) ( $plan['price_usd'] ?? 0 ), $paid, (int) ( $plan['total_months'] ?? 0 ), sanitize_email( (string) ( $plan['customer_email'] ?? '' ) ), $pi, 'plan_' . $ps
+			"INSERT IGNORE INTO {$t} (created_at, mode, domain, kind, price, paid, plan_months, buyer_email, pi_id, lead_id, status) VALUES (%s,%s,%s,%s,%f,%f,%d,%s,%s,%d,%s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			gmdate( 'Y-m-d H:i:s', (int) ( $first['ts'] ?? time() ) ), $mode, strtolower( (string) $plan['domain'] ), $lead_id ? 'custom_offer' : 'plan', (float) ( $plan['price_usd'] ?? 0 ), $paid, (int) ( $plan['total_months'] ?? 0 ), $email, $pi, $lead_id, 'plan_' . $ps
 		) );
 		if ( $ok ) {
 			$n++;
