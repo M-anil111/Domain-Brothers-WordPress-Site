@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.149.0
+ * Version:     3.149.1
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.149.0' );
+define( 'DB_BLOCKS_LOADED', '3.149.1' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -3579,15 +3579,18 @@ add_action( 'wp_footer', function () {
 			};
 
 			/* 1. Hide duplicate search forms — keep the first visible one. */
-			var seen = 0;
+			var seen = 0, dupForms = [];
 			document.querySelectorAll('form').forEach(function (f) {
 				var inp = f.querySelector('input[type="text"], input[type="search"]');
 				if (!inp) { return; }
 				var ph = (inp.getAttribute('placeholder') || '').toLowerCase();
 				if (ph.indexOf('search') === -1) { return; }
 				seen++;
-				if (seen > 1 && f.offsetParent !== null) { f.style.display = 'none'; }
+				if (seen > 1) { dupForms.push(f); }
 			});
+			// Read every visibility first, then hide: reading offsetParent after a style write
+			// forced a fresh layout for each form (long task on phones).
+			dupForms.filter(function (f) { return f.offsetParent !== null; }).forEach(function (f) { f.style.display = 'none'; });
 
 			/* 2. Tag action links + "View All" by their visible text. */
 			document.querySelectorAll('a').forEach(function (a) {
@@ -3639,6 +3642,7 @@ add_action( 'wp_footer', function () {
 			   blank header nav-toggle and any icon that still fails to
 			   render after step 3.5 above. We test ACTUAL rendered size of
 			   any icon child rather than just its presence. */
+			var emptyEls = [];
 			var iconRenders = function (el) {
 				var ic = el.querySelector('img, svg, i, [class*="icon"], .dashicons');
 				if (!ic) {
@@ -3655,8 +3659,10 @@ add_action( 'wp_footer', function () {
 				if ((el.textContent || '').trim().length > 0) { return; }
 				if (iconRenders(el)) { return; }
 				if (el.getBoundingClientRect().height > 80) { return; } // never a big wrapper
-				el.style.display = 'none';
+				emptyEls.push(el);
 			});
+			// Writes after all the reads above (one layout instead of one per element).
+			emptyEls.forEach(function (el) { el.style.display = 'none'; });
 
 			/* 5. Hero burger menu toggle. */
 			var burger = document.querySelector('.db-hp-burger');

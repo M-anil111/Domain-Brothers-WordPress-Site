@@ -496,7 +496,9 @@ add_action( 'wp_footer', function () {
 		items.forEach(function (it) { if (it.classList.contains('is-open')) { set(it, false); var a = it.querySelector('.db-hd-top'); if (a && it.contains(document.activeElement)) { a.blur(); } } });
 	});
 	document.addEventListener('touchstart', function (e) { if (!hd.contains(e.target)) { closeAll(null); } }, { passive: true });
-	var onScroll = function () { hd.classList.toggle('is-stuck', window.scrollY > 8); };
+	// One class change per animation frame, and only when the state flips (it restyled the whole page on every scroll event).
+	var stuck = null, ticking = false;
+	var onScroll = function () { if (ticking) { return; } ticking = true; requestAnimationFrame(function () { ticking = false; var s = window.scrollY > 8; if (s !== stuck) { stuck = s; hd.classList.toggle('is-stuck', s); } }); };
 	onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
 }());
 </script>
