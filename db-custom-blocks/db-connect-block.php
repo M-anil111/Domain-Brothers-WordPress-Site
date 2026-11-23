@@ -285,14 +285,14 @@ if ( ! function_exists( 'db_connect_seller_card' ) ) {
 			return $h . '<p>Stripe payouts are available to sellers in the United States. As a seller in Canada, you are paid by bank transfer: we email you to confirm your bank details after your first sale.</p></section>';
 		}
 		if ( '' === $acc ) {
-			return $h . '<p>Connect a Stripe account so your share of each sale is paid straight to your bank. Stripe checks your identity and bank details; it takes about 5 minutes.</p>' . $btn( 'Onboard to collect payments' ) . '</section>';
+			return $h . '<p>Connect a Stripe account now so future payouts can go straight to your bank. For now, payouts are sent by bank transfer to the details you give our broker. Stripe checks your identity and bank details; it takes about 5 minutes.</p>' . $btn( 'Onboard to collect payments' ) . '</section>';
 		}
 		$st = db_connect_status( $acc );
 		if ( is_wp_error( $st ) ) {
 			return $h . '<p class="dbsl-msg dbsl-msg--warn" role="status">We could not read your Stripe status just now: ' . esc_html( $st->get_error_message() ) . '</p></section>';
 		}
 		if ( $st['ready'] && $st['complete'] ) {
-			return $h . '<p class="dbsl-msg dbsl-msg--ok" role="status"><strong>Ready to receive payments.</strong> Your share of each sale is sent to your Stripe account.</p>'
+			return $h . '<p class="dbsl-msg dbsl-msg--ok" role="status"><strong>Stripe account connected.</strong> Payouts are still sent by bank transfer for now; we will tell you before they move to Stripe.</p>'
 				. '<p class="dbsl-muted">Stripe account ' . esc_html( $acc ) . '. Change your bank details in the Stripe dashboard from the email Stripe sent you.</p></section>';
 		}
 		$msg = $st['complete'] ? 'Stripe is reviewing your details. This usually takes a few minutes; this page shows the latest status.' : 'Stripe needs more information before you can be paid.';
@@ -418,7 +418,7 @@ if ( ! function_exists( 'db_connect_handle_event' ) ) {
 			// The transfers capability changed: tell the seller when they can be paid.
 			$st = db_connect_status( $account_id );
 			if ( ! is_wp_error( $st ) && $st['ready'] && function_exists( 'db_seller_mail' ) ) {
-				db_seller_mail( (string) $seller['email'], 'You are ready to receive payments', '<p>Your Stripe account is set up. Your share of each sale will be sent to it.</p>' );
+				db_seller_mail( (string) $seller['email'], 'You are ready to receive payments', '<p>Your Stripe account is set up. Payouts are still sent by bank transfer for now; we will email you before they move to Stripe.</p>' );
 			}
 			db_connect_audit( $seller, 'connect_capability', is_wp_error( $st ) ? 'status unavailable' : (string) $st['transfers'] );
 			return;
