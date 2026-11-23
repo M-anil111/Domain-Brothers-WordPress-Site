@@ -651,3 +651,33 @@ if ( ! function_exists( 'db_listing_handle_inquiry' ) ) {
 		// phpcs:enable
 	}
 }
+
+if ( ! function_exists( 'db_listing_offer_page_html' ) ) {
+	/**
+	 * Pure: fixes the theme's legacy page for offer-only listings (bug register batch 2, CR-3).
+	 * The visible "The domain name X is for sale!" line becomes the page's H1 (the only H1 sat in a
+	 * hidden block); the hidden one becomes a paragraph; the "100% Money Back Gaurentee" and
+	 * "Get this domain in less than 2 hours" items are removed (all sales are final, and the same
+	 * page says transfers take days).
+	 */
+	function db_listing_offer_page_html( $html ) {
+		if ( ! is_string( $html ) || false === stripos( $html, 'banner_contant' ) ) {
+			return $html;
+		}
+		$html = (string) preg_replace( '#(<header class="entry-header"[^>]*display:\s*none[^>]*>\s*)<h1\b([^>]*)>(.*?)</h1>#is', '$1<p$2>$3</p>', $html, 1 );
+		$html = (string) preg_replace( '#(<div class="text_normal">\s*)<h2>(.*?)</h2>#is', '$1<h1 class="db-offer-h1">$2</h1>', $html, 1 );
+		$html = (string) preg_replace( '#<li>\s*<i class="sprite_ic money_back_ic">.*?</li>#is', '', $html );
+		return (string) preg_replace( '#<li>\s*<i class="sprite_ic domain_ic">(?:(?!</li>).)*?less than 2 hours.*?</li>#is', '', $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) ) {
+		return;
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof WP_Post || 'offer' !== db_listing_state( $post ) ) {
+		return;
+	}
+	ob_start( 'db_listing_offer_page_html' );
+}, -994 );
