@@ -721,7 +721,7 @@ if ( ! function_exists( 'db_sales_collection_rows' ) ) {
 			return null;
 		}
 		$c    = db_finder_criteria_from_array( array( 'collection' => $slug ) );
-		$rows = db_finder_match( $c, 50 );
+		$rows = db_finder_match( $c, 500 ); // every match, so "N names" is the real total (LS-13)
 		return count( $rows ) >= 3 ? array( $c, $rows ) : null;
 	}
 }
