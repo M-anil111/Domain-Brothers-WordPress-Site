@@ -632,7 +632,9 @@ if ( ! function_exists( 'db_connect_store_body' ) ) {
 			$h .= '<p class="dbcs-msg dbcs-bad" role="status">Checkout was cancelled. Nothing was charged.</p>';
 		}
 		if ( isset( $_GET['err'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			$h .= '<p class="dbcs-msg dbcs-bad" role="alert">' . esc_html( sanitize_text_field( wp_unslash( $_GET['err'] ) ) ) . '</p>'; // phpcs:ignore WordPress.Security.NonceVerification
+			// A fixed message: any text in ?err= was shown as an on-site alert, a phishing lure on
+			// our own domain (bug register batch 2, SL-19). The real reason is in the error log.
+			$h .= '<p class="dbcs-msg dbcs-bad" role="alert">The checkout could not be started. Please try again, or contact us if it keeps happening.</p>';
 		}
 		$products = db_connect_products();
 		if ( is_wp_error( $products ) ) {
@@ -683,7 +685,8 @@ add_action( 'template_redirect', function () {
 		$pid = isset( $_POST['product'] ) ? sanitize_text_field( wp_unslash( $_POST['product'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
 		$url = $ok && preg_match( '/^prod_[A-Za-z0-9]+$/', $pid ) ? db_connect_checkout( $pid ) : new WP_Error( 'db_connect_form', 'That form expired. Please try again.' );
 		if ( is_wp_error( $url ) ) {
-			wp_safe_redirect( add_query_arg( 'err', rawurlencode( $url->get_error_message() ), home_url( '/connect-store/' ) ) );
+			error_log( 'DB Connect: store checkout failed: ' . $url->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			wp_safe_redirect( add_query_arg( 'err', '1', home_url( '/connect-store/' ) ) );
 			exit;
 		}
 		wp_redirect( $url ); // phpcs:ignore WordPress.Security.SafeRedirect -- Stripe-hosted Checkout (checkout.stripe.com).
