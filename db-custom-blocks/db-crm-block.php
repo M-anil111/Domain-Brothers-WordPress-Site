@@ -112,8 +112,29 @@ if ( ! function_exists( 'db_crm_clean_offer_amount' ) ) {
 		if ( null === $raw || '' === $raw ) {
 			return null;
 		}
-		$clean = preg_replace( '/[^0-9.]/', '', (string) $raw );
-		return is_numeric( $clean ) ? (float) $clean : null;
+		return db_money_parse( $raw );
+	}
+}
+
+if ( ! function_exists( 'db_money_parse' ) ) {
+	/**
+	 * Pure: a US dollar amount, or null when the text is not one. Accepts 15000, 15000.5, $15,000
+	 * and 15,000.00; refuses 15k, 1.500 (European thousands) and 2,5 (decimal comma), which the old
+	 * "strip everything but digits and dots" read as $15, $1.50 and $25 (bug register batch 2, AC-10).
+	 *
+	 * @param mixed $raw Typed amount.
+	 * @return float|null
+	 */
+	function db_money_parse( $raw ) {
+		if ( ! is_scalar( $raw ) ) {
+			return null;
+		}
+		$t = trim( str_replace( array( "\xc2\xa0", ' ' ), '', (string) $raw ) );
+		$t = preg_replace( '/^(?:US)?\$|(?:USD|US\$)$/i', '', $t );
+		if ( ! preg_match( '/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?$/', (string) $t ) ) {
+			return null;
+		}
+		return (float) str_replace( ',', '', (string) $t );
 	}
 }
 
@@ -1523,3 +1544,22 @@ if ( ! function_exists( 'db_crm_get_admin_js' ) ) {
 JS;
 	}
 }
+
+// Contact Form 7 offer forms: an amount that is not a plain dollar figure is refused with a
+// message, instead of being saved as a much smaller offer (AC-10).
+add_filter( 'wpcf7_validate', function ( $result, $tags ) {
+	if ( ! function_exists( 'db_money_parse' ) ) {
+		return $result;
+	}
+	foreach ( (array) $tags as $tag ) {
+		$name = is_object( $tag ) ? $tag->name : ( $tag['name'] ?? '' );
+		if ( ! in_array( $name, array( 'your-offer', 'offer', 'amount', 'offer-amount', 'offer-price' ), true ) ) {
+			continue;
+		}
+		$raw = isset( $_POST[ $name ] ) ? wp_unslash( $_POST[ $name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		if ( is_string( $raw ) && '' !== trim( $raw ) && null === db_money_parse( $raw ) ) {
+			$result->invalidate( $tag, 'Enter your offer as a whole dollar amount, for example 15000 or 15,000.' );
+		}
+	}
+	return $result;
+}, 20, 2 );

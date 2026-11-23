@@ -481,13 +481,13 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
 			}
 			$domain = strtolower( trim( preg_replace( '/^https?:\/\/(www\.)?/i', '', (string) ( $d['domain'] ?? '' ) ), " \t\n\r\0\x0B/" ) );
-			$amount = (float) preg_replace( '/[^0-9.]/', '', (string) ( $d['amount'] ?? '' ) );
+			$amount = function_exists( 'db_money_parse' ) ? (float) db_money_parse( $d['amount'] ?? '' ) : 0.0; // AC-10
 			$msg    = mb_substr( sanitize_textarea_field( (string) ( $d['message'] ?? '' ) ), 0, 1000 );
 			if ( ! preg_match( '/^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)+$/', $domain ) ) {
 				return $send( array( 'ok' => false, 'message' => 'Enter the domain name, for example example.com.' ), 400 );
 			}
 			if ( $amount < 1 || $amount > 100000000 ) {
-				return $send( array( 'ok' => false, 'message' => 'Enter your offer in US dollars, for example 1500.' ), 400 );
+				return $send( array( 'ok' => false, 'message' => 'Enter your offer as a whole dollar amount, for example 15000 or 15,000.' ), 400 );
 			}
 			$post = function_exists( 'db_listing_post_for_domain' ) ? db_listing_post_for_domain( $domain ) : null;
 			if ( ! $post || ! db_acct_sellable( $post ) ) {
