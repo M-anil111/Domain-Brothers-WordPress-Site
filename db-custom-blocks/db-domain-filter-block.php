@@ -279,6 +279,11 @@ add_action( 'wp_footer', function () {
 	})();
 	// Populate the extension list as soon as someone reaches for the bar.
 	bar.addEventListener('focusin', function () { load().catch(function () {}); }, { once: true });
+	// Fill the extension list as soon as the bar is ready: loading on first focus meant the native
+	// picker opened with only 'Any' (bug register batch 2, LS-9).
+	(window.requestIdleCallback || function (f) { return setTimeout(f, 200); })(function () {
+		load().then(function () { if (count.textContent === 'Loading all listings…') { count.textContent = ''; } }).catch(function () { count.textContent = ''; });
+	});
 })();
 </script>
 	<?php
