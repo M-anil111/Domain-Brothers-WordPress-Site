@@ -417,15 +417,20 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 		$title = $price
 			? sprintf( '%s for Sale, %s%s', $name, $price, DB_SEO_SUFFIX )
 			: sprintf( '%s for Sale%s', $name, DB_SEO_SUFFIX );
+		// Plans are mentioned only where one is offered: a listed price of at least the plan floor.
+		// Offer-only names have no listed plan (SE-11).
+		$plans = $price && ( ! function_exists( 'db_plan_offered' ) || db_plan_offered( (float) $clean ) );
 		$desc  = $price
-			? sprintf( 'Buy %s for %s. A premium domain with step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
-			: sprintf( 'Buy %s, a premium domain, with an step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name );
+			? ( $plans
+				? sprintf( 'Buy %s for %s. A premium domain with step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
+				: sprintf( 'Buy %s for %s. A premium domain with a step-by-step transfer. Secure it today at Domain Brothers.', $name, $price ) )
+			: sprintf( 'Make an offer on %s, a premium domain, with a step-by-step transfer once you agree a price. Domain Brothers replies personally.', $name );
 		// Long names (e.g. canadaimmigrationcounsel.ca) pushed this to 162–168
 		// characters, past the 160 that search results show.
 		if ( mb_strlen( $desc ) > 160 ) {
 			$desc = $price
-				? sprintf( 'Buy %s for %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name, $price )
-				: sprintf( 'Buy %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name );
+				? ( $plans ? sprintf( 'Buy %s for %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name, $price ) : sprintf( 'Buy %s for %s. Step-by-step transfer at Domain Brothers.', $name, $price ) )
+				: sprintf( 'Make an offer on %s. Step-by-step transfer at Domain Brothers.', $name );
 		}
 
 		return array( 'title' => $title, 'desc' => $desc, 'kw' => strtolower( $name ) );
@@ -571,7 +576,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 				$desc = $is_blog_term
 					? sprintf( 'Posts filed under %s on the Domain Brothers blog — domain industry news and market insights.', $term->name )
 					: sprintf(
-						'Browse %s domains for sale at Domain Brothers. Every listing includes an step-by-step transfer and 0%% interest payment plans. Find yours today.',
+						'Browse %s domains for sale at Domain Brothers. Every listing includes a step-by-step transfer, and payment plans on names from $600. Find yours today.',
 						$term->name
 					);
 			}
@@ -601,7 +606,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 		if ( is_post_type_archive( 'domain' ) || is_home() ) {
 			return array(
 				'title' => 'Premium Domains for Sale' . $brand,
-				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an step-by-step transfer and flexible payment plans. Find your domain today.',
+				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with a step-by-step transfer and payment plans on names from $600. Find your domain today.',
 				'kw'    => 'premium domains for sale',
 			);
 		}
