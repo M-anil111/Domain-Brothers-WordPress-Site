@@ -158,11 +158,15 @@ if ( ! function_exists( 'db_acct_profile_html' ) ) {
 			$h .= '</fieldset>';
 		}
 		$h .= '</div></section>';
+		if ( '' === $consent ) {
+			// Accounts made by a code sign-in never accepted the terms (AC-7): ask here.
+			$h .= '<p class="db-pf-accept"><label><input type="checkbox" name="accept_terms" value="1"> I accept the <a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of Use</a> and <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">Privacy Policy</a>.</label></p>';
+		}
 		$h .= '<div class="db-pf-save"><button type="submit" class="db-pf-btn">Save profile</button><p class="db-ac-msg" id="db-ac-profilemsg" role="status" aria-live="polite"></p></div></form></div>';
 		// Side column: data and danger zone.
 		$h .= '<aside class="db-pf-side" aria-label="Your data"><section class="db-pf-card"><h2>Your data</h2><dl class="db-pf-dl">'
 			. ( '' !== $since ? '<div><dt>Member since</dt><dd>' . esc_html( $since ) . '</dd></div>' : '' )
-			. '<div><dt>Policies</dt><dd>' . ( '' !== $consent ? 'Accepted version ' . esc_html( $consent ) : 'Accepted at sign-up' ) . '</dd></div></dl>'
+			. '<div><dt>Policies</dt><dd>' . ( '' !== $consent ? 'Accepted version ' . esc_html( $consent ) : 'Not yet accepted' ) . '</dd></div></dl>'
 			. '<p class="db-pf-note">See our <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">Privacy Policy</a>.</p>'
 			. '<button type="button" class="db-pf-btn db-pf-btn--ghost" id="db-ad-export">Download my data</button></section>'
 			. '<section class="db-pf-card db-pf-danger" aria-labelledby="db-pf-del"><h2 id="db-pf-del">Delete account</h2><p>Removes your account, saved domains and sign-in sessions. Purchase and payment-plan records are kept for tax and dispute reasons. Email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> to have those reviewed.</p>'
@@ -285,7 +289,7 @@ add_action( 'wp_footer', function () {
 			a.interests = [].map.call(f.querySelectorAll('input[name=interests]:checked'), function (i) { return i.value; });
 			a.industry = f.elements.industry ? f.elements.industry.value : '';
 			var btn = f.querySelector('button[type=submit]'); btn.disabled = true; m.textContent = 'Saving…'; m.className = 'db-ac-msg';
-			post('account/profile', { name: f.elements.name.value, phone: f.elements.phone.value, newsletter: f.elements.newsletter.checked, answers: a }).then(function (j) {
+			post('account/profile', { name: f.elements.name.value, phone: f.elements.phone.value, newsletter: f.elements.newsletter.checked, answers: a, accept_terms: !!(f.elements.accept_terms && f.elements.accept_terms.checked) }).then(function (j) {
 				btn.disabled = false; m.textContent = j.message || (j.ok ? 'Saved.' : 'Could not save that.'); m.className = 'db-ac-msg ' + (j.ok ? 'is-good' : 'is-bad');
 			}).catch(function () { btn.disabled = false; m.textContent = 'Could not reach the server. Try again.'; m.className = 'db-ac-msg is-bad'; });
 		});

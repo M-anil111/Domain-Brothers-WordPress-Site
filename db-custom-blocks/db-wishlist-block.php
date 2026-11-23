@@ -422,6 +422,11 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'That code did not work. Check it, or ask for a new one.' ), 400 );
 			}
 			db_wl_start_session( $email );
+			// A code sign-in for a new address creates the account record (no consent yet: Profile
+			// asks for it), so every signed-in person is in Accounts (bug register batch 2, AC-7).
+			if ( function_exists( 'db_acct_row' ) && function_exists( 'db_acct_upsert' ) && ! db_acct_row( $email ) ) {
+				db_acct_upsert( $email, array() );
+			}
 			$added = null;
 			if ( ! empty( $d['post'] ) ) {
 				$ids = db_wl_ids( $email );
