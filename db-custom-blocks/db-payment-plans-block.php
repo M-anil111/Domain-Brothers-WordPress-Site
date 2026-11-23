@@ -115,7 +115,7 @@ if ( ! function_exists( 'db_pp_sections' ) ) {
 		$s = array();
 
 		$s['glance'] = array( 'At a glance', '<ul class="dbpp-facts">'
-			. '<li><strong>US dollars</strong><span>Every price and payment is in USD, by card.</span></li>'
+			. '<li><strong>US dollars</strong><span>Every price and payment is in USD. Pay in full by card or another method shown at checkout; payment plans are charged to a saved card.</span></li>'
 			. '<li><strong>Stripe handles the card</strong><span>We never see or store your card number.</span></li>'
 			. '<li><strong>' . esc_html( db_pp_list( $terms ) ) . ' month plans</strong><span>' . ( $free ? 'No interest up to ' . (int) max( $free ) . ' months. ' : '' ) . ( $paid ? esc_html( implode( ' and ', array_map( function ( $m, $r ) use ( $fmt ) { return $fmt( $r ) . '% on ' . (int) $m . ' months'; }, array_keys( $paid ), $paid ) ) ) . '.' : '' ) . '</span></li>'
 			. '<li><strong>Ownership comes last</strong><span>The domain transfers to you after the final payment clears.</span></li>'
