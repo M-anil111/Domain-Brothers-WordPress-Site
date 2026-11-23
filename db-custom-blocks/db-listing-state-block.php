@@ -116,6 +116,9 @@ if ( ! function_exists( 'db_listing_mark_sold' ) ) {
 			return;
 		}
 		update_post_meta( $post->ID, 'db_listing_state', 'sold' );
+		// The theme's search results, archive rows and prev/next links read domain_status, so a name
+		// sold through checkout kept 'Make an Offer' there (bug register batch 2, LS-4).
+		update_post_meta( $post->ID, 'domain_status', 'sold' );
 		update_post_meta( $post->ID, 'db_sold_at', time() );
 		if ( (float) $price > 0 ) {
 			update_post_meta( $post->ID, 'db_sold_price', round( (float) $price, 2 ) );
