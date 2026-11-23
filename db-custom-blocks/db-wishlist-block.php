@@ -913,7 +913,8 @@ add_action( 'admin_post_db_wl_export', function () {
 	fputcsv( $out, array( 'Domain', 'Watching', 'Last added (UTC)', 'Emails' ) );
 	foreach ( db_wl_admin_rows() as $r ) {
 		$name = strtolower( $r->post_title );
-		fputcsv( $out, array( ( '' !== $name && false !== strpos( '=+-@', $name[0] ) ) ? "'" . $name : $name, (int) $r->watchers, $r->last_at, $r->emails ) );
+		// Every text cell is escaped: emails can start with = + - @ too (AC-18).
+		fputcsv( $out, array( db_crm_csv_safe( $name ), (int) $r->watchers, $r->last_at, db_crm_csv_safe( $r->emails ) ) );
 	}
 	fclose( $out );
 	exit;

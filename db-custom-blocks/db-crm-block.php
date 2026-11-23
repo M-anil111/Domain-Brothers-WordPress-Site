@@ -966,7 +966,7 @@ if ( ! function_exists( 'db_crm_csv_safe' ) ) {
 	 */
 	function db_crm_csv_safe( $value ) {
 		$value = (string) $value;
-		if ( '' !== $value && false !== strpos( "=+-@\t", $value[0] ) ) {
+		if ( '' !== $value && false !== strpos( "=+-@\t\r", $value[0] ) ) {
 			return "'" . $value;
 		}
 		return $value;

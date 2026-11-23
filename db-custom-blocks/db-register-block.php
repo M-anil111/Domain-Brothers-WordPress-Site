@@ -658,11 +658,8 @@ add_action( 'admin_post_db_accounts_csv', function () {
 		$p = json_decode( (string) $r['profile'], true );
 		$p = is_array( $p ) ? $p : array();
 		// A leading = + - @ would run as a formula in a spreadsheet.
-		$safe = static function ( $v ) {
-			$v = (string) $v;
-			return '' !== $v && false !== strpos( "=+-@\t\r", $v[0] ) ? "'" . $v : $v;
-		};
-		fputcsv( $out, array( $r['email'], $safe( $r['full_name'] ), $safe( $r['phone'] ), $r['newsletter'] ? 'yes' : 'no', $r['newsletter_at'], $r['consent_version'], $r['consent_at'],
+		$safe = 'db_crm_csv_safe';
+		fputcsv( $out, array( $safe( $r['email'] ), $safe( $r['full_name'] ), $safe( $r['phone'] ), $r['newsletter'] ? 'yes' : 'no', $r['newsletter_at'], $r['consent_version'], $r['consent_at'],
 			$safe( $p['intent'] ?? '' ), $safe( $p['budget'] ?? '' ), $safe( implode( '|', (array) ( $p['interests'] ?? array() ) ) ), $safe( $p['timeline'] ?? '' ), $safe( $p['industry'] ?? '' ), $safe( $p['source'] ?? '' ), $r['created_at'] ) );
 	}
 	fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions
