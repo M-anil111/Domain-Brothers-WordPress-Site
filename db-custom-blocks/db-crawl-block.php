@@ -239,8 +239,11 @@ add_action( 'template_redirect', function () {
 }, 3 );
 
 // 4. A canonical on every page that has none (virtual pages, staging, theme templates).
+// The plugin's own routes (/sell-your-domains/, /trust-center/, ...) are a 404 to WordPress's
+// query until they render with status 200, so the decision is made on the final status inside
+// the buffer, not with is_404() here (they had no canonical at all).
 add_action( 'template_redirect', function () {
-	if ( ! db_crawl_is_front_request() || is_404() || is_search() ) {
+	if ( ! db_crawl_is_front_request() || is_search() ) {
 		return;
 	}
 	$scheme = is_ssl() ? 'https' : 'http';
@@ -248,9 +251,9 @@ add_action( 'template_redirect', function () {
 	$uri    = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : '/'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	$url    = db_crawl_canonical_url( $scheme . '://' . $host . $uri );
 	ob_start( static function ( $html ) use ( $url ) {
-		return ( is_string( $html ) && false !== stripos( $html, '<html' ) ) ? db_crawl_insert_canonical( $html, $url ) : $html;
+		return ( is_string( $html ) && 200 === (int) http_response_code() && false !== stripos( $html, '<html' ) ) ? db_crawl_insert_canonical( $html, $url ) : $html;
 	} );
-}, 99 );
+}, -999 ); // early: the plugin's routes render and exit in template_redirect; inside the page cache's -1000 buffer
 
 // 5. robots.txt (the staging rule in db-safety-block.php still replaces it on staging hosts).
 add_filter( 'robots_txt', function ( $output ) {
