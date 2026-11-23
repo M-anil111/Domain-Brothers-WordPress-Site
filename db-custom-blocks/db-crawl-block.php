@@ -301,8 +301,22 @@ if ( ! function_exists( 'db_crawl_extra_sitemap_entries' ) ) {
 		global $wpdb;
 		// Latest change to any listing for sale: the lists and indexes change with it.
 		$latest = (int) $wpdb->get_var( "SELECT GREATEST( COALESCE( MAX( UNIX_TIMESTAMP( p.post_modified_gmt ) ), 0 ), COALESCE( MAX( CAST( m.meta_value AS UNSIGNED ) ), 0 ) ) FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_db_changed_at' WHERE p.post_type = 'domain' AND p.post_status = 'publish'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$file   = static function ( $f ) {
-			return is_readable( __DIR__ . '/' . $f ) ? (int) filemtime( __DIR__ . '/' . $f ) : 0;
+		// A deploy rewrites every file's mtime, so the last change is tracked by content hash:
+		// the date moves only when the file that builds the page really changed.
+		$seen   = get_option( 'db_crawl_file_seen', array() );
+		$seen   = is_array( $seen ) ? $seen : array();
+		$dirty  = false;
+		$file   = static function ( $f ) use ( &$seen, &$dirty ) {
+			$path = __DIR__ . '/' . $f;
+			if ( ! is_readable( $path ) ) {
+				return 0;
+			}
+			$hash = md5_file( $path );
+			if ( ! isset( $seen[ $f ] ) || $seen[ $f ][0] !== $hash ) {
+				$seen[ $f ] = array( $hash, isset( $seen[ $f ] ) ? time() : (int) filemtime( $path ) );
+				$dirty      = true;
+			}
+			return (int) $seen[ $f ][1];
 		};
 		$out = array(
 			array( home_url( '/sell-your-domains/' ), $file( 'db-seller-block.php' ) ),
@@ -314,6 +328,9 @@ if ( ! function_exists( 'db_crawl_extra_sitemap_entries' ) ) {
 			array( home_url( '/domain-glossary/' ), $file( 'db-learn-pages-block.php' ) ),
 			array( home_url( '/domain-price-index/' ), max( $file( 'db-learn-pages-block.php' ), $latest ) ),
 		);
+		if ( $dirty ) {
+			update_option( 'db_crawl_file_seen', $seen, false );
+		}
 		if ( function_exists( 'db_sales_collections' ) ) {
 			foreach ( array_keys( db_sales_collections() ) as $slug ) {
 				$out[] = array( home_url( '/collections/' . $slug . '/' ), $latest );
@@ -369,6 +386,20 @@ add_filter( 'rank_math/sitemap/entry', function ( $entry, $type, $object ) {
 	}
 	return $entry;
 }, 25, 3 );
+
+// The same rule in SQL, so Rank Math's page counts match what it lists. Without it the index
+// named a domain-sitemap2.xml whose six entries were all filtered out, and that file was a 404.
+if ( ! function_exists( 'db_crawl_sitemap_unsold_where' ) ) {
+	function db_crawl_sitemap_unsold_where( $where, $post_type = '' ) {
+		if ( 'domain' !== $post_type ) {
+			return $where;
+		}
+		global $wpdb;
+		return $where . " AND p.ID NOT IN ( SELECT post_id FROM {$wpdb->postmeta} WHERE ( meta_key = 'db_listing_state' AND meta_value IN ( 'sold', 'not_for_sale' ) ) OR ( meta_key = 'domain_status' AND LOWER( TRIM( meta_value ) ) = 'sold' ) )";
+	}
+}
+add_filter( 'rank_math/sitemap/get_posts/where', 'db_crawl_sitemap_unsold_where', 20, 2 );
+add_filter( 'rank_math/sitemap/post_count/where', 'db_crawl_sitemap_unsold_where', 20, 2 );
 
 // The /domains/ archive links every name to a broken /<name>/detail/ address: not in the sitemap.
 add_filter( 'rank_math/sitemap/post_type_archive_link', function ( $link, $post_type ) {
