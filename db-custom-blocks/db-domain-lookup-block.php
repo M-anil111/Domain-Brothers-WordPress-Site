@@ -483,7 +483,7 @@ if ( ! function_exists( 'db_lk_host' ) ) {
 		if ( 200 !== $r['code'] || ! $r['json'] ) {
 			return array( 'state' => 'unavailable', 'ip' => $ip );
 		}
-		return array( 'state' => 'ok', 'ip' => $ip, 'network' => sanitize_text_field( (string) ( $r['json']['name'] ?? '' ) ), 'country' => sanitize_text_field( (string) ( $r['json']['country'] ?? '' ) ) );
+		return array( 'state' => 'ok', 'ip' => $ip, 'network' => sanitize_text_field( (string) ( $r['json']['name'] ?? '' ) ), 'country' => sanitize_text_field( db_lk_rdap_country( (array) $r['json'] ) ) );
 	}
 }
 
@@ -678,6 +678,51 @@ if ( ! function_exists( 'db_lk_input_name' ) ) {
 			$name = $raw; // punycode extension, e.g. .xn--p1ai
 		}
 		return '' === $name ? array( 'name' => '', 'error' => 'Enter a domain name such as example.com.' ) : array( 'name' => $name, 'error' => '' );
+	}
+}
+
+if ( ! function_exists( 'db_lk_rdap_country' ) ) {
+	/**
+	 * The country of an IP network's RDAP record. ARIN leaves out the top-level country and puts it
+	 * in the registrant's vCard address instead, so most US-hosted sites showed 'Not shown' (TL-20).
+	 * Pure.
+	 */
+	function db_lk_rdap_country( array $json, $depth = 0 ) {
+		if ( ! empty( $json['country'] ) && is_string( $json['country'] ) ) {
+			return $json['country'];
+		}
+		if ( $depth > 3 ) {
+			return '';
+		}
+		foreach ( (array) ( $json['entities'] ?? array() ) as $ent ) {
+			if ( ! is_array( $ent ) ) {
+				continue;
+			}
+			foreach ( (array) ( $ent['vcardArray'][1] ?? array() ) as $prop ) {
+				if ( ! is_array( $prop ) || 'adr' !== ( $prop[0] ?? '' ) ) {
+					continue;
+				}
+				$params = (array) ( $prop[1] ?? array() );
+				if ( ! empty( $params['cc'] ) && is_string( $params['cc'] ) ) {
+					return strtoupper( $params['cc'] );
+				}
+				$val = $prop[3] ?? array();
+				if ( is_array( $val ) && ! empty( $val[6] ) && is_string( $val[6] ) ) {
+					return $val[6];
+				}
+				if ( ! empty( $params['label'] ) && is_string( $params['label'] ) ) {
+					$lines = array_values( array_filter( array_map( 'trim', explode( "\n", $params['label'] ) ) ) );
+					if ( $lines ) {
+						return end( $lines );
+					}
+				}
+			}
+			$inner = db_lk_rdap_country( $ent, $depth + 1 );
+			if ( '' !== $inner ) {
+				return $inner;
+			}
+		}
+		return '';
 	}
 }
 
