@@ -904,6 +904,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 
 		get_header();
 		?>
+<main id="main" class="site-main db-co-main"><?php // landmark for the checkout (bug register batch 2, AX-12) ?>
 <div id="db-co" class="db-co">
 	<?php
 	if ( function_exists( 'db_pa_html' ) ) {
@@ -1263,6 +1264,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 }());
 </script>
 <?php endif; ?>
+</main>
 		<?php
 		get_footer();
 	}
