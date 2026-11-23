@@ -859,7 +859,7 @@ if ( ! function_exists( 'db_trust_center_body' ) ) {
 		$h .= '<ul class="db-tc-pillars"><li><strong>Card data stays with Stripe</strong><span>We never see or store your card number.</span></li><li><strong>Codes are encrypted</strong><span>Transfer codes are shown only to the buyer.</span></li><li><strong>Every step is recorded</strong><span>Offers, payments and transfer stages sit in your account.</span></li></ul>';
 		$h .= '<h2 class="db-tc-h2">How each part of a purchase is protected</h2><dl class="db-sales-trust db-tc-grid">';
 		foreach ( $items as $it ) {
-			$h .= '<div class="db-sales-card db-tc-card"><span class="db-tc-ico">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span><dt>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
+			$h .= '<div class="db-sales-card db-tc-card"><dt><span class="db-tc-ico" aria-hidden="true">' . $ico( isset( $icons[ $it[0] ] ) ? $icons[ $it[0] ] : $icons['Payments'] ) . '</span>' . esc_html( $it[0] ) . '</dt><dd>' . esc_html( $it[1] ) . '</dd></div>';
 		}
 		$h .= '</dl><h2 class="db-tc-h2">Policies and guides</h2>';
 		$h .= '<ul class="db-sales-links"><li><a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms of use</a></li><li><a href="' . esc_url( home_url( '/payment-terms/' ) ) . '">Payment terms</a></li><li><a href="' . esc_url( home_url( '/epp-guidelines/' ) ) . '">Transfer (EPP) guidelines</a></li><li><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Contact us</a></li></ul>';
