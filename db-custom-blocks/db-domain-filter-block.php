@@ -271,7 +271,8 @@ add_action( 'wp_footer', function () {
 		if (!(qs.get('q') || qs.get('tld') || qs.get('max') || qs.get('sort'))) { return; }
 		if (qs.get('q')) { bar.elements.q.value = qs.get('q'); }
 		load().then(function () {
-			if (qs.get('tld')) { bar.elements.tld.value = qs.get('tld'); }
+			// ?tld=ca and ?tld=.CA both mean .ca; an unknown value was dropped silently (LS-15).
+			if (qs.get('tld')) { var tv = String(qs.get('tld')).trim().toLowerCase(); if (tv && tv.charAt(0) !== '.') { tv = '.' + tv; } bar.elements.tld.value = tv; }
 			if (qs.get('max')) { bar.elements.max.value = qs.get('max'); }
 			if (qs.get('sort')) { bar.elements.sort.value = qs.get('sort'); }
 			apply();
