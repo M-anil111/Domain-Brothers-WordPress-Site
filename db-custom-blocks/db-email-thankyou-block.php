@@ -547,7 +547,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 		$amount_safe = '';
 		if ( $amount ) {
 			$clean = preg_replace( '/[^0-9.]/', '', $amount );
-			$amount_safe = $clean ? '$' . number_format( (float) $clean, 0 ) : esc_html( $amount );
+			$amount_safe = $clean ? '$' . number_format( (float) $clean, floor( (float) $clean ) == (float) $clean ? 0 : 2 ) : esc_html( $amount );
 		}
 
 		// Green circle-check SVG — stroke draw animated via CSS (reduced-motion safe)

@@ -673,7 +673,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		// var, and ?s=... on a page URL turns it into a search for that page
 		// (a 404 here, after every successful payment).
 		$ty_type    = $is_plan ? 'plan' : 'full';
-		$ty_amount  = number_format( $price, 0, '.', ',' );
+		$ty_amount  = number_format( $price, floor( $price ) == $price ? 0 : 2, '.', ',' ); // keep cents: $2,499.50 is not $2,500 (CK-19)
 		$return_url = home_url(
 			'/thank-you/?type=' . $ty_type
 			. '&d=' . rawurlencode( $domain )
