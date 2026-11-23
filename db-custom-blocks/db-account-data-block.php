@@ -76,6 +76,13 @@ if ( ! function_exists( 'db_ad_delete_targets' ) ) {
 			$prefix . 'db_wl_codes'    => 'email',
 			$prefix . 'db_wl_sessions' => 'email',
 			$prefix . 'db_accounts'    => 'email',
+			// Alerts, alert settings, saved searches and checkout reminders: an alert already queued
+			// was still emailed after the account was deleted (bug register batch 2, AC-9). Orders,
+			// offers and transfer records are kept as business records.
+			$prefix . 'db_wl_notes'            => 'email',
+			$prefix . 'db_wl_prefs'            => 'email',
+			$prefix . 'db_saved_searches'      => 'email',
+			$prefix . 'db_checkout_reminders'  => 'email',
 		);
 	}
 }
@@ -144,6 +151,10 @@ add_action( 'rest_api_init', function () {
 				setcookie( DB_WL_COOKIE, '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
 			}
 			unset( $_COOKIE[ DB_WL_COOKIE ] );
+			if ( ! headers_sent() ) {
+				setcookie( 'db_in', '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'samesite' => 'Lax' ) ); // signed-in hint (AC-9)
+			}
+			delete_transient( 'db_reg_' . md5( $email ) );
 			error_log( 'DB account: self-service deletion completed.' ); // No address in the log.
 			return $send( array( 'ok' => true, 'message' => 'Your account and saved domains are deleted.' ) );
 		},

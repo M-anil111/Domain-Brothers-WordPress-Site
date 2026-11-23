@@ -23,7 +23,9 @@ check( 'confirm matches ignoring case and spaces', db_ad_confirm_ok( 'sam@exampl
 check( 'confirm rejects other text', ! db_ad_confirm_ok( 'sam@example.test', 'sam' ) && ! db_ad_confirm_ok( 'sam@example.test', '' ) );
 check( 'confirm rejects an empty signed-in address', ! db_ad_confirm_ok( '', '' ) );
 $t = db_ad_delete_targets( 'wp_' );
-check( 'delete covers account, items, codes, sessions', 4 === count( $t ) && isset( $t['wp_db_accounts'], $t['wp_db_wl_items'], $t['wp_db_wl_codes'], $t['wp_db_wl_sessions'] ) );
+check( 'delete covers account, items, codes, sessions', isset( $t['wp_db_accounts'], $t['wp_db_wl_items'], $t['wp_db_wl_codes'], $t['wp_db_wl_sessions'] ) );
+check( 'AC-9: delete covers alerts, alert settings, saved searches and checkout reminders', isset( $t['wp_db_wl_notes'], $t['wp_db_wl_prefs'], $t['wp_db_saved_searches'], $t['wp_db_checkout_reminders'] ) );
+check( 'delete keeps business records (deals, leads, transfers)', ! isset( $t['wp_db_deals'], $t['wp_db_leads'], $t['wp_db_epp'] ) );
 check( 'delete never targets orders', ! array_filter( array_keys( $t ), function ( $k ) { return false !== strpos( $k, 'order' ); } ) );
 
 echo "\n$pass passed, $fail failed\n";
