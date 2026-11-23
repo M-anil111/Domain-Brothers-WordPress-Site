@@ -57,13 +57,14 @@ if ( ! function_exists( 'db_seller_is_main_name' ) ) {
 	function db_seller_is_main_name( $name ) {
 		$labels = explode( '.', (string) $name );
 		$n      = count( $labels );
+		$second = array( 'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'com.au', 'net.au', 'org.au', 'id.au', 'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'com.mx', 'co.in', 'net.in', 'org.in', 'co.jp', 'com.cn', 'com.sg', 'com.hk', 'co.kr', 'com.tr', 'com.ar', 'co.il', 'com.my', 'com.ph', 'co.id', 'com.co', 'qc.ca', 'on.ca', 'bc.ca', 'ab.ca' );
 		if ( 2 === $n ) {
-			return true;
+			// A registry ending on its own (co.uk, com.au) is not a name anyone can own (SL-18).
+			return ! in_array( $labels[0] . '.' . $labels[1], $second, true );
 		}
 		if ( 3 !== $n ) {
 			return false;
 		}
-		$second = array( 'co.uk', 'org.uk', 'me.uk', 'ltd.uk', 'plc.uk', 'com.au', 'net.au', 'org.au', 'id.au', 'co.nz', 'net.nz', 'org.nz', 'co.za', 'com.br', 'com.mx', 'co.in', 'net.in', 'org.in', 'co.jp', 'com.cn', 'com.sg', 'com.hk', 'co.kr', 'com.tr', 'com.ar', 'co.il', 'com.my', 'com.ph', 'co.id', 'com.co', 'qc.ca', 'on.ca', 'bc.ca', 'ab.ca' );
 		return in_array( $labels[1] . '.' . $labels[2], $second, true );
 	}
 }
