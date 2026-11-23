@@ -987,8 +987,10 @@ if ( ! function_exists( 'db_seller_category_options' ) ) {
 if ( ! function_exists( 'db_seller_apply_categories' ) ) {
 	/** Sets the listing's categories; an empty choice leaves the existing ones. */
 	function db_seller_apply_categories( $post_id, $cats ) {
-		$ids = array_filter( array_map( 'intval', explode( ',', (string) $cats ) ) );
-		if ( $post_id && $ids ) {
+		$ids = array_values( array_filter( array_map( 'intval', explode( ',', (string) $cats ) ) ) );
+		if ( $post_id ) {
+			// Always set, clearing when none are chosen: a reused post kept the previous seller's
+			// categories (SL-27).
 			wp_set_object_terms( (int) $post_id, $ids, 'domain_category', false );
 			delete_transient( 'db_search_hints' );
 		}
