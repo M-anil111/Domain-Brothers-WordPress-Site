@@ -120,10 +120,17 @@ if ( ! function_exists( 'db_delay_rewrite' ) ) {
 		$loader = '<script data-no-delay>(function(){var done=false,ev=["pointerdown","keydown","touchstart","scroll","mousemove","wheel"];'
 			// Consent (db-consent-block.php): while a visitor who must be asked has not accepted, nothing starts.
 			. 'function ok(){var C=window.dbConsent;return !C||C.ok();}'
-			. 'function go(){if(done||!ok())return;done=true;ev.forEach(function(e){removeEventListener(e,go,{passive:true});});'
-			. 'document.querySelectorAll(\'script[type="text/db-delay"]\').forEach(function(o){var n=document.createElement("script");'
+			// INP: the scripts used to be swapped in inside the visitor's first input event, so the
+			// page could not paint the response to that tap until every inline script and tag had
+			// run (one 500 ms+ task on a mid-range phone). Now the handler only schedules: each
+			// script runs in its own task, in document order, after the browser has painted.
+			. 'function run(o){var n=document.createElement("script");'
 			. 'for(var i=0;i<o.attributes.length;i++){var a=o.attributes[i];if(a.name==="type"||a.name==="data-src")continue;n.setAttribute(a.name,a.value);}'
-			. 'var s=o.getAttribute("data-src");if(s){n.src=s;if(!o.hasAttribute("defer"))n.async=true;}else{n.text=o.text;}o.parentNode.replaceChild(n,o);});}'
+			. 'var s=o.getAttribute("data-src");if(s){n.src=s;if(!o.hasAttribute("defer"))n.async=true;}else{n.text=o.text;}o.parentNode.replaceChild(n,o);}'
+			. 'function go(){if(done||!ok())return;done=true;ev.forEach(function(e){removeEventListener(e,go,{passive:true});});'
+			. 'var q=[].slice.call(document.querySelectorAll(\'script[type="text/db-delay"]\')),k=0;'
+			. 'function step(){if(k>=q.length)return;run(q[k++]);setTimeout(step,0);}'
+			. 'if(window.requestAnimationFrame){requestAnimationFrame(function(){setTimeout(step,0);});}else{setTimeout(step,0);}}'
 			. 'ev.forEach(function(e){addEventListener(e,go,{passive:true});});'
 			. 'document.addEventListener("db-consent",function(e){if(e.detail&&e.detail.choice==="all")go();});'
 			. ( $immediate ? 'go();' : '' )

@@ -61,13 +61,13 @@ if ( '' === $node ) {
 			. 'createElement:function(){return {setAttribute:function(){}};}};var started=false;'
 			. 'global.addEventListener=function(){};global.removeEventListener=function(){};'
 			. 'Intl.DateTimeFormat=function(){return {resolvedOptions:function(){return {timeZone:' . json_encode( $tz ) . '};}};};'
-			. $head . $loader_js . $after;
+			. $head . $loader_js . 'setTimeout(function(){' . $after . '},30);';
 	};
 	$cases = array(
 		array( 'US visitor: scripts start, consent granted by default', 'America/New_York', null, 'console.log(JSON.stringify([started,window.dbConsent.region]))', '[true,false]' ),
 		array( 'UK visitor without a choice: scripts held', 'Europe/London', null, 'console.log(JSON.stringify([started,window.dbConsent.region]))', '[false,true]' ),
-		array( 'UK visitor: "Accept all" starts scripts', 'Europe/London', null, 'window.dbConsent.choice="all";document.dispatch("db-consent",{choice:"all"});console.log(JSON.stringify([started]))', '[true]' ),
-		array( 'UK visitor: "Reject" keeps scripts held', 'Europe/London', null, 'window.dbConsent.choice="essential";document.dispatch("db-consent",{choice:"essential"});console.log(JSON.stringify([started]))', '[false]' ),
+		array( 'UK visitor: "Accept all" starts scripts', 'Europe/London', null, 'window.dbConsent.choice="all";document.dispatch("db-consent",{choice:"all"});setTimeout(function(){console.log(JSON.stringify([started]));},30)', '[true]' ),
+		array( 'UK visitor: "Reject" keeps scripts held', 'Europe/London', null, 'window.dbConsent.choice="essential";document.dispatch("db-consent",{choice:"essential"});setTimeout(function(){console.log(JSON.stringify([started]));},30)', '[false]' ),
 		array( 'UK visitor who accepted before: scripts start', 'Europe/Paris', 'all', 'console.log(JSON.stringify([started]))', '[true]' ),
 		array( 'Stored choice is re-applied to Consent Mode', 'Europe/Paris', 'all', 'console.log(JSON.stringify([dataLayer.filter(function(a){return a[0]==="consent"&&a[1]==="update";}).length]))', '[1]' ),
 	);
