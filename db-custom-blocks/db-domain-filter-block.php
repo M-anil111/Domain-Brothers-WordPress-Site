@@ -414,6 +414,22 @@ add_action( 'pre_get_posts', function ( $q ) {
 	}
 } );
 
+// Domain search results (?s=...&post_type=domain) list only names for sale, as the header's match
+// count does: sold names were mixed into the results (LS-11).
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || ! $q->is_main_query() || ! $q->is_search() || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	$pt = $q->get( 'post_type' );
+	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
+		return;
+	}
+	$ids = array_map( static function ( $r ) {
+		return (int) $r['id'];
+	}, (array) db_domain_index() );
+	$q->set( 'post__in', $ids ? $ids : array( 0 ) );
+} );
+
 if ( ! function_exists( 'db_ad_clean_rows_html' ) ) {
 	/**
 	 * Pure: in theme list tables, drops rows for names that are not for sale and makes every link
