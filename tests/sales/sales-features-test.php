@@ -25,7 +25,7 @@ function esc_textarea( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES )
 function sanitize_key( $s ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $s ) ); }
 function sanitize_title( $s ) { return trim( preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $s ) ), '-' ); }
 function wp_unslash( $s ) { return $s; }
-function get_terms() { return array( (object) array( 'slug' => 'business', 'name' => 'Business' ), (object) array( 'slug' => 'technology', 'name' => 'Technology' ) ); }
+function get_terms() { return array( (object) array( 'slug' => 'business', 'name' => 'Business' ), (object) array( 'slug' => 'technology', 'name' => 'Technology' ), (object) array( 'slug' => 'creative', 'name' => 'Technology & Design' ) ); }
 function is_wp_error( $x ) { return false; }
 function current_user_can() { return false; }
 function current_time( $f ) { return '2026-11-08' === $f ? '2026-11-08' : '2026-11-08 10:00:00'; }
@@ -49,6 +49,16 @@ function wp_get_referer() { return false; }
 function add_query_arg( $args, $url ) { return $url . '?' . http_build_query( $args ); }
 function db_hits_is_bot() { return false; }
 function db_wl_email() { return ''; }
+function wp_list_pluck( $list, $field ) { return array_map( function ( $x ) use ( $field ) { return is_object( $x ) ? $x->$field : $x[ $field ]; }, (array) $list ); }
+/* Category terms: the slug is the name made into a slug, unless META 'slugs' gives a custom one. */
+function get_the_terms( $post, $tax ) {
+	$m = $GLOBALS['META'][ $post->ID ] ?? array();
+	$out = array();
+	foreach ( (array) ( $m['cats'] ?? array() ) as $i => $name ) {
+		$out[] = (object) array( 'name' => $name, 'slug' => $m['slugs'][ $i ] ?? sanitize_title( $name ) );
+	}
+	return $out ? $out : false;
+}
 
 class WP_Post { public $ID; public $post_type = 'domain'; public $post_title = ''; public $post_name = ''; }
 class WP_Query { public $posts = array(); public function __construct() { $this->posts = db_test_listings(); } }
@@ -101,6 +111,8 @@ db_test_add( 6, 'Ca-tools.ca', array( 'price' => 1500, 'cats' => array( 'Busines
 db_test_add( 7, 'Sold1.com', array( 'db_listing_state' => 'sold', 'price' => 500 ) );
 db_test_add( 8, 'Plainshop.ca', array( 'price' => 3000, 'cats' => array( 'Business' ) ) );
 db_test_add( 9, 'Quartz.com', array( 'price' => 2500, 'cats' => array( 'Business' ) ) );
+db_test_add( 10, 'Amber.ca', array( 'price' => 3500, 'cats' => array( 'Technology & Design' ), 'slugs' => array( 'creative' ) ) );
+db_test_add( 11, 'A1-test.com', array( 'price' => 900, 'cats' => array( 'Business' ) ) );
 
 require dirname( __DIR__, 2 ) . '/db-custom-blocks/db-sales-block.php';
 
@@ -178,6 +190,21 @@ ok( count( db_sales_comparables( db_dd_facts( $GLOBALS['POSTS'][1] ), 1 ) ) === 
 $comps = db_sales_comparables( db_dd_facts( $GLOBALS['POSTS'][3] ), 3 );
 ok( count( $comps ) === 2 && 'sold2.com' === $comps[0]['name'], 'comparables are the same extension, newest first' );
 ok( count( db_sales_comparables( db_dd_facts( $GLOBALS['POSTS'][7] ), 7 ) ) === 1, 'a sold name is not its own comparable' );
+
+/* QA report 2026-11-23 (earlier tests replace the fixtures, so add these listings here) */
+db_test_add( 10, 'Amber.ca', array( 'price' => 3500, 'cats' => array( 'Technology & Design' ), 'slugs' => array( 'creative' ) ) );
+db_test_add( 11, 'A1-test.com', array( 'price' => 900, 'cats' => array( 'Business' ) ) );
+db_test_add( 12, 'Maple.ca', array( 'price' => 1200, 'cats' => array( 'Business' ) ) );
+$n = names( db_finder_match( db_finder_criteria_from_array( array( 'industry' => 'creative' ) ), 50 ) );
+ok( array( 'amber.ca' ) === $n, 'DB-14: an industry with a custom slug finds its listings' );
+$saved = db_finder_criteria_from_array( json_decode( json_encode( db_finder_criteria_from_array( array( 'collection' => 'canadian-names-for-business-under-5000' ) ) ), true ) );
+$n     = names( db_finder_match( $saved, 50 ) );
+ok( '.ca' === $saved['ext'] && $n && ! array_filter( $n, function ( $x ) { return '.ca' !== substr( $x, -3 ); } ), 'DB-15: a saved collection keeps its .ca filter after a save and reload' );
+ok( 'Canadian names for business, up to $5,000' === db_finder_summary( $saved ), 'DB-15: a saved collection is labelled with its title' );
+$plain = db_finder_match( db_finder_criteria_from_array( array( 'collection' => 'plain-names-for-consumers' ) ), 50 );
+ok( ! in_array( 'a1-test.com', names( $plain ), true ) && ! in_array( 'ca-tools.ca', names( $plain ), true ), 'DB-19: the letters-only collection excludes digits and hyphens' );
+$forged = db_finder_criteria_from_array( array( 'ext' => '.net', 'maxlen' => 2, 'pure' => 1 ) );
+ok( ! isset( $forged['ext'] ) && ! isset( $forged['pure'] ), 'fixed collection filters are never read from the request' );
 
 /* Trust center and transfer stages */
 $trust = db_trust_center_body();

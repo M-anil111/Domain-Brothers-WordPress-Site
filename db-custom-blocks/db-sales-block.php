@@ -180,7 +180,22 @@ if ( ! function_exists( 'db_finder_criteria_from_array' ) ) {
 			$v           = isset( $in[ $key ] ) ? sanitize_key( (string) $in[ $key ] ) : 'any';
 			$out[ $key ] = isset( $def['choices'][ $v ] ) ? $v : 'any';
 		}
-		// Fixed filters used by collections only; never read from the query string.
+		// Fixed filters used by collections only; never read from the query string. A saved
+		// collection keeps its id and its fixed filters are rebuilt from it (QA report DB-15).
+		$col = isset( $in['collection'] ) ? sanitize_key( (string) $in['collection'] ) : '';
+		$all = function_exists( 'db_sales_collections' ) ? db_sales_collections() : array();
+		if ( '' !== $col && isset( $all[ $col ] ) ) {
+			$fixed = $all[ $col ]['criteria'];
+			foreach ( db_finder_options() as $key => $def ) {
+				if ( isset( $fixed[ $key ] ) && isset( $def['choices'][ $fixed[ $key ] ] ) ) {
+					$out[ $key ] = (string) $fixed[ $key ];
+				}
+			}
+			$out['collection'] = $col;
+			$out['ext']        = (string) ( $fixed['ext'] ?? '' );
+			$out['maxlen']     = (int) ( $fixed['maxlen'] ?? 0 );
+			$out['pure']       = ! empty( $fixed['pure'] ) ? 1 : 0;
+		}
 		return $out;
 	}
 }
@@ -189,6 +204,10 @@ if ( ! function_exists( 'db_finder_summary' ) ) {
 	function db_finder_summary( array $c ) {
 		$opts  = db_finder_options();
 		$parts = array();
+		$cols  = function_exists( 'db_sales_collections' ) ? db_sales_collections() : array();
+		if ( ! empty( $c['collection'] ) && isset( $cols[ $c['collection'] ] ) ) {
+			return $cols[ $c['collection'] ]['title'];
+		}
 		foreach ( array( 'industry', 'audience', 'geography', 'tone', 'budget' ) as $k ) {
 			if ( 'any' !== $c[ $k ] && isset( $opts[ $k ]['choices'][ $c[ $k ] ] ) ) {
 				$parts[] = $opts[ $k ]['choices'][ $c[ $k ] ];
@@ -208,7 +227,7 @@ if ( ! function_exists( 'db_finder_candidates' ) ) {
 		$q     = new WP_Query( array(
 			'post_type'      => 'domain',
 			'post_status'    => 'publish',
-			'posts_per_page' => 800,
+			'posts_per_page' => -1, // every listing: a cap dropped names past the first 800 (QA report DB-13)
 			'no_found_rows'  => true,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
@@ -232,7 +251,9 @@ if ( ! function_exists( 'db_finder_match' ) ) {
 		foreach ( db_finder_candidates() as $post ) {
 			$f     = db_dd_facts( $post );
 			$state = db_listing_state( $post );
-			$cats  = array_map( 'sanitize_title', (array) $f['cats'] );
+			// Term slugs, as the industry choices use; names made into slugs missed custom slugs (DB-14).
+			$terms = get_the_terms( $post, 'domain_category' );
+			$cats  = is_array( $terms ) ? wp_list_pluck( $terms, 'slug' ) : array();
 			$score = 0.0;
 			$why   = array();
 			$pure  = 'letters only' === $f['type'];
@@ -242,6 +263,9 @@ if ( ! function_exists( 'db_finder_match' ) ) {
 			}
 			if ( ! empty( $c['maxlen'] ) && $f['len'] > (int) $c['maxlen'] ) {
 				continue;
+			}
+			if ( ! empty( $c['pure'] ) && ! $pure ) {
+				continue; // letters-only collections never admit digits or hyphens (QA report DB-19)
 			}
 			if ( 'any' !== $c['industry'] ) {
 				if ( ! in_array( $c['industry'], $cats, true ) ) {
@@ -595,7 +619,7 @@ if ( ! function_exists( 'db_sales_handle_save' ) ) {
 		if ( $n >= DB_SALES_MAX_SEARCHES ) {
 			db_sales_back( array( 'saved' => 'full' ) );
 		}
-		$seen = wp_list_pluck( db_finder_match( $c, 500 ), 'post' );
+		$seen = wp_list_pluck( db_finder_match( $c, 5000 ), 'post' );
 		$ids  = array_map( function ( $p ) { return (int) $p->ID; }, $seen );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->insert( $t, array(
@@ -628,15 +652,18 @@ add_action( 'db_sales_cron', function () {
 		break;
 	}
 	foreach ( (array) $rows as $row ) {
+		$cursor = (int) $row->id;
 		$c    = db_finder_criteria_from_array( (array) json_decode( (string) $row->criteria, true ) );
 		$seen = (array) json_decode( (string) $row->seen, true );
 		$now  = array_map( function ( $p ) { return (int) $p->ID; }, wp_list_pluck( db_finder_match( $c, 5000 ), 'post' ) );
 		$new  = array_values( array_diff( $now, $seen ) );
+		$queued = array();
 		foreach ( array_slice( $new, 0, 5 ) as $post_id ) {
 			$p = get_post( $post_id );
 			if ( ! $p ) {
 				continue;
 			}
+			$queued[] = (int) $post_id;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$wpdb->insert( $wpdb->prefix . 'db_wl_notes', array(
 				'email'      => $row->email,
@@ -654,18 +681,21 @@ add_action( 'db_sales_cron', function () {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update( $t, array( 'seen' => wp_json_encode( $merged ) ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
 	}
-		$cursor = (int) $row->id;
+	if ( count( $rows ) < 500 ) {
+		$cursor = 0; // reached the end: start from the first search next run
+		break;
+	}
+	}
+	update_option( 'db_sales_cron_cursor', $cursor, false );
 } );
 
 /* --------------------------------------------------------- collections */
 
-		$queued = array();
 if ( ! function_exists( 'db_sales_collections' ) ) {
 	function db_sales_collections() {
 		return array(
 			'canadian-names-for-business-under-5000' => array(
 				'title'    => 'Canadian names for business, up to $5,000',
-			$queued[] = (int) $post_id;
 				'intro'    => 'Names ending in .ca that suit other businesses and fall within a $5,000 fixed price or are open to offers.',
 				'criteria' => array( 'ext' => '.ca', 'audience' => 'businesses', 'budget' => '5000' ),
 			),
@@ -677,16 +707,10 @@ if ( ! function_exists( 'db_sales_collections' ) ) {
 			'plain-names-for-consumers'              => array(
 				'title'    => 'Plain, easy-to-say names for consumers',
 				'intro'    => 'Letters-only names of ten characters or fewer that are easy to say and remember.',
-				'criteria' => array( 'audience' => 'consumers', 'maxlen' => 10, 'tone' => 'trustworthy' ),
+				'criteria' => array( 'audience' => 'consumers', 'maxlen' => 10, 'tone' => 'trustworthy', 'pure' => true ),
 			),
 		);
 	}
-	if ( count( $rows ) < 500 ) {
-		$cursor = 0; // reached the end: start from the first search next run
-		break;
-	}
-	}
-	update_option( 'db_sales_cron_cursor', $cursor, false );
 }
 
 if ( ! function_exists( 'db_sales_collection_rows' ) ) {
@@ -696,9 +720,7 @@ if ( ! function_exists( 'db_sales_collection_rows' ) ) {
 		if ( ! isset( $all[ $slug ] ) ) {
 			return null;
 		}
-		$c           = db_finder_criteria_from_array( $all[ $slug ]['criteria'] );
-		$c['ext']    = $all[ $slug ]['criteria']['ext'] ?? '';
-		$c['maxlen'] = (int) ( $all[ $slug ]['criteria']['maxlen'] ?? 0 );
+		$c    = db_finder_criteria_from_array( array( 'collection' => $slug ) );
 		$rows = db_finder_match( $c, 50 );
 		return count( $rows ) >= 3 ? array( $c, $rows ) : null;
 	}
