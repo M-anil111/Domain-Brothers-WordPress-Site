@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.145.5
+ * Version:     3.145.6
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -35,7 +35,7 @@ if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
 	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
 }
-define( 'DB_BLOCKS_LOADED', '3.145.5' );
+define( 'DB_BLOCKS_LOADED', '3.145.6' );
 $GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
 
 /*
@@ -793,6 +793,36 @@ if ( ! function_exists( 'db_plan_rate' ) ) {
 	function db_plan_rate( $months ) {
 		$rates = array( 3 => 0, 6 => 5, 9 => 8, 12 => 10 );
 		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
+	}
+}
+
+if ( ! function_exists( 'db_plan_add_months' ) ) {
+	/**
+	 * The date $n months after $ts, in the site's time zone, keeping the time of day. A day the
+	 * month does not have becomes the month's last day (Jan 31 + 1 = Feb 28/29), as in the plan
+	 * chooser's script. One rule for the chooser, the checkout, emails and the charges (batch 2).
+	 */
+	function db_plan_add_months( $ts, $n ) {
+		$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$d  = ( new DateTimeImmutable( '@' . (int) $ts ) )->setTimezone( $tz );
+		$y  = (int) $d->format( 'Y' );
+		$m  = (int) $d->format( 'n' ) + (int) $n;
+		$y += intdiv( $m - 1, 12 );
+		$m  = ( ( $m - 1 ) % 12 ) + 1;
+		$last = (int) ( new DateTimeImmutable( sprintf( '%04d-%02d-01', $y, $m ), $tz ) )->format( 't' );
+		$day  = min( (int) $d->format( 'j' ), $last );
+		return ( new DateTimeImmutable( sprintf( '%04d-%02d-%02d %s', $y, $m, $day, $d->format( 'H:i:s' ) ), $tz ) )->getTimestamp();
+	}
+}
+
+if ( ! function_exists( 'db_plan_is_due' ) ) {
+	/** True once the due date has arrived in the site's time zone (charged on the date shown, not a day late). */
+	function db_plan_is_due( $due_ts, $now ) {
+		if ( (int) $due_ts <= 0 ) {
+			return false;
+		}
+		$f = function_exists( 'wp_date' ) ? 'wp_date' : 'gmdate';
+		return $f( 'Y-m-d', (int) $due_ts ) <= $f( 'Y-m-d', (int) $now );
 	}
 }
 

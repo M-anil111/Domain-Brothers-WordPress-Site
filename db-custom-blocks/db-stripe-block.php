@@ -354,7 +354,7 @@ if ( ! function_exists( 'db_stripe_checkout_schedule' ) ) {
 		$rows   = array();
 		$months = (int) $months;
 		for ( $i = 1; $i <= $months; $i++ ) {
-			$ts     = 1 === $i ? (int) $now : (int) strtotime( '+' . ( $i - 1 ) . ' months', (int) $now );
+			$ts     = 1 === $i ? (int) $now : (int) db_plan_add_months( (int) $now, $i - 1 );
 			$when   = function_exists( 'wp_date' ) ? wp_date( 'M j, Y', $ts ) : gmdate( 'M j, Y', $ts );
 			$rows[] = array(
 				'label'  => $when . ( 1 === $i ? ' (today)' : '' ),
@@ -1744,7 +1744,11 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 
 		$plan['status']           = 'active';
 		$plan['next_installment'] = $installment_num + 1;
-		$plan['next_charge_ts']   = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		// Payment n+1 falls due on the schedule's date (start + n months), not a month after this
+		// charge happened, so charges no longer drift from the dates shown at checkout (batch 2).
+		$start_ts                 = (int) ( $plan['history'][0]['ts'] ?? time() );
+		$plan['next_charge_ts']   = db_plan_add_months( $start_ts, $installment_num );
+		unset( $plan['pending_pi'], $plan['pending_since'] );
 		update_option( $opt_key, $plan, false );
 		db_stripe_plan_index_add( $domain );
 		if ( $was_past_due && function_exists( 'db_plan_on_recovered' ) ) {
@@ -1835,6 +1839,9 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 			if ( time() - (int) ( $fresh['last_attempt_ts'] ?? 0 ) < 20 * HOUR_IN_SECONDS ) {
 				return 'skipped';
 			}
+			if ( ! empty( $fresh['pending_pi'] ) && time() - (int) ( $fresh['pending_since'] ?? 0 ) < 7 * DAY_IN_SECONDS ) {
+				return 'skipped'; // A payment for this installment is still processing.
+			}
 			$plan   = $fresh;
 			$n      = (int) $plan['next_installment'];
 			$months = (int) $plan['total_months'];
@@ -1889,7 +1896,15 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 				return 'declined';
 			}
 			if ( $pi ) {
-				return 'processing'; // e.g. "processing": the webhook settles it; last_attempt_ts de-bounces.
+				// Still settling (bank debits, Cash App): remember it, so the next daily run does not create
+				// a second PaymentIntent for the same payment; the webhook clears it (batch 2).
+				if ( 'processing' === $status ) {
+					$latest                  = (array) get_option( $opt_key, [] );
+					$latest['pending_pi']    = (string) ( $pi['id'] ?? '' );
+					$latest['pending_since'] = time();
+					update_option( $opt_key, $latest, false );
+				}
+				return 'processing';
 			}
 
 			// No PaymentIntent at all: network failure, bad key, deleted
@@ -2071,7 +2086,7 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 				$subj = sprintf( 'Your payment plan for %s has started', $domain );
 				$rows = '';
 				for ( $i = 1; $i <= $months; $i++ ) {
-					$when  = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
+					$when  = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', db_plan_add_months( time(), $i - 1 ) );
 					$rows .= '<tr><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . (int) $i . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . esc_html( $when ) . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;text-align:right;">$' . esc_html( number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '</td></tr>';
 				}
 				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active</p>';

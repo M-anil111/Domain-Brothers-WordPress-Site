@@ -95,7 +95,7 @@ if ( ! function_exists( 'db_plan_schedule' ) ) {
 			$state  = $i <= $paid ? 'paid' : ( $i === $next ? ( 'past_due' === ( $plan['status'] ?? '' ) ? 'overdue' : 'next' ) : 'scheduled' );
 			$rows[] = array(
 				'n'       => $i,
-				'due'     => 1 === $i ? $start : (int) strtotime( '+' . ( $i - 1 ) . ' months', $start ),
+				'due'     => 1 === $i ? $start : (int) db_plan_add_months( $start, $i - 1 ),
 				'amount'  => db_stripe_installment_cents( $price, $months, $i, db_plan_rate_of( $plan ) ) / 100,
 				'state'   => $state,
 				'paid_ts' => (int) ( $hist[ $i - 1 ]['ts'] ?? 0 ),
@@ -122,14 +122,14 @@ if ( ! function_exists( 'db_plan_preview_html' ) ) {
 		for ( $i = 1; $i <= $months; $i++ ) {
 			$rows[] = array(
 				'n'       => $i,
-				'due'     => 1 === $i ? $now : (int) strtotime( '+' . ( $i - 1 ) . ' months', $now ),
+				'due'     => 1 === $i ? $now : (int) db_plan_add_months( $now, $i - 1 ),
 				'amount'  => db_stripe_installment_cents( $price, $months, $i ) / 100,
 				'state'   => 1 === $i ? 'next' : 'scheduled',
 				'paid_ts' => 0,
 			);
 		}
 		$h = db_plan_schedule_html( $rows );
-		return '<p class="co-plan-schedule" style="font-size:14px;margin:12px 0 0;"><strong>Your payment dates</strong> (if every payment is on time). Payment 1 is charged today; the others on the same day of each following month.</p>' . $h;
+		return '<p class="co-plan-schedule" style="font-size:14px;margin:12px 0 0;"><strong>Your payment dates</strong> (if every payment is on time). Payment 1 is charged today; the others on the same day of each following month (the last day of a shorter month).</p>' . $h;
 	}
 }
 
@@ -478,6 +478,10 @@ if ( ! function_exists( 'db_plan_on_installment_failed' ) ) {
 		if ( $installment && (int) $installment !== (int) ( $plan['next_installment'] ?? 0 ) ) {
 			return;
 		}
+		if ( ! empty( $plan['pending_pi'] ) ) {
+			unset( $plan['pending_pi'], $plan['pending_since'] ); // a processing payment that failed: retries may run again
+			db_plan_save( $domain, $plan );
+		}
 		if ( 'past_due' === $plan['status'] ) {
 			// A retry inside the grace period also declined. The scheduled
 			// notices (day 3/6/9) already tell the customer; don't pile on.
@@ -582,7 +586,7 @@ if ( ! function_exists( 'db_plan_run_daily' ) ) {
 					$plan = $latest;
 				}
 				// Due: charge (de-bounced so a slow webhook can't cause a double charge).
-				if ( $due <= $now && $now - (int) ( $plan['last_attempt_ts'] ?? 0 ) > 20 * HOUR_IN_SECONDS ) {
+				if ( db_plan_is_due( $due, $now ) && $now - (int) ( $plan['last_attempt_ts'] ?? 0 ) > 20 * HOUR_IN_SECONDS ) {
 					db_stripe_charge_next_installment( $plan );
 				}
 				continue;

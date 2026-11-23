@@ -313,10 +313,33 @@ ok( 6 === count( $sched ) && 100000 === (int) round( $sched[1]['amount'] * 100 )
 $sched_new = db_plan_schedule( (array) get_option( $new_key ) );
 ok( 6 === count( $sched_new ) && 17500 === (int) round( $sched_new[1]['amount'] * 100 ), 'schedule for the new 6-month plan shows $175.00 instalments' );
 
+// 9d2. One month rule everywhere: a missing day becomes the month's last day (batch 2, plan date drift).
+$j31 = strtotime( '2026-01-31 15:00:00 UTC' );
+ok( '2026-02-28' === gmdate( 'Y-m-d', db_plan_add_months( $j31, 1 ) ) && '2026-03-31' === gmdate( 'Y-m-d', db_plan_add_months( $j31, 2 ) ) && '2026-04-30' === gmdate( 'Y-m-d', db_plan_add_months( $j31, 3 ) ), 'Jan 31 plan: Feb 28, Mar 31, Apr 30 (not Mar 3, Mar 31, May 1)' );
+ok( '2028-02-29' === gmdate( 'Y-m-d', db_plan_add_months( strtotime( '2028-01-30 09:00:00 UTC' ), 1 ) ), 'leap year: Jan 30 + 1 month is Feb 29' );
+ok( '2027-01-15 15:00' === gmdate( 'Y-m-d H:i', db_plan_add_months( strtotime( '2026-11-15 15:00:00 UTC' ), 2 ) ), 'crossing the year keeps the day and the time' );
+$rows31 = db_stripe_checkout_schedule( 3000, 3, $j31 );
+ok( false !== strpos( $rows31[1]['label'], 'Feb 28, 2026' ) && false !== strpos( $rows31[2]['label'], 'Mar 31, 2026' ), 'checkout shows the same dates the charges use' );
+ok( db_plan_is_due( strtotime( '2026-03-31 23:00:00 UTC' ), strtotime( '2026-03-31 01:00:00 UTC' ) ), 'due on its date even before the hour of the original purchase' );
+ok( ! db_plan_is_due( strtotime( '2026-03-31 00:30:00 UTC' ), strtotime( '2026-03-30 23:59:00 UTC' ) ), 'not due the day before' );
+
 // 9e. Checkout sidebar schedule: dates and amounts, first payment today.
 $rows = db_stripe_checkout_schedule( 12500, 3, strtotime( '2026-11-20 12:00:00 UTC' ) );
 ok( 3 === count( $rows ) && false !== strpos( $rows[0]['label'], '(today)' ) && '$4,166.67' === $rows[0]['amount'] && '$4,166.66' === $rows[2]['amount'], 'checkout schedule: 3 rows, first is today, last absorbs the rounding cent' );
 ok( 6 === count( db_stripe_checkout_schedule( 12500, 6, time() ) ) && '$2,187.50' === db_stripe_checkout_schedule( 12500, 6, time() )[0]['amount'], 'checkout schedule for 6 months uses the 5% total ($13,125 / 6)' );
 
+
+// 9f. A payment that comes back 'processing' is remembered: no second PaymentIntent the next day (batch 2).
+$pk = db_stripe_store_key( 'plan', 'proc.ca' );
+update_option( $pk, array( 'domain' => 'proc.ca', 'mode' => 'test', 'status' => 'active', 'price_usd' => 3000.0, 'total_months' => 3, 'next_installment' => 2, 'paid_installments' => 1,
+	'customer_id' => 'cus_p', 'payment_method' => 'pm_p', 'customer_email' => 'p@example.test', 'next_charge_ts' => time() - 60, 'rate_pct' => 0.0,
+	'history' => array( array( 'installment' => 1, 'amount_usd' => 1000, 'ts' => time() - 31 * DAY_IN_SECONDS, 'pi' => 'pi_p1' ) ) ) );
+$GLOBALS['STRIPE_NEXT'][] = array( 200, array( 'id' => 'pi_proc', 'object' => 'payment_intent', 'status' => 'processing', 'metadata' => array( 'domain' => 'proc.ca' ) ) );
+ok( 'processing' === db_stripe_charge_next_installment( (array) get_option( $pk ) ) && 'pi_proc' === ( get_option( $pk )['pending_pi'] ?? '' ), 'processing charge is stored as pending' );
+$pp = get_option( $pk ); $pp['last_attempt_ts'] = 0; update_option( $pk, $pp );
+$sp = count( $GLOBALS['STRIPE'] );
+ok( 'skipped' === db_stripe_charge_next_installment( (array) get_option( $pk ) ) && count( $GLOBALS['STRIPE'] ) === $sp, 'no second charge while the first is still processing' );
+db_plan_on_installment_failed( 'proc.ca', 2 );
+ok( empty( get_option( $pk )['pending_pi'] ), 'a failed processing payment clears the pending mark so retries can run' );
 echo "\n" . ( $n - $fails ) . "/$n passed\n";
 exit( $fails ? 1 : 0 );
