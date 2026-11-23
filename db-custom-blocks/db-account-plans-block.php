@@ -32,6 +32,15 @@ add_action( 'template_redirect', function () {
 	if ( ! in_array( $months, array( 3, 6, 9, 12 ), true ) || '' !== db_wl_email() ) {
 		return;
 	}
+	// A listing under the plan floor gets no plan: skip sign-in, and the checkout sends the
+	// buyer to pay in full (CK-15). Agreed deals (?offer=) keep the sign-in step.
+	if ( empty( $_GET['offer'] ) && function_exists( 'db_plan_offered' ) && function_exists( 'db_stripe_lookup_domain_price' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$name  = base64_decode( (string) wp_unslash( $_GET['d'] ?? '' ), true ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput, WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		$price = is_string( $name ) && preg_match( '/^[a-z0-9.-]{3,253}$/i', $name ) ? db_stripe_lookup_domain_price( $name ) : null;
+		if ( null !== $price && ! db_plan_offered( $price ) ) {
+			return;
+		}
+	}
 	$back = home_url( add_query_arg( array() ) ); // the full checkout URL, query included
 	nocache_headers();
 	wp_safe_redirect( add_query_arg( array( 'auth' => 'signin', 'plan' => 1, 'next' => rawurlencode( $back ) ), home_url( '/my-wishlist/' ) ) );
