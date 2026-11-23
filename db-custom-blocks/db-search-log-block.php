@@ -78,6 +78,10 @@ add_action( 'template_redirect', function () {
 	if ( '' === $ua || preg_match( '/bot|crawl|spider|slurp|curl|python|wget/i', $ua ) ) {
 		return;
 	}
+	// At most 30 logged searches per address per hour (SC-10).
+	if ( function_exists( 'db_wl_allow' ) && function_exists( 'db_wl_ip' ) && ! db_wl_allow( 'slog|' . db_wl_ip(), 30, HOUR_IN_SECONDS ) ) {
+		return;
+	}
 	global $wp_query;
 	$log = get_option( 'db_search_log', array() );
 	update_option( 'db_search_log', db_sl_add( is_array( $log ) ? $log : array(), get_search_query( false ), (int) $wp_query->found_posts, time() ), false );

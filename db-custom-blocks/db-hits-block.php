@@ -189,6 +189,10 @@ add_action( 'rest_api_init', function () {
 			if ( false !== strpos( $purpose, 'prefetch' ) || false !== strpos( $purpose, 'prerender' ) ) {
 				return $done();
 			}
+			// At most 60 counted views per address per 10 minutes: anonymous writes were unlimited (SC-10).
+			if ( function_exists( 'db_wl_allow' ) && function_exists( 'db_wl_ip' ) && ! db_wl_allow( 'hit|' . db_wl_ip(), 60, 10 * MINUTE_IN_SECONDS ) ) {
+				return $done();
+			}
 			$data = json_decode( (string) $req->get_body(), true );
 			$id   = is_array( $data ) ? (int) ( $data['p'] ?? 0 ) : 0;
 			$post = $id > 0 ? get_post( $id ) : null;

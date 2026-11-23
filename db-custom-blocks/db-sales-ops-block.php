@@ -455,6 +455,17 @@ add_action( 'rest_api_init', static function () {
 		'methods'             => WP_REST_Server::CREATABLE,
 		'callback'            => function ( WP_REST_Request $r ) {
 			$ev = sanitize_text_field( (string) $r->get_param( 'ev' ) ); // Exact names only: sanitize_key would lowercase them.
+			// Anonymous writes are limited per address, and each experiment event counts once per
+			// address per day, so the A/B numbers cannot be inflated by repeat calls (SC-10).
+			$fip = function_exists( 'db_wl_ip' ) ? db_wl_ip() : '';
+			if ( function_exists( 'db_wl_allow' ) ) {
+				if ( ! db_wl_allow( 'funnel|' . $fip, 60, 10 * MINUTE_IN_SECONDS ) ) {
+					return new WP_REST_Response( array( 'ok' => true ), 200 );
+				}
+				if ( 0 === strpos( $ev, 'exp_' ) && ! db_wl_allow( 'funnel|' . $ev . '|' . $fip, 1, DAY_IN_SECONDS ) ) {
+					return new WP_REST_Response( array( 'ok' => true ), 200 );
+				}
+			}
 			if ( 'listing_view' === $ev ) {
 				// Sent by the page-cache beacon; only for a published listing.
 				$post = get_post( (int) $r->get_param( 'post' ) );
