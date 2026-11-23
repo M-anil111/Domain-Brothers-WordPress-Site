@@ -614,13 +614,23 @@ if ( ! function_exists( 'db_sales_handle_save' ) ) {
 
 add_action( 'db_sales_cron', function () {
 	global $wpdb;
-	$t    = db_sales_table( 'searches' );
+	$t     = db_sales_table( 'searches' );
+	$began = time();
+	// Every saved search, in batches of 500 from a stored cursor: a fixed LIMIT 500 never reached
+	// the searches after the first 500 (QA report DB-11). A run that hits the time budget resumes
+	// where it stopped next time.
+	$cursor = (int) get_option( 'db_sales_cron_cursor', 0 );
+	while ( time() - $began < 20 ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-	$rows = $wpdb->get_results( "SELECT * FROM {$t} ORDER BY id ASC LIMIT 500" );
+	$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$t} WHERE id > %d ORDER BY id ASC LIMIT 500", $cursor ) );
+	if ( ! $rows ) {
+		$cursor = 0;
+		break;
+	}
 	foreach ( (array) $rows as $row ) {
 		$c    = db_finder_criteria_from_array( (array) json_decode( (string) $row->criteria, true ) );
 		$seen = (array) json_decode( (string) $row->seen, true );
-		$now  = array_map( function ( $p ) { return (int) $p->ID; }, wp_list_pluck( db_finder_match( $c, 500 ), 'post' ) );
+		$now  = array_map( function ( $p ) { return (int) $p->ID; }, wp_list_pluck( db_finder_match( $c, 5000 ), 'post' ) );
 		$new  = array_values( array_diff( $now, $seen ) );
 		foreach ( array_slice( $new, 0, 5 ) as $post_id ) {
 			$p = get_post( $post_id );
@@ -638,19 +648,24 @@ add_action( 'db_sales_cron', function () {
 				'tries'      => 0,
 			), array( '%s', '%d', '%s', '%s', '%s', '%d', '%d' ) );
 		}
-		$merged = array_slice( array_values( array_unique( array_merge( $seen, $now ) ) ), -500 );
+		// Only matches that were alerted (or were already known) count as seen; new matches past
+		// the five per run are alerted on later runs instead of being dropped (QA report DB-12).
+		$merged = array_slice( array_values( array_unique( array_merge( $seen, array_diff( $now, $new ), $queued ) ) ), -2000 );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update( $t, array( 'seen' => wp_json_encode( $merged ) ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
 	}
+		$cursor = (int) $row->id;
 } );
 
 /* --------------------------------------------------------- collections */
 
+		$queued = array();
 if ( ! function_exists( 'db_sales_collections' ) ) {
 	function db_sales_collections() {
 		return array(
 			'canadian-names-for-business-under-5000' => array(
 				'title'    => 'Canadian names for business, up to $5,000',
+			$queued[] = (int) $post_id;
 				'intro'    => 'Names ending in .ca that suit other businesses and fall within a $5,000 fixed price or are open to offers.',
 				'criteria' => array( 'ext' => '.ca', 'audience' => 'businesses', 'budget' => '5000' ),
 			),
@@ -666,6 +681,12 @@ if ( ! function_exists( 'db_sales_collections' ) ) {
 			),
 		);
 	}
+	if ( count( $rows ) < 500 ) {
+		$cursor = 0; // reached the end: start from the first search next run
+		break;
+	}
+	}
+	update_option( 'db_sales_cron_cursor', $cursor, false );
 }
 
 if ( ! function_exists( 'db_sales_collection_rows' ) ) {
