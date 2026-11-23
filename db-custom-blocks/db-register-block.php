@@ -273,7 +273,9 @@ add_action( 'rest_api_init', function () {
 					'phone'      => (string) $phone,
 					'newsletter' => ! empty( $d['newsletter'] ) ? 1 : 0,
 				), 30 * MINUTE_IN_SECONDS );
-				db_wl_send_code( $email );
+				if ( ! db_wl_send_code( $email ) ) {
+					return $send( array( 'ok' => false, 'message' => 'Too many codes were asked for this address in the last hour. Use the newest code you received, or try again in an hour.' ), 429 ); // AC-6: no false "we sent a code"
+				}
 			} else {
 				error_log( 'DB spam: blocked a registration (hidden field or too fast).' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}

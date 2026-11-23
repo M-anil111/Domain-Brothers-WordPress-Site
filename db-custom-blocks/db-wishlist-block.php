@@ -118,23 +118,60 @@ if ( ! function_exists( 'db_wl_hash' ) ) {
 
 if ( ! function_exists( 'db_wl_ip' ) ) {
 	function db_wl_ip() {
-		$ip = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? (string) $_SERVER['HTTP_CF_CONNECTING_IP'] : ( isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		return $ip;
+		// REMOTE_ADDR only. The server already sets it to the visitor's address for requests that
+		// come through Cloudflare; the CF-Connecting-IP header itself can be sent by anyone who
+		// reaches the origin directly, which gave a fresh rate-limit quota per request (TL-16).
+		return isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	}
 }
 
 if ( ! function_exists( 'db_wl_allow' ) ) {
 	/** Counts one use of $key; false once it has been used $limit times inside $window seconds. */
 	function db_wl_allow( $key, $limit, $window ) {
-		$k = 'db_wl_rl_' . md5( $key );
-		$n = (int) get_transient( $k );
-		if ( $n >= $limit ) {
-			return false;
+		// One atomic counter per key with a fixed window (TL-16, AC-13): the old transient was read
+		// and then written, so parallel requests all saw the same count, and every hit pushed the
+		// window out again.
+		global $wpdb;
+		$t   = $wpdb->prefix . 'db_rate';
+		$now = time();
+		$win = max( 1, (int) $window );
+		db_wl_rate_table();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$ok = $wpdb->query( $wpdb->prepare(
+			"INSERT INTO {$t} (k, n, ws) VALUES (%s, 1, %d) ON DUPLICATE KEY UPDATE n = IF(ws + %d <= %d, 1, n + 1), ws = IF(ws + %d <= %d, %d, ws)",
+			md5( $key ), $now, $win, $now, $win, $now, $now
+		) );
+		if ( false === $ok ) {
+			return true; // the limiter must never lock everyone out when the table is missing
 		}
-		set_transient( $k, $n + 1, $window );
-		return true;
+		$n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT n FROM {$t} WHERE k = %s", md5( $key ) ) );
+		// phpcs:enable
+		return $n <= (int) $limit;
 	}
 }
+
+if ( ! function_exists( 'db_wl_rate_table' ) ) {
+	/** Creates the counter table once. */
+	function db_wl_rate_table() {
+		if ( '1' === get_option( 'db_rate_table_v' ) ) {
+			return;
+		}
+		global $wpdb;
+		$wpdb->query( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}db_rate (k CHAR(32) NOT NULL PRIMARY KEY, n INT UNSIGNED NOT NULL DEFAULT 0, ws INT UNSIGNED NOT NULL DEFAULT 0, KEY ws (ws)) " . $wpdb->get_charset_collate() ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		update_option( 'db_rate_table_v', '1', true );
+	}
+}
+
+// Old counters are removed daily (rows whose window ended over a day ago).
+add_action( 'db_wl_rate_cleanup', static function () {
+	global $wpdb;
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_rate WHERE ws < %d", time() - DAY_IN_SECONDS ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+} );
+add_action( 'init', static function () {
+	if ( ! wp_next_scheduled( 'db_wl_rate_cleanup' ) ) {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'db_wl_rate_cleanup' );
+	}
+} );
 
 if ( ! function_exists( 'db_wl_same_origin' ) ) {
 	/** The request was made by a page of this site. */
@@ -186,21 +223,27 @@ if ( ! function_exists( 'db_wl_check_code' ) ) {
 		if ( 6 !== strlen( $code ) ) {
 			return false;
 		}
+		// Per address, across codes: a new code resets the per-code counter, this one is not (AC-13).
+		if ( ! db_wl_allow( 'verify-email:' . strtolower( (string) $email ), 10, HOUR_IN_SECONDS ) ) {
+			return false;
+		}
 		$t = $wpdb->prefix . 'db_wl_codes';
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// Claim one guess atomically before comparing: parallel guesses each need their own claim,
+		// so at most five are ever checked against one code (AC-13).
+		$claimed = $wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s AND attempts < 5 AND expires_at >= %d", $email, time() ) );
+		if ( ! $claimed ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND ( attempts >= 5 OR expires_at < %d )", $email, time() ) );
+			return false;
+		}
 		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s", $email ) );
-		if ( ! $row || (int) $row->expires_at < time() ) {
+		if ( ! $row || ! hash_equals( $row->code_hash, db_wl_hash( $email . '|' . $code ) ) ) {
 			return false;
 		}
-		if ( (int) $row->attempts >= 5 ) {
-			$wpdb->delete( $t, array( 'email' => $email ) );
+		// A code works once: only the request that deletes it signs in.
+		if ( ! $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND code_hash = %s", $email, $row->code_hash ) ) ) {
 			return false;
 		}
-		if ( ! hash_equals( $row->code_hash, db_wl_hash( $email . '|' . $code ) ) ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s", $email ) );
-			return false;
-		}
-		$wpdb->delete( $t, array( 'email' => $email ) ); // a code works once
 		// phpcs:enable
 		return true;
 	}
@@ -355,7 +398,10 @@ add_action( 'rest_api_init', function () {
 			if ( '' === $email ) {
 				return $send( array( 'ok' => false, 'message' => 'Enter a valid email address.' ), 400 );
 			}
-			db_wl_send_code( $email ); // the same answer whether or not it was sent
+			// The limit is per address, so saying so reveals nothing about whether an account exists (AC-6).
+			if ( ! db_wl_send_code( $email ) ) {
+				return $send( array( 'ok' => false, 'message' => 'Too many codes were asked for this address in the last hour. Use the newest code you received, or try again in an hour.' ), 429 );
+			}
 			return $send( array( 'ok' => true, 'message' => 'If that address is right, a 6-digit code is on its way. It works for 10 minutes.' ) );
 		},
 	) );
