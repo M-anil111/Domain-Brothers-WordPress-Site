@@ -62,6 +62,32 @@ if ( ! function_exists( 'db_lk_rdap_missing' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_lk_dns_state' ) ) {
+	/**
+	 * Whether a name exists in DNS: 'nx' when the TLD answers NXDOMAIN (no registration),
+	 * 'exists' when it is delegated, 'unknown' otherwise. Used when a registry's RDAP server
+	 * cannot be reached: Verisign (.com, .net) drops the TLS connection from this host on every
+	 * unregistered name instead of answering 404 (bug register batch 2, TL-1).
+	 */
+	function db_lk_dns_state( $name ) {
+		$r = db_lk_http( 'https://cloudflare-dns.com/dns-query?name=' . rawurlencode( $name ) . '&type=NS', array( 'Accept' => 'application/dns-json' ) );
+		return db_lk_dns_state_of( 200 === $r['code'] ? $r['json'] : null );
+	}
+}
+
+if ( ! function_exists( 'db_lk_dns_state_of' ) ) {
+	/** Pure: reads a DNS-over-HTTPS JSON answer. */
+	function db_lk_dns_state_of( $json ) {
+		if ( ! is_array( $json ) || ! isset( $json['Status'] ) ) {
+			return 'unknown';
+		}
+		if ( 3 === (int) $json['Status'] ) {
+			return 'nx';
+		}
+		return 0 === (int) $json['Status'] && ( ! empty( $json['Answer'] ) || ! empty( $json['Authority'] ) ) ? 'exists' : 'unknown';
+	}
+}
+
 if ( ! function_exists( 'db_lk_registry' ) ) {
 	/** @return array<string,mixed> */
 	function db_lk_registry( $name ) {
@@ -69,8 +95,14 @@ if ( ! function_exists( 'db_lk_registry' ) ) {
 		if ( 404 === $r['code'] && ! db_lk_rdap_missing( $r['json'] ) ) {
 			return array( 'state' => 'none' );
 		}
+		if ( 404 === $r['code'] ) {
+			return array( 'state' => 'unavailable', 'reason' => 'no_rdap' );
+		}
+		if ( 0 === $r['code'] && 'nx' === db_lk_dns_state( $name ) ) {
+			return array( 'state' => 'none', 'via' => 'dns' );
+		}
 		if ( 200 !== $r['code'] || ! $r['json'] ) {
-			return array( 'state' => 'unavailable' );
+			return array( 'state' => 'unavailable', 'reason' => 'no_answer' );
 		}
 		$out = array( 'state' => 'ok', 'events' => array(), 'status' => array(), 'ns' => array(), 'registrar' => '', 'dnssec' => null );
 		foreach ( (array) ( $r['json']['events'] ?? array() ) as $e ) {
@@ -635,7 +667,8 @@ if ( ! function_exists( 'db_lk_extensions' ) ) {
 				$code  = ( is_object( $r ) && isset( $r->status_code ) ) ? (int) $r->status_code : 0;
 				$out[] = array( 'ext' => $x, 'state' => 200 === $code ? 'taken' : ( 404 === $code && ! db_lk_rdap_missing( is_object( $r ) ? $r->body : '' ) ? 'free' : 'unknown' ) );
 			}
-			// Some registries drop a connection now and then; try each unclear one once more (at most three).
+			// Some registries drop a connection now and then; try each unclear one once more (at most
+			// three), then ask DNS: NXDOMAIN at the TLD means no registration (TL-1, .com and .net).
 			$tries = 0;
 			foreach ( $out as $k => $row ) {
 				if ( 'unknown' === $row['state'] && $tries < 3 ) {
@@ -645,6 +678,14 @@ if ( ! function_exists( 'db_lk_extensions' ) ) {
 						$out[ $k ]['state'] = 'taken';
 					} elseif ( 404 === $r['code'] && ! db_lk_rdap_missing( $r['json'] ) ) {
 						$out[ $k ]['state'] = 'free';
+					}
+				}
+				if ( 'unknown' === $out[ $k ]['state'] ) {
+					$dns = db_lk_dns_state( $label . '.' . $row['ext'] );
+					if ( 'nx' === $dns ) {
+						$out[ $k ]['state'] = 'free';
+					} elseif ( 'exists' === $dns ) {
+						$out[ $k ]['state'] = 'taken';
 					}
 				}
 			}

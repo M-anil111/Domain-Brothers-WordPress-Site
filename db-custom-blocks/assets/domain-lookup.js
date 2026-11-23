@@ -44,9 +44,11 @@
       if (c && r.status && r.status.length) { var p = el("p"); p.style.marginTop = "12px"; r.status.forEach(function (s) { p.appendChild(el("span", "dblk-pill", s)); }); c.appendChild(p); }
       note(c, "Owner details are usually hidden by registrars for privacy, so a lookup rarely shows who owns a name.");
     } else if (r.state === "none") {
-      add(card("Registry record", "No registration record was found. The name looks unregistered."));
+      add(card("Registry record", r.via === "dns" ? "No registration was found: the name does not exist in DNS. It looks unregistered; confirm at a registrar before you count on it." : "No registration record was found. The name looks unregistered."));
+    } else if (r.reason === "no_rdap") {
+      add(card("Registry record", "This extension does not publish a public registry record."));
     } else {
-      add(card("Registry record", "This extension does not publish a public registry record, or the registry did not answer."));
+      add(card("Registry record", "The registry did not answer, so the record could not be checked. Try again in a minute."));
     }
 
     // Age and expiry
