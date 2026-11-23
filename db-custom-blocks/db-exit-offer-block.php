@@ -72,7 +72,7 @@ add_action( 'wp_footer', function () {
 		<h2 id="db-exit-title" class="db-exit-title">Make an offer on <span><?php echo esc_html( $name ); ?></span></h2>
 		<p id="db-exit-desc" class="db-exit-text">
 			<?php if ( $price > 0 ) : ?>
-				Listed at <strong>$<?php echo esc_html( number_format( $price, 0 ) ); ?></strong>, but we welcome offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
+				Listed at <strong><?php echo esc_html( db_usd( $price ) ); ?></strong>, but we welcome offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
 			<?php else : ?>
 				This name is open to offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
 			<?php endif; ?>
@@ -91,7 +91,7 @@ add_action( 'wp_footer', function () {
 		<?php if ( $urls ) : ?>
 			<p class="db-exit-or">Rather buy it now?</p>
 			<div class="db-exit-alt">
-				<a class="db-exit-btn db-exit-btn--solid" data-db-exit-evt="buy" href="<?php echo esc_url( $urls['buy'] ); ?>">Buy now &middot; $<?php echo esc_html( number_format( $price, 0 ) ); ?></a>
+				<a class="db-exit-btn db-exit-btn--solid" data-db-exit-evt="buy" href="<?php echo esc_url( $urls['buy'] ); ?>">Buy now &middot; <?php echo esc_html( db_usd( $price ) ); ?></a>
 				<?php if ( ! function_exists( 'db_plan_offered' ) || db_plan_offered( $price ) ) : ?><a class="db-exit-btn" data-db-exit-evt="plan" href="<?php echo esc_url( $urls['plan'] ); ?>">Pay monthly from <?php echo esc_html( function_exists( 'db_dd_monthly' ) ? db_dd_monthly( $price ) : '' ); ?>/mo</a><?php endif; ?>
 			</div>
 		<?php endif; ?>

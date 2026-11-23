@@ -52,7 +52,7 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		$shown = ucfirst( $name );
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$urls  = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
-		$money = '$' . number_format( $price, 0 );
+		$money = db_usd( $price );
 		$plan  = $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) && function_exists( 'db_dd_monthly' );
 		$cats  = get_the_terms( $post, 'domain_category' );
 		$cat   = null;

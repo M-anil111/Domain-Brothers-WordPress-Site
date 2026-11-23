@@ -432,7 +432,7 @@ if ( ! function_exists( 'db_pages_listing_html' ) ) {
 			if ( $sold ) {
 				$h .= '<span class="dbl-foot"><span class="dbl-badge">Sold</span></span>';
 			} elseif ( $price > 0 ) {
-				$h .= '<span class="dbl-foot"><span class="dbl-price">$' . esc_html( number_format( $price, 0 ) ) . ( $r['monthly'] > 0 ? '<small>or from $' . esc_html( number_format( (float) $r['monthly'], 0 ) ) . '/mo</small>' : '' ) . '</span><span class="dbl-go">Buy now</span></span>';
+				$h .= '<span class="dbl-foot"><span class="dbl-price">' . esc_html( db_usd( $price ) ) . ( $r['monthly'] > 0 ? '<small>or from $' . esc_html( number_format( (float) $r['monthly'], 0 ) ) . '/mo</small>' : '' ) . '</span><span class="dbl-go">Buy now</span></span>';
 			} else {
 				$h .= '<span class="dbl-foot"><span class="dbl-price dbl-price--offer">Open to offers</span><span class="dbl-go dbl-go--offer">Make an offer</span></span>';
 			}

@@ -883,6 +883,17 @@ if ( ! function_exists( 'db_plan_b64' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_usd' ) ) {
+	/**
+	 * A USD amount as shown to buyers: "$1,500" for whole dollars, "$1,500.75" when there are cents.
+	 * One formatter for listings, the plan chooser, checkout and confirmation (QA report DB-17).
+	 */
+	function db_usd( $amount ) {
+		$a = round( (float) $amount, 2 );
+		return '$' . number_format( $a, floor( $a ) == $a ? 0 : 2 );
+	}
+}
+
 if ( ! function_exists( 'db_plan_offered' ) ) {
 	/**
 	 * Whether a price can be paid monthly. The FAQ and listing cards promise plans from
@@ -951,7 +962,7 @@ function db_plan_widget_html() {
 
 		<div class="db-plan-head">
 			<h1 class="db-plan-h1">Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h1>
-			<p class="db-plan-total">Domain price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
+			<p class="db-plan-total">Domain price: <strong><?php echo esc_html( '$' === $cur ? db_usd( $price ) : $cur . number_format( $price, 2 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
 		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="db-plan-terms" role="group" aria-label="Payment terms"></div><?php // toggle buttons, not half-built tabs (AX-11) ?>

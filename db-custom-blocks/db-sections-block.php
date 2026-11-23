@@ -148,7 +148,7 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		$h     = '<aside class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
 		if ( 'standard' === $state && $price > 0 ) {
 			$urls = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
-			$h   .= '<p class="db-dd-side-price">$' . esc_html( number_format( $price, 0 ) ) . '</p>';
+			$h   .= '<p class="db-dd-side-price">' . esc_html( db_usd( $price ) ) . '</p>';
 			if ( function_exists( 'db_dd_monthly' ) && $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) ) {
 				$h .= '<p class="db-dd-side-sub">or from ' . esc_html( db_dd_monthly( $price ) ) . '/month</p>';
 			}

@@ -780,7 +780,7 @@ if ( ! function_exists( 'db_wl_row_html' ) ) {
 		$state = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'offer';
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$label = array(
-			'standard'     => $price > 0 ? '$' . number_format( $price, 0 ) : 'Open to offers',
+			'standard'     => $price > 0 ? db_usd( $price ) : 'Open to offers',
 			'offer'        => 'Open to offers',
 			'sold'         => 'Sold',
 			'not_for_sale' => 'Not for sale',

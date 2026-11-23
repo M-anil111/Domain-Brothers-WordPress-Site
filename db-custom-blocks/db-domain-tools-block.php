@@ -526,7 +526,7 @@ if ( ! function_exists( 'db_tools_sticky_html' ) ) {
 		$h = '<div class="db-sticky" id="db-sticky" hidden><div class="db-sticky-in"><div class="db-sticky-txt"><strong>' . esc_html( $f['name'] ) . '</strong><span>';
 		if ( 'standard' === $state && $f['price'] > 0 ) {
 			$urls = db_dd_checkout_urls( get_the_title( $post ), $f['price'] );
-			$h   .= esc_html( '$' . number_format( $f['price'], 0 ) . ' or ' . db_dd_monthly( $f['price'] ) . '/mo' ) . '</span></div><div class="db-sticky-act"><a class="db-sticky-btn db-sticky-btn--ghost" href="#db-pay-h">Ways to pay</a><a class="db-sticky-btn" href="' . esc_url( $urls['buy'] ) . '">Buy now</a>';
+			$h   .= esc_html( db_usd( $f['price'] ) . ' or ' . db_dd_monthly( $f['price'] ) . '/mo' ) . '</span></div><div class="db-sticky-act"><a class="db-sticky-btn db-sticky-btn--ghost" href="#db-pay-h">Ways to pay</a><a class="db-sticky-btn" href="' . esc_url( $urls['buy'] ) . '">Buy now</a>';
 		} else {
 			$h .= 'Open to offers</span></div><div class="db-sticky-act"><a class="db-sticky-btn" href="#offer" data-sticky-offer>Make an offer</a>';
 		}

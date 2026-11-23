@@ -223,7 +223,7 @@ if ( ! function_exists( 'db_rec_cards_html' ) ) {
 			$out  .= '<li class="db-rec-card"><a class="db-rec-link" href="' . esc_url( $r['u'] ) . '">'
 				. '<span class="db-rec-name">' . esc_html( $r['n'] ) . '</span>'
 				. '<span class="db-rec-why">' . esc_html( $r['reason'] ) . '</span>'
-				. '<span class="db-rec-price">' . ( $price > 0 ? '$' . esc_html( number_format( $price, 0 ) ) : 'Make an offer' ) . '</span>'
+				. '<span class="db-rec-price">' . ( $price > 0 ? esc_html( db_usd( $price ) ) : 'Make an offer' ) . '</span>'
 				. ( $price >= 600 && function_exists( 'db_dd_monthly' ) ? '<span class="db-rec-mo">or ' . esc_html( db_dd_monthly( $price ) ) . '/mo</span>' : '' )
 				. '</a></li>';
 		}
