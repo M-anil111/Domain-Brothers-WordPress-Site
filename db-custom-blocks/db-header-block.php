@@ -271,7 +271,22 @@ if ( ! function_exists( 'db_acct_menu_links' ) ) {
 if ( ! function_exists( 'db_acct_signout_url' ) ) {
 	/** A sign-out link that works before any script has loaded. */
 	function db_acct_signout_url() {
-		return add_query_arg( 'db_signout', wp_create_nonce( 'db_signout' ), home_url( '/' ) );
+		return add_query_arg( 'db_signout', db_acct_signout_token(), home_url( '/' ) );
+	}
+}
+
+if ( ! function_exists( 'db_acct_signout_token' ) ) {
+	/**
+	 * Sign-out token tied to this visitor's session cookie. wp_create_nonce() was the same for
+	 * every visitor without a WordPress login, so any site could sign people out (SC-14).
+	 * Signed-in pages are never cached (cookie db_wl), so the token is per visitor.
+	 */
+	function db_acct_signout_token() {
+		$c = defined( 'DB_WL_COOKIE' ) && isset( $_COOKIE[ DB_WL_COOKIE ] ) ? (string) $_COOKIE[ DB_WL_COOKIE ] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( '' === $c ) {
+			return '';
+		}
+		return substr( hash_hmac( 'sha256', $c . '|signout', wp_salt( 'nonce' ) ), 0, 24 );
 	}
 }
 
@@ -279,7 +294,9 @@ add_action( 'template_redirect', function () {
 	if ( ! isset( $_GET['db_signout'] ) || ! function_exists( 'db_wl_end_session' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 		return;
 	}
-	if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['db_signout'] ) ), 'db_signout' ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+	$tok  = sanitize_text_field( wp_unslash( $_GET['db_signout'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+	$want = db_acct_signout_token();
+	if ( '' !== $want && hash_equals( $want, $tok ) ) {
 		db_wl_end_session();
 	}
 	nocache_headers();
