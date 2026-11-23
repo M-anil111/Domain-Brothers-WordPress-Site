@@ -941,7 +941,7 @@ function db_plan_widget_html() {
 
 		<div class="db-plan-head">
 			<h1 class="db-plan-h1">Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h1>
-			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
+			<p class="db-plan-total">Domain price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
 		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
 		<div class="db-plan-terms" role="group" aria-label="Payment terms"></div><?php // toggle buttons, not half-built tabs (AX-11) ?>
