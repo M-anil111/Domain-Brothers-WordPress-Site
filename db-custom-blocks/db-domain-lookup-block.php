@@ -260,7 +260,17 @@ if ( ! function_exists( 'db_lk_ssl' ) ) {
 		// Never connect to a name that points inside a private or reserved network.
 		$ip = gethostbyname( $name );
 		if ( $ip === $name || ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-			return array( 'state' => 'none' );
+			// IPv6-only sites have no IPv4 address; use a public AAAA address instead (TL-18).
+			$ip = '';
+			foreach ( (array) @dns_get_record( $name, DNS_AAAA ) as $rec ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				if ( ! empty( $rec['ipv6'] ) && filter_var( $rec['ipv6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+					$ip = '[' . $rec['ipv6'] . ']';
+					break;
+				}
+			}
+			if ( '' === $ip ) {
+				return array( 'state' => 'none' );
+			}
 		}
 		$ctx = stream_context_create( array( 'ssl' => array( 'capture_peer_cert' => true, 'verify_peer' => false, 'verify_peer_name' => false, 'SNI_enabled' => true, 'peer_name' => $name ) ) );
 		$fp  = @stream_socket_client( 'ssl://' . $ip . ':443', $errno, $errstr, 4, STREAM_CLIENT_CONNECT, $ctx ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
@@ -496,7 +506,7 @@ if ( ! function_exists( 'db_lk_mailauth' ) ) {
 if ( ! function_exists( 'db_lk_host' ) ) {
 	/** Network that owns the website address, from the public RDAP IP record. @return array<string,mixed> */
 	function db_lk_host( array $dns ) {
-		$ip = $dns['A'][0] ?? '';
+		$ip = $dns['A'][0] ?? ( $dns['AAAA'][0] ?? '' ); // IPv6-only sites have only AAAA (TL-18)
 		if ( '' === $ip || ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 			return array( 'state' => 'none' );
 		}
