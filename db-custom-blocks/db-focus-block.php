@@ -173,7 +173,7 @@ if ( ! function_exists( 'db_focus_section_html' ) ) {
 		}
 		$html .= '</ol>';
 		if ( ! empty( $def['link'] ) && 3 === count( $def['link'] ) ) {
-			$html .= '<p class="dbx-more">' . esc_html( $def['link'][2] ) . ' <a href="' . esc_url( $def['link'][0] ) . '" target="_blank" rel="noopener">' . esc_html( $def['link'][1] ) . '</a>.</p>';
+			$html .= '<p class="dbx-more">' . esc_html( $def['link'][2] ) . ' <a href="' . esc_url( $def['link'][0] ) . '" target="_blank" rel="noopener">' . esc_html( $def['link'][1] ) . '<span class="screen-reader-text"> (opens in a new tab)</span>' . '</a>.</p>';
 		}
 		return $html . db_focus_read_next( isset( $def['_slug'] ) ? (string) $def['_slug'] : '' ) . '</div></section>';
 	}

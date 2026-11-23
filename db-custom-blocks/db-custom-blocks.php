@@ -914,6 +914,25 @@ if ( ! function_exists( 'db_usd' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_newtab_hint' ) ) {
+	/**
+	 * Adds a hidden " (opens in a new tab)" to every link with target="_blank" that does not
+	 * already say so, so screen-reader users are warned before a new tab opens (AX-22). Pure.
+	 */
+	function db_newtab_hint( $html ) {
+		if ( false === stripos( (string) $html, '_blank' ) ) {
+			return $html;
+		}
+		return preg_replace_callback( '#(<a\b[^>]*\btarget=["\']_blank["\'][^>]*>)(.*?)(</a>)#is', static function ( $m ) {
+			if ( false !== stripos( $m[2], 'new tab' ) || false !== stripos( $m[1], 'new tab' ) ) {
+				return $m[0];
+			}
+			return $m[1] . $m[2] . '<span class="screen-reader-text"> (opens in a new tab)</span>' . $m[3];
+		}, (string) $html );
+	}
+}
+add_filter( 'the_content', 'db_newtab_hint', 99 );
+
 if ( ! function_exists( 'db_plan_offered' ) ) {
 	/**
 	 * Whether a price can be paid monthly. The FAQ and listing cards promise plans from

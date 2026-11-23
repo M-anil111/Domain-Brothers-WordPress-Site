@@ -155,7 +155,7 @@ if ( ! function_exists( 'db_article_layout' ) ) {
 			'Facebook' => 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( $url ),
 			'Email'    => 'mailto:?subject=' . rawurlencode( $title ) . '&body=' . rawurlencode( $url ),
 		) as $label => $href ) {
-			$share .= '<a href="' . esc_url( $href ) . '"' . ( 'Email' === $label ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( $label ) . '</a>';
+			$share .= '<a href="' . esc_url( $href ) . '"' . ( 'Email' === $label ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( $label ) . ( 'Email' === $label ? '' : '<span class="screen-reader-text"> (opens in a new tab)</span>' ) . '</a>';
 		}
 
 		$tags = '';
