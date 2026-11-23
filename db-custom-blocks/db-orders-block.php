@@ -430,7 +430,12 @@ add_action( 'admin_post_db_orders_reset_test', function () {
 			do_action( 'litespeed_purge_post', $post->ID );
 		}
 		$n += (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE mode = 'test' AND domain = %s", $domain ) );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_epp WHERE domain = %s", strtolower( trim( $domain ) ) ) ); // test transfer-code records go with the test sale
+		// Test transfer-code records go with the test sale. The EPP table has no mode column, so
+		// a domain with a live sale keeps its records (CK-22).
+		$live = get_option( 'db_stripe_sold_' . $key ) || (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE mode = 'live' AND domain = %s", $domain ) ) > 0;
+		if ( ! $live ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_epp WHERE domain = %s", strtolower( trim( $domain ) ) ) );
+		}
 	}
 	// phpcs:enable
 	delete_transient( defined( 'DB_DOMAIN_INDEX_KEY' ) ? DB_DOMAIN_INDEX_KEY : 'db_domain_index_v3' );
