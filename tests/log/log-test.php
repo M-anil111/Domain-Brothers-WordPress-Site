@@ -34,5 +34,6 @@ check( 'months older than 12 months are archived, oldest first', array( '2025-09
 check( 'the cut-off month itself is kept', ! in_array( '2025-11', db_log_archive_months( '2025-01-01 00:00:00', $now ), true ) );
 check( 'a very old start is bounded (at most 240 months)', 240 === count( db_log_archive_months( '1990-01-01 00:00:00', $now ) ) );
 
+check( 'one-time sign-in codes are masked (AD-2)', 'Your Domain Brothers sign-in code: [code]' === db_log_redact( 'Your Domain Brothers sign-in code: 151544' ) && false === strpos( db_log_redact( 'PIN 4821' ), '4821' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

@@ -64,6 +64,7 @@ if ( ! function_exists( 'db_log_redact' ) ) {
 			'/\b(?:\d[ \-]?){13,19}\b/'                                                   => '[number]',
 			'/([?&](?:pass(?:word)?|pwd|token|key|secret|code|nonce|_wpnonce)=)[^&\s"\']+/i' => '$1[redacted]',
 			'/\b[a-f0-9]{40,}\b/i'                                                        => '[hex]',
+			'/\b(code|passcode|PIN)(:?\s*)\d{4,8}\b/i'                                    => '$1$2[code]',
 		);
 		foreach ( $rules as $re => $to ) {
 			$out = preg_replace( $re, $to, $text );
@@ -258,7 +259,9 @@ register_shutdown_function( function () {
 add_action( 'wp_mail_failed', function ( $err ) {
 	if ( is_wp_error( $err ) ) {
 		$d = (array) $err->get_error_data();
-		db_log( 'mail', 'error', 'Email not sent: ' . $err->get_error_message(), array( 'subject' => (string) ( $d['subject'] ?? '' ) ), 'wp_mail' );
+		// Subjects can carry one-time codes ("Your sign-in code: 123456"): digits are masked (batch 2, AD-2).
+		$subject = preg_replace( '/\b\d{4,8}\b/', '[code]', (string) ( $d['subject'] ?? '' ) );
+		db_log( 'mail', 'error', 'Email not sent: ' . $err->get_error_message(), array( 'subject' => (string) $subject ), 'wp_mail' );
 	}
 } );
 
