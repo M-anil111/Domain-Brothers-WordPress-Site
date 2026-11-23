@@ -108,6 +108,8 @@ if ( ! function_exists( 'db_lk_registry' ) ) {
 		foreach ( (array) ( $r['json']['events'] ?? array() ) as $e ) {
 			if ( ! empty( $e['eventAction'] ) && ! empty( $e['eventDate'] ) ) {
 				$out['events'][ sanitize_key( $e['eventAction'] ) ] = substr( (string) $e['eventDate'], 0, 10 );
+				// The exact time too: a .com expiring at 04:00 UTC read 'Expired' from midnight (TL-26).
+				$out['events_at'][ sanitize_key( $e['eventAction'] ) ] = substr( preg_replace( '/[^0-9T:.+\-Z]/', '', (string) $e['eventDate'] ), 0, 40 );
 			}
 		}
 		foreach ( (array) ( $r['json']['status'] ?? array() ) as $s ) {

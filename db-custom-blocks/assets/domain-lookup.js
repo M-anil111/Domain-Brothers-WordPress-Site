@@ -29,7 +29,8 @@
     return null;
   }
   function note(c, text) { if (c) { var p = el("p", "dblk-hint", text); p.style.marginTop = "12px"; c.appendChild(p); } }
-  function parse(s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ""); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; }
+  // The full registry timestamp when there is one (TL-26); a date alone is midnight UTC.
+  function parse(s) { var t = Date.parse(s || ""); if (s && /T\d/.test(s) && !isNaN(t)) { return new Date(t); } var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ""); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null; }
   function span(a, b) {
     var y = b.getUTCFullYear() - a.getUTCFullYear(), m = b.getUTCMonth() - a.getUTCMonth(), d = b.getUTCDate() - a.getUTCDate();
     if (d < 0) { m -= 1; d += new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), 0)).getUTCDate(); }
@@ -61,11 +62,11 @@
     }
 
     // Age and expiry
-    var reg = parse(e.registration), exp = parse(e.expiration);
+    var at = r.events_at || {}, reg = parse(at.registration || e.registration), exp = parse(at.expiration || e.expiration);
     if (r.state === "ok" && (reg || exp)) {
       var rows = [];
-      if (reg) { rows.push(["Registered", e.registration]); rows.push(["Age", span(reg, now)]); }
-      if (exp) { rows.push(["Expires", e.expiration]); rows.push([exp < now ? "Expired" : "Time left", exp < now ? span(exp, now) + " ago" : span(now, exp)]); }
+      if (reg) { rows.push(["Registered", e.registration + " (UTC)"]); rows.push(["Age", span(reg, now)]); }
+      if (exp) { rows.push(["Expires", e.expiration + " (UTC)"]); rows.push([exp < now ? "Expired" : "Time left", exp < now ? span(exp, now) + " ago" : span(now, exp)]); }
       c = add(card("Age and expiry", rows));
       note(c, "Registration date is when the registry first recorded this name. A name can be older than its current owner.");
     } else if (SHOW.indexOf("Age and expiry") > -1) {
