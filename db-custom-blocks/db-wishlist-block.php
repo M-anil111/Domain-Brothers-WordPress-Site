@@ -348,7 +348,9 @@ if ( ! function_exists( 'db_wl_toggle' ) ) {
 		if ( ! $post || 'domain' !== $post->post_type || 'publish' !== $post->post_status || '' !== $post->post_password ) {
 			return new WP_Error( 'db_wl_bad', 'That domain cannot be saved.', array( 'status' => 404 ) );
 		}
-		if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE email = %s", $email ) ) >= DB_WL_MAX_ITEMS ) {
+		// Count only names the person can see and remove: unpublished ones are hidden, so they
+		// used up the 200 slots with no way to clear them (AC-19).
+		if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} w JOIN {$wpdb->posts} p ON p.ID = w.post_id AND p.post_status = 'publish' AND p.post_password = '' WHERE w.email = %s", $email ) ) >= DB_WL_MAX_ITEMS ) {
 			return new WP_Error( 'db_wl_full', 'Your wishlist is full.', array( 'status' => 400 ) );
 		}
 		$wpdb->insert( $t, array( 'email' => $email, 'post_id' => (int) $post_id ) );
