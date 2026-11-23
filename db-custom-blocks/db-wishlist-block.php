@@ -808,6 +808,9 @@ add_action( 'template_redirect', function () {
 	echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">My account</span></li></ol></nav>';
 	if ( 'ok' === $stop ) {
 		echo '<div class="db-wl-card db-ac-notice" role="status"><h2>Alert emails are off</h2><p>We will not email you about domains you follow. You can still see every alert in your account, and turn emails back on from the Alerts tab.</p></div>';
+	} elseif ( 'confirm' === $stop ) {
+		echo '<div class="db-wl-card db-ac-notice" role="status"><h2>Stop alert emails?</h2><p>We will stop emailing you about domains you follow. You can still see every alert in your account, and turn emails back on from the Alerts tab.</p>'
+			. '<form method="post" action="' . esc_url( add_query_arg( null, null ) ) . '"><button type="submit" class="db-wl-primary">Stop alert emails</button></form></div>';
 	} elseif ( 'bad' === $stop ) {
 		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
 	}

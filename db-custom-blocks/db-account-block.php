@@ -276,6 +276,7 @@ if ( ! function_exists( 'db_acct_send_pending' ) ) {
 				$li .= '<li>' . esc_html( $n->message ) . ( $p ? ' <a href="' . esc_url( get_permalink( $p ) ) . '">View</a>' : '' ) . '</li>';
 			}
 			$li .= '</ul>';
+			$GLOBALS['db_list_unsubscribe'] = db_acct_stop_url( $email ); // List-Unsubscribe headers (AC-12)
 			$tpl = function_exists( 'db_mail_send' ) ? db_mail_send( 'alerts_digest', $email, array(
 				'summary'     => 1 === $count ? $list[0]->message : $count . ' updates on domains you follow',
 				'alerts_html' => $li,
@@ -283,6 +284,7 @@ if ( ! function_exists( 'db_acct_send_pending' ) ) {
 				'stop_url'    => db_acct_stop_url( $email ),
 			) ) : null;
 			$ok = null === $tpl ? (bool) wp_mail( $email, $subject, $body ) : (bool) $tpl;
+			unset( $GLOBALS['db_list_unsubscribe'] );
 			if ( $ok || ( function_exists( 'db_wl_is_staging' ) && db_wl_is_staging() ) ) {
 				$wpdb->query( "UPDATE {$notes} SET emailed = 1 WHERE id IN ({$ids})" );
 				$sent++;
@@ -841,6 +843,12 @@ if ( ! function_exists( 'db_acct_handle_stop' ) ) {
 		if ( '' === $email || ! hash_equals( db_acct_stop_sig( $email ), $sig ) ) {
 			return 'bad';
 		}
+		// Only a POST changes the setting: email security scanners open every link in a message,
+		// and a plain GET used to switch alerts off without the person knowing (AC-12). The same
+		// URL takes the one-click POST that mail apps send for List-Unsubscribe-Post.
+		if ( 'POST' !== strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			return 'confirm';
+		}
 		db_acct_set_emails( $email, false );
 		return 'ok';
 	}
@@ -865,4 +873,19 @@ add_action( 'db_wl_admin_after', function () {
 		echo '<tr><td>' . esc_html( wp_date( 'M j, g:i a', strtotime( $r->created_at . ' UTC' ) ) ) . '</td><td>' . esc_html( strtolower( (string) $r->post_title ) ) . '</td><td>' . esc_html( $r->kind ) . '</td><td>' . esc_html( $r->message ) . '</td><td>' . esc_html( $r->email ) . '</td><td>' . esc_html( $status[ (int) $r->emailed ] ?? '' ) . '</td></tr>';
 	}
 	echo '</tbody></table>';
+} );
+
+
+// Recurring alert emails carry List-Unsubscribe and List-Unsubscribe-Post (one click), as Gmail
+// and Yahoo expect for notification mail (AC-12). Set only while a digest is being sent.
+add_filter( 'wp_mail', function ( $args ) {
+	if ( empty( $GLOBALS['db_list_unsubscribe'] ) || ! is_array( $args ) ) {
+		return $args;
+	}
+	$h   = isset( $args['headers'] ) ? $args['headers'] : array();
+	$h   = is_array( $h ) ? $h : array_filter( explode( "\n", str_replace( "\r\n", "\n", (string) $h ) ) );
+	$h[] = 'List-Unsubscribe: <' . esc_url_raw( $GLOBALS['db_list_unsubscribe'] ) . '>';
+	$h[] = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+	$args['headers'] = $h;
+	return $args;
 } );
