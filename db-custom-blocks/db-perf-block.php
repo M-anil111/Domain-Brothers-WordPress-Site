@@ -50,6 +50,14 @@ if ( ! function_exists( 'db_perf_needs_forms' ) ) {
 			// Sold and not-for-sale pages have no contact form.
 			return ! ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( get_queried_object() ), array( 'sold', 'not_for_sale' ), true ) );
 		}
+		// Routes this plugin draws itself print their form with do_shortcode(), which the content
+		// check cannot see: their form script loaded without its settings ('wpcf7 is not defined',
+		// bug register batch 2, CR-5).
+		$path   = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : trim( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$routes = (array) apply_filters( 'db_perf_form_routes', array( 'sell-your-domains', 'acquire-premium-domain', 'make-an-offer', 'domain-transfer' ) );
+		if ( in_array( $path, $routes, true ) ) {
+			return true;
+		}
 		return db_perf_has( db_perf_content(), array( '[contact-form-7', '[cf7', 'wpcf7' ) );
 	}
 }
