@@ -534,10 +534,19 @@ if ( ! function_exists( 'db_seller_blocked' ) ) {
 		$label  = false === $dot ? $label : substr( $label, 0, $dot );
 		$flat   = str_replace( '-', '', $label );
 		$brands = array( 'google', 'facebook', 'instagram', 'whatsapp', 'youtube', 'amazon', 'apple', 'iphone', 'microsoft', 'windows', 'netflix', 'paypal', 'tiktok', 'twitter', 'linkedin', 'snapchat', 'spotify', 'uber', 'airbnb', 'tesla', 'nike', 'adidas', 'cocacola', 'pepsi', 'disney', 'samsung', 'visa', 'mastercard', 'walmart', 'chatgpt', 'openai', 'anthropic' );
-		// Refused outright: abuse material and slurs.
-		$terms  = array( 'childporn', 'kiddieporn', 'lolita', 'pedo', 'preteen', 'nigger', 'nigga', 'faggot', 'wetback', 'raghead', 'kkk', 'heilhitler', 'whitepower', 'killjews', 'killgays' );
-		// Broker review: profanity and adult words (short words also appear inside innocent names, so a person decides).
-		$review = array( 'fuck', 'cunt', 'shit', 'bitch', 'whore', 'slut', 'porn', 'xxx', 'nude', 'pussy', 'nazi' );
+		// Refused outright: unambiguous abuse material and slurs (long enough not to occur inside
+		// ordinary words).
+		$terms  = array( 'childporn', 'kiddieporn', 'nigger', 'faggot', 'heilhitler', 'whitepower', 'killjews', 'killgays' );
+		// Broker review: profanity, adult words and short terms that also occur inside innocent
+		// names (torpedo, pedometer), so a person decides instead of a refusal (SL-14).
+		$review = array( 'fuck', 'cunt', 'shit', 'bitch', 'whore', 'slut', 'porn', 'xxx', 'nude', 'pussy', 'nazi', 'pedo', 'lolita', 'preteen', 'nigga', 'wetback', 'raghead', 'kkk' );
+		// Ordinary words that contain a listed term are masked first (SL-14).
+		$allow  = array( 'torpedo', 'pedometer', 'pedology', 'pineapple', 'grapple', 'snapple', 'scrapple', 'appleton', 'applejack', 'crabapple', 'advisable', 'revisable', 'visage', 'envisage', 'vise', 'exuberant', 'protuberant', 'tuberose', 'tuber', 'shiitake', 'shitake', 'teapot', 'scunthorpe', 'cocktail', 'sussex', 'essex', 'therapist', 'grapes', 'nikel' );
+		if ( function_exists( 'apply_filters' ) ) {
+			$allow = (array) apply_filters( 'db_seller_blocked_allow', $allow );
+		}
+		usort( $allow, static function ( $a, $b ) { return strlen( $b ) - strlen( $a ); } );
+		$flat = str_replace( array_filter( array_map( 'strval', $allow ) ), '_', $flat );
 		if ( function_exists( 'apply_filters' ) ) {
 			$brands = (array) apply_filters( 'db_seller_blocked_brands', $brands );
 			$terms  = (array) apply_filters( 'db_seller_blocked_terms', $terms );
@@ -547,6 +556,10 @@ if ( ! function_exists( 'db_seller_blocked' ) ) {
 			if ( '' !== $t && false !== strpos( $flat, $t ) ) {
 				return 'This name cannot be listed.';
 			}
+		}
+		// A word about minors together with a sexual or picture word is refused outright.
+		if ( preg_match( '/preteen|lolita|pedo|underage|child|kiddie|teen|minor/', $flat ) && preg_match( '/porn|sex|nude|naked|xxx|pics|pix|nsfw|cam/', $flat ) ) {
+			return 'This name cannot be listed.';
 		}
 		foreach ( $review as $t ) {
 			if ( '' !== $t && false !== strpos( $flat, $t ) ) {
