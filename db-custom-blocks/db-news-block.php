@@ -617,10 +617,10 @@ add_action( 'template_redirect', function () {
 		if ( '' === $desc ) {
 			$desc = $guides
 				? 'Practical guides to buying, valuing, transferring and marketing premium domain names, written by the Domain Brothers team.'
-				: 'Stories from the domain industry, collected daily.';
+				: sprintf( 'Posts filed under %s on the Domain Brothers blog.', $term->name ); // no false "collected daily" (CR-7)
 		}
 		$paged = max( 1, (int) get_query_var( 'paged' ) );
-		$head  = '<header class="db-an-head db-an-head--cat"><p class="db-an-day">' . ( $guides ? 'The Domain Brothers blog' : 'Domain news' ) . '</p><h1 class="db-an-h1">' . esc_html( $title ) . ( $paged > 1 ? ' <span class="db-an-page">Page ' . (int) $paged . '</span>' : '' ) . '</h1><p class="db-an-sub">' . esc_html( $desc ) . '</p></header>';
+		$head  = '<header class="db-an-head db-an-head--cat"><p class="db-an-day">' . ( 'domain-news' === $term->slug ? 'Domain news' : 'The Domain Brothers blog' ) . '</p><h1 class="db-an-h1">' . esc_html( $title ) . ( $paged > 1 ? ' <span class="db-an-page">Page ' . (int) $paged . '</span>' : '' ) . '</h1><p class="db-an-sub">' . esc_html( $desc ) . '</p></header>';
 		$out   = preg_replace( '#<header class="page-header">.*?</header>#s', '', $html, 1 );
 		$out   = null === $out ? $html : $out;
 		$out   = db_news_own_cards( $out );
