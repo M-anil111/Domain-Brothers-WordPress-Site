@@ -414,9 +414,11 @@ add_action( 'template_redirect', function () {
 	if ( '' !== $home && 0 === strpos( $path, $home ) ) {
 		$path = trim( substr( $path, strlen( $home ) ), '/' );
 	}
-	// The sell-a-domain page is withdrawn until the seller marketplace exists.
+	// The old sell-a-domain page: a permanent move to "Sell your domains" now that the seller
+	// marketplace exists, or to Contact while it is switched off (SE-22).
 	if ( 'sell-domains-service' === $path && ! is_admin() && ! is_user_logged_in() ) {
-		wp_safe_redirect( home_url( '/contact-us/' ), 302 );
+		$on = function_exists( 'db_seller_enabled' ) && db_seller_enabled();
+		wp_safe_redirect( home_url( $on ? '/sell-your-domains/' : '/contact-us/' ), $on ? 301 : 302 );
 		exit;
 	}
 	if ( 'blog' === $path && ! is_admin() ) {
