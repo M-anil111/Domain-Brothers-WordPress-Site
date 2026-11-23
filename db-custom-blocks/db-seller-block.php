@@ -1509,9 +1509,12 @@ add_action( 'admin_post_db_seller_admin', function () {
 	$msg = '';
 	if ( in_array( $do, array( 'approve', 'reject' ), true ) ) {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT l.*, s.email, s.legal_name FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.id = %d", $id ), ARRAY_A );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT l.*, s.email, s.legal_name, s.status AS seller_status FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.id = %d", $id ), ARRAY_A );
 		if ( $row && 'pending' === $row['review_status'] ) {
-			if ( 'approve' === $do ) {
+			if ( 'approve' === $do && 'active' !== (string) $row['seller_status'] ) {
+				// A paused or offline seller cannot answer buyers, so their names wait (SL-24).
+				$msg = 'Not published: the seller is ' . str_replace( '_', ' ', (string) $row['seller_status'] ) . '. Approve it once the account is active again.';
+			} elseif ( 'approve' === $do ) {
 				$res = db_seller_publish( $row );
 				$msg = is_int( $res ) ? 'Published ' . $row['domain'] . '.' : 'Not published: ' . $res;
 				if ( is_int( $res ) ) {
@@ -1572,15 +1575,15 @@ if ( ! function_exists( 'db_seller_admin_page' ) ) {
 			echo '<div class="notice notice-info"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['msg'] ) ) ) . '</p></div>'; // phpcs:ignore WordPress.Security.NonceVerification
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$pending = (array) $wpdb->get_results( "SELECT l.*, s.email, s.legal_name, s.country FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.review_status = 'pending' ORDER BY l.updated_at ASC LIMIT 200", ARRAY_A );
+		$pending = (array) $wpdb->get_results( "SELECT l.*, s.email, s.legal_name, s.country, s.status AS seller_status FROM {$l} l JOIN {$s} s ON s.id = l.seller_id WHERE l.review_status = 'pending' ORDER BY l.updated_at ASC LIMIT 200", ARRAY_A );
 		echo '<h2>Waiting for review (' . count( $pending ) . ')</h2>';
 		if ( ! $pending ) {
 			echo '<p>Nothing to review.</p>';
 		} else {
 			echo '<table class="widefat striped"><thead><tr><th>Name</th><th>Seller</th><th>Option</th><th>Price</th><th>Minimum offer</th><th>Verified</th><th>Commission at price</th><th>Action</th></tr></thead><tbody>';
 			foreach ( $pending as $r ) {
-				echo '<tr><td><strong>' . esc_html( $r['domain'] ) . '</strong></td><td>' . esc_html( $r['legal_name'] ) . '<br>' . esc_html( $r['email'] ) . ' (' . esc_html( $r['country'] ) . ')</td><td>' . ( 'make_offer' === $r['option_type'] ? 'Make Offer' : 'Buy Now' ) . '</td><td>' . ( (int) $r['price'] ? '$' . esc_html( number_format( (int) $r['price'] ) ) : '&mdash;' ) . '</td><td>' . ( (int) $r['min_offer'] ? '$' . esc_html( number_format( (int) $r['min_offer'] ) ) : '&mdash;' ) . '</td>'
-					. '<td>' . esc_html( strtoupper( $r['verify_method'] ) . ' ' . $r['verified_at'] ) . '</td><td>' . ( (int) $r['price'] ? '$' . esc_html( number_format( db_seller_commission( (int) $r['price'] ) ) ) : '&mdash;' ) . '</td><td>'
+				echo '<tr><td><strong>' . esc_html( $r['domain'] ) . '</strong></td><td>' . esc_html( $r['legal_name'] ) . '<br>' . esc_html( $r['email'] ) . ' (' . esc_html( $r['country'] ) . ')' . ( 'active' !== ( $r['seller_status'] ?? 'active' ) ? '<br><strong style="color:#b32d2e">Seller ' . esc_html( str_replace( '_', ' ', $r['seller_status'] ) ) . '</strong>' : '' ) . '</td><td>' . ( 'make_offer' === $r['option_type'] ? 'Make Offer' : 'Buy Now' ) . '</td><td>' . ( (int) $r['price'] ? '$' . esc_html( number_format( (int) $r['price'] ) ) : '&mdash;' ) . '</td><td>' . ( (int) $r['min_offer'] ? '$' . esc_html( number_format( (int) $r['min_offer'] ) ) : '&mdash;' ) . '</td>'
+					. '<td>' . esc_html( strtoupper( $r['verify_method'] ) . ' ' . $r['verified_at'] ) . '</td><td>' . ( (int) $r['price'] ? '$' . esc_html( number_format( db_seller_fee( (int) $r['price'], ! empty( $r['exclusive'] ) ) ) ) : '&mdash;' ) . '</td><td>'
 					. $f( 'approve', $r['id'], 'Approve and publish', '', 'button button-primary' )
 					. $f( 'reject', $r['id'], 'Reject', '<input type="text" name="note" placeholder="Reason sent to the seller" style="width:220px"> ' ) . '</td></tr>'; // phpcs:ignore WordPress.Security.EscapeOutput
 			}
