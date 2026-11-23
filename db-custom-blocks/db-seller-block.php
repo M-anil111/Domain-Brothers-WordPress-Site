@@ -1204,6 +1204,20 @@ if ( ! function_exists( 'db_seller_rules_sentence' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_seller_reminder_sentence' ) ) {
+	/**
+	 * "Please answer offers within 7 days: we remind you after 1, 3 and 5 days." from the live
+	 * rules, so the copy follows the owner's settings in Tools > Seller listings (SL-26).
+	 */
+	function db_seller_reminder_sentence() {
+		$remind = array_map( 'intval', (array) ( function_exists( 'db_seller_rule' ) ? db_seller_rule( 'remind_days' ) : array( 1, 3, 5 ) ) );
+		$strike = (int) ( function_exists( 'db_seller_rule' ) ? db_seller_rule( 'strike_days' ) : 7 );
+		$last   = array_pop( $remind );
+		$days   = $remind ? implode( ', ', $remind ) . ' and ' . $last : (string) $last;
+		return 'Please answer offers within ' . $strike . ' ' . ( 1 === $strike ? 'day' : 'days' ) . ': we remind you after ' . $days . ' ' . ( '1' === $days ? 'day' : 'days' ) . '.';
+	}
+}
+
 if ( ! function_exists( 'db_seller_agreement_body' ) ) {
 	function db_seller_agreement_body() {
 		$h  = '<p class="db-sales-lead">The terms for listing domain names on Domain Brothers. Version ' . esc_html( DB_SELLER_AGREEMENT_VERSION ) . '.</p>' . db_seller_css() . '<div class="dbsl">';

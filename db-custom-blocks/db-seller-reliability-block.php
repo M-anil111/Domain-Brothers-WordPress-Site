@@ -183,7 +183,7 @@ if ( ! function_exists( 'db_seller_reactivate' ) ) {
 			db_seller_audit( (int) $seller['id'], '', 'reactivated', $n . ' names back online' . ( $reset_strikes ? ', strikes reset' : '' ) );
 		}
 		if ( is_email( $seller['email'] ) ) {
-			db_seller_mail( $seller['email'], 'Your Domain Brothers listings are back online', '<p>Your seller account is active again and ' . $n . ' ' . ( 1 === $n ? 'name is' : 'names are' ) . ' back on the site. Please answer offers within 24 hours: we remind you on day 1, 3 and 5.</p><p><a href="' . esc_url( home_url( '/seller/' ) ) . '">Open your seller page</a></p>' );
+			db_seller_mail( $seller['email'], 'Your Domain Brothers listings are back online', '<p>Your seller account is active again and ' . $n . ' ' . ( 1 === $n ? 'name is' : 'names are' ) . ' back on the site. ' . esc_html( db_seller_reminder_sentence() ) . '</p><p><a href="' . esc_url( home_url( '/seller/' ) ) . '">Open your seller page</a></p>' );
 		}
 		return $n;
 	}
