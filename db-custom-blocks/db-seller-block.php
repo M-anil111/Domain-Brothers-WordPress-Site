@@ -721,12 +721,27 @@ if ( ! function_exists( 'db_seller_handle_post' ) ) {
 			}
 			$names = wp_list_pluck( $ready, 'domain' );
 			if ( 'trusted' === $seller['trust'] ) {
-				$live = 0;
+				// Failures are reported to the seller and kept on the row, and the email lists only the
+				// names that went live (SL-5).
+				$live   = 0;
+				$done   = array();
+				$failed = array();
 				foreach ( $ready as $r ) {
-					is_int( db_seller_publish( $r ) ) && ++$live;
+					$res = db_seller_publish( $r );
+					if ( is_int( $res ) ) {
+						++$live;
+						$done[] = $r['domain'];
+					} else {
+						$failed[] = array( 'bad', $r['domain'] . ': ' . (string) $res );
+						$wpdb->update( $l, array( 'review_note' => mb_substr( (string) $res, 0, 250 ), 'updated_at' => $now ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					}
+				}
+				$names = $done;
+				if ( ! $done ) {
+					return $failed ? $failed : array( array( 'bad', 'No names could be published.' ) );
 				}
 				db_seller_mail( $email, 'Your names are live on Domain Brothers', '<p>These names are now listed for sale:</p>' . db_seller_names_html( $names ) . '<p>Our brokers handle every offer and will contact you when a buyer is ready.</p>' );
-				return array( array( 'ok', $live . ' ' . ( 1 === $live ? 'name is' : 'names are' ) . ' now live.' ) );
+				return array_merge( array( array( 'ok', $live . ' ' . ( 1 === $live ? 'name is' : 'names are' ) . ' now live.' ) ), $failed );
 			}
 			foreach ( $ready as $r ) {
 				$wpdb->update( $l, array( 'review_status' => 'pending', 'updated_at' => $now ), array( 'id' => (int) $r['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
