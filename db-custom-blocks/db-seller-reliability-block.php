@@ -363,9 +363,17 @@ if ( ! function_exists( 'db_seller_expiry_run' ) ) {
 				++$out['looked_up'];
 			}
 			$act = db_seller_expiry_action( (int) $exp, time(), (int) db_seller_rule( 'expiry_warn_days' ) );
-			if ( 'warn' === $act && empty( $warned[ (int) $r['id'] ] ) ) {
+			// One warning per expiry date, not per listing for good: a renewed name is warned again
+			// before its next expiry (SL-25). Older entries stored the time the warning was sent;
+			// one sent inside this warning window counts for this expiry date.
+			$prev = (int) ( $warned[ (int) $r['id'] ] ?? 0 );
+			if ( $prev && $prev !== (int) $exp && $prev < time() && $prev > (int) $exp - ( (int) db_seller_rule( 'expiry_warn_days' ) + 7 ) * DAY_IN_SECONDS ) {
+				$warned[ (int) $r['id'] ] = (int) $exp;
+				$prev                     = (int) $exp;
+			}
+			if ( 'warn' === $act && $prev !== (int) $exp ) {
 				db_seller_mail( $r['email'], $r['domain'] . ' expires on ' . wp_date( 'F j, Y', (int) $exp ), '<p>Your name <strong>' . esc_html( $r['domain'] ) . '</strong> is registered until ' . esc_html( wp_date( 'F j, Y', (int) $exp ) ) . '. Renew it at your registrar so it stays listed and can be sold; expired names are taken off the site.</p>' );
-				$warned[ (int) $r['id'] ] = time();
+				$warned[ (int) $r['id'] ] = (int) $exp;
 				++$out['warn'];
 			} elseif ( 'expired' === $act ) {
 				db_seller_remove( $r );
