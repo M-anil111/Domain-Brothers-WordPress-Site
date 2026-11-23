@@ -485,6 +485,42 @@ if ( ! function_exists( 'db_seller_remove' ) ) {
 			do_action( 'db_page_cache_purge_all' );
 		}
 		$wpdb->update( db_seller_table( 'listings' ), array( 'review_status' => 'removed', 'updated_at' => current_time( 'mysql', true ) ), array( 'id' => (int) $listing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		db_seller_close_deals_on_removal( (string) ( $listing['domain'] ?? '' ) );
+	}
+}
+
+if ( ! function_exists( 'db_seller_close_deals_on_removal' ) ) {
+	/**
+	 * A name taken down (removed, sold elsewhere, lost claim, expiry, failed re-check) leaves no
+	 * offer hanging: open and countered offers are declined, and accepted ones, which the buyer can
+	 * still pay, go to the broker team (bug register batch 2, SL-6).
+	 */
+	function db_seller_close_deals_on_removal( $domain ) {
+		global $wpdb;
+		$domain = strtolower( trim( (string) $domain ) );
+		if ( '' === $domain || ! function_exists( 'db_deal_table' ) || ! function_exists( 'db_deal_apply' ) ) {
+			return;
+		}
+		$t     = db_deal_table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$deals = (array) $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$t} WHERE domain = %s AND state IN ('open','countered','accepted')", $domain ) );
+		$held  = array();
+		foreach ( $deals as $d ) {
+			if ( 'accepted' === $d->state ) {
+				$held[] = $d;
+				continue;
+			}
+			$GLOBALS['db_seller_auto'] = true;
+			db_deal_apply( $d, 'seller', 'decline', null, 'This name is no longer listed for sale.' );
+			unset( $GLOBALS['db_seller_auto'] );
+		}
+		if ( $held && function_exists( 'db_mail_team_to' ) && function_exists( 'db_seller_mail' ) ) {
+			$list = '';
+			foreach ( $held as $d ) {
+				$list .= '<li>' . esc_html( $domain ) . ': accepted at ' . esc_html( function_exists( 'db_deal_money' ) ? db_deal_money( $d->amount ) : (string) $d->amount ) . ' (deal ' . (int) $d->id . ')</li>';
+			}
+			db_seller_mail( db_mail_team_to(), 'Listing taken down with an accepted offer: ' . $domain, '<p>The seller listing for ' . esc_html( $domain ) . ' was taken down while a buyer holds an accepted offer. The buyer can still pay, and no seller payout record would be created. Contact the buyer and the seller before any payment.</p><ul>' . $list . '</ul>' );
+		}
 	}
 }
 
