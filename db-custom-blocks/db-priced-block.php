@@ -75,7 +75,7 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		};
 
 		$h  = '<div class="db-priced">';
-		$h .= '<div class="db-sale-band"><p>This domain <strong>' . esc_html( strtoupper( $name ) ) . '</strong> is on sale <span aria-hidden="true">&#9733;</span></p></div>';
+		$h .= '<div class="db-sale-band"><p>This domain <strong>' . esc_html( strtoupper( $name ) ) . '</strong> is for sale <span aria-hidden="true">&#9733;</span></p></div>'; // "on sale" read as a discount (LS-20)
 		$h .= '<section class="db-pr-hero" aria-labelledby="db-pr-h"><h1 id="db-pr-h">Create something meaningful with <span>' . esc_html( $shown ) . '</span></h1><p class="db-pr-ask">Are you interested in this domain? <strong>Get started here.</strong></p></section>';
 
 		// The three ways to get it.
