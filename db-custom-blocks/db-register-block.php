@@ -586,10 +586,17 @@ add_action( 'wp_footer', function () {
 	function say(form, t, bad) { var m = form.querySelector('.db-reg-msg'); if (m) { m.textContent = t || ''; m.className = 'db-reg-msg' + (t ? (bad ? ' is-bad' : ' is-good') : ''); } }
 	function fieldErrors(form, errs) {
 		[].forEach.call(form.querySelectorAll('.db-reg-field'), function (f) { f.classList.remove('has-err'); });
+		var first = null;
 		['name', 'email', 'phone', 'agree'].forEach(function (k) {
 			var e = document.getElementById('db-reg-' + k + '-e'); if (e) { e.textContent = (errs && errs[k]) || ''; }
-			var i = form.elements[k]; if (i && errs && errs[k] && i.closest('.db-reg-field')) { i.closest('.db-reg-field').classList.add('has-err'); }
+			var i = form.elements[k], bad = !!(errs && errs[k]);
+			if (i && i.setAttribute) {
+				// Each field says whether it is invalid, and focus goes to the first one (AX-20).
+				if (bad) { i.setAttribute('aria-invalid', 'true'); first = first || i; } else { i.removeAttribute('aria-invalid'); }
+			}
+			if (i && bad && i.closest('.db-reg-field')) { i.closest('.db-reg-field').classList.add('has-err'); }
 		});
+		if (first) { first.focus(); }
 	}
 	var f1 = steps.details, f2 = steps.code, f3 = steps.profile;
 	f1.addEventListener('submit', function (e) {

@@ -609,7 +609,14 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 				var first = box.querySelector('form'); if (first) { first.parentNode.insertBefore(note, first); }
 			}
 			var ef = box.querySelector('[data-step=email]'), cf = box.querySelector('[data-step=code]'), m = box.querySelector('.db-au-msg'), mail = '';
-			var tell = function (t, bad) { m.textContent = t; m.className = 'db-au-msg' + (bad ? ' is-bad' : ''); };
+			// The message is tied to the field being edited, which is marked invalid on an error (AX-20).
+			if (!m.id) { m.id = 'db-au-msg'; }
+			var tell = function (t, bad) {
+				m.textContent = t; m.className = 'db-au-msg' + (bad ? ' is-bad' : '');
+				var fld = !cf.hidden ? cf.code : ef.email;
+				[ef.email, cf.code].forEach(function (x) { if (x) { x.removeAttribute('aria-invalid'); } });
+				if (fld) { fld.setAttribute('aria-describedby', m.id); if (bad) { fld.setAttribute('aria-invalid', 'true'); } }
+			};
 			if (qs.get('plan') === '1' && !addId) {
 				var pn = document.createElement('p'); pn.className = 'db-au-note'; pn.setAttribute('role', 'status');
 				pn.textContent = 'Payment plans need a free account, so you can see your schedule and next payment in My account. Enter your email for a sign-in code; new here, the same code creates your account. You go straight back to checkout.';
