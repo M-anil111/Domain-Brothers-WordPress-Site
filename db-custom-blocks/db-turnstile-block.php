@@ -100,7 +100,7 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() || ! db_ts_enabled() ) {
 		return;
 	}
-	echo '<script>window.DB_TS_SITE=' . wp_json_encode( db_ts_site_key() ) . ';window.dbTsRender=function(root){if(!window.turnstile||!window.DB_TS_SITE){return;}(root||document).querySelectorAll(".db-ts:not([data-ts-id])").forEach(function(el){el.setAttribute("data-ts-id",String(window.turnstile.render(el,{sitekey:window.DB_TS_SITE})));});};window.dbTsToken=function(root){var i=root&&root.querySelector("input[name=\'cf-turnstile-response\']");return i?i.value:"";};window.dbTsLoad=function(){window.dbTsRender(document);};</script>' . "\n" .
+	echo '<script>window.DB_TS_SITE=' . wp_json_encode( db_ts_site_key() ) . ';window.dbTsRender=function(root){if(!window.turnstile||!window.DB_TS_SITE){return;}(root||document).querySelectorAll(".db-ts:not([data-ts-id])").forEach(function(el){el.setAttribute("data-ts-id",String(window.turnstile.render(el,{sitekey:window.DB_TS_SITE})));});};window.dbTsReset=function(root){if(!window.turnstile){return;}var r=root||document;var els=r.matches&&r.matches(".db-ts[data-ts-id]")?[r]:r.querySelectorAll(".db-ts[data-ts-id]");[].forEach.call(els,function(el){try{window.turnstile.reset(el.getAttribute("data-ts-id"));}catch(e){}});};window.dbTsToken=function(root){var i=root&&root.querySelector("input[name=\'cf-turnstile-response\']");var v=i?i.value:"";if(v&&root){setTimeout(function(){window.dbTsReset(root);},1500);}return v;};document.addEventListener("wpcf7submit",function(e){window.dbTsReset(e.target);});window.dbTsLoad=function(){window.dbTsRender(document);};</script>' . "\n" .
 		'<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=dbTsLoad&amp;render=explicit" async defer></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources, WordPress.Security.EscapeOutput
 }, 85 );
 
@@ -109,7 +109,10 @@ add_filter( 'wpcf7_form_elements', function ( $html ) {
 	if ( ! db_ts_enabled() ) {
 		return $html;
 	}
-	return $html . '<div class="db-ts" style="margin:12px 0"></div>';
+	// Before the submit button, so visitors see the check before they press Send (batch 2, AC-5).
+	$widget = '<div class="db-ts" style="margin:12px 0"></div>';
+	$out    = preg_replace( '/(<p>\s*)?<input\b[^>]*type="submit"/i', $widget . '$0', $html, 1, $n );
+	return ( $n && is_string( $out ) ) ? $out : $html . $widget;
 } );
 
 add_filter( 'wpcf7_spam', function ( $spam ) {
@@ -130,6 +133,14 @@ add_filter( 'wpcf7_spam', function ( $spam ) {
 	}
 	return ! $ok;
 } );
+
+// A failed check is not a server error: tell the visitor what to do (batch 2, AC-5).
+add_filter( 'wpcf7_display_message', function ( $message, $status ) {
+	if ( 'spam' === $status && db_ts_enabled() ) {
+		return 'Please complete the security check above the Send button, then send again.';
+	}
+	return $message;
+}, 10, 2 );
 
 /** Admin: the two keys, and turning the check off again. */
 if ( ! function_exists( 'db_ts_admin_html' ) ) {

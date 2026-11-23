@@ -343,11 +343,15 @@ add_action( 'rest_api_init', function () {
 			if ( ! db_wl_same_origin() ) {
 				return $send( array( 'ok' => false, 'message' => 'Please use the website.' ), 403 );
 			}
-			$body = $json( $req );
-			if ( function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
+			$body  = $json( $req );
+			$email = db_wl_clean_email( $body['email'] ?? '' );
+			// A sign-up that already passed the check at /register/ (its pending record exists) may ask
+			// for a new code from the code step, where no fresh check can be solved: at most 3 times in
+			// 30 minutes (bug register batch 2, AC-2).
+			$resend = '' !== $email && false !== get_transient( 'db_reg_' . md5( $email ) ) && db_wl_allow( 'reg-resend:' . $email, 3, 30 * MINUTE_IN_SECONDS );
+			if ( ! $resend && function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
 				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
 			}
-			$email = db_wl_clean_email( $body['email'] ?? '' );
 			if ( '' === $email ) {
 				return $send( array( 'ok' => false, 'message' => 'Enter a valid email address.' ), 400 );
 			}
