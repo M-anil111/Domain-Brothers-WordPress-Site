@@ -717,7 +717,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 /* Checkout content, isolated from the theme and db-design-block styles
    (which restyle every input, label, heading and link on the page). Every
    rule is scoped to #db-co so an id outranks those class-based rules. */
-#db-co{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#2f8a17;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-err:#c62828;position:relative;background:var(--co-bg);box-shadow:0 0 0 100vmax var(--co-bg);clip-path:inset(0 -100vmax);display:flow-root;color:var(--co-ink);font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px;padding-bottom:40px}
+#db-co{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#0b6b36;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-err:#c62828;position:relative;background:var(--co-bg);box-shadow:0 0 0 100vmax var(--co-bg);clip-path:inset(0 -100vmax);display:flow-root;color:var(--co-ink);font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px;padding-bottom:40px}
 #db-co,#db-co *,#db-co *::before,#db-co *::after{box-sizing:border-box}
 #db-co *{margin:0;padding:0}
 #db-co :is(h1,h2,h3,h4,h5,h6,p,li,a,td,th,label,input,select,textarea,button,small,strong,em,dt,dd,span){font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important}
