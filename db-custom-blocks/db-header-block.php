@@ -475,13 +475,23 @@ add_action( 'wp_footer', function () {
 (function () {
 	var hd = document.getElementById('db-hd');
 	if (!hd) { return; }
-	if (hd.parentNode !== document.body || hd !== document.body.firstElementChild) { document.body.insertBefore(hd, document.body.firstChild); }
+	// The theme's skip link stays the first Tab stop, then the header (AX-4: it used to come after
+	// every header link). Its target gets focus, and scroll padding keeps it clear of the fixed header (AX-5).
+	var skip = document.querySelector('a.skip-link');
+	if (skip) { document.body.insertBefore(skip, document.body.firstChild); }
+	if (hd.parentNode !== document.body || hd.previousElementSibling !== skip) { document.body.insertBefore(hd, skip ? skip.nextSibling : document.body.firstChild); }
+	if (skip) {
+		skip.addEventListener('click', function () {
+			var id = (skip.getAttribute('href') || '').replace(/^#/, ''), t = id && document.getElementById(id);
+			if (t) { if (!t.hasAttribute('tabindex')) { t.setAttribute('tabindex', '-1'); } setTimeout(function () { t.focus({ preventScroll: false }); }, 0); }
+		});
+	}
 	// Phone, tablet and 200% zoom: the search and menu buttons are printed in the footer and only
 	// look like part of the header (position:fixed), so they were the last Tab stops on the page
 	// (bug register batch 2, AX-2). Put them, and the panels they open, right after the header.
 	var hoist = function () {
 		// Right after the skip link when the theme prints one (it stays the first stop), else after the header.
-		var after = document.querySelector('a.skip-link') || hd;
+		var after = hd;
 		['.db-ms-btn', '#db-ms', '#db-mnav-toggle', '#db-mnav'].forEach(function (sel) {
 			var el = document.querySelector(sel);
 			if (el && el !== after && !el.contains(after)) { if (after.nextSibling !== el) { after.parentNode.insertBefore(el, after.nextSibling); } after = el; }
@@ -497,16 +507,30 @@ add_action( 'wp_footer', function () {
 	function closeAll(except) { items.forEach(function (it) { if (it !== except) { set(it, false); } }); }
 	items.forEach(function (item) {
 		var top = item.querySelector('.db-hd-top'), timer;
-		item.addEventListener('mouseenter', function () { clearTimeout(timer); closeAll(item); set(item, true); });
-		item.addEventListener('mouseleave', function () { timer = setTimeout(function () { set(item, false); }, 140); });
-		item.addEventListener('focusin', function () { closeAll(item); set(item, true); });
-		item.addEventListener('focusout', function (e) { if (!item.contains(e.relatedTarget)) { set(item, false); } });
+		item.addEventListener('mouseenter', function () { clearTimeout(timer); if (!item.classList.contains('is-dismissed')) { closeAll(item); set(item, true); } });
+		item.addEventListener('mouseleave', function () { item.classList.remove('is-dismissed'); timer = setTimeout(function () { set(item, false); }, 140); });
+		// Keyboard: focus alone no longer opens a panel, so Tab moves between the top links instead of
+		// through every panel link (AX-4). Arrow Down or Space opens it and moves into it.
+		top.addEventListener('keydown', function (e) {
+			if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Spacebar') {
+				e.preventDefault(); closeAll(item); item.classList.remove('is-dismissed'); set(item, true);
+				var first = item.querySelector('.db-hd-mega a, .db-hd-mega button'); if (first) { setTimeout(function () { first.focus(); }, 30); }
+			}
+		});
+		item.addEventListener('focusout', function (e) { if (!item.contains(e.relatedTarget)) { set(item, false); item.classList.remove('is-dismissed'); } });
 		// Touch: the first tap opens the panel, the second follows the link.
 		top.addEventListener('touchend', function (e) { if (!item.classList.contains('is-open')) { e.preventDefault(); closeAll(item); set(item, true); } });
 	});
 	document.addEventListener('keydown', function (e) {
 		if (e.key !== 'Escape') { return; }
-		items.forEach(function (it) { if (it.classList.contains('is-open')) { set(it, false); var a = it.querySelector('.db-hd-top'); if (a && it.contains(document.activeElement)) { a.blur(); } } });
+		// Close the panel, keep it closed while the pointer stays over it, and keep focus on its
+		// trigger instead of dropping it to <body> (AX-7, AX-8).
+		items.forEach(function (it) {
+			var open = it.classList.contains('is-open') || it.matches(':hover');
+			if (!open) { return; }
+			set(it, false); it.classList.add('is-dismissed');
+			var a = it.querySelector('.db-hd-top'); if (a && it.contains(document.activeElement) && document.activeElement !== a) { a.focus(); }
+		});
 	});
 	document.addEventListener('touchstart', function (e) { if (!hd.contains(e.target)) { closeAll(null); } }, { passive: true });
 	// One class change per animation frame, and only when the state flips (it restyled the whole page on every scroll event).
@@ -581,6 +605,9 @@ add_action( 'wp_footer', function () {
 	var hints = null, index = null, uid = 0;
 	var initSearch = function (f, sheet) {
 	var q = f.querySelector('input[type=search]'), panel = f.querySelector('.db-hd-sp'), body = panel.querySelector('[data-sp-body]');
+	var say = document.createElement('p'), sayT;
+	say.className = 'screen-reader-text'; say.setAttribute('role', 'status'); say.setAttribute('aria-live', 'polite');
+	f.appendChild(say);
 	var active = -1, timer, pre = sheet ? 'db-ms-o' : 'db-hd-o';
 	var money = function (p) { return p > 0 ? '$' + Number(p).toLocaleString('en-US') : 'Make an offer'; };
 	var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -646,6 +673,9 @@ add_action( 'wp_footer', function () {
 		}
 		body.innerHTML = html;
 		active = -1;
+		// Screen readers hear how many names matched, or that none did (AX-10).
+		clearTimeout(sayT);
+		sayT = setTimeout(function () { say.textContent = top.length ? scored.length + (scored.length === 1 ? ' match' : ' matches') + ' for ' + term + '. Use the arrow keys to choose.' : 'No listed name matches ' + term + '.'; }, 400);
 	};
 	var update = function () {
 		var term = q.value.trim();
@@ -723,9 +753,11 @@ add_action( 'wp_enqueue_scripts', function () {
 	html body .db-hd .db-hd-top { display: inline-flex; align-items: center; gap: 7px; height: 72px; padding: 0 18px; color: #111827 !important; font-size: 15px; font-weight: 600; letter-spacing: -.005em; text-decoration: none !important; box-shadow: none !important; background: transparent !important; border-radius: 0; opacity: .82; transition: opacity .15s ease; }
 	html body .db-hd .db-hd-top:hover, html body .db-hd .db-hd-item.is-open .db-hd-top { opacity: 1; color: #111827 !important; background: transparent !important; }
 	.db-hd-top svg { transition: transform .2s ease; opacity: .6; }
-	.db-hd-item.is-open .db-hd-top svg, .db-hd-item:focus-within .db-hd-top svg { transform: rotate(180deg); }
+	.db-hd-item.is-open .db-hd-top svg { transform: rotate(180deg); }
 	.db-hd-mega { position: absolute; top: 100%; left: 0; right: 0; visibility: hidden; opacity: 0; transform: translateY(-6px); background: #fff !important; border-bottom: 1px solid rgba(17,24,39,.1); box-shadow: 0 40px 60px -30px rgba(17,24,39,.35); transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s; }
-	.db-hd-item.is-open .db-hd-mega, .db-hd-item:focus-within .db-hd-mega, .db-hd-item:hover .db-hd-mega { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+	.db-hd-item.is-open .db-hd-mega, .db-hd-item:hover .db-hd-mega { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+	.db-hd-item.is-dismissed .db-hd-mega { visibility: hidden !important; opacity: 0 !important; }
+	html { scroll-padding-top: 88px; } /* focus and the skip target stay clear of the fixed header (AX-5, AX-6) */
 	html body .db-hd .db-hd-mega-in { background: #fff !important; display: flex; gap: clamp(24px, 4vw, 56px); max-width: 1360px; margin: 0 auto; padding: 34px clamp(20px, 3vw, 40px) 40px; }
 	.db-hd-col { flex: 1 1 0; min-width: 0; }
 	html body .db-hd .db-hd-h { margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #5b6472; }
@@ -739,7 +771,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	html body .db-hd .db-hd-ic { flex: none; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; background: #eef6f5; color: #0b7a75; font-style: normal; transition: background .15s ease, color .15s ease, transform .15s ease; }
 	html body .db-hd .db-hd-col a:hover .db-hd-ic, html body .db-hd .db-hd-col a:focus-visible .db-hd-ic { background: #0b7a75; color: #fff; transform: scale(1.04); }
 	.db-hd::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 100vh; z-index: -1; pointer-events: none; background: rgba(12,20,36,.34); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); opacity: 0; transition: opacity .2s ease; }
-	.db-hd:has(.db-hd-item.is-open)::after, .db-hd:has(.db-hd-item:hover)::after, .db-hd:has(.db-hd-item:focus-within)::after { opacity: 1; }
+	.db-hd:has(.db-hd-item.is-open)::after, .db-hd:has(.db-hd-item:hover:not(.is-dismissed))::after { opacity: 1; }
 	.db-hd-in { position: relative; background: inherit; }
 	.db-hd-col + .db-hd-col { padding-left: clamp(20px, 3vw, 44px); border-left: 1px solid rgba(17,24,39,.08); }
 	.db-hd-card { flex: 0 0 280px; align-self: flex-start; padding: 24px; border-radius: 20px; color: #fff; background: radial-gradient(420px 240px at 100% 0%, rgba(25,179,166,.5) 0%, rgba(25,179,166,0) 65%), #0c1424; }
@@ -826,6 +858,13 @@ add_action( 'wp_enqueue_scripts', function () {
 	.db-hd [hidden] { display: none !important; }
 	.db-hd a:focus-visible, .db-hd button:focus-visible { outline: 3px solid #0b7a75; outline-offset: 2px; }
 }
+/* A visible focus ring on form controls that had none (AX-9); a lime ring on the dark lead forms. */
+html body .wpcf7 input:focus-visible, html body .wpcf7 select:focus-visible, html body .wpcf7 textarea:focus-visible, html body .wpcf7-submit:focus-visible, html body .error404 input:focus-visible, html body .error404 button:focus-visible, html body .search-form input:focus-visible { outline: 3px solid #0b7a75 !important; outline-offset: 2px; }
+html body .dblp-form input:focus-visible, html body .dblp-form select:focus-visible, html body .dblp-form textarea:focus-visible { outline: 3px solid #b5e61d !important; outline-offset: 2px; }
+/* Placeholder text at 4.6:1 or better on white fields (AX-13). */
+html body .wpcf7 input::placeholder, html body .wpcf7 textarea::placeholder, html body input[type="search"]::placeholder, html body .dbx-wrap input::placeholder, html body .dbl-head input::placeholder { color: #6b7280 !important; opacity: 1; }
+@media (max-width: 991px) { html { scroll-padding-top: 76px; } }
+
 @media (min-width: 992px) and (max-width: 1280px) {
 	html body .db-hd .db-hd-search input[type=search] { padding-right: 16px; }
 	.db-hd-search { min-width: 170px; }
