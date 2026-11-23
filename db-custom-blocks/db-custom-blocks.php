@@ -580,6 +580,7 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 			// The theme's hidden "brothers of the web" block still carried an old phone number, an
 			// "over 10 years" claim and a Facebook iframe; crawlers read hidden text (SE-19).
 			$html = db_strip_div_by_class( $html, 'brothers-content' );
+			$html = db_hp_main_wraps_content( $html );
 			$hero = db_hp_hero_html();
 			return preg_replace_callback( '/<body[^>]*>/i', function ( $m ) use ( $hero ) {
 				return $m[0] . $hero;
@@ -610,6 +611,42 @@ if ( ! function_exists( 'db_strip_div_by_class' ) ) {
 			$pos    = $t[0][1] + strlen( $t[0][0] );
 		}
 		return $depth > 0 ? $html : substr( $html, 0, $start ) . substr( $html, $pos );
+	}
+}
+
+if ( ! function_exists( 'db_hp_main_wraps_content' ) ) {
+	/**
+	 * DomainFolio's front page closes <main> (and #primary) straight after the first section, so the
+	 * market pulse, who-it-is-for, how-it-works, welcome and why-us blocks sat outside every landmark
+	 * (AX-17). Moves "</main></div>" to just before #content closes. Script and style bodies are
+	 * masked while counting divs. Returns the input unchanged when the shape is not the expected one. Pure.
+	 */
+	function db_hp_main_wraps_content( $html ) {
+		if ( ! preg_match( '/<div\b[^>]*\bid="content"[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$mask = preg_replace_callback( '#<(script|style)\b[^>]*>.*?</\1>#is', function ( $x ) { return str_repeat( ' ', strlen( $x[0] ) ); }, $html );
+		$mask = preg_replace_callback( '#<!--.*?-->#s', function ( $x ) { return str_repeat( ' ', strlen( $x[0] ) ); }, $mask );
+		$pos   = $m[0][1] + strlen( $m[0][0] );
+		$depth = 1;
+		$end   = -1;
+		while ( preg_match( '#<(/?)div\b[^>]*>#i', $mask, $t, PREG_OFFSET_CAPTURE, $pos ) ) {
+			$depth += '' === $t[1][0] ? 1 : -1;
+			if ( 0 === $depth ) {
+				$end = $t[0][1];
+				break;
+			}
+			$pos = $t[0][1] + strlen( $t[0][0] );
+		}
+		if ( $end < 0 || ! preg_match( '#</main>\s*</div>#i', $mask, $c, PREG_OFFSET_CAPTURE, $m[0][1] ) || $c[0][1] > $end ) {
+			return $html;
+		}
+		$at  = $c[0][1];
+		$len = strlen( $c[0][0] );
+		if ( '' === trim( substr( $mask, $at + $len, $end - $at - $len ) ) ) {
+			return $html;
+		}
+		return substr( $html, 0, $at ) . substr( $html, $at + $len, $end - $at - $len ) . substr( $html, $at, $len ) . substr( $html, $end );
 	}
 }
 
