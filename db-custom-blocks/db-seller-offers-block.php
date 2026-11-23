@@ -130,7 +130,7 @@ if ( ! function_exists( 'db_seller_offer_post' ) ) {
 		$do      = sanitize_key( (string) ( $p['do'] ?? '' ) );
 		$amount  = (string) ( $p['amount'] ?? '' );
 		$message = mb_substr( sanitize_textarea_field( (string) ( $p['message'] ?? '' ) ), 0, 1000 );
-		$why     = db_seller_offer_check( $do, $amount, $deal->state );
+		$why     = db_seller_offer_check( $do, $amount, $deal->state, (float) $deal->amount );
 		if ( '' !== $why ) {
 			return array( array( 'bad', $why ) );
 		}
@@ -184,7 +184,7 @@ if ( ! function_exists( 'db_seller_offers_html' ) ) {
 				$base = '<input type="hidden" name="db_seller_action" value="offer"><input type="hidden" name="t" value="' . esc_attr( $t ) . '"><input type="hidden" name="deal" value="' . (int) $d->id . '">';
 				$h   .= '<div class="dbsl-offer-acts">';
 				if ( 'open' === $st ) {
-					$h .= '<form method="post" action="' . $self . '">' . $base . '<input type="hidden" name="do" value="accept"><button type="submit" class="dbsl-btn">Accept ' . esc_html( db_deal_money( $d->amount ) ) . '</button></form>';
+					$h .= '<form method="post" action="' . $self . '">' . $base . '<input type="hidden" name="do" value="accept"><button type="submit" class="dbsl-btn">Accept ' . esc_html( db_deal_money( $d->amount ) ) . '</button><span class="dbsl-net">You receive ' . esc_html( db_deal_money( db_seller_payout_split( (float) $d->amount, ! empty( ( db_seller_listing_for_domain( $d->domain ) ?: array() )['exclusive'] ) )['net'] ?? 0 ) ) . ' after commission</span></form>';
 				}
 				$h .= '<form method="post" action="' . $self . '" class="dbsl-counter">' . $base . '<input type="hidden" name="do" value="counter">'
 					. '<label for="dbsl-c-' . (int) $d->id . '">Counter price (USD)</label><input type="text" inputmode="numeric" id="dbsl-c-' . (int) $d->id . '" name="amount" placeholder="e.g. 4500" required>'

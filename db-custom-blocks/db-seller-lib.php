@@ -698,7 +698,9 @@ if ( ! function_exists( 'db_seller_auto_counter' ) ) {
 	function db_seller_auto_counter( $amount, $min_offer ) {
 		$amount    = (float) $amount;
 		$min_offer = (int) $min_offer;
-		return ( $min_offer > 0 && $amount > 0 && $amount < $min_offer ) ? (float) $min_offer : null;
+		// Every offer below the lowest price is answered automatically, private minimum or not (SL-9).
+		$floor = max( $min_offer, (int) DB_SELLER_MIN_PRICE );
+		return ( $amount > 0 && $amount < $floor ) ? (float) $floor : null;
 	}
 }
 
@@ -735,12 +737,17 @@ if ( ! function_exists( 'db_seller_offer_check' ) ) {
 	 * @param mixed  $amount Counter price (counter only).
 	 * @param string $state  Deal state.
 	 */
-	function db_seller_offer_check( $do, $amount, $state ) {
+	function db_seller_offer_check( $do, $amount, $state, $offer_amount = null ) {
 		if ( ! in_array( $do, array( 'accept', 'counter', 'decline' ), true ) ) {
 			return 'Choose accept, counter or decline.';
 		}
 		if ( 'accept' === $do && 'open' !== $state ) {
 			return 'Only an offer waiting for you can be accepted.';
+		}
+		// An offer below the lowest price leaves the seller nothing after the minimum commission
+		// ($99.60 paid $0.00 out; SL-9): counter instead.
+		if ( 'accept' === $do && null !== $offer_amount && (float) $offer_amount < DB_SELLER_MIN_PRICE ) {
+			return 'Offers under $' . DB_SELLER_MIN_PRICE . ' cannot be accepted: after the minimum commission you would receive nothing. Send a counter price instead.';
 		}
 		if ( 'decline' === $do && ! in_array( $state, array( 'open', 'countered' ), true ) ) {
 			return 'This offer is already closed.';

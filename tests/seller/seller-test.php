@@ -131,7 +131,9 @@ check( 'rdap: 404 elsewhere, timeouts and rate limits are unknown', 'unknown' ==
 
 // Phase 3: negotiations.
 check( 'auto-counter: below minimum answers with the minimum', 2000.0 === db_seller_auto_counter( 1500, 2000 ) );
-check( 'auto-counter: at or above minimum, or no minimum, does nothing', null === db_seller_auto_counter( 2000, 2000 ) && null === db_seller_auto_counter( 2500, 2000 ) && null === db_seller_auto_counter( 50, 0 ) );
+check( 'auto-counter: at or above the minimum does nothing', null === db_seller_auto_counter( 2000, 2000 ) && null === db_seller_auto_counter( 2500, 2000 ) && null === db_seller_auto_counter( 150, 0 ) );
+check( 'SL-9: an offer under the lowest price is countered at it even without a private minimum', 100.0 === db_seller_auto_counter( 50, 0 ) );
+check( 'SL-9: an offer under $100 cannot be accepted; $100 and up can', '' !== db_seller_offer_check( 'accept', '', 'open', 99.6 ) && '' === db_seller_offer_check( 'accept', '', 'open', 100 ) && '' === db_seller_offer_check( 'accept', '', 'open' ) );
 check( 'sweep: remind after 3 days once, close after 14 days', 'remind' === db_seller_offer_due( 'open', 72, false ) && '' === db_seller_offer_due( 'open', 100, true ) && 'expire' === db_seller_offer_due( 'open', 336, true ) && '' === db_seller_offer_due( 'open', 10, false ) );
 check( 'sweep: only offers waiting for the seller', '' === db_seller_offer_due( 'countered', 999, false ) && '' === db_seller_offer_due( 'accepted', 999, false ) );
 check( 'seller move: accept only when open', '' === db_seller_offer_check( 'accept', '', 'open' ) && '' !== db_seller_offer_check( 'accept', '', 'countered' ) );
