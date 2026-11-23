@@ -515,6 +515,7 @@ if ( ! function_exists( 'db_log_filters' ) ) {
 			'from'   => preg_match( '/^\d{4}-\d{2}-\d{2}$/', $g( 'from' ) ) ? $g( 'from' ) : '',
 			'to'     => preg_match( '/^\d{4}-\d{2}-\d{2}$/', $g( 'to' ) ) ? $g( 'to' ) : '',
 			'day'    => preg_match( '/^\d{4}-\d{2}-\d{2}$/', $g( 'day' ) ) ? $g( 'day' ) : '',
+			'since'  => ctype_digit( $g( 'since' ) ) ? (int) $g( 'since' ) : 0,
 			'paged'  => max( 1, (int) $g( 'paged' ) ),
 		);
 		// phpcs:enable WordPress.Security.NonceVerification
@@ -536,6 +537,9 @@ if ( ! function_exists( 'db_log_where' ) ) {
 		}
 		if ( '' !== $f['source'] ) {
 			$w[] = $wpdb->prepare( 'source = %s', $f['source'] );
+		}
+		if ( $f['since'] > 0 ) {
+			$w[] = $wpdb->prepare( 'last_seen >= %s', gmdate( 'Y-m-d H:i:s', $f['since'] ) );
 		}
 		if ( '' !== $f['from'] ) {
 			$w[] = $wpdb->prepare( 'last_seen >= %s', $f['from'] . ' 00:00:00' );
@@ -577,7 +581,7 @@ if ( ! function_exists( 'db_log_admin_page' ) ) {
 		echo '<p>Last 24 hours: ';
 		foreach ( array( 'error' => '#b42318', 'warning' => '#b54708', 'notice' => '#475467', 'info' => '#475467' ) as $lv => $c ) {
 			$s = $stats[ $lv ] ?? null;
-			echo '<a href="' . esc_url( add_query_arg( array( 'level' => $lv, 'from' => gmdate( 'Y-m-d', time() - DAY_IN_SECONDS ) ), $base ) ) . '" style="margin-right:14px;color:' . esc_attr( $c ) . '"><strong>' . (int) ( $s ? $s->n : 0 ) . '</strong> ' . esc_html( $lv ) . ( $s && (int) $s->h > (int) $s->n ? ' (' . (int) $s->h . ' times)' : '' ) . '</a>';
+			echo '<a href="' . esc_url( add_query_arg( array( 'level' => $lv, 'since' => time() - DAY_IN_SECONDS ), $base ) /* same 24 hours as the count (AD-12) */ ) . '" style="margin-right:14px;color:' . esc_attr( $c ) . '"><strong>' . (int) ( $s ? $s->n : 0 ) . '</strong> ' . esc_html( $lv ) . ( $s && (int) $s->h > (int) $s->n ? ' (' . (int) $s->h . ' times)' : '' ) . '</a>';
 		}
 		echo '</p><p class="description">' . number_format( $all ) . ' entries kept (12 months; older months are archived below). Times are UTC. Emails, keys and card numbers are masked before saving.</p>';
 
