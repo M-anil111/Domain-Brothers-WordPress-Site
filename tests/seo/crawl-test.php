@@ -47,5 +47,13 @@ $has = "<html><head><link rel='canonical' href='https://example.test/b/'></head>
 check( 'an existing canonical is kept', $has === db_crawl_insert_canonical( $has, 'https://example.test/a/' ) );
 check( 'a canonical-looking link in the body does not count', false !== strpos( db_crawl_insert_canonical( '<html><head></head><body><link rel="canonical" href="x"></body></html>', 'https://e.test/' ), '<head><link rel="canonical" href="https://e.test/">' ) );
 
+$x = db_crawl_sitemap_xml( array( array( 'https://example.test/a/', 1700000000 ), array( 'https://example.test/a/', 1 ), array( 'https://example.test/b/?x=1&y=2', 0 ) ) );
+check( 'sitemap: valid urlset, duplicates dropped', 1 === substr_count( $x, '<loc>https://example.test/a/</loc>' ) && false !== strpos( $x, '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' ) );
+check( 'sitemap: lastmod in W3C format, omitted when unknown, ampersands escaped', false !== strpos( $x, '<lastmod>2023-11-14T22:13:20+00:00</lastmod>' ) && false !== strpos( $x, '<loc>https://example.test/b/?x=1&amp;y=2</loc></url>' ) );
+$theme = "<p>x</p><script>window.location.href='https://example.test/';</script><p>y</p>";
+check( 'theme home redirect removed on list pages', '<p>x</p><p>y</p>' === db_crawl_strip_home_redirect( $theme, 'https://example.test/' ) );
+$other = "<script>window.location.href='https://other.test/pay';</script>";
+check( 'other redirects are left alone', $other === db_crawl_strip_home_redirect( $other, 'https://example.test/' ) );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );

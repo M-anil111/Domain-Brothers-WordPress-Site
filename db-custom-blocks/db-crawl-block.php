@@ -256,3 +256,156 @@ add_action( 'template_redirect', function () {
 add_filter( 'robots_txt', function ( $output ) {
 	return db_crawl_robots_txt( home_url( '/sitemap_index.xml' ), '1' === (string) get_option( 'db_crawl_block_ai_training', '0' ) );
 }, 50 );
+
+/* -------------------------------------------------------------- sitemaps */
+
+if ( ! function_exists( 'db_crawl_sitemap_xml' ) ) {
+	/**
+	 * Pure: a urlset from entries.
+	 *
+	 * @param array<int, array{0:string,1:int}> $entries [ url, lastmod unix time ].
+	 * @return string
+	 */
+	function db_crawl_sitemap_xml( array $entries ) {
+		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+		$seen = array();
+		foreach ( $entries as $e ) {
+			$loc = (string) $e[0];
+			if ( '' === $loc || isset( $seen[ $loc ] ) ) {
+				continue;
+			}
+			$seen[ $loc ] = true;
+			$xml .= '<url><loc>' . htmlspecialchars( $loc, ENT_XML1 ) . '</loc>' . ( (int) $e[1] > 0 ? '<lastmod>' . gmdate( 'c', (int) $e[1] ) . '</lastmod>' : '' ) . '</url>' . "\n";
+		}
+		return $xml . '</urlset>' . "\n";
+	}
+}
+
+if ( ! function_exists( 'db_crawl_listing_changed' ) ) {
+	/** When a listing last changed in a way buyers see (content, price or state), unix time. */
+	function db_crawl_listing_changed( $post ) {
+		$post = get_post( $post );
+		if ( ! $post ) {
+			return 0;
+		}
+		return max( (int) strtotime( $post->post_modified_gmt . ' UTC' ), (int) get_post_meta( $post->ID, '_db_changed_at', true ) );
+	}
+}
+
+if ( ! function_exists( 'db_crawl_extra_sitemap_entries' ) ) {
+	/**
+	 * Pages Rank Math does not know: the plugin-built landing pages, the domain categories and
+	 * the collections, with their real last change.
+	 */
+	function db_crawl_extra_sitemap_entries() {
+		global $wpdb;
+		// Latest change to any listing for sale: the lists and indexes change with it.
+		$latest = (int) $wpdb->get_var( "SELECT GREATEST( COALESCE( MAX( UNIX_TIMESTAMP( p.post_modified_gmt ) ), 0 ), COALESCE( MAX( CAST( m.meta_value AS UNSIGNED ) ), 0 ) ) FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = '_db_changed_at' WHERE p.post_type = 'domain' AND p.post_status = 'publish'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$file   = static function ( $f ) {
+			return is_readable( __DIR__ . '/' . $f ) ? (int) filemtime( __DIR__ . '/' . $f ) : 0;
+		};
+		$out = array(
+			array( home_url( '/sell-your-domains/' ), $file( 'db-seller-block.php' ) ),
+			array( home_url( '/seller-agreement/' ), $file( 'db-seller-block.php' ) ),
+			array( home_url( '/payment-terms/' ), $file( 'db-payment-plans-block.php' ) ),
+			array( home_url( '/find-a-domain/' ), max( $file( 'db-sales-block.php' ), $latest ) ),
+			array( home_url( '/collections/' ), max( $file( 'db-sales-block.php' ), $latest ) ),
+			array( home_url( '/trust-center/' ), $file( 'db-sales-block.php' ) ),
+			array( home_url( '/domain-glossary/' ), $file( 'db-learn-pages-block.php' ) ),
+			array( home_url( '/domain-price-index/' ), max( $file( 'db-learn-pages-block.php' ), $latest ) ),
+		);
+		if ( function_exists( 'db_sales_collections' ) ) {
+			foreach ( array_keys( db_sales_collections() ) as $slug ) {
+				$out[] = array( home_url( '/collections/' . $slug . '/' ), $latest );
+			}
+		}
+		$terms = get_terms( array( 'taxonomy' => 'domain_category', 'hide_empty' => true ) );
+		if ( is_array( $terms ) ) {
+			foreach ( $terms as $t ) {
+				$link = get_term_link( $t );
+				if ( ! is_wp_error( $link ) ) {
+					$out[] = array( $link, $latest );
+				}
+			}
+		}
+		return (array) apply_filters( 'db_crawl_sitemap_entries', $out );
+	}
+}
+
+// /db-pages-sitemap.xml, built from the live site on every request (cheap: one query and a term list).
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! function_exists( 'db_sales_request_path' ) || 'db-pages-sitemap.xml' !== db_sales_request_path() ) {
+		return;
+	}
+	status_header( 200 );
+	header( 'Content-Type: application/xml; charset=UTF-8' );
+	header( 'X-Robots-Tag: noindex' );
+	echo db_crawl_sitemap_xml( db_crawl_extra_sitemap_entries() ); // phpcs:ignore WordPress.Security.EscapeOutput
+	exit;
+}, 2 );
+
+// Rank Math's index: list the new sitemap, drop the Local SEO locations sitemap (an empty
+// address and phone in locations.kml).
+add_filter( 'rank_math/sitemap/index', function ( $xml ) {
+	$xml = (string) preg_replace( '#<sitemap>\s*<loc>[^<]*local-sitemap\.xml</loc>.*?</sitemap>#s', '', (string) $xml );
+	return $xml . '<sitemap><loc>' . esc_url( home_url( '/db-pages-sitemap.xml' ) ) . '</loc><lastmod>' . esc_html( gmdate( 'c' ) ) . '</lastmod></sitemap>';
+}, 30 );
+
+// Listing sitemaps: no sold or not-for-sale names (their pages are noindex), and a lastmod that
+// moves when the price or the state changes, not only when the post itself is edited.
+add_filter( 'rank_math/sitemap/entry', function ( $entry, $type, $object ) {
+	if ( 'post' !== $type || ! is_array( $entry ) || ! is_object( $object ) || ! isset( $object->ID ) ) {
+		return $entry;
+	}
+	if ( 'domain' !== get_post_type( (int) $object->ID ) ) {
+		return $entry;
+	}
+	if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( (int) $object->ID ), array( 'sold', 'not_for_sale' ), true ) ) {
+		return false;
+	}
+	$changed = db_crawl_listing_changed( (int) $object->ID );
+	if ( $changed > 0 ) {
+		$entry['mod'] = gmdate( 'c', $changed );
+	}
+	return $entry;
+}, 25, 3 );
+
+// The /domains/ archive links every name to a broken /<name>/detail/ address: not in the sitemap.
+add_filter( 'rank_math/sitemap/post_type_archive_link', function ( $link, $post_type ) {
+	return 'domain' === $post_type ? false : $link;
+}, 10, 2 );
+
+// Record when a listing changes in a way buyers see.
+$db_crawl_touch = static function ( $meta_id, $post_id, $key ) {
+	if ( in_array( $key, array( 'domain_price', 'db_listing_state', 'domain_status' ), true ) && 'domain' === get_post_type( $post_id ) ) {
+		update_post_meta( $post_id, '_db_changed_at', time() );
+	}
+};
+add_action( 'updated_post_meta', $db_crawl_touch, 10, 3 );
+add_action( 'added_post_meta', $db_crawl_touch, 10, 3 );
+
+/* ------------------------------------------- theme redirect on list pages */
+
+if ( ! function_exists( 'db_crawl_strip_home_redirect' ) ) {
+	/**
+	 * Pure: removes the theme's `window.location.href = '<home>'` script. The theme prints it for
+	 * a sold listing; on a category archive it fired too (the global post was a sold name) and
+	 * sent visitors and crawlers to the home page from 5 categories (bug register batch 2, CR-1).
+	 */
+	function db_crawl_strip_home_redirect( $html, $home ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'location.href' ) ) {
+			return $html;
+		}
+		$h = preg_quote( rtrim( (string) $home, '/' ), '#' );
+		return (string) preg_replace( '#<script\b[^>]*>\s*window\.location\.href\s*=\s*([\'"])' . $h . '/?\1\s*;?\s*</script>#i', '', $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( ! db_crawl_is_front_request() || is_singular( 'domain' ) ) {
+		return; // single listings: db-listing-template.php already handles it
+	}
+	ob_start( static function ( $html ) {
+		return db_crawl_strip_home_redirect( $html, home_url( '/' ) );
+	} );
+}, 98 );
