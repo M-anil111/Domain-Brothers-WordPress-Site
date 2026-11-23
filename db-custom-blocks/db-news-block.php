@@ -180,12 +180,10 @@ if ( ! function_exists( 'db_render_news' ) ) {
 			$date_str = $it['date'] ? date_i18n( get_option( 'date_format' ), $it['date'] ) : '';
 			$image    = db_news_og_image( $it['link'] );
 			$source   = trim( (string) preg_replace( '/\s*\|.*$/', '', (string) $it['source'] ) );
-			// One click target for the whole card. It opens the on-site preview
-			// (db-ui-enhancer.js); the external link appears once, inside that
-			// preview, labelled as leaving the site. data-* carries what it needs.
-			$h  = '<article class="db-an-card ' . esc_attr( $class ) . '"><button type="button" class="db-news-card__trigger db-an-hit"'
-				. ' data-title="' . esc_attr( $it['title'] ) . '" data-excerpt="' . esc_attr( $it['excerpt'] ) . '" data-source="' . esc_attr( $it['source'] ) . '"'
-				. ' data-date="' . esc_attr( $date_str ) . '" data-link="' . esc_url( $it['link'] ) . '"' . ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' ) . '>';
+			// One link for the whole card: the publisher's article in a new tab. Its accessible name is
+			// "Title, Source (opens in a new tab)" rather than all the card text read in a row (AX-15).
+			$label = $it['title'] . ( '' !== $source ? ', ' . $source : '' ) . ' (opens in a new tab)';
+			$h     = '<article class="db-an-card ' . esc_attr( $class ) . '"><a class="db-an-hit" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr( $label ) . '">';
 			$h .= '<span class="db-an-img">' . db_img_placeholder( '' !== $source ? $source : 'Domain news', $it['title'] ) . ( $image ? '<img src="' . esc_url( $image ) . '" alt="" ' . ( $eager ? 'loading="eager"' . ( 1 === $eager ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async">' : '' ) . '</span>';
 			$h .= '<span class="db-an-txt">';
 			if ( '' !== $source ) {
@@ -198,7 +196,7 @@ if ( ! function_exists( 'db_render_news' ) ) {
 			if ( $date_str ) {
 				$h .= '<span class="db-an-date">' . esc_html( $date_str ) . '</span>';
 			}
-			return $h . '</span></button></article>';
+			return $h . '</span></a></article>';
 		};
 
 		$html  = '<div class="db-news-live db-an">';
