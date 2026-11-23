@@ -174,6 +174,9 @@ add_action( 'wp_footer', function () {
 	.db-mnav-inner { padding: 26px 18px 28px; }
 	.db-mnav-logo { display: block; margin: 0 6px 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(157,199,251,.15); }
 	.db-mnav-logo img { height: 46px; width: auto; max-width: 200px; display: block; }
+	/* Keep the logo clear of the fixed close button (46px, 12px from the right) (LS-22). */
+	.db-mnav-logo { margin-right: 62px; }
+	.db-mnav-logo img { max-width: 100%; height: auto; max-height: 46px; }
 	.db-mnav ul { list-style: none; margin: 0; padding: 0; }
 	.db-mnav li {
 		opacity: 0; transform: translateX(14px);
