@@ -1158,6 +1158,9 @@ if ( ! function_exists( 'db_sales_route_meta' ) ) {
 		$path = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : '';
 		$map  = array(
 			'find-a-domain' => array( 'Domain Finder: Find the Right Name in 3 Steps | Domain Brothers', 'Describe your business and budget, and the domain finder lists premium names that fit, with prices and monthly payment plans. Free to use.' ),
+			// The seller pages had no meta description or og:description (bug register batch 2, SE-10).
+			'sell-your-domains' => array( 'Sell Your Domains: List Names on Our Marketplace | Domain Brothers', 'List your domains for sale with Domain Brothers: prove ownership, set prices and payment plans, answer offers, and get paid after the transfer.' ),
+			'seller-agreement'  => array( 'Seller Agreement: Listing Domains for Sale | Domain Brothers', 'The terms for listing domains on Domain Brothers: commission, offers and response times, the 72-hour transfer, payouts and ownership re-checks.' ),
 			'trust-center'  => array( 'Trust Center: How Payments and Transfers Are Protected | Domain Brothers', 'How Domain Brothers protects a domain purchase: Stripe card payments, encrypted transfer codes, recorded offers and tracked transfer stages.' ),
 			'collections'   => array( 'Domain Collections: Curated Premium Names by Industry | Domain Brothers', 'Curated collections of premium domains for sale, grouped by industry and use. Each list shows names available today, with prices and payment plans.' ),
 		);
