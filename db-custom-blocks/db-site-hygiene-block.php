@@ -628,11 +628,25 @@ add_action( 'rest_api_init', function () {
 			if ( '' === $dir || '' === $what ) {
 				return new WP_REST_Response( null, 204 );
 			}
+			// Only reports about this site's own pages (SC-11).
+			if ( strtolower( (string) wp_parse_url( $page, PHP_URL_HOST ) ) !== strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) ) {
+				return new WP_REST_Response( null, 204 );
+			}
 			$all = get_option( 'db_csp_reports', array() );
 			$all = is_array( $all ) ? $all : array();
 			$key = substr( $dir . ' ' . $what, 0, 120 );
+			// Keys unseen for 30 days expire, and when the store is full the least reported, oldest
+			// key makes room: junk reports filled it and locked out real violations (SC-11).
+			foreach ( $all as $k => $v ) {
+				if ( (int) ( $v['last'] ?? 0 ) < time() - 30 * DAY_IN_SECONDS ) {
+					unset( $all[ $k ] );
+				}
+			}
 			if ( ! isset( $all[ $key ] ) && count( $all ) >= 200 ) {
-				return new WP_REST_Response( null, 204 );
+				uasort( $all, static function ( $a, $b ) {
+					return array( (int) $a['n'], (int) $a['last'] ) <=> array( (int) $b['n'], (int) $b['last'] );
+				} );
+				array_shift( $all );
 			}
 			$n           = (int) ( $all[ $key ]['n'] ?? 0 ) + 1;
 			$all[ $key ] = array( 'n' => $n, 'last' => time(), 'page' => substr( $page, 0, 200 ) );
