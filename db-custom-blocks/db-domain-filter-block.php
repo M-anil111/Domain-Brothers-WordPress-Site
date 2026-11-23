@@ -508,3 +508,60 @@ add_action( 'template_redirect', function () {
 		return db_ad_heading_count_html( $html, $n );
 	} );
 }, -996 );
+
+if ( ! function_exists( 'db_ad_sidebar_html' ) ) {
+	/**
+	 * Pure: the theme sidebar's "By TLD" links go to All Domains filtered by extension, with the
+	 * number for sale; extensions with nothing for sale and empty length lists are blanked (the
+	 * table keeps its shape). They used to search for '.net' and show only sold names
+	 * (bug register batch 2, LS-8).
+	 *
+	 * @param string $html      Page HTML.
+	 * @param array  $tld_count Extension (".ca") => names for sale.
+	 * @param array  $empty     Paths of list pages with nothing for sale.
+	 * @param string $all_url   All Domains URL.
+	 */
+	function db_ad_sidebar_html( $html, array $tld_count, array $empty, $all_url ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'post_type=domain' ) ) {
+			return $html;
+		}
+		$html = (string) preg_replace_callback( '#(<td\b[^>]*>)\s*<a href="[^"]*\?s=(\.[a-z.]+)&(?:amp;)?post_type=domain"[^>]*>[^<]*</a>\s*(</td>)#i', static function ( $m ) use ( $tld_count, $all_url ) {
+			$ext = strtolower( $m[2] );
+			if ( empty( $tld_count[ $ext ] ) ) {
+				return $m[1] . $m[3];
+			}
+			$url = rtrim( (string) $all_url, '?' ) . ( false === strpos( (string) $all_url, '?' ) ? '?' : '&' ) . 'tld=' . rawurlencode( $ext );
+			return $m[1] . '<a href="' . htmlspecialchars( $url, ENT_QUOTES ) . '">' . htmlspecialchars( $ext . ' (' . (int) $tld_count[ $ext ] . ')', ENT_QUOTES ) . '</a>' . $m[3];
+		}, $html );
+		foreach ( $empty as $path ) {
+			$html = (string) preg_replace( '#(<td\b[^>]*>)\s*<a href="[^"]*' . preg_quote( $path, '#' ) . '"[^>]*>[^<]*</a>\s*(</td>)#i', '$1$2', $html );
+		}
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! ( is_front_page() || is_tax( 'domain_category' ) ) || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	ob_start( static function ( $html ) {
+		$count = array();
+		foreach ( db_domain_index() as $r ) {
+			$n = strtolower( (string) ( $r['n'] ?? $r['name'] ?? get_the_title( (int) $r['id'] ) ) );
+			$i = strpos( $n, '.' );
+			if ( false !== $i ) {
+				$ext           = substr( $n, $i );
+				$count[ $ext ] = ( $count[ $ext ] ?? 0 ) + 1;
+			}
+		}
+		$empty = array();
+		if ( function_exists( 'db_pages_listing_counts' ) ) {
+			foreach ( (array) db_pages_listing_counts() as $slug => $c ) {
+				if ( 0 === (int) $c ) {
+					$empty[] = '/' . $slug . '/';
+				}
+			}
+		}
+		return db_ad_sidebar_html( $html, $count, $empty, home_url( '/all-domains/' ) );
+	} );
+}, -995 );

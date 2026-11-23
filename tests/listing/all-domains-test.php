@@ -53,5 +53,8 @@ check( 'home rows: correct rows and header rows are unchanged', false !== strpos
 check( 'home rows: front-page query keeps its own page size', 8 === db_ad_only_for_sale_vars( array( 'post_type' => 'domain', 'posts_per_page' => 8 ), array( 1, 2 ) )['posts_per_page'] && array( 1, 2 ) === db_ad_only_for_sale_vars( array( 'posts_per_page' => 8 ), array( 1, 2 ) )['post__in'] );
 
 check( 'LS-6: the category heading shows the for-sale count', false !== strpos( db_ad_heading_count_html( '<h1 class="page-title" style="x">Business Names &mdash; <span>98 Domains</span></h1>', 76 ), '<span>76 Domains</span>' ) && false !== strpos( db_ad_heading_count_html( '<h1 class="page-title">X <span>3 Domains</span></h1>', 1 ), '<span>1 Domain</span>' ) );
+$side = '<td colspan="6"><a href="https://e.test/?s=.ca&post_type=domain" class="">.Ca</a></td><td colspan="6"><a href="https://e.test/?s=.net&post_type=domain" class="">.Net</a></td><td colspan="6"><a href="https://e.test/3-character-domains/" class="">3 Characters</a></td><td><a href="https://e.test/5-character-domains/">5</a></td>';
+$out  = db_ad_sidebar_html( $side, array( '.ca' => 40 ), array( '/3-character-domains/' ), 'https://e.test/all-domains/' );
+check( 'LS-8: TLD links go to the filtered list with a count; sold-only extensions and empty lists are blanked', false !== strpos( $out, 'href="https://e.test/all-domains/?tld=.ca">.ca (40)</a>' ) && false === strpos( $out, '.net' ) && false === strpos( $out, '3-character' ) && false !== strpos( $out, '5-character-domains' ) );
 echo "\n$pass passed, $fail failed\n";
 exit( $fail ? 1 : 0 );
