@@ -221,6 +221,17 @@ if ( ! function_exists( 'db_seller_reliability_sweep' ) ) {
 			$id  = (int) $deal->id;
 			$st  = $state[ $id ] ?? array( 'n' => 0, 'strike' => 0, 'away' => 0 );
 			$idle = (float) $deal->idle_h;
+			// A new wait on the same deal (the buyer offered again after a counter) starts the
+			// reminders and the strike count afresh; before, it got no reminder and no warning but
+			// still counted toward the 10-day suspension (bug register batch 2, SL-8).
+			$since = (int) ( time() - $idle * HOUR_IN_SECONDS );
+			if ( ! isset( $st['since'] ) || abs( $since - (int) $st['since'] ) > HOUR_IN_SECONDS ) {
+				if ( isset( $st['since'] ) ) {
+					$st['n']      = 0;
+					$st['strike'] = 0;
+				}
+				$st['since'] = $since;
+			}
 			if ( 'active' !== $deal->seller_status ) {
 				if ( ! $st['away'] ) { // paused or offline: the broker handles it, the buyer hears once
 					db_seller_tell_buyer_broker( $deal, 'paused' === $deal->seller_status ? 'paused' : 'suspended' );
