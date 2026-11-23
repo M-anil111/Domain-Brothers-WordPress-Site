@@ -71,7 +71,7 @@
     }
 
     // DNS records
-    c = add(card("DNS", [["Website address", has("A") || has("AAAA") ? (d.A || []).concat(d.AAAA || []).join(", ") : "None"], ["Mail servers", has("MX") ? d.MX.join(", ") : "None"], ["Name servers", has("NS") ? d.NS.join(", ") : "None"], ["SPF record", d.SPF ? "Present" : "Not found"]]));
+    c = add(card("DNS", [["Website address", has("A") || has("AAAA") ? (d.A || []).concat(d.AAAA || []).join(", ") : "None"], ["Mail servers", has("MX") ? (d.MX.length === 1 && /^0\s+\.?$/.test(String(d.MX[0]).trim()) ? "None: this domain does not accept email (null MX)" : d.MX.join(", ")) : "None"], ["Name servers", has("NS") ? d.NS.join(", ") : "None"], ["SPF record", d.SPF ? "Present" : "Not found"]]));
 
     // Website: chain, headers, security headers, summary
     var st = j.site || {};
