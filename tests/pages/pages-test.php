@@ -101,5 +101,7 @@ $smo = db_pages_sitemap_dedupe( $sm );
 check( 'site map keeps one entry per address', 1 === substr_count( $smo, 'digital-marketing-services/' ) );
 check( 'site map drops the old slug', false === strpos( $smo, 'href="https://e.test/digital-marketing/"' ) );
 check( 'site map keeps the other entries', false !== strpos( $smo, 'Home' ) && false !== strpos( $smo, 'Contact Us' ) && substr_count( $smo, '<li>' ) === substr_count( $smo, '</li>' ) );
+$smu = db_pages_sitemap_dedupe( '<ul><li><a href="https://e.test/sold/">Sold</a></li><li><a href="https://e.test/domains-under-review/">In Review</a></li></ul>', array( 'domains-under-review', 'checkout' ) );
+check( 'SE-20: site map leaves out noindex utility pages', false === strpos( $smu, 'domains-under-review' ) && false !== strpos( $smu, '/sold/' ) );
 
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );

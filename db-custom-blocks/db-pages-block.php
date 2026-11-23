@@ -106,8 +106,14 @@ if ( ! function_exists( 'db_pages_sitemap_dedupe' ) ) {
 	 * @param string $html Page content.
 	 * @return string
 	 */
-	function db_pages_sitemap_dedupe( $html ) {
-		$old  = array( 'digital-marketing', 'mobile-app-development', 'software-development', 'sell-your-domain' );
+	function db_pages_sitemap_dedupe( $html, $hidden = null ) {
+		$old = array( 'digital-marketing', 'mobile-app-development', 'software-development', 'sell-your-domain' );
+		// Utility pages (checkout steps, "In Review" and the like) are noindex and kept out of the
+		// XML sitemap, so the HTML site map does not link to them either (SE-20).
+		if ( null === $hidden ) {
+			$hidden = function_exists( 'db_seo_utility_slugs' ) ? array_keys( db_seo_utility_slugs() ) : array();
+		}
+		$old  = array_merge( $old, array_map( 'strval', (array) $hidden ) );
 		$seen = array();
 		return (string) preg_replace_callback(
 			'#<li>\s*(<a href="([^"]+)"[^>]*>[^<]*</a>)\s*</li>#i',
