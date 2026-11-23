@@ -35,7 +35,8 @@ if ( ! function_exists( 'db_lp_counts' ) ) {
 		global $wpdb;
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$all  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'domain' AND post_status = 'publish'" );
-		$sold = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND m.meta_key = 'domain_status' WHERE p.post_type = 'domain' AND p.post_status = 'publish' AND m.meta_value = 'sold'" );
+		// Sold by either flag: the theme's domain_status or the plugin's db_listing_state (SE-16).
+		$sold = (int) $wpdb->get_var( "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p JOIN {$wpdb->postmeta} m ON m.post_id = p.ID AND ( ( m.meta_key = 'domain_status' AND m.meta_value = 'sold' ) OR ( m.meta_key = 'db_listing_state' AND m.meta_value = 'sold' ) ) WHERE p.post_type = 'domain' AND p.post_status = 'publish'" );
 		// phpcs:enable
 		$c = array( 'sale' => max( 0, $all - $sold ), 'sold' => $sold );
 		set_transient( 'db_lp_counts', $c, 6 * HOUR_IN_SECONDS );
