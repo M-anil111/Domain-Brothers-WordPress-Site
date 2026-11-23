@@ -16,9 +16,10 @@ $pass = 0; $fail = 0;
 function check( $name, $ok ) { global $pass, $fail; if ( $ok ) { $pass++; echo "PASS $name\n"; } else { $fail++; echo "FAIL $name\n"; } }
 
 $g = db_safety_template_guards();
-foreach ( array( 'check-domain', 'plugnpay', 'paypal-ipn', 'payment-cancel', 'installment-detail-buyer', 'installment-detail-seller' ) as $slug ) {
+foreach ( array( 'plugnpay', 'paypal-ipn', 'payment-cancel', 'installment-detail-buyer', 'installment-detail-seller' ) as $slug ) {
 	check( "$slug answers 410 before its template runs", isset( $g[ $slug ] ) && null === $g[ $slug ]['require'] && 410 === $g[ $slug ]['code'] );
 }
+check( 'check-domain 301s to the extension checker before its template runs (SE-6)', null === $g['check-domain']['require'] && 301 === $g['check-domain']['code'] && '/domain-tools/domain-extension-checker/' === $g['check-domain']['to'] );
 check( 'payment-successful always redirects, whatever the query string', null === $g['payment-successful']['require'] && '/thank-you/' === $g['payment-successful']['to'] );
 check( 'the admin instalment page still needs manage_options', 'manage_options' === $g['installment-detail-admin']['cap'] );
 check( 'the transfer form page is not blocked', ! isset( $g['domain-transfer'] ) );

@@ -592,7 +592,8 @@ if ( ! function_exists( 'db_safety_template_guards' ) ) {
 			// email or call PayPal / PlugnPay on a plain GET and build SQL from
 			// request values (bug register batch 2, SC-1/SC-2). Checkout runs on
 			// Stripe now, so they answer 410 Gone before the template runs.
-			'check-domain'              => array( 'require' => null, 'to' => '/', 'code' => 410 ),
+			// Two guides link "domain checker" here: a permanent redirect to the real tool (SE-6).
+			'check-domain'              => array( 'require' => null, 'to' => '/domain-tools/domain-extension-checker/', 'code' => 301 ),
 			'plugnpay'                  => array( 'require' => null, 'to' => '/', 'code' => 410 ),
 			'paypal-ipn'                => array( 'require' => null, 'to' => '/', 'code' => 410 ),
 			'payment-cancel'            => array( 'require' => null, 'to' => '/', 'code' => 410 ),

@@ -670,3 +670,12 @@ add_action( 'admin_menu', function () {
 		echo '</form></div>';
 	} );
 } );
+
+// Guides that link "domain checker" to the old /check-domain/ template point at the tool itself
+// (bug register batch 2, SE-6); the old address also 301s there (db-safety-block.php).
+add_filter( 'the_content', function ( $html ) {
+	if ( ! is_string( $html ) || false === strpos( $html, 'check-domain' ) ) {
+		return $html;
+	}
+	return (string) preg_replace( '#href=(["\'])(?:https?://[^/"\']+)?/check-domain/?\1#i', 'href=$1' . esc_url( home_url( '/domain-tools/domain-extension-checker/' ) ) . '$1', $html );
+}, 20 );
