@@ -739,11 +739,19 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 	window.dbAccount = { open: function (mode) { onSignedIn = goAccount; openSignIn(0, mode === 'register' ? 'register' : 'signin'); }, signedIn: function () { return state.signedIn; } };
 
 	function start() {
-		api('state', 'GET').then(function (j) {
+		var ready = function (j) {
 			state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); paintAccount();
 			var m = /[?&]auth=(signin|register)\b/.exec(location.search);
 			if (m && !state.signedIn && !document.getElementById('db-au') && m[1] === 'signin') { onSignedIn = goAccount; openSignIn(0, m[1]); }
-		}).catch(function () {});
+		};
+		// Saving needs an account, and signing in sets the db_in hint cookie. Without it the answer is
+		// always "signed out, nothing saved", so no request is made: this call took about 1 s of PHP on
+		// every page view for every visitor and added to the host's 508 limit (2026-11-24).
+		if (!/(?:^|;\s*)db_in=1(?:;|$)/.test(document.cookie)) {
+			ready({ signedIn: false, saved: [] });
+		} else {
+			api('state', 'GET').then(ready).catch(function () {});
+		}
 		mountButton(); mountPage();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
