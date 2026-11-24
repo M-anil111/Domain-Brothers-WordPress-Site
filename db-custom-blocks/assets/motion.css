@@ -1,0 +1,122 @@
+/*
+ * Motion layer (2026-11-24). CSS only, printed inline in <head> by db-motion-block.php.
+ *
+ * Rules this file keeps:
+ *  - Nothing is hidden until a script runs. Inline scripts on this site wait for the
+ *    visitor's first interaction, so a script-driven reveal would leave content blank.
+ *    The reveal is a scroll-driven CSS animation; browsers without it show everything.
+ *  - Nothing above the fold starts invisible: an element already in view when the page
+ *    opens is past its reveal range and draws at full opacity, so LCP is not delayed.
+ *  - The reveal moves cards with the `translate` property, not `transform`, so the
+ *    designer's hover lifts (which use `transform`) still work during and after it.
+ *  - Hover choices stay the designer's; this file only smooths their timing.
+ *  - prefers-reduced-motion turns every effect here off.
+ */
+
+:root {
+	--dbm-ease: cubic-bezier(.2, .7, .2, 1);
+	--dbm-fast: .18s;
+	--dbm-mid: .32s;
+}
+
+/* 1. Smooth page-to-page changes (same-origin links). The header and footer keep their
+      place, so only the page body cross-fades. */
+@view-transition {
+	navigation: auto;
+}
+.db-hd {
+	view-transition-name: db-header; /* one element only: a repeated name cancels the transition */
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: .22s;
+	animation-timing-function: var(--dbm-ease);
+}
+
+/* 2. Cards and list items rise into place as they scroll into view. */
+@supports (animation-timeline: view()) and (overflow: clip) {
+	/* html and body both had overflow-x: hidden, which makes body a scroll container that
+	   never scrolls; scroll-driven animations follow the nearest scroll container, so they
+	   never advanced. clip cuts sideways overflow the same way without being a scroller. */
+	html body {
+		overflow-x: clip !important;
+		overflow-y: visible !important;
+	}
+	/* Same for the All Domains grid (hidden on both axes, also never scrolls). The list view
+	   sets it with html.db-view-list body.dbp-all.dbp-all .resp_table > .db-domain-grid. */
+	html:root body .resp_table > .db-domain-grid.db-domain-grid.db-domain-grid.db-domain-grid,
+	html:root body .db-domain-grid.db-domain-grid.db-domain-grid.db-domain-grid.db-domain-grid {
+		overflow: clip !important;
+	}
+	@keyframes dbm-rise {
+		from { opacity: 0; translate: 0 26px; }
+		to { opacity: 1; translate: 0 0; }
+	}
+	:is(
+		.db-domain-card, .dbl-card, .serviceBox, .iconBox, .db-pulse-tile, .dbs-card,
+		.db-an-hit, .dba-svc, .dba-step, .db-vis-card, .db-pr-card, .dbf-sec,
+		.dbtp-grid > li, .dbwi-faq, .dbsa-help, .db-rec-link
+	) {
+		animation: dbm-rise linear both;
+		animation-timeline: view();
+		animation-range: entry 0% entry 70%;
+	}
+}
+
+/* 3. Hover and press: the same quick, soft timing everywhere. */
+:is(
+	.db-domain-card, .dbl-card, .serviceBox, .iconBox, .db-pulse-tile, .dbs-card,
+	.db-an-hit, .dba-svc, .db-vis-card, .db-pr-card, .dbf-topic, .dbtp-grid > li > a
+) {
+	transition:
+		transform var(--dbm-mid) var(--dbm-ease),
+		box-shadow var(--dbm-mid) var(--dbm-ease),
+		border-color var(--dbm-fast) ease,
+		background-color var(--dbm-fast) ease;
+}
+:is(button, input[type="submit"], input[type="button"], a.button, a.btn, a[class*="-btn"]:not([class*="-btns"]), a[class*="btn-"]):not(:disabled) {
+	transition:
+		transform var(--dbm-fast) var(--dbm-ease),
+		box-shadow var(--dbm-fast) var(--dbm-ease),
+		background-color var(--dbm-fast) ease,
+		border-color var(--dbm-fast) ease,
+		color var(--dbm-fast) ease;
+}
+:is(button, input[type="submit"], input[type="button"], a.button, a.btn, a[class*="-btn"]:not([class*="-btns"]), a[class*="btn-"]):not(:disabled):active {
+	scale: .97;
+}
+
+/* 4. Domain names in cards: the lime underline sweeps in on hover. */
+.db-domain-card__name {
+	background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 2px;
+	transition: background-size var(--dbm-mid) var(--dbm-ease), color var(--dbm-fast) ease;
+}
+.db-domain-card:hover .db-domain-card__name,
+.db-domain-card__name:focus-visible {
+	background-size: 100% 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	@view-transition {
+		navigation: none;
+	}
+	*, *::before, *::after {
+		animation-timeline: auto !important;
+		scroll-behavior: auto !important;
+	}
+	:is(
+		.db-domain-card, .dbl-card, .serviceBox, .iconBox, .db-pulse-tile, .dbs-card,
+		.db-an-hit, .dba-svc, .dba-step, .db-vis-card, .db-pr-card, .dbf-sec,
+		.dbtp-grid > li, .dbwi-faq, .dbsa-help, .db-rec-link
+	) {
+		animation: none !important;
+		opacity: 1 !important;
+		translate: none !important;
+	}
+	:is(button, input[type="submit"], input[type="button"], a.button, a.btn, a[class*="-btn"]:not([class*="-btns"]), a[class*="btn-"]):active {
+		scale: none;
+	}
+	.db-domain-card__name {
+		transition: none;
+	}
+}

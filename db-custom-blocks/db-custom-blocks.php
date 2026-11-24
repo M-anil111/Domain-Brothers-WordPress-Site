@@ -5262,6 +5262,10 @@ if ( is_readable( __DIR__ . '/db-account-plans-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-ui-fixes-block.php' ) && is_readable( __DIR__ . '/designer/ui-fixes/includes/html-filters.php' ) ) {
 	require_once __DIR__ . '/db-ui-fixes-block.php';
 }
+// Motion layer: scroll reveal, page cross-fade, smooth hover and press (CSS only).
+if ( is_readable( __DIR__ . '/db-motion-block.php' ) ) {
+	require_once __DIR__ . '/db-motion-block.php';
+}
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {
 	require_once __DIR__ . '/db-faq-block.php';
 }
