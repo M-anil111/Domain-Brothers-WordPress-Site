@@ -60,8 +60,19 @@ if ( ! function_exists( 'db_drop_array_query_values' ) ) {
 		return $q;
 	}
 }
-$_GET     = db_drop_array_query_values( $_GET, db_scalar_query_keys() ); // phpcs:ignore WordPress.Security.NonceVerification
-$_REQUEST = db_drop_array_query_values( $_REQUEST, db_scalar_query_keys() ); // phpcs:ignore WordPress.Security.NonceVerification
+if ( ! function_exists( 'db_theme_scalar_query_keys' ) ) {
+	/**
+	 * Keys the DomainFolio theme reads from $_GET/$_REQUEST as strings (footer.php, header.php,
+	 * page templates; listed from the theme on 2026-11-24). The theme passes several straight to
+	 * base64_decode(), so ?m[]=1 or ?rn[]=1 was an HTTP 500 on any page. The theme is not edited,
+	 * so they are guarded here too. Payment-form POST fields are not listed: no form posts arrays.
+	 */
+	function db_theme_scalar_query_keys() {
+		return array( 'agree_terms', 'alertmoth', 'bids', 'cd', 'char', 'character', 'charlen', 'checkout_type', 'clear', 'cm', 'comm', 'custom', 'dmb', 'dt', 'email', 'epp', 'hd', 'hd_domain', 'hd_price', 'i', 'installment', 'item_name', 'm', 'max_Value', 'method', 'min_Value', 'o', 'pp', 'price', 'r', 'request_order', 'rn', 'search_domain', 'sellerprice', 'st', 'tld', 'total', 'tx', 'txn_id' );
+	}
+}
+$_GET     = db_drop_array_query_values( $_GET, array_merge( db_scalar_query_keys(), db_theme_scalar_query_keys() ) ); // phpcs:ignore WordPress.Security.NonceVerification
+$_REQUEST = db_drop_array_query_values( $_REQUEST, array_merge( db_scalar_query_keys(), db_theme_scalar_query_keys() ) ); // phpcs:ignore WordPress.Security.NonceVerification
 
 /*
  * Who writes the SEO tags in <head>. When Rank Math is active and the site is
