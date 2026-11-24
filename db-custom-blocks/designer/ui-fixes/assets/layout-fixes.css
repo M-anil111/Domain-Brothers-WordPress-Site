@@ -68,6 +68,8 @@
  *   .faqPage       /comprehensive-digital-solutions/             <details.dbp-faq>
  *   .dbb-body      guide posts (core Details block)              <details.wp-block-details>
  *   .dbs-faq       service pages (button accordion, .dbs-qa)
+ *   .dbwi-faq      /my-wishlist/ signed-out intro (added 2026-11-24)  <details>
+ *   .dbsa-help     seller dashboard, registrar help (added 2026-11-24) <details>
  * Only presentation changes: questions, answers, heading levels and the
  * FAQPage JSON-LD in each page are untouched.
  * ================================================================== */
@@ -127,6 +129,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details,
 	.dbs-acc > .dbs-qa
@@ -148,6 +152,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) + details {
@@ -158,6 +164,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details,
 	.dbs-acc > .dbs-qa
@@ -169,6 +177,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details[open],
 	.dbtp-faq > details[open],
 	.dbx-tr-faqs > details[open],
+	.dbwi-faq > details[open],
+	.dbsa-help > details[open],
 	.faqPage details.dbp-faq[open],
 	.dbb-body > details.wp-block-details[open],
 	.dbs-acc > .dbs-qa.is-open
@@ -188,6 +198,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary,
 	.dbs-acc .dbs-q > button
@@ -229,6 +241,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary
 )::-webkit-details-marker {
@@ -239,6 +253,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary
 )::marker {
@@ -249,6 +265,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary
 )::before {
@@ -260,6 +278,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary,
 	.dbs-acc .dbs-q > button
@@ -271,6 +291,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details[open] > summary,
 	.dbtp-faq > details[open] > summary,
 	.dbx-tr-faqs > details[open] > summary,
+	.dbwi-faq > details[open] > summary,
+	.dbsa-help > details[open] > summary,
 	.faqPage details.dbp-faq[open] > summary,
 	.dbb-body > details.wp-block-details[open] > summary,
 	.dbs-acc > .dbs-qa.is-open .dbs-q > button
@@ -282,6 +304,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary,
 	.dbs-acc .dbs-q > button
@@ -297,6 +321,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details > summary,
 	.dbtp-faq > details > summary,
 	.dbx-tr-faqs > details > summary,
+	.dbwi-faq > details > summary,
+	.dbsa-help > details > summary,
 	.faqPage details.dbp-faq > summary,
 	.dbb-body > details.wp-block-details > summary
 )::after {
@@ -324,6 +350,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details[open] > summary,
 	.dbtp-faq > details[open] > summary,
 	.dbx-tr-faqs > details[open] > summary,
+	.dbwi-faq > details[open] > summary,
+	.dbsa-help > details[open] > summary,
 	.faqPage details.dbp-faq[open] > summary,
 	.dbb-body > details.wp-block-details[open] > summary
 )::after {
@@ -359,7 +387,7 @@ html body.db-ui-active #page .dbs-acc .dbs-qa.is-open .dbs-pm::after {
 	opacity: 0 !important;
 }
 @media (prefers-reduced-motion: reduce) {
-	html body.db-ui-active #page :is(.dblp-faq, .dbh-faq, .dbtp-faq, .dbx-tr-faqs, .faqPage, .dbb-body, .dbs-acc) :is(summary, summary::after, button, .dbs-pm::after) {
+	html body.db-ui-active #page :is(.dblp-faq, .dbh-faq, .dbtp-faq, .dbx-tr-faqs, .dbwi-faq, .dbsa-help, .faqPage, .dbb-body, .dbs-acc) :is(summary, summary::after, button, .dbs-pm::after) {
 		transition: none !important;
 	}
 }
@@ -370,6 +398,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) > :not(summary) {
@@ -388,6 +418,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) > summary + * {
@@ -398,6 +430,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) > :not(summary):last-child {
@@ -408,6 +442,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) > :not(summary) + :not(summary) {
@@ -418,6 +454,8 @@ html body.db-ui-active #page :is(
 	.dbh-faq > details,
 	.dbtp-faq > details,
 	.dbx-tr-faqs > details,
+	.dbwi-faq > details,
+	.dbsa-help > details,
 	.faqPage details.dbp-faq,
 	.dbb-body > details.wp-block-details
 ) > :is(ul, ol) {
@@ -438,7 +476,7 @@ html body.db-ui-active #page .dbs-acc .dbs-ans-in {
 	line-height: 1.6 !important;
 	color: var(--dbq-text) !important;
 }
-html body.db-ui-active #page :is(.dblp-faq > details, .dbh-faq > details, .dbtp-faq > details, .dbx-tr-faqs > details, .faqPage details.dbp-faq, .dbb-body > details.wp-block-details, .dbs-acc .dbs-ans-in) a {
+html body.db-ui-active #page :is(.dblp-faq > details, .dbh-faq > details, .dbtp-faq > details, .dbx-tr-faqs > details, .dbwi-faq > details, .dbsa-help > details, .faqPage details.dbp-faq, .dbb-body > details.wp-block-details, .dbs-acc .dbs-ans-in) a {
 	color: var(--dbq-ink) !important;
 	font-weight: 600 !important;
 	text-decoration: underline !important;
@@ -446,7 +484,7 @@ html body.db-ui-active #page :is(.dblp-faq > details, .dbh-faq > details, .dbtp-
 	text-decoration-thickness: 2px !important;
 	text-underline-offset: 3px !important;
 }
-html body.db-ui-active #page :is(.dblp-faq > details, .dbh-faq > details, .dbtp-faq > details, .dbx-tr-faqs > details, .faqPage details.dbp-faq, .dbb-body > details.wp-block-details, .dbs-acc .dbs-ans-in) a:hover {
+html body.db-ui-active #page :is(.dblp-faq > details, .dbh-faq > details, .dbtp-faq > details, .dbx-tr-faqs > details, .dbwi-faq > details, .dbsa-help > details, .faqPage details.dbp-faq, .dbb-body > details.wp-block-details, .dbs-acc .dbs-ans-in) a:hover {
 	text-decoration-color: var(--dbq-ink) !important;
 }
 
@@ -802,4 +840,53 @@ html body.db-ui-active.blog #page#page#page#page main#main > .db-news-live + .pa
 	html body.db-ui-active.blog #page#page#page#page main#main > .db-news-live { --dbn-cols: 1; gap: 16px !important; }
 	html body.db-ui-active.blog #page#page#page#page main#main > .db-news-live > .db-an-grid > .db-an-grid { gap: 16px !important; }
 	html body.db-ui-active.blog #page#page#page#page .db-news-live .db-an-sec--own { margin-top: 24px !important; }
+}
+
+/* ================================================================== *
+ * 8. Home: sections inside <main> (2026-11-24)
+ *    The front page now keeps every section inside <main> (AX-17), so the
+ *    "across wrappers" rule in layout.css §3, written for #content > …,
+ *    no longer matched: the welcome block (.pageNewContent) added its own
+ *    top padding to the gap after "How it works" (90/120/160px instead of
+ *    45/60/80px). Same rule for the new parent; hidden theme blocks between
+ *    them (.middle-blue-bg, .cleardiv) do not count.
+ * ================================================================== */
+html body.db-ui-active #page#page main#main > :is(.db-pulse, .db-rsold-home, .db-aud, .db-how) ~ :is(.db-rsold-home, .db-aud, .db-how, .pageNewContent) {
+	padding-top: 0 !important;
+}
+
+/* ================================================================== *
+ * 9. FAQ lists added to the §1 component (2026-11-24)
+ *    /my-wishlist/ (signed-out intro, .dbwi-faq) and the seller dashboard's
+ *    registrar help (.dbsa-help). The wishlist list's own grid gap is
+ *    dropped so the component's gap is the only one.
+ * ================================================================== */
+html body.db-ui-active #page .dbwi-faq {
+	display: block !important;
+	max-width: var(--dbq-max) !important;
+}
+html body.db-ui-active #page .dbsa-help > h2 + details { margin-top: 0 !important; }
+html body.db-ui-active #page .dbsa-help > details + p { margin-top: var(--dbq-gap) !important; }
+
+/* ================================================================== *
+ * 10. Thank-you pages (page-template-thankyou: offer, enquiry and
+ *     payment confirmations). The card's 48px bottom margin stacked on
+ *     main's section padding (128px above the footer on desktop, 93px on
+ *     phones). The section padding is the one gap.
+ * ================================================================== */
+html body.db-ui-active.page-template-thankyou #page#page main#main > .db-ty-wrap:last-child,
+html body.db-ui-active.page-template-page-templatesthankyou-php #page#page main#main > .db-ty-wrap:last-child {
+	margin-bottom: 0 !important;
+}
+
+/* ================================================================== *
+ * 11. /connect-store/ (.dbcs). The product list was a centred 1100px
+ *     column under a full-container hero card (content 95px in from the
+ *     hero's edge at 1440px). It spans the container like the hero, as
+ *     layout.css §4.8 does for the tool and glossary columns.
+ * ================================================================== */
+html body.db-ui-active #page#page main#main.db-sales-page > .dbcs {
+	max-width: none !important;
+	margin-left: 0 !important;
+	margin-right: 0 !important;
 }
