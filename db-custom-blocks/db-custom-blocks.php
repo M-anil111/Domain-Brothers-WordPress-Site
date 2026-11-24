@@ -770,7 +770,9 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		font-size: clamp(40px, 7vw, 80px); font-weight: 700; line-height: 1.04;
 		letter-spacing: -0.04em; color: #f5f7fb !important; margin: 0 0 24px;
 		text-wrap: balance;
-		animation: db-fade-up 0.6s 0.10s ease both;
+		/* Slides in without fading: an element that starts at opacity 0 is not "painted" for LCP until
+		   it shows, which put home's LCP at 1.6-1.9 s although the page drew at 0.5 s. */
+		animation: db-rise 0.7s cubic-bezier(.2,.7,.2,1) both;
 	}
 	.db-hp-sub {
 		font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(245,247,251,0.86) !important;
@@ -803,6 +805,7 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	.db-hp-titem { padding: 4px 14px; white-space: nowrap; }
 	.db-hp-tdot { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: rgba(79,156,249,0.55); vertical-align: middle; }
 	@keyframes db-fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+	@keyframes db-rise { from { transform: translateY(18px); } to { transform: translateY(0); } }
 	@media (prefers-reduced-motion: reduce) {
 		.db-hp-eyebrow, .db-hp-h1, .db-hp-sub, .db-hp-ctas, .db-hp-trust, .db-hp-sell { animation: none; }
 		.db-hp-btn-primary:hover, .db-hp-btn-ghost:hover { transform: none; }
