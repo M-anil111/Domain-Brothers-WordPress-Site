@@ -413,7 +413,7 @@ add_action( 'updated_option', function ( $option ) {
 
 // LiteSpeed must not keep its own copy of a warm-up address (?ref=db-cache-warm).
 add_action( 'send_headers', function () {
-	if ( isset( $_GET['ref'] ) && 'db-cache-warm' === $_GET['ref'] && ! headers_sent() ) { // phpcs:ignore WordPress.Security.NonceVerification
+	if ( isset( $_GET['ref'] ) && is_string( $_GET['ref'] ) && 0 === strpos( $_GET['ref'], 'db-cache-warm' ) && ! headers_sent() ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
 		header( 'X-LiteSpeed-Cache-Control: no-cache' );
 	}
 } );
@@ -493,6 +493,36 @@ if ( ! function_exists( 'db_pc_warm_list' ) ) {
 		foreach ( $ids as $id ) {
 			$urls[] = get_permalink( $id );
 		}
+		// Pages the plugin draws itself (not WordPress pages): the tool hub and its 17 tool pages,
+		// glossary, price index, payment terms, collections, the domain and blog category archives,
+		// and the menu's list pages. They were never warmed, so after every purge the first visitor
+		// to each waited 1-1.5 s (2026-11-24).
+		$urls[] = home_url( '/all-domains/' );
+		$urls[] = home_url( '/premium-domain-deals/' );
+		$urls[] = home_url( '/sold/' );
+		$urls[] = home_url( '/news/' );
+		if ( function_exists( 'db_tp_pages' ) && function_exists( 'db_tp_url' ) ) {
+			$urls[] = db_tp_url();
+			foreach ( array_keys( db_tp_pages() ) as $slug ) {
+				$urls[] = db_tp_url( (string) $slug );
+			}
+		}
+		if ( function_exists( 'db_crawl_extra_sitemap_entries' ) ) {
+			foreach ( db_crawl_extra_sitemap_entries() as $e ) {
+				if ( is_array( $e ) && ! empty( $e[0] ) ) {
+					$urls[] = (string) $e[0];
+				}
+			}
+		}
+		$cats = get_terms( array( 'taxonomy' => 'category', 'hide_empty' => true, 'number' => 30 ) );
+		if ( is_array( $cats ) ) {
+			foreach ( $cats as $t ) {
+				$link = get_term_link( $t );
+				if ( ! is_wp_error( $link ) ) {
+					$urls[] = $link;
+				}
+			}
+		}
 		$ids = get_posts( array( 'post_type' => 'domain', 'post_status' => 'publish', 'numberposts' => 500, 'fields' => 'ids', 'orderby' => 'modified', 'order' => 'DESC' ) );
 		foreach ( $ids as $id ) {
 			$urls[] = get_permalink( $id );
@@ -547,7 +577,10 @@ if ( ! function_exists( 'db_pc_warm_run' ) ) {
 				// ?ref= makes LiteSpeed (in front of WordPress) pass the request through instead of
 				// answering from its own copy (it drops utm_* but keeps ref); our cache ignores ref and
 				// saves under the plain address (P-5: warm runs used to save almost nothing).
-				$res  = wp_remote_get( add_query_arg( 'ref', 'db-cache-warm', $url ), $args );
+				// A new ref value per run: LiteSpeed began answering ?ref=db-cache-warm from its own
+				// copy, so WordPress never ran and nothing was saved (0 saved, 211 failed on
+				// 2026-11-24). Our cache ignores ref whatever its value.
+				$res  = wp_remote_get( add_query_arg( 'ref', 'db-cache-warm-' . $state['at'], $url ), $args );
 				$code = is_wp_error( $res ) ? 0 : (int) wp_remote_retrieve_response_code( $res );
 				if ( 401 === $code ) {
 					$state['blocked'] = true;
