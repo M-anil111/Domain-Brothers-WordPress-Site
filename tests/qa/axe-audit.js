@@ -9,7 +9,7 @@
  *   BETA_USER=... BETA_PASS=... AXE_DIR=/tmp/axe NODE_PATH=$(npm root -g) node tests/qa/axe-audit.js
  *
  * Optional: BETA_BASE (default https://beta.domainbrothers.com), AXE_PAGES (comma-separated paths),
- * VIEWPORT=phone for a 390 px wide run. Exit code 1 when any page has a violation or fails to load.
+ * VIEWPORT=phone for a 390 px wide run, AXE_COOKIES (name=value;...) for a signed-in run. Exit code 1 when any page has a violation or fails to load.
  * Credentials come only from the environment. Sequential on purpose: the shared host returns 508 under load.
  */
 'use strict';
@@ -40,6 +40,14 @@ function loadAxe() {
 	const creds = process.env.BETA_USER ? { httpCredentials: { username: process.env.BETA_USER, password: process.env.BETA_PASS } } : {};
 	const browser = await chromium.launch();
 	const ctx = await browser.newContext({ ...creds, viewport: PHONE ? { width: 390, height: 800 } : { width: 1280, height: 900 } });
+	// Optional signed-in run: AXE_COOKIES="db_wl=<token>;db_in=1" (a QA session; never a real visitor's).
+	if (process.env.AXE_COOKIES) {
+		const host = new URL(BASE).hostname;
+		await ctx.addCookies(process.env.AXE_COOKIES.split(';').map((c) => c.trim()).filter(Boolean).map((c) => {
+			const i = c.indexOf('=');
+			return { name: c.slice(0, i), value: c.slice(i + 1), domain: host, path: '/', secure: true };
+		}));
+	}
 	let failed = 0;
 	// Domain page: find one real listing from the All Domains page.
 	const pages = PAGES.slice();
