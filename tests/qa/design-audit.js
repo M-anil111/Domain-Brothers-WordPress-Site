@@ -65,6 +65,15 @@ const PAGES_ALL = [
 	['Sign in', '/my-wishlist/?auth=signin'],
 	['Register', '/register/'],
 	['404 page', '/no-such-page-qa-audit/'],
+	// Added 2026-11-24 with the designer's 23 Nov changes and their extension to these templates.
+	['Wishlist intro', '/my-wishlist/'],
+	['Thank you', '/thank-you/'],
+	['Connect store', '/connect-store/'],
+	['EPP guidelines', '/epp-guidelines/'],
+	['Our team', '/our-team/'],
+	['Terms of use', '/terms-of-use/'],
+	['Domain transfer', '/domain-transfer/'],
+	['Social handle page', '/sell-social-media-handles/'],
 ];
 const PAGES = process.env.ONLY ? PAGES_ALL.filter((p) => process.env.ONLY.split('|').includes(p[0])) : PAGES_ALL;
 
@@ -170,7 +179,9 @@ function measure(arg) {
 		if (sameBand) { const ca = getComputedStyle(a); const cb = getComputedStyle(b); ea.bottom = a.getBoundingClientRect().bottom - px(ca.paddingBottom); eb.top = b.getBoundingClientRect().top + px(cb.paddingTop); }
 		const gap = Math.round(eb.top - ea.bottom);
 		const bothColoured = !ea.clear && !eb.clear && !a.matches(K_SEL) && !b.matches(K_SEL);
-		const ok = Math.abs(gap - wantPad) <= 2 || (bothColoured && Math.abs(gap) <= 2);
+		// Pagination sits half a section gap under its grid (designer's layout.css §4.5, 2026-11-23).
+		const half = /\bpagenav\b/.test(String(b.className)) && Math.abs(gap - wantPad / 2) <= 2;
+		const ok = Math.abs(gap - wantPad) <= 2 || half || (bothColoured && Math.abs(gap) <= 2);
 		out.gaps.push({ between: String(a.className).slice(0, 24) + ' / ' + String(b.className).slice(0, 24), gap, ok });
 	}
 	out.wantPad = wantPad;
