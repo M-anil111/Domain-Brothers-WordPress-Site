@@ -1104,3 +1104,13 @@ html body .db-hd .db-hd-sgo,
 html body .db-ms .db-hd-sgo {
 	text-transform: none !important;
 }
+
+/* ================================================================== *
+ * 17. The theme sets .content-area { font-family: latoregular }. Other
+ *     templates override it; the service template did not, so its guide
+ *     section and lists rendered in Lato (one extra font download) while
+ *     the rest of the page used the system stack. Inherit the body face.
+ * ================================================================== */
+html body.db-ui-active #page :is(#primary.content-area, .content-area) {
+	font-family: inherit !important;
+}
