@@ -36,7 +36,16 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
+		// Re-entry guard: the index's own query runs pre_get_posts, and the for-sale hooks below
+		// call this function. On the home page with a cold cache that recursed until PHP ran out of
+		// memory (1 GB fatals on /?ref=db-cache-warm since 23 Nov). A nested call gets an empty
+		// list (not cached); the hooks ask db_domain_index_ids(), which then means no restriction.
+		if ( db_domain_index_building() ) {
+			return array();
+		}
+		db_domain_index_building( true );
 		$ids  = get_posts( array(
+			'db_index_build'         => true, // marks this query for the hooks below
 			'post_type'              => 'domain',
 			'post_status'            => 'publish',
 			'has_password'           => false,
@@ -81,10 +90,38 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 				'k'  => strtolower( trim( (string) get_post_meta( $id, 'domain_keyword', true ) ) ),
 			);
 		}
+		db_domain_index_building( false );
 		if ( ! function_exists( 'db_on_canonical_host' ) || db_on_canonical_host() ) {
 			set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS ); // never cache links built for a preview host
 		}
 		return $rows;
+	}
+}
+
+if ( ! function_exists( 'db_domain_index_building' ) ) {
+	/** True while db_domain_index() is building; pass a bool to set it. */
+	function db_domain_index_building( $set = null ) {
+		static $on = false;
+		if ( null !== $set ) {
+			$on = (bool) $set;
+		}
+		return $on;
+	}
+}
+
+if ( ! function_exists( 'db_domain_index_ids' ) ) {
+	/**
+	 * Ids of the names for sale, for query filters: null when the index is not known (it is being
+	 * built in this request, or the query is the index's own), which means "do not restrict".
+	 */
+	function db_domain_index_ids( $q = null ) {
+		if ( ( $q instanceof WP_Query && $q->get( 'db_index_build' ) ) || ! function_exists( 'db_domain_index' ) || db_domain_index_building() ) {
+			return null;
+		}
+		$idx = db_domain_index();
+		return is_array( $idx ) ? array_map( static function ( $r ) {
+			return (int) $r['id'];
+		}, $idx ) : null;
 	}
 }
 
@@ -370,9 +407,7 @@ add_action( 'pre_get_posts', function ( $q ) {
 	if ( ! function_exists( 'is_page' ) || ! is_page( 'all-domains' ) || ! db_ad_is_theme_query( $q->query_vars ) ) {
 		return;
 	}
-	$for_sale = function_exists( 'db_domain_index' ) ? array_map( static function ( $r ) {
-		return (int) $r['id'];
-	}, db_domain_index() ) : null;
+	$for_sale = db_domain_index_ids( $q );
 	foreach ( db_ad_fix_query_vars( $q->query_vars, $for_sale ) as $k => $v ) {
 		$q->set( $k, $v );
 	}
@@ -407,9 +442,10 @@ add_action( 'pre_get_posts', function ( $q ) {
 	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
 		return;
 	}
-	$for_sale = function_exists( 'db_domain_index' ) ? array_map( static function ( $r ) {
-		return (int) $r['id'];
-	}, db_domain_index() ) : null;
+	if ( $q->get( 'db_index_build' ) ) {
+		return; // the index's own query: never filtered by the index
+	}
+	$for_sale = db_domain_index_ids( $q );
 	foreach ( db_ad_only_for_sale_vars( $q->query_vars, $for_sale ) as $k => $v ) {
 		$q->set( $k, $v );
 	}
@@ -425,9 +461,10 @@ add_action( 'pre_get_posts', function ( $q ) {
 	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
 		return;
 	}
-	$ids = array_map( static function ( $r ) {
-		return (int) $r['id'];
-	}, (array) db_domain_index() );
+	$ids = db_domain_index_ids( $q );
+	if ( null === $ids ) {
+		return;
+	}
 	$q->set( 'post__in', $ids ? $ids : array( 0 ) );
 } );
 
