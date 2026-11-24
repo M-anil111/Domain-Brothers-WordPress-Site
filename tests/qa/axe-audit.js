@@ -9,7 +9,9 @@
  *   BETA_USER=... BETA_PASS=... AXE_DIR=/tmp/axe NODE_PATH=$(npm root -g) node tests/qa/axe-audit.js
  *
  * Optional: BETA_BASE (default https://beta.domainbrothers.com), AXE_PAGES (comma-separated paths),
- * VIEWPORT=phone for a 390 px wide run, AXE_COOKIES (name=value;...) for a signed-in run. Exit code 1 when any page has a violation or fails to load.
+ * Runs with reduced motion so colours are checked settled: the scroll reveal (assets/motion.css)
+ * fades cards in, and a card caught mid-fade at the screen edge reads as low contrast.
+ * AXE_MOTION=1 runs with motion on. VIEWPORT=phone for a 390 px wide run, AXE_COOKIES (name=value;...) for a signed-in run. Exit code 1 when any page has a violation or fails to load.
  * Credentials come only from the environment. Sequential on purpose: the shared host returns 508 under load.
  */
 'use strict';
@@ -39,7 +41,7 @@ function loadAxe() {
 	const axeSrc = loadAxe();
 	const creds = process.env.BETA_USER ? { httpCredentials: { username: process.env.BETA_USER, password: process.env.BETA_PASS } } : {};
 	const browser = await chromium.launch();
-	const ctx = await browser.newContext({ ...creds, viewport: PHONE ? { width: 390, height: 800 } : { width: 1280, height: 900 } });
+	const ctx = await browser.newContext({ ...creds, viewport: PHONE ? { width: 390, height: 800 } : { width: 1280, height: 900 }, reducedMotion: process.env.AXE_MOTION ? 'no-preference' : 'reduce' });
 	// Optional signed-in run: AXE_COOKIES="db_wl=<token>;db_in=1" (a QA session; never a real visitor's).
 	if (process.env.AXE_COOKIES) {
 		const host = new URL(BASE).hostname;
