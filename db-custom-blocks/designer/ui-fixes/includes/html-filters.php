@@ -20,6 +20,7 @@ function dbux_filter_html( $html, array $context ) {
 	$html = dbux_label_header_search( $html );
 	$html = dbux_checkout_price_icon( $html );
 	$html = dbux_strip_stray_shortcode( $html );
+	$html = dbux_strip_webfonts( $html );
 
 	if ( ! empty( $context['domain_archive'] ) ) {
 		$html = dbux_archive_heading_h1( $html );
@@ -114,4 +115,23 @@ function dbux_strip_stray_shortcode( $html ) {
 		return $html;
 	}
 	return preg_replace( '/\[quads id=(?:"|&quot;|&#8221;|&#8243;)?\d+(?:"|&quot;|&#8221;|&#8243;)?\]/', '', $html );
+}
+
+/**
+ * One typeface sitewide (2026-11-24): the system font stack. Some markup outside this plugin
+ * still asks for web fonts: the theme's footer.php links Google Fonts (Inter, Plus Jakarta Sans)
+ * on every page for the footer headings, and older page content carries its own <style> with
+ * Figtree, Inter or Plus Jakarta Sans. Removes the Google Fonts links and preconnects, and drops
+ * those families from font lists inside <style> blocks only (text is never touched). Pure.
+ */
+function dbux_strip_webfonts( $html ) {
+	if ( false === stripos( $html, 'fonts.g' ) && ! preg_match( '/Plus Jakarta|Figtree|[\s:"\']Inter[\'"]?\s*,/', $html ) ) {
+		return $html;
+	}
+	$html = preg_replace( '#<link\b[^>]*\bhref=["\']https://fonts\.(?:googleapis|gstatic)\.com[^"\']*["\'][^>]*>\s*#i', '', $html );
+	return preg_replace_callback( '#(<style\b[^>]*>)(.*?)(</style>)#is', static function ( $m ) {
+		$css = preg_replace( '#@import\s+url\(\s*["\']?https://fonts\.googleapis\.com/[^)]*\)\s*;?#i', '', $m[2] );
+		$css = preg_replace( '#(font-family\s*:\s*)((?:\s*(?:"(?:Plus Jakarta Sans|Figtree|Inter)"|\'(?:Plus Jakarta Sans|Figtree|Inter)\'|Inter)\s*,)+)\s*#i', '$1', $css );
+		return $m[1] . $css . $m[3];
+	}, $html );
 }

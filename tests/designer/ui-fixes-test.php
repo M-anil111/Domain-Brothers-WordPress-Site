@@ -27,4 +27,13 @@ check( 'archive rule off elsewhere', false !== strpos( dbux_filter_html( $a, arr
 $d = '<p><strong>206 names available.</strong></p>';
 check( 'hero count becomes a placeholder for the script', false !== strpos( dbux_filter_html( $d, array( 'all_domains' => true ) ), 'data-dbux-available' ) && false === strpos( dbux_filter_html( $d, array( 'all_domains' => true ) ), '206' ) );
 check( 'hero count untouched off the listing page', false !== strpos( dbux_filter_html( $d, array() ), '206 names available.' ) );
+// One typeface sitewide (2026-11-24): web fonts from the theme footer and old page styles are removed.
+$wf = '<html><head><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Plus+Jakarta+Sans:wght@800&display=swap"><link rel="stylesheet" href="/wp-content/x.css"></head><body>'
+	. '<style>@import url(\'https://fonts.googleapis.com/css2?family=Figtree:wght@400&display=swap\');#a h1{font-family:"Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, sans-serif!important}#b{font-family:Inter,ui-sans-serif}#c{font-family:\'Figtree\',Arial}</style>'
+	. '<p>Meet us at Inter, the Figtree cafe, or Plus Jakarta Sans fans.</p></body></html>';
+$wo = dbux_filter_html( $wf, array() );
+check( 'Google Fonts links and preconnects are removed, other stylesheets stay', false === strpos( $wo, 'fonts.g' ) && false !== strpos( $wo, '/wp-content/x.css' ) );
+check( 'web font families leave the font lists', false !== strpos( $wo, '#a h1{font-family:ui-sans-serif, system-ui, sans-serif!important}' ) && false !== strpos( $wo, '#b{font-family:ui-sans-serif}' ) && false !== strpos( $wo, '#c{font-family:Arial}' ) );
+check( 'text outside <style> is never changed', false !== strpos( $wo, '<p>Meet us at Inter, the Figtree cafe, or Plus Jakarta Sans fans.</p>' ) );
+check( 'pages without web fonts are returned unchanged', '<html><p>Hi</p></html>' === dbux_strip_webfonts( '<html><p>Hi</p></html>' ) );
 echo "\n$pass/" . ( $pass + $fail ) . " passed\n"; exit( $fail ? 1 : 0 );
