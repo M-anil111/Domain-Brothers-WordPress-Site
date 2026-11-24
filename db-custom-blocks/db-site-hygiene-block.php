@@ -527,6 +527,19 @@ add_action( 'transition_post_status', function ( $new, $old, $post ) {
 	) );
 }, 10, 3 );
 
+// Staging never notifies search engines: Rank Math's Instant Indexing also pings IndexNow when
+// pages are saved, and on beta (noindex, unverified host) every ping came back 403 and filled the
+// error log. Any IndexNow request from a staging host is answered locally instead.
+add_filter( 'pre_http_request', static function ( $pre, $args, $url ) {
+	if ( false !== $pre || ! is_string( $url ) || false === stripos( $url, 'indexnow' ) ) {
+		return $pre;
+	}
+	if ( ! function_exists( 'db_is_staging_host' ) || ! db_is_staging_host() ) {
+		return $pre;
+	}
+	return array( 'headers' => array(), 'body' => '', 'response' => array( 'code' => 202, 'message' => 'Skipped on staging' ), 'cookies' => array(), 'filename' => null );
+}, 10, 3 );
+
 /* ------------------------------------------------- form entry retention */
 
 if ( ! function_exists( 'db_hyg_retention_cutoff' ) ) {
