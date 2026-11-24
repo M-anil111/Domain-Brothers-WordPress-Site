@@ -74,6 +74,8 @@ add_action( 'wp_enqueue_scripts', static function () {
 	$dir  = __DIR__ . '/designer/ui-fixes/assets/';
 	wp_enqueue_style( 'dbux-ui-fixes', $base . 'ui-fixes.css', array(), DBUX_VERSION . '.' . (int) @filemtime( $dir . 'ui-fixes.css' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 	wp_enqueue_style( 'dbux-layout', $base . 'layout.css', array( 'dbux-ui-fixes' ), DBUX_VERSION . '.' . (int) @filemtime( $dir . 'layout.css' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+	// Template fixes and the shared FAQ component (designer's add-on 1.2.1, 2026-11-23), after layout.css.
+	wp_enqueue_style( 'dbux-layout-fixes', $base . 'layout-fixes.css', array( 'dbux-layout' ), DBUX_VERSION . '.' . (int) @filemtime( $dir . 'layout-fixes.css' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 	if ( dbux_is_all_domains_listing() ) {
 		wp_enqueue_script( 'dbux-listing-state', $base . 'listing-state.js', array(), DBUX_VERSION . '.' . (int) @filemtime( $dir . 'listing-state.js' ), array( 'in_footer' => true, 'strategy' => 'defer' ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 		wp_localize_script( 'dbux-listing-state', 'dbuxListing', array(

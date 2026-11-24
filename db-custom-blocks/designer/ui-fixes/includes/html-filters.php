@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'DBUX_TESTING' ) ) {
 function dbux_filter_html( $html, array $context ) {
 	$html = dbux_label_header_search( $html );
 	$html = dbux_checkout_price_icon( $html );
+	$html = dbux_strip_stray_shortcode( $html );
 
 	if ( ! empty( $context['domain_archive'] ) ) {
 		$html = dbux_archive_heading_h1( $html );
@@ -100,4 +101,17 @@ function dbux_all_domains_hero_count( $html ) {
 		$html,
 		1
 	);
+}
+
+/**
+ * Domain category archives (/domain-category/.../) print the literal text [quads id="1"] under the
+ * listing: the theme template echoes the ad shortcode of a plugin that is no longer installed. It
+ * showed as text and added a 26px line. Remove only that unrendered shortcode (designer's add-on
+ * 1.2.0, 2026-11-23); no-op when it is absent.
+ */
+function dbux_strip_stray_shortcode( $html ) {
+	if ( false === strpos( $html, '[quads id=' ) ) {
+		return $html;
+	}
+	return preg_replace( '/\[quads id=(?:"|&quot;|&#8221;|&#8243;)?\d+(?:"|&quot;|&#8221;|&#8243;)?\]/', '', $html );
 }
