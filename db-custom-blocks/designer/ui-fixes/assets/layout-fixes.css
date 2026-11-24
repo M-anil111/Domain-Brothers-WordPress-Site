@@ -890,3 +890,164 @@ html body.db-ui-active #page#page main#main.db-sales-page > .dbcs {
 	margin-left: 0 !important;
 	margin-right: 0 !important;
 }
+
+/* ================================================================== *
+ * 12-14. One set of corners, buttons and titles (2026-11-24)
+ *    The 23 Nov work gave every template one container, one spacing
+ *    rhythm and one FAQ component. A sitewide measurement (32 templates,
+ *    1440px and 375px) then found 11 card radii (8-32px), button heights
+ *    from 33 to 70px with 7 corner styles and 6 navies, and 12 page-title
+ *    sizes (40-68px). These sections apply the values the site already
+ *    uses most, so the change is a tidy-up, not a new look:
+ *      corners   28px panels · 18px cards · 12px small items and tables
+ *      buttons   navy pill (#0f1b2d) · 52px for page actions, 46px in cards
+ *      titles    page title 32-54px · compact 28-40px · section heading
+ *                as the FAQ heading (§1) · sub-heading 22-28px; all 800
+ *    Left alone on purpose: the home hero and the domain detail page
+ *    (their display type is set by the designer, names at 700), the
+ *    listing card buttons (DB-12), and illustrations (phone mock-ups).
+ * ================================================================== */
+:root {
+	--dbd-navy: #0f1b2d;
+	--dbd-navy-hover: #1e2d44;
+	--dbd-r-panel: 28px;
+	--dbd-r-card: 18px;
+	--dbd-r-small: 12px;
+	--dbd-btn-h: 52px;
+	--dbd-btn-h-sm: 46px;
+	--dbd-h1: clamp(32px, 4vw, 54px);
+	--dbd-h1-compact: clamp(28px, 3vw, 40px);
+	--dbd-h2: clamp(30px, 3vw, 38px);
+	--dbd-h2-sub: clamp(22px, 2vw, 28px);
+}
+
+/* ---- 12. Corners ---------------------------------------------------- */
+/* Full-container panels: hero cards, CTA bands, forms and tool panels. */
+html body.db-ui-active #page#page :is(
+	.dbs2-hero, .dbl-head, .dbwi-hero, .dbwi-cta, .dbpp-calc, .dbpp-cta, .db-sales-card,
+	.dbs-cta, .dbf-cta, .dbt-cta, .dblk-src, .dbtp-rel, .dbgl-wrap, .dbsv-form, .dbh-sec.dbh-dark,
+	.dbp-hero
+) {
+	border-radius: var(--dbd-r-panel) !important;
+}
+/* Content cards. */
+html body.db-ui-active #page#page :is(
+	.dblp-steps > li, .dblp-benefits > li, .dblp-form, .dbpp-facts > li, .dbpp-plans > li.dbpp-plan, .dbpp-table-wrap,
+	.dbwi-feats > li, .dbwi-steps > li, .dbt-grid > li.dbt-card, .dbh-steps > li, .dbh-broker > li, .dbh-cards > li,
+	.dbs-fgrid > .dbs-fcard, .dba-path-grid > .dba-step, .dba-founders > .dba-founder, .dbtp-steps > li,
+	.db-sales-quiz > fieldset, .dbc-card, .dbc-direct, .dbf-topics, .dbf-help, .db-op-card, .db-reg-card, .db-reg-side,
+	.dbx-tr-form, .dbx-tr-side, .co-card, .co-sum, .db-plan-summary, .db-ty-also, .dbb-author, .dbb-final, .dbb-sidecta,
+	.dbb-body > .wp-block-group.db-takeaways, .dbb-body > .wp-block-group.db-related
+) {
+	border-radius: var(--dbd-r-card) !important;
+}
+/* Small items and tables. */
+html body.db-ui-active #page#page :is(
+	.dbt-card > .dbt-photo, .dbgl-wrap > table, .dbpp-table, .db-plan-schedule, .db-plan-terms, .hlp-info,
+	.wp-block-table > table, section > table.table-bordered
+) {
+	border-radius: var(--dbd-r-small) !important;
+}
+
+/* ---- 13. Buttons ---------------------------------------------------- */
+/* Shape and size: one pill, two heights. */
+html body.db-ui-active #page#page :is(
+	.dbs-btn, .dba-btn, .dbf-btn, .dbgl-cta > a, .dblk-cta, .dbtp-cta > a, .dbpp-cta-btn, .dbr-fd-cta-btn,
+	.db-sales-btn, .dbwi-btn, .dbt-btn, .dbh-check > button, .db-ty-cta, .co-actions > .co-btn, .db-dev-btn
+) {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-height: var(--dbd-btn-h) !important;
+	height: auto !important;
+	padding: 0 32px !important;
+	border-radius: 999px !important;
+	font-size: 17px !important;
+	font-weight: 700 !important;
+	line-height: 1.2 !important;
+	box-sizing: border-box !important;
+}
+html body.db-ui-active #page#page :is(
+	.dblp-btn, .db-wl-btn, .db-pay-go, .db-plan-cta, .db-tools-btn, .dbp-btn, .dbb-btn
+) {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-height: var(--dbd-btn-h-sm) !important;
+	height: auto !important;
+	padding: 0 22px !important;
+	border-radius: 999px !important;
+	font-size: 15px !important;
+	font-weight: 700 !important;
+	line-height: 1.2 !important;
+	box-sizing: border-box !important;
+}
+/* Colour: the dark buttons share one navy. Light, ghost and lime variants keep theirs. */
+html body.db-ui-active #page#page :is(
+	.dbs-btn, .dba-btn, .dbf-btn, .dbgl-cta > a, .dblk-cta, .dbtp-cta > a, .dbpp-cta-btn, .dbr-fd-cta-btn,
+	.db-sales-btn, .dbwi-btn--navy, .dbt-btn, .dbh-check > button, .db-ty-cta, .co-actions > .co-btn,
+	.dblp-btn:not(.dblp-btn--ghost), .db-pay-go, .db-plan-cta
+) {
+	background: var(--dbd-navy) !important;
+	border-color: var(--dbd-navy) !important;
+	color: #fff !important;
+}
+html body.db-ui-active #page#page :is(
+	.dbs-btn, .dba-btn, .dbf-btn, .dbgl-cta > a, .dblk-cta, .dbtp-cta > a, .dbpp-cta-btn, .dbr-fd-cta-btn,
+	.db-sales-btn, .dbwi-btn--navy, .dbt-btn, .dbh-check > button, .db-ty-cta, .co-actions > .co-btn,
+	.dblp-btn:not(.dblp-btn--ghost), .db-pay-go, .db-plan-cta
+):is(:hover, :focus-visible) {
+	background: var(--dbd-navy-hover) !important;
+	border-color: var(--dbd-navy-hover) !important;
+	color: #fff !important;
+}
+@media (max-width: 575.98px) {
+	html body.db-ui-active #page#page :is(
+		.dbs-btn, .dba-btn, .dbf-btn, .dbgl-cta > a, .dblk-cta, .dbtp-cta > a, .dbpp-cta-btn, .dbr-fd-cta-btn,
+		.db-sales-btn, .dbwi-btn, .dbt-btn, .dbh-check > button, .db-ty-cta, .co-actions > .co-btn, .db-dev-btn
+	) {
+		padding: 0 24px !important;
+		font-size: 16px !important;
+	}
+}
+
+/* ---- 14. Titles ----------------------------------------------------- */
+/* Page title: every template except the home hero and the domain page. */
+html body.db-ui-active #page#page :is(
+	h1.dbs2-title, h1.dbr-h1, h1.dbx-tr-h1, .dbs-hero-copy > h1, h1.db-an-h1, h1.dbp-title, h1.dbf-title,
+	.dbc-hero-copy > h1, h1.dbh-h1, .dba-hero-copy > h1, h1.dbb-title, h1.dbwi-title, h1.dbt-title, h1.dbl-title,
+	.page-header > h1.page-title, article.page > h1.entry-title, .db-404 > h1
+) {
+	font-size: var(--dbd-h1) !important;
+	font-weight: 800 !important;
+	line-height: 1.1 !important;
+	letter-spacing: -.02em !important;
+}
+/* Compact title: titles inside a card (sign-up, confirmations, the plan chooser). */
+html body.db-ui-active #page#page :is(h1.db-reg-title, h1.db-ty-headline, h1.db-plan-h1) {
+	font-size: var(--dbd-h1-compact) !important;
+	font-weight: 800 !important;
+	line-height: 1.15 !important;
+	letter-spacing: -.02em !important;
+}
+/* Section heading: the size of the FAQ section heading (§1). */
+html body.db-ui-active #page#page :is(
+	.dbx-wrap > h2, .db-hub > h2, h2.dbf-sec-h, .dbh-head > h2, .dbsv-form-copy > h2, .dbs-head > h2,
+	.dbtp-sec > h2, .dbwi-sec > h2, h2.db-sitemap-h2, .dbgl > h2, h2.dba-h2, h2.db-op-title, .dbc-help > h2,
+	.dbc-form-card > h2
+) {
+	font-size: var(--dbd-h2) !important;
+	font-weight: 800 !important;
+	line-height: 1.12 !important;
+	letter-spacing: -.02em !important;
+}
+/* Sub-heading: sections of long documents (policies, guides, payment terms) and card headings. */
+html body.db-ui-active #page#page :is(
+	.dbr-sec > h2, .dbb-body > h2.wp-block-heading, .dbpp-sec > h2, .dbc-direct > h2, .dbc-include > h2,
+	.dbc-faq > h2, .dblp-form > h2
+) {
+	font-size: var(--dbd-h2-sub) !important;
+	font-weight: 800 !important;
+	line-height: 1.25 !important;
+	letter-spacing: -.01em !important;
+}
