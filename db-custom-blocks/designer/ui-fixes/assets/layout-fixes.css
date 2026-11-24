@@ -1060,7 +1060,9 @@ html body.db-ui-active #page#page :is(
  *    "Cookie settings" button (22px; the other footer links got 5px padding
  *    in DB-28), the market pulse link (26px), the checkout and sign-up
  *    tick boxes (16-20px), "On this page" on /payment-terms/ (21px) and the
- *    founders' LinkedIn links on /about-us/ (30px).
+ *    founders' LinkedIn links on /about-us/ (30px). Signed in: "How it works"
+ *    and "Sign out" on the account page (23px), the Profile terms box and
+ *    the seller table's Exclusive box (13px).
  * ================================================================== */
 @media (max-width: 767.98px) {
 	html body.db-ui-active #page#page :is(.db-dfilter-q > input, .db-dfilter select, .dbl-search > input) {
@@ -1077,12 +1079,14 @@ html body #db-legal-links .db-legal-btn {
 	min-height: 32px !important;
 }
 html body.db-ui-active #page#page a.db-pulse-link,
-html body.db-ui-active #page#page a.dba-li {
+html body.db-ui-active #page#page a.dba-li,
+html body.db-ui-active #page#page a.db-ac-howto,
+html body.db-ui-active #page#page button.db-wl-link {
 	display: inline-flex !important;
 	align-items: center !important;
 	min-height: 32px !important;
 }
-html body :is(#db-co .co-agree, .db-ui-active #page .db-reg-check) input[type="checkbox"] {
+html body :is(#db-co .co-agree, .db-ui-active #page .db-reg-check, .db-ui-active #page .db-pf-accept, .db-ui-active #page .dbsl-check) input[type="checkbox"] {
 	width: 22px !important;
 	height: 22px !important;
 	flex: 0 0 22px !important;
