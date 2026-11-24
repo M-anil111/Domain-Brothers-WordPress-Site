@@ -851,7 +851,7 @@ html body.db-ui-active.blog #page#page#page#page main#main > .db-news-live + .pa
  *    45/60/80px). Same rule for the new parent; hidden theme blocks between
  *    them (.middle-blue-bg, .cleardiv) do not count.
  * ================================================================== */
-html body.db-ui-active #page#page main#main > :is(.db-pulse, .db-rsold-home, .db-aud, .db-how) ~ :is(.db-rsold-home, .db-aud, .db-how, .pageNewContent) {
+html body.db-ui-active #page#page#page#page main#main > :is(.db-pulse, .db-rsold-home, .db-aud, .db-how) ~ :is(.db-rsold-home, .db-aud, .db-how, .pageNewContent) {
 	padding-top: 0 !important;
 }
 
