@@ -975,6 +975,22 @@ add_filter( 'the_title', function ( $title, $id = 0 ) {
 	return $title;
 }, 10, 2 );
 
+if ( ! function_exists( 'db_strip_webfont_css' ) ) {
+	/**
+	 * Page content built with its own <style> loaded Figtree from Google Fonts (About, FAQs, Our
+	 * Team, Contact). The site uses one system font stack: the @import is removed and the family
+	 * dropped from font stacks, so the browser falls through to the system face. Pure.
+	 */
+	function db_strip_webfont_css( $html ) {
+		if ( false === strpos( (string) $html, 'Figtree' ) ) {
+			return $html;
+		}
+		$html = preg_replace( '#@import\s+url\(\s*[\'"]?https://fonts\.googleapis\.com/[^)]*\)\s*;?#i', '', (string) $html );
+		return preg_replace( '#([\'"])Figtree\1\s*,\s*#', '', $html );
+	}
+}
+add_filter( 'the_content', 'db_strip_webfont_css', 99 );
+
 if ( ! function_exists( 'db_newtab_hint' ) ) {
 	/**
 	 * Adds a hidden " (opens in a new tab)" to every link with target="_blank" that does not
@@ -1698,8 +1714,7 @@ add_action( 'wp_head', function () {
 		echo '<link rel="preconnect" href="https://api.stripe.com">' . "\n";
 		echo '<link rel="dns-prefetch" href="//js.stripe.com">' . "\n";
 	}
-	echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-	echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+	// No Google Fonts preconnect: the site uses the system font stack (design audit 2026-11-24).
 }, 0 );
 
 add_action( 'send_headers', function () {

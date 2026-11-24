@@ -425,7 +425,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( ! $on ) {
 		return;
 	}
-	wp_enqueue_style( 'db-svt-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap', array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters
+	// One typeface sitewide (the system stack): no Google Fonts request (design audit 2026-11-24).
 	$file = __DIR__ . '/assets/service-template.css';
 	$css  = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions
 	if ( null !== db_svt_current() && '' !== $css ) {
@@ -446,8 +446,8 @@ if ( ! function_exists( 'db_svt_transfer_css' ) ) {
 	/** The transfer page keeps its working form; this gives its hero, steps and cards the template's look. */
 	function db_svt_transfer_css() {
 		return '.dbx-tr{--navy:#0b1a33;--lime:#a6cf2b;--lime-d:#7fa60f;--lime-t:#eef6d6;--line:#e1e5eb}'
-			. 'html body .dbx-tr :is(h1,h2,h3){font-family:"Plus Jakarta Sans",Inter,ui-sans-serif,system-ui,sans-serif;color:var(--navy);letter-spacing:-.025em;font-weight:800;text-wrap:balance}'
-			. 'html body .dbx-tr :is(p,li,a,span,label,strong){font-family:Inter,ui-sans-serif,system-ui,sans-serif}'
+			. 'html body .dbx-tr :is(h1,h2,h3){font-family:ui-sans-serif,system-ui,sans-serif;color:var(--navy);letter-spacing:-.025em;font-weight:800;text-wrap:balance}'
+			. 'html body .dbx-tr :is(p,li,a,span,label,strong){font-family:ui-sans-serif,system-ui,sans-serif}'
 			. '.dbx-tr .dbx-tr-hero{position:relative;width:100vw;left:50%;margin-left:-50vw;padding:clamp(32px,5vw,64px) max(32px,calc(50vw - 620px));background:radial-gradient(110% 90% at 80% 35%,#fff 0,rgba(255,255,255,0) 60%),linear-gradient(180deg,#f8f9fa 0,#f1f3f5 100%)}'
 			. '.dbx-tr .dbx-tr-hero .dbp-eyebrow{display:inline-block;margin:0 0 14px;padding:6px 12px;border-radius:999px;background:var(--lime-t);color:#4f6f0f;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}'
 			. 'html body .dbx-tr .dbx-tr-hero{border-radius:0!important;border:0!important}html body .dbx-tr .dbx-tr-hero :is(h1,.dbx-tr-h1){color:#0b1a33!important}html body .dbx-tr .dbx-tr-hero :is(p,.dbx-lede,.dbx-tr-lead){color:#4a5568!important}html body .dbx-tr .dbx-tr-hero .dbx-tr-trust li{color:#0b1a33!important}html body .dbx-tr .dbx-tr-hero .dbp-eyebrow{background:#eef6d6!important;color:#4f6f0f!important}'

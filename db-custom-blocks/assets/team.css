@@ -23,7 +23,7 @@ body #main#main.db-team-main { padding: 0 !important; margin: 0 !important; max-
 	--t-pill: #e6f5a8;
 	--t-band: #eef9cf;
 	--t-hero: #edf1f7;
-	--t-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+	--t-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 	display: block;
 	color: var(--t-text);
 	font-family: var(--t-font);

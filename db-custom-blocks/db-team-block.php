@@ -144,7 +144,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( is_admin() || ! db_team_is_page() ) {
 		return;
 	}
-	wp_enqueue_style( 'db-team-font', 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	// One typeface sitewide (the system stack): no Google Fonts request (design audit 2026-11-24).
 	$file = __DIR__ . '/assets/team.css';
 	$css  = is_readable( $file ) ? (string) file_get_contents( $file ) : '';
 	if ( '' === $css ) {

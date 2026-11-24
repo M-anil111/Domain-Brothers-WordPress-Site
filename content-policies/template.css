@@ -1,11 +1,10 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap');
 body.page-id-1887{overflow-x:clip}
 body.page-id-1887 #page .db-breadcrumbs,body.page-id-1887 #page article.post-1887>.entry-title,body.page-id-1887 #page .db-ad{display:none!important}
 body.page-id-1887 #page #content{padding-bottom:0!important}
 body.page-id-1887 #page #content #main.site-main,body.page-id-1887 #page #content article.post-1887{margin-top:0!important;padding-top:0!important;margin-bottom:0!important;padding-bottom:0!important}
 body.page-id-1887 .entry-content{margin:0;padding:0}
-#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:'Figtree',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
+#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
 #dbr *,#dbr *::before,#dbr *::after{box-sizing:border-box}
 #dbr h1,#dbr h2,#dbr p,#dbr ul,#dbr ol,#dbr li{margin:0;padding:0;font-family:inherit;text-transform:none;border:0;background:none;letter-spacing:normal}
 #dbr .dbr-bleed{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
