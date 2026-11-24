@@ -885,6 +885,8 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 #db-co .co-opt{border:1.5px solid #cfd8d3;border-radius:14px}
 #db-co .co-opt.is-on{border-color:var(--co-green);background:var(--co-green-soft)}
 #db-co .co-pill{border-radius:999px;box-shadow:none;border:1.5px solid #cfd8d3;font-size:16px;letter-spacing:0}
+/* Step titles: the page's heading at the site's compact title size, not a 16px label (checkout audit, item 7). */
+#db-co .co-pill.co-title{margin:0 0 18px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;text-align:left;font-size:clamp(24px,3vw,32px);font-weight:800;line-height:1.15;letter-spacing:-.02em;color:#0a1628}
 #db-co .co-input{height:46px;min-height:46px;border:1.5px solid #cfd8d3;border-radius:14px}
 #db-co .co-input:focus{border-color:var(--co-navy);box-shadow:0 0 0 4px rgba(22,163,74,.2)}
 #db-co .co-btn{min-height:50px;border-radius:999px;letter-spacing:.04em;background:var(--co-navy);box-shadow:0 8px 20px rgba(10,22,40,.18)}
@@ -964,7 +966,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 <?php else : ?>
 					<!-- Step 1: Billing information -->
 					<div class="co-panel" id="co-panel-1" data-panel="1">
-						<h1 class="co-pill">Please fill-in your billing information</h1>
+						<h1 class="co-pill co-title">Your billing information</h1>
 						<p class="co-intro">You will receive an invoice once your payment is processed.</p>
 						<form id="co-billing" novalidate>
 							<div class="co-field">
@@ -989,7 +991,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 
 					<!-- Step 2: Order confirmation -->
 					<div class="co-panel" id="co-panel-2" data-panel="2" hidden>
-						<h2 class="co-pill" tabindex="-1">Please confirm your order</h2>
+						<h2 class="co-pill co-title" tabindex="-1">Confirm your order</h2>
 						<div class="co-review-head"><h3>Billing information</h3><button type="button" class="co-edit" data-goto="1">Edit</button></div>
 						<dl class="co-review">
 							<div class="co-review-row"><dt>Full Name</dt><dd id="co-r-name"></dd></div>
@@ -1022,7 +1024,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 
 					<!-- Step 3: Payment -->
 					<div class="co-panel" id="co-panel-3" data-panel="3" hidden>
-						<h2 class="co-pill" tabindex="-1">Enter your payment details</h2>
+						<h2 class="co-pill co-title" tabindex="-1">Your payment details</h2>
 						<div class="co-due"><span>Amount due today</span><strong><?php echo esc_html( $due_today_display ); ?></strong></div>
 						<div id="co-err" class="co-err" role="alert"></div>
 						<form id="co-pay" novalidate>
