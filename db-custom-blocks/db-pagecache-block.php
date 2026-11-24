@@ -554,7 +554,7 @@ if ( ! function_exists( 'db_pc_warm_run' ) ) {
 		if ( 'ours' !== db_pc_dropin_state( 'advanced-cache.php' ) || ! db_pc_enabled( 'page' ) ) {
 			return;
 		}
-		$state  = array( 'at' => time(), 'saved' => 0, 'fresh' => 0, 'failed' => 0, 'blocked' => false, 'more' => false );
+		$state  = array( 'at' => time(), 'saved' => 0, 'fresh' => 0, 'moved' => 0, 'failed' => 0, 'blocked' => false, 'more' => false );
 		$start  = microtime( true );
 		foreach ( db_pc_warm_list() as $url ) {
 			$path     = strtolower( (string) wp_parse_url( $url, PHP_URL_PATH ) );
@@ -588,6 +588,8 @@ if ( ! function_exists( 'db_pc_warm_run' ) ) {
 				}
 				if ( 200 === $code && $file && file_exists( $file ) ) {
 					++$state['saved'];
+				} elseif ( $code >= 300 && $code < 400 ) {
+					++$state['moved']; // an old address that redirects: nothing to save
 				} else {
 					++$state['failed'];
 				}

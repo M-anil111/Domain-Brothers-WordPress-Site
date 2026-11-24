@@ -738,7 +738,14 @@ if ( ! function_exists( 'db_sales_request_path' ) ) {
 if ( ! function_exists( 'db_sales_render' ) ) {
 	/** Renders a public page in the theme. $noindex keeps thin or parameter pages out of search. */
 	function db_sales_render( $title, $crumb, $body, $noindex = false ) {
-		if ( ! defined( 'DONOTCACHEPAGE' ) && ! empty( $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		// Tracking parameters (utm_*, gclid, ref ...) do not change the page; the page cache
+		// ignores them too. Treating them as "has a query" kept every page drawn here (tools,
+		// glossary, price index, payment terms) out of the cache for ad and email visitors and
+		// for the cache warmer, which adds ?ref= (2026-11-24).
+		$db_real_q = array_filter( array_keys( $_GET ), static function ( $k ) { // phpcs:ignore WordPress.Security.NonceVerification
+			return ! preg_match( '/^(utm_[a-z_]+|gclid|gbraid|wbraid|fbclid|msclkid|dclid|_ga|_gl|mc_cid|mc_eid|ref)$/i', (string) $k );
+		} );
+		if ( ! defined( 'DONOTCACHEPAGE' ) && $db_real_q ) {
 			define( 'DONOTCACHEPAGE', true );
 		}
 		status_header( 200 );
