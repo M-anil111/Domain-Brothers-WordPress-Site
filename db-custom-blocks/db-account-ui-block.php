@@ -92,7 +92,7 @@ if ( ! function_exists( 'db_acct_guide_html' ) ) {
 		foreach ( $cards as $c ) {
 			$h .= '<li><a href="' . esc_url( db_acct_ui_url( $c[0] ) ) . '"><span class="db-ac-gico">' . db_acct_ui_icon( $c[0] ) . '</span><strong>' . esc_html( $c[1] ) . '</strong><span>' . esc_html( $c[2] ) . '</span><em>' . esc_html( $c[3] ) . '</em></a></li>';
 		}
-		$h .= '</ul><div class="db-ac-setup"><h2>Quick setup</h2><div class="db-ac-bar" role="progressbar" aria-valuemin="0" aria-valuemax="' . count( $steps ) . '" aria-valuenow="' . (int) $done . '"><span style="width:' . (int) round( 100 * $done / count( $steps ) ) . '%"></span></div><ol>';
+		$h .= '</ul><div class="db-ac-setup"><h2>Quick setup</h2><div class="db-ac-bar" role="progressbar" aria-label="Quick setup progress" aria-valuetext="' . (int) $done . ' of ' . count( $steps ) . ' steps done" aria-valuemin="0" aria-valuemax="' . count( $steps ) . '" aria-valuenow="' . (int) $done . '"><span style="width:' . (int) round( 100 * $done / count( $steps ) ) . '%"></span></div><ol>';
 		foreach ( $steps as $s ) {
 			$h .= '<li class="' . ( $s[0] ? 'is-done' : '' ) . '"><span class="db-ac-tick" aria-hidden="true">' . ( $s[0] ? db_acct_ui_icon( 'check' ) : '' ) . '</span><span class="db-ac-step-l">' . esc_html( $s[1] ) . ( $s[0] ? ' <span class="db-ac-sr">(done)</span>' : '' ) . '</span>'
 				. ( $s[0] ? '' : '<a class="db-ac-btn db-ac-btn--ghost" href="' . esc_url( $s[2] ) . '">' . esc_html( $s[3] ) . '</a>' ) . '</li>';
@@ -204,7 +204,7 @@ add_action( 'wp_enqueue_scripts', function () {
 		. '.db-ac-bar{height:8px;margin:0 0 14px;border-radius:999px;background:#e4e7ec;overflow:hidden}.db-ac-bar span{display:block;height:100%;border-radius:999px;background:#b5e61d}'
 		. '.db-ac-setup ol{display:grid;gap:10px;margin:0 0 14px;padding:0;list-style:none}.db-ac-setup li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0;color:#0f172a;font-size:15px;font-weight:600}'
 		. '.db-ac-tick{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:2px solid #cbd2dc;border-radius:50%;background:#fff;color:#0f1b2d}.db-ac-setup li.is-done .db-ac-tick{border-color:#b5e61d;background:#b5e61d}.db-ac-tick svg{width:14px;height:14px}'
-		. '.db-ac-setup li.is-done .db-ac-step-l{color:#6b7280;text-decoration:line-through}.db-ac-sr{position:absolute;left:-9999px}.db-ac-step-l{flex:1 1 140px;min-width:0}'
+		. '.db-ac-setup li.is-done .db-ac-step-l{color:#4b5563;text-decoration:line-through}.db-ac-sr{position:absolute;left:-9999px}.db-ac-step-l{flex:1 1 140px;min-width:0}'
 		. '.db-ac-intro{margin:0 0 18px;padding:12px 16px;border-left:4px solid #b5e61d;border-radius:0 12px 12px 0;background:#f6fbe6;color:#374151;font-size:15.5px;line-height:1.55}'
 		// Tabs: one scrollable row on narrow screens.
 		. 'html body .db-ac-tabs{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 18px;padding:2px 2px 8px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}'

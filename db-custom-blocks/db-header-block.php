@@ -344,7 +344,7 @@ if ( ! function_exists( 'db_header_account_html' ) ) {
 			$unread = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}db_wl_notes WHERE email = %s AND read_at IS NULL", $email ) );
 		}
 		$h  = '<div class="db-hd-acct">'
-			. '<button type="button" class="db-hd-acct-btn" aria-expanded="false" aria-controls="db-hd-acct-menu"><span class="db-hd-av" aria-hidden="true">' . esc_html( $initial ) . '</span><span class="db-hd-acct-l">' . ( '' !== $first ? esc_html( $first ) : 'My account' ) . '</span>'
+			. '<button type="button" class="db-hd-acct-btn" aria-label="My account" aria-expanded="false" aria-controls="db-hd-acct-menu"><span class="db-hd-av" aria-hidden="true">' . esc_html( $initial ) . '</span><span class="db-hd-acct-l">' . ( '' !== $first ? esc_html( $first ) : 'My account' ) . '</span>'
 			. ( $unread ? '<span class="db-hd-dot"><span class="screen-reader-text">, ' . (int) $unread . ' new alerts</span></span>' : '' )
 			. '<svg class="db-hd-chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2.500 4.500 6 8l3.500-3.500" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round"/></svg></button>'
 			. '<div class="db-hd-acct-menu" id="db-hd-acct-menu">'
