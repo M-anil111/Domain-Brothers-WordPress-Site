@@ -31,6 +31,26 @@ Audit corrections (the first run measured some things the design does not ask fo
 - The container check accepts a full-width wrapper whose padding gives the 15px gutter (the FAQs page was a false alarm).
 - `CACHEBUST=1` adds a throwaway query string so cached pages are skipped right after a deploy.
 
+## Shared components (3.150.45 to 3.150.50, 2026-11-24)
+
+The designer's 23 Nov work (one container, one spacing rhythm, one FAQ component) is bundled in
+`db-custom-blocks/designer/ui-fixes/assets/layout-fixes.css`. Sections 8 to 18 of that file extend it to every template,
+using values the site already used most:
+
+| Part | Standard | Section |
+|---|---|---|
+| Corners | 28px panels and hero cards, 18px cards, 12px small items and tables | §12 |
+| Buttons | navy pill `#0f1b2d`; 52px page actions, 46px in cards; light, ghost and lime variants keep their colours | §13 |
+| Titles | page 32-54px, compact (in a card) 28-40px, section heading as the FAQ heading, sub-heading 22-28px; all weight 800 | §14 |
+| Phones | fields 16px (no iOS zoom), tap targets 32px or more | §15 |
+| Typeface | the system font stack only; no Google Fonts (theme footer and page styles filtered in `includes/html-filters.php`) | §16-17 |
+| Heroes | plain eyebrow 13px/800 `.12em` dark olive `#4f6f0f`; pill eyebrow 12px; intro 17-19px, 640px wide | §18 |
+
+Left as the designer set them: the home hero, the domain detail page (names at 700), listing card buttons (DB-12) and
+the two hero layouts (dark gradient card, light hero with illustration). Choosing fewer hero layouts is a design decision.
+
+Audit after 3.150.49: 114 page-width checks (38 pages, 375/768/1440px), 0 issues; axe clean on 14 pages at both widths.
+
 ## Checklist by page
 
 | Page | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
