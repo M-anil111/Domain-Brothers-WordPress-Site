@@ -1128,7 +1128,8 @@ html body.db-ui-active #page :is(#primary.content-area, .content-area) {
  * ================================================================== */
 /* Plain eyebrow on a light hero: dark olive passes 4.5:1 on white and the light grounds. */
 html body.db-ui-active #page#page :is(
-	.dbs-eyebrow, .dba-eyebrow, .dbc-eyebrow, .dbt-eyebrow, .dbh-hero .dbp-eyebrow, .dbe-hero .dbp-eyebrow
+	.dbs-hero .dbs-eyebrow, .dba-hero-copy .dba-eyebrow, .dbc-hero-copy .dbc-eyebrow, .dbt-hero-text .dbt-eyebrow,
+	.dbh-hero .dbp-eyebrow, .dbe-hero .dbp-eyebrow
 ) {
 	font-size: 13px !important;
 	font-weight: 800 !important;
