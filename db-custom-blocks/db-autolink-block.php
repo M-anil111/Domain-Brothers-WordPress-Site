@@ -247,8 +247,23 @@ if ( ! function_exists( 'db_autolink_live_map' ) ) {
 			}
 			set_transient( $key, $ok, 12 * HOUR_IN_SECONDS );
 		}
-		$live = array_values( array_filter( $map, static function ( $row ) use ( $ok ) {
-			return ! empty( $ok[ (string) preg_replace( '/#.*$/', '', $row[1] ) ] );
+		// List pages with nothing on them get no links, the same rule the menu uses: a length list
+		// with 0 names, and Deals while nothing is reduced (db_pages_deals_state). Checked on every
+		// request, not cached, so a link appears as soon as a name is listed.
+		$empty = array();
+		if ( function_exists( 'db_pages_listing_counts' ) ) {
+			foreach ( (array) db_pages_listing_counts() as $slug => $n ) {
+				if ( (int) $n < 1 ) {
+					$empty[ '/' . trim( (string) $slug, '/' ) . '/' ] = true;
+				}
+			}
+		}
+		if ( '1' !== (string) get_option( 'db_pages_deals_state', '' ) ) {
+			$empty['/premium-domain-deals/'] = true;
+		}
+		$live = array_values( array_filter( $map, static function ( $row ) use ( $ok, $empty ) {
+			$path = (string) preg_replace( '/#.*$/', '', $row[1] );
+			return ! empty( $ok[ $path ] ) && ! isset( $empty[ $path ] );
 		} ) );
 		return $live;
 	}
