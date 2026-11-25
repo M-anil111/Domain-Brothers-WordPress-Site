@@ -424,7 +424,7 @@ if ( ! function_exists( 'db_pages_listing_html' ) ) {
 				$alt    = '';
 				foreach ( array( '4-character-domains', '5-character-domains', '6-character-domains' ) as $other ) {
 					if ( $other !== $slug && ! empty( $counts[ $other ] ) ) {
-						$alt = '<a href="' . esc_url( $links[ $other ] ) . '">' . esc_html( $sets[ $other ]['chip'] ) . ' domains</a>';
+						$alt = '<a href="' . esc_url( $links[ $other ] ) . '">' . esc_html( (string) preg_replace( '/ for sale$/', '', $sets[ $other ]['title'] ) ) . '</a>';
 						break;
 					}
 				}
