@@ -54,7 +54,7 @@ check( 'priced card shows price, monthly and Buy now', false !== strpos( $l, '$2
 check( 'offer card shows Make an offer and no price', false !== strpos( $l, 'data-name="saska.ca" data-price="0"' ) && false !== strpos( $l, 'Make an offer' ) );
 check( 'category is escaped', false !== strpos( $l, 'Business &amp; &lt;Tech&gt;' ) );
 $e = db_pages_listing_html( '3-character-domains', array(), $links );
-check( 'empty list explains and links on, with no search box', false !== strpos( $e, 'dbl-head dbl-head--empty' ) && false === strpos( $e, 'dbl-empty"' ) && false === strpos( $e, 'dbl-q' ) && false !== strpos( $e, 'href="/find/"' ) && false !== strpos( $e, '<strong>0 names available.</strong>' ) );
+check( 'empty list explains and links on, with no search box', false !== strpos( $e, 'dbl-head dbl-head--empty' ) && false === strpos( $e, 'dbl-empty"' ) && false === strpos( $e, 'dbl-q' ) && false !== strpos( $e, 'href="/find/"' ) && false !== strpos( $e, 'No three-letter names are listed right now.' ) && false !== strpos( $e, 'href="/acq/">ask us to find a three-letter name for you</a>' ) && false === strpos( $e, '0 names available' ) );
 $sd = db_pages_listing_html( 'sold', array( array( 'name' => 'wingcms.com', 'url' => '/domains/wingcms-com/', 'price' => 0, 'monthly' => 0, 'cat' => '' ) ), $links );
 check( 'sold list shows a Sold badge, no sort and no price', false !== strpos( $sd, 'dbl-badge">Sold' ) && false === strpos( $sd, 'id="dbl-sort"' ) && false === strpos( $sd, 'Make an offer' ) && false !== strpos( $sd, '<strong>1 name sold.</strong>' ) );
 

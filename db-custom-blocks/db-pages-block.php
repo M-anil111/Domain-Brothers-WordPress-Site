@@ -416,6 +416,23 @@ if ( ! function_exists( 'db_pages_listing_html' ) ) {
 		$h    = '<section class="dbl-head"><p class="dbp-eyebrow">' . ( $sold ? 'Track record' : 'Browse by type' ) . '</p><h1 class="dbl-title">' . esc_html( $set['title'] ) . '</h1>'
 			. '<p class="dbl-intro">' . esc_html( $set['intro'] ) . ' <strong>' . (int) $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ( $sold ? ' sold' : ' available' ) . '.</strong></p>';
 		if ( ! $rows ) {
+			// Approved copy 2026-11-25: "0 names available" read as a dead end; say what to do instead.
+			if ( ! $sold ) {
+				$kind   = array( '3-character-domains' => 'three-letter', 'numeric-domains-for-sale' => 'numeric', '4-character-domains' => 'four-character', '5-character-domains' => 'five-character', '6-character-domains' => 'six-character' );
+				$word   = $kind[ $slug ] ?? 'such';
+				$counts = function_exists( 'db_pages_listing_counts' ) ? (array) db_pages_listing_counts() : array();
+				$alt    = '';
+				foreach ( array( '4-character-domains', '5-character-domains', '6-character-domains' ) as $other ) {
+					if ( $other !== $slug && ! empty( $counts[ $other ] ) ) {
+						$alt = '<a href="' . esc_url( $links[ $other ] ) . '">' . esc_html( $sets[ $other ]['chip'] ) . ' domains</a>';
+						break;
+					}
+				}
+				$intro = 'No ' . $word . ' names are listed right now. New ' . ( 'numeric' === $word ? 'number' : 'short' ) . ' names appear here first; meanwhile, '
+					. ( '' !== $alt ? 'see ' . $alt . ' or ' : '' )
+					. '<a href="' . esc_url( $links['acquire'] ) . '">ask us to find a ' . $word . ' name for you</a>.';
+				$h     = (string) preg_replace( '#<p class="dbl-intro">.*?</p>#s', '<p class="dbl-intro">' . $intro . '</p>', $h, 1 );
+			}
 			return str_replace( '<section class="dbl-head">', '<section class="dbl-head dbl-head--empty">', $h )
 				. '<p class="dbp-actions"><a class="dbp-btn dbp-btn--primary" href="' . esc_url( $links['all'] ) . '">Browse all domains</a><a class="dbp-btn" href="' . esc_url( $links['finder'] ) . '">Use the domain finder</a><a class="dbp-btn" href="' . esc_url( $links['acquire'] ) . '">Ask us to find a name</a></p>'
 				. db_pages_listing_chips( $slug, $links ) . '</section>';
@@ -597,6 +614,8 @@ if ( ! function_exists( 'db_pages_all_layout' ) ) {
 		$n    = (int) $m[2][0];
 		$head = '<section class="dbl-head"><p class="dbp-eyebrow">Marketplace</p><h1 class="dbl-title">Premium domains for sale</h1>'
 			. '<p class="dbl-intro"><strong>' . $n . ' ' . ( 1 === $n ? 'name' : 'names' ) . ' available.</strong></p>'
+			// Approved copy 2026-11-25: only while deals are on (db_pages_deals_state, set by the deals page).
+			. ( '1' === (string) get_option( 'db_pages_deals_state', '' ) ? '<p class="dbl-intro dbl-deals-note"><strong>Reduced this month:</strong> see the <a href="' . esc_url( $links['deals'] ) . '">current domain deals</a>.</p>' : '' )
 			. str_replace( '<a href="' . esc_url( $links['all'] ) . '">All domains</a>', '<a href="' . esc_url( $links['all'] ) . '" aria-current="page">All domains</a>', db_pages_listing_chips( '', $links ) ) . '</section>';
 		return substr_replace( $html, $head, $m[0][1], strlen( $m[0][0] ) );
 	}
