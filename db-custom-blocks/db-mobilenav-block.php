@@ -356,7 +356,7 @@ if ( ! function_exists( 'db_nav_account_items' ) ) {
 	 * "Sign out" once signed in (pages are cached, so the state is read by the script).
 	 */
 	function db_nav_account_items( $where ) {
-		$signin   = esc_url( home_url( '/sign-in/' ) );
+		$signin   = esc_url( home_url( '/my-wishlist/?auth=signin' ) ); // final address, not the /sign-in/ redirect
 		$register = esc_url( home_url( '/register/' ) );
 		$cls      = 'drawer' === $where ? 'db-mnav-acct' : 'db-desk-acct';
 		$email    = function_exists( 'db_wl_email' ) ? db_wl_email() : '';

@@ -122,6 +122,8 @@ if ( ! function_exists( 'db_header_panels' ) ) {
 							array( 'Blog', $u( '/category/domain-guides/' ), 'Guides for buyers and sellers' ),
 							array( 'EPP code guide', $u( '/epp-guidelines/' ), 'Get the transfer code at any registrar' ),
 							array( 'Domain tools', $u( '/domain-tools/' ), 'Free lookup: registry, DNS and comparable sales' ),
+							array( 'Domain glossary', $u( '/domain-glossary/' ), 'Domain terms explained in plain words' ),
+							array( 'Price index', $u( '/domain-price-index/' ), 'Median asking prices by length and extension' ),
 						),
 					),
 					array(
@@ -181,7 +183,7 @@ if ( ! function_exists( 'db_header_icon' ) ) {
 			'all domains' => 'globe', 'character' => 'hash', 'numeric' => 'hash', 'sold' => 'check', 'deals' => 'tag', 'finder' => 'search', 'collections' => 'grid',
 			'wishlist' => 'heart', 'payment' => 'card', 'brokerage' => 'chat', 'appraisal' => 'chart', 'management' => 'shield', 'sell a domain' => 'tag', 'transfer' => 'swap',
 			'handle' => 'at', 'website' => 'monitor', 'marketing' => 'horn', 'software' => 'code', 'mobile' => 'phone', 'hosting' => 'server', 'team' => 'users',
-			'contact' => 'mail', 'about' => 'info', 'trust' => 'shield', 'faq' => 'help', 'news' => 'news', 'blog' => 'book', 'epp' => 'key', 'policy' => 'doc', 'terms' => 'doc',
+			'contact' => 'mail', 'about' => 'info', 'trust' => 'shield', 'faq' => 'help', 'news' => 'news', 'blog' => 'book', 'glossary' => 'book', 'price index' => 'chart', 'epp' => 'key', 'policy' => 'doc', 'terms' => 'doc',
 		);
 		$key   = 'globe';
 		$label = strtolower( $label );
@@ -330,7 +332,8 @@ if ( ! function_exists( 'db_header_account_html' ) ) {
 	function db_header_account_html() {
 		$email = function_exists( 'db_wl_email' ) ? db_wl_email() : '';
 		if ( '' === $email ) {
-			return '<a class="db-hd-link" href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-href="' . esc_url( home_url( '/sign-in/' ) ) . '" data-db-acct="signin">Sign in</a>'
+			// The final address, not /sign-in/ (a 302 to it): 1,315 links to a redirect in the 2026-11-25 audit.
+			return '<a class="db-hd-link" href="' . esc_url( home_url( '/my-wishlist/?auth=signin' ) ) . '" data-href="' . esc_url( home_url( '/my-wishlist/?auth=signin' ) ) . '" data-db-acct="signin">Sign in</a>'
 				. '<a class="db-hd-cta" href="' . esc_url( home_url( '/register/' ) ) . '" data-db-acct="register">Create account</a>';
 		}
 		$row     = function_exists( 'db_acct_row' ) ? db_acct_row( $email ) : null;
