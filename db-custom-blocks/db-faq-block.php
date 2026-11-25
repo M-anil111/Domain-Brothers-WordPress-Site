@@ -109,6 +109,10 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 						'a' => 'Send us the domain name and your asking price through our ' . $contact . ' or by email to ' . $mail . '. We’ll review your submission and get back to you shortly.',
 					),
 					array(
+						'q' => 'How do I find out what my domain is worth?',
+						'a' => 'Start with comparable sales: what similar names have sold for recently. For a written range with the reasoning explained, ask for a <a href="' . esc_url( home_url( '/domain-appraisal-services/' ) ) . '">domain appraisal</a>. A broker replies within one business day.',
+					),
+					array(
 						'q' => 'What sort of payment methods do you accept?',
 						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3-month plan is interest-free, the 6-month plan carries 5% interest, the 9-month plan 8% and the 12-month plan 10%.',
 					),
