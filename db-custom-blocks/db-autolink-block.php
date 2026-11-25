@@ -277,51 +277,30 @@ add_filter( 'the_content', function ( $html ) {
 if ( ! function_exists( 'db_autolink_front_page' ) ) {
 	/**
 	 * Home: the DomainFolio front page template prints its text with echo get_the_content(),
-	 * which skips the_content filters, so the broker link is added to the finished page, inside
-	 * the template's own text block (.pageNewContent) only. Search Console sent "domain broker"
-	 * searches to home (positions 63 to 86) instead of the brokerage page; linking home's own
-	 * "domain brokerage" wording to that page tells Google which page owns the topic.
+	 * which skips the_content filters. get_the_content() reads the pages WordPress prepared with
+	 * the content_pagination filter, so the broker link is added there, to home's own text only.
+	 * Search Console sent "domain broker" searches to home (positions 63 to 86) instead of the
+	 * brokerage page; linking home's own "domain brokerage" wording to that page tells Google
+	 * which page owns the topic.
 	 *
-	 * @param string $page Whole page HTML.
-	 * @return string
+	 * @param string[] $pages Content pages of the post.
+	 * @param WP_Post  $post  Post.
+	 * @return string[]
 	 */
-	function db_autolink_front_page( $page, $phase = PHP_OUTPUT_HANDLER_FINAL ) {
-		// The page can arrive in pieces when something flushes mid-page; the text block and its
-		// end (</main>) must be seen together, so pieces are held and the page is processed once.
-		static $held = '';
-		if ( ! is_string( $page ) ) {
-			return $page;
+	function db_autolink_front_page( $pages, $post ) {
+		if ( is_admin() || ! is_array( $pages ) || ! $post instanceof WP_Post || (int) $post->ID !== (int) get_option( 'page_on_front' ) || '1' === (string) get_option( 'db_autolink_off', '0' ) ) {
+			return $pages;
 		}
-		if ( ! ( $phase & PHP_OUTPUT_HANDLER_FINAL ) && ! ( $phase & PHP_OUTPUT_HANDLER_END ) ) {
-			$held .= $page;
-			return '';
-		}
-		$page = $held . $page;
-		$held = '';
-		$start = strpos( $page, 'pageNewContent' );
-		if ( false === $start ) {
-			return $page;
-		}
-		$start = strpos( $page, '>', $start );
-		$end   = false !== $start ? strpos( $page, '</main>', $start ) : false;
-		if ( false === $start || false === $end ) {
-			return $page;
-		}
-		++$start;
 		$only = array( '/domain-brokerage-services/', '/acquire-premium-domain/' );
 		$map  = array_values( array_filter( db_autolink_live_map(), static function ( $row ) use ( $only ) {
 			return in_array( $row[1], $only, true );
 		} ) );
-		$part = db_autolink_apply( substr( $page, $start, $end - $start ), $map, '/', 2, static function ( $p ) {
-			return home_url( $p );
-		} );
-		return substr( $page, 0, $start ) . $part . substr( $page, $end );
+		foreach ( $pages as $i => $html ) {
+			$pages[ $i ] = db_autolink_apply( (string) $html, $map, '/', 2, static function ( $p ) {
+				return home_url( $p );
+			} );
+		}
+		return $pages;
 	}
 }
-
-add_action( 'template_redirect', function () {
-	if ( is_admin() || is_feed() || ! is_front_page() || '1' === (string) get_option( 'db_autolink_off', '0' ) ) {
-		return;
-	}
-	ob_start( 'db_autolink_front_page' );
-}, 1 ); // early: a later template_redirect handler draws the home page and exits
+add_filter( 'content_pagination', 'db_autolink_front_page', 10, 2 );
