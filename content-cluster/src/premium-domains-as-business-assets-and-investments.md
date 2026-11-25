@@ -25,7 +25,7 @@ The [Verisign Domain Name Industry Brief](https://www.verisign.com/en_US/domain-
 ## Four ways to benefit from a premium domain
 
 1. **Build on it.** Use the name for your own business. The value shows up as lower marketing costs, higher trust and better recall.
-2. **Sell it.** Buy a name for the right price, wait for the right buyer and sell for more. Brokers and marketplaces connect sellers to buyers; see our [sell domains service](/sell-domains-service/).
+2. **Sell it.** Buy a name for the right price, wait for the right buyer and sell for more. Brokers and marketplaces connect sellers to buyers; see our [sell domains service](/sell-your-domains/).
 3. **Lease it or lease to own.** A business pays monthly to use the name, with an option to buy later.
 4. **Park or develop it.** Some owners run a simple page that collects enquiries or ad revenue; a developed site that earns on its own is worth more.
 
