@@ -285,10 +285,19 @@ if ( ! function_exists( 'db_autolink_front_page' ) ) {
 	 * @param string $page Whole page HTML.
 	 * @return string
 	 */
-	function db_autolink_front_page( $page ) {
+	function db_autolink_front_page( $page, $phase = PHP_OUTPUT_HANDLER_FINAL ) {
+		// The page can arrive in pieces when something flushes mid-page; the text block and its
+		// end (</main>) must be seen together, so pieces are held and the page is processed once.
+		static $held = '';
 		if ( ! is_string( $page ) ) {
 			return $page;
 		}
+		if ( ! ( $phase & PHP_OUTPUT_HANDLER_FINAL ) && ! ( $phase & PHP_OUTPUT_HANDLER_END ) ) {
+			$held .= $page;
+			return '';
+		}
+		$page = $held . $page;
+		$held = '';
 		$start = strpos( $page, 'pageNewContent' );
 		if ( false === $start ) {
 			return $page;
