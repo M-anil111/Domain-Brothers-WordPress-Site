@@ -315,4 +315,4 @@ add_action( 'template_redirect', function () {
 		return;
 	}
 	ob_start( 'db_autolink_front_page' );
-}, 22 );
+}, 1 ); // early: a later template_redirect handler draws the home page and exits

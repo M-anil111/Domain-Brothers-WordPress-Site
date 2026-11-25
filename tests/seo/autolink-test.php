@@ -6,6 +6,7 @@
  */
 define( 'ABSPATH', __DIR__ );
 function add_filter() {}
+function add_action() {}
 function apply_filters( $h, $v ) { return $v; }
 require dirname( __DIR__, 2 ) . '/db-custom-blocks/db-autolink-block.php';
 
