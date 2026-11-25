@@ -70,7 +70,7 @@ Move the price up or down for these things.
 
 Decide two numbers before you speak to the seller: the price you would be glad to pay and the price at which you walk away. Start below the first number, leave room to move, and do not tell the seller your top figure. Write your domain valuation range down before you contact the seller.
 
-Many of the names on our site have a clear price. Others are open to offers, and we reply to each offer personally. If you would like help setting a number, our [domain brokerage](/domain-brokerage-services/) team does this every day.
+Many of the names on our site have a clear price. Others are open to offers, and we reply to each offer personally. If you would like help setting a number, ask for a [domain appraisal](/domain-appraisal-services/): a broker reads the comparable sales and sends you a written price range with the reasoning behind it.
 
 ## Automated domain valuation tools versus a professional appraisal
 

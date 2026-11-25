@@ -37,7 +37,7 @@ A useful valuation looks at the same factors buyers use:
 - **Comparable sales.** What similar names actually sold for, not what they were listed at.
 - **Clean history.** No trademark conflict, no spam past, no penalty history.
 
-Our guide on [how to value a premium domain name](/how-to-value-a-premium-domain-name/) explains the full method. If you want an outside view, ask a broker you trust to review the name and explain the reasoning before you list it.
+Our guide on [how to value a premium domain name](/how-to-value-a-premium-domain-name/) explains the full method. If you want an outside view before you list it, a [domain appraisal](/domain-appraisal-services/) gives you a written price range with the comparable sales behind it, so you can check the figure yourself.
 
 ## Step 2: Set a price, or decide to take offers
 
