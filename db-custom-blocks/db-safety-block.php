@@ -303,6 +303,29 @@ add_action( 'template_redirect', function () {
 	ob_start( 'db_safety_fix_social_link_text' );
 }, 21 );
 
+/**
+ * Dead links in the theme's hidden listing table (content-domain.php, rows set display:none):
+ * an external-link icon pointing at "http://www." when a listing has no website, and an empty
+ * anchor to "?lis=y". The 2026-11-25 link audit counted 34 on /all-domains/ alone. Links that
+ * lead nowhere waste crawling and count as broken; both are removed, their contents kept.
+ */
+if ( ! function_exists( 'db_safety_strip_dead_links' ) ) {
+	function db_safety_strip_dead_links( $html ) {
+		if ( ! is_string( $html ) || ( false === strpos( $html, 'href="http://www."' ) && false === strpos( $html, 'href="?lis=y"' ) ) ) {
+			return $html;
+		}
+		$out = preg_replace( '#<a\b[^>]*\bhref="(?:https?://www\.|\?lis=y)"[^>]*>(.*?)</a>#is', '$1', $html );
+		return is_string( $out ) ? $out : $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	ob_start( 'db_safety_strip_dead_links' );
+}, 21 );
+
 /* ─── Hardcoded production thank-you redirect (theme-native CF7 handler) ────── */
 
 if ( ! function_exists( 'db_safety_fix_hardcoded_thankyou_redirect' ) ) {
