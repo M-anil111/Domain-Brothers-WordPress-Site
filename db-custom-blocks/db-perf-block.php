@@ -50,6 +50,14 @@ if ( ! function_exists( 'db_perf_needs_forms' ) ) {
 			// Sold and not-for-sale pages have no contact form.
 			return ! ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( get_queried_object() ), array( 'sold', 'not_for_sale' ), true ) );
 		}
+		// Routes this plugin draws itself print their form with do_shortcode(), which the content
+		// check cannot see: their form script loaded without its settings ('wpcf7 is not defined',
+		// bug register batch 2, CR-5).
+		$path   = function_exists( 'db_sales_request_path' ) ? db_sales_request_path() : trim( (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$routes = (array) apply_filters( 'db_perf_form_routes', array( 'sell-your-domains', 'acquire-premium-domain', 'make-an-offer', 'domain-transfer' ) );
+		if ( in_array( $path, $routes, true ) ) {
+			return true;
+		}
 		return db_perf_has( db_perf_content(), array( '[contact-form-7', '[cf7', 'wpcf7' ) );
 	}
 }
@@ -112,6 +120,15 @@ add_action( 'wp_head', function () {
 	if ( is_admin() ) {
 		return;
 	}
-	$base = esc_url( get_template_directory_uri() . '/assets/fonts/lato-bold' );
-	echo '<style id="db-font-swap">@font-face{font-family:"latobold";src:url("' . $base . '.woff2") format("woff2"),url("' . $base . '.woff") format("woff");font-weight:normal;font-style:normal;font-display:swap}</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	$base   = esc_url( get_template_directory_uri() . '/assets/fonts/lato-bold' );
+	$subset = esc_url( plugins_url( 'assets/fonts/lato-bold-latin.woff2', __FILE__ ) );
+	$range  = 'U+0000-00FF,U+0100-017F,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20A0-20CF,U+2113,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD';
+	// The theme's file is 227 KB (every script Lato covers). A Latin subset (31 KB,
+	// assets/fonts/LICENSE-Lato.txt) is declared last with a unicode-range, so it is
+	// used for Latin text; the full file is fetched only for characters outside it.
+	echo '<style id="db-font-swap">@font-face{font-family:"latobold";src:url("' . $base . '.woff2") format("woff2"),url("' . $base . '.woff") format("woff");font-weight:normal;font-style:normal;font-display:swap}'
+		. '@font-face{font-family:"latobold";src:url("' . $subset . '") format("woff2");font-weight:normal;font-style:normal;font-display:swap;unicode-range:' . $range . '}</style>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	if ( is_singular( 'domain' ) ) {
+		echo '<link rel="preload" as="font" type="font/woff2" href="' . $subset . '" crossorigin>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
 }, 99 );

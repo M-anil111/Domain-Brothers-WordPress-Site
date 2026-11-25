@@ -1,0 +1,53 @@
+name: SEO checks (live)
+
+# Technical SEO checks against the live sites with tools/seo-check.py: robots.txt, every sitemap,
+# and on key pages plus a sample of sitemap URLs: status, title, canonical (and that it answers
+# 200), noindex (never on production sitemap pages, always on staging) and JSON-LD validity.
+# Weekly and on demand. Production runs on the schedule only when the repository variable
+# SEO_CHECK_PRODUCTION is 1 (set it once production runs the current plugin).
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which site to check
+        type: choice
+        options: [staging, production]
+        default: staging
+      sample:
+        description: Sitemap URLs to check besides the key pages
+        default: '40'
+  schedule:
+    - cron: '43 7 * * 1' # Mondays 07:43 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-check
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    if: github.event_name == 'schedule' || inputs.target == 'staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check https://beta.domainbrothers.com
+        run: python3 -I tools/seo-check.py https://beta.domainbrothers.com --env staging --sample "${{ inputs.sample || '40' }}" --delay 2
+
+  production:
+    if: (github.event_name == 'schedule' && vars.SEO_CHECK_PRODUCTION == '1') || inputs.target == 'production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check https://www.domainbrothers.com
+        run: python3 -I tools/seo-check.py https://www.domainbrothers.com --env production --sample "${{ inputs.sample || '40' }}" --delay 2

@@ -28,7 +28,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/*
+ * OFF by default since 2026-11-20: the owner does not want popups, and offers now go to their own
+ * page (/make-an-offer/). The code is kept; set the option db_exit_offer_on to 1, or return true
+ * from the filter db_exit_offer_enabled, to bring the popup back.
+ */
 add_action( 'wp_footer', function () {
+	if ( ! apply_filters( 'db_exit_offer_enabled', (bool) get_option( 'db_exit_offer_on', false ) ) ) {
+		return;
+	}
 	if ( ! is_singular( 'domain' ) ) {
 		return;
 	}
@@ -64,7 +72,7 @@ add_action( 'wp_footer', function () {
 		<h2 id="db-exit-title" class="db-exit-title">Make an offer on <span><?php echo esc_html( $name ); ?></span></h2>
 		<p id="db-exit-desc" class="db-exit-text">
 			<?php if ( $price > 0 ) : ?>
-				Listed at <strong>$<?php echo esc_html( number_format( $price, 0 ) ); ?></strong>, but we welcome offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
+				Listed at <strong><?php echo esc_html( db_usd( $price ) ); ?></strong>, but we welcome offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
 			<?php else : ?>
 				This name is open to offers. Tell us what you would pay and we reply personally, usually within 24 hours. No commitment.
 			<?php endif; ?>
@@ -83,8 +91,8 @@ add_action( 'wp_footer', function () {
 		<?php if ( $urls ) : ?>
 			<p class="db-exit-or">Rather buy it now?</p>
 			<div class="db-exit-alt">
-				<a class="db-exit-btn db-exit-btn--solid" data-db-exit-evt="buy" href="<?php echo esc_url( $urls['buy'] ); ?>">Buy now &middot; $<?php echo esc_html( number_format( $price, 0 ) ); ?></a>
-				<a class="db-exit-btn" data-db-exit-evt="plan" href="<?php echo esc_url( $urls['plan'] ); ?>">Pay monthly from <?php echo esc_html( function_exists( 'db_dd_monthly' ) ? db_dd_monthly( $price ) : '' ); ?>/mo</a>
+				<a class="db-exit-btn db-exit-btn--solid" data-db-exit-evt="buy" href="<?php echo esc_url( $urls['buy'] ); ?>">Buy now &middot; <?php echo esc_html( db_usd( $price ) ); ?></a>
+				<?php if ( ! function_exists( 'db_plan_offered' ) || db_plan_offered( $price ) ) : ?><a class="db-exit-btn" data-db-exit-evt="plan" href="<?php echo esc_url( $urls['plan'] ); ?>">Pay monthly from <?php echo esc_html( function_exists( 'db_dd_monthly' ) ? db_dd_monthly( $price ) : '' ); ?>/mo</a><?php endif; ?>
 			</div>
 		<?php endif; ?>
 		<?php if ( $recs ) : ?>

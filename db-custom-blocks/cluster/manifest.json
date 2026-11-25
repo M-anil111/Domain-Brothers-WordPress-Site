@@ -5,50 +5,335 @@
   "description": "Guides to premium domain names, websites and marketing from the Domain Brothers team."
  },
  "images": {
+  "brandable-domain-names": {
+   "file": "brandable-domain-names.jpg",
+   "alt": "Cover image for: Brandable Domain Names: How to Choose, Test and Check One",
+   "title": "Brandable Domain Names: How to Choose, Test and Check One"
+  },
+  "change-domain-name-without-losing-seo": {
+   "file": "change-domain-name-without-losing-seo.jpg",
+   "alt": "Cover image for: Change Domain Name SEO: How to Move Without Losing Rankings",
+   "title": "Change Domain Name SEO: How to Move Without Losing Rankings"
+  },
   "choosing-a-domain-extension-com-ca-io-and-more": {
    "file": "choosing-a-domain-extension-com-ca-io-and-more.jpg",
-   "alt": "Cover image for: Choosing a Domain Extension: .com, .ca, .io and More",
-   "title": "Choosing a Domain Extension: .com, .ca, .io and More"
+   "alt": "Cover image for: Domain Extensions: Choosing .com, .ca, .io and More",
+   "title": "Domain Extensions: Choosing .com, .ca, .io and More"
   },
   "do-premium-domains-help-seo": {
    "file": "do-premium-domains-help-seo.jpg",
-   "alt": "Cover image for: Do Premium Domains Help SEO? What Google Says",
-   "title": "Do Premium Domains Help SEO? What Google Says"
+   "alt": "Cover image for: Domain Name SEO: Do Premium Domains Help Your Rankings?",
+   "title": "Domain Name SEO: Do Premium Domains Help Your Rankings?"
+  },
+  "domain-backorder-and-expired-domains": {
+   "file": "domain-backorder-and-expired-domains.jpg",
+   "alt": "Cover image for: Domain Backorder Guide: How to Buy Expired Domains Safely",
+   "title": "Domain Backorder Guide: How to Buy Expired Domains Safely"
+  },
+  "domain-escrow-explained": {
+   "file": "domain-escrow-explained.jpg",
+   "alt": "Cover image for: Domain Escrow Explained: How It Works, Fees and Scams to Avoid",
+   "title": "Domain Escrow Explained: How It Works, Fees and Scams to Avoid"
+  },
+  "domain-flipping": {
+   "file": "domain-flipping.jpg",
+   "alt": "Cover image for: Domain Flipping: An Honest Guide to Buying and Reselling Names",
+   "title": "Domain Flipping: An Honest Guide to Buying and Reselling Names"
+  },
+  "domain-leasing-and-lease-to-own": {
+   "file": "domain-leasing-and-lease-to-own.jpg",
+   "alt": "Cover image for: Domain Leasing and Lease to Own: How They Work and What to Check",
+   "title": "Domain Leasing and Lease to Own: How They Work and What to Check"
   },
   "domain-name-marketing-playbook": {
    "file": "domain-name-marketing-playbook.jpg",
-   "alt": "Cover image for: The Domain Name Marketing Playbook",
-   "title": "The Domain Name Marketing Playbook"
+   "alt": "Cover image for: Domain Name Marketing: A Playbook for Premium Domains",
+   "title": "Domain Name Marketing: A Playbook for Premium Domains"
+  },
+  "domain-names-for-business": {
+   "file": "domain-names-for-business.jpg",
+   "alt": "Cover image for: Domain Names for Business: How to Choose the Right One",
+   "title": "Domain Names for Business: How to Choose the Right One"
+  },
+  "domain-parking": {
+   "file": "domain-parking.jpg",
+   "alt": "Cover image for: Domain Parking: What It Is, How It Pays and When to Build",
+   "title": "Domain Parking: What It Is, How It Pays and When to Build"
   },
   "domain-transfers-epp-codes-and-dns-explained": {
    "file": "domain-transfers-epp-codes-and-dns-explained.jpg",
-   "alt": "Cover image for: Domain Transfers, EPP Codes and DNS Explained",
-   "title": "Domain Transfers, EPP Codes and DNS Explained"
+   "alt": "Cover image for: How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
+   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained"
+  },
+  "how-to-buy-a-domain-name-for-a-website": {
+   "file": "how-to-buy-a-domain-name-for-a-website.jpg",
+   "alt": "Cover image for: How to Buy a Domain Name for a Website: A Complete Guide",
+   "title": "How to Buy a Domain Name for a Website: A Complete Guide"
+  },
+  "how-to-buy-a-domain-name-from-someone": {
+   "file": "how-to-buy-a-domain-name-from-someone.jpg",
+   "alt": "Cover image for: How to Buy a Domain Name from Someone: A Step-by-Step Guide",
+   "title": "How to Buy a Domain Name from Someone: A Step-by-Step Guide"
   },
   "how-to-buy-a-premium-domain-safely": {
    "file": "how-to-buy-a-premium-domain-safely.jpg",
-   "alt": "Cover image for: How to Buy a Premium Domain Safely, Step by Step",
-   "title": "How to Buy a Premium Domain Safely, Step by Step"
+   "alt": "Cover image for: Buying Premium Domains Safely: A Step-by-Step Guide",
+   "title": "Buying Premium Domains Safely: A Step-by-Step Guide"
   },
   "how-to-pick-a-brand-name-and-domain-that-lasts": {
    "file": "how-to-pick-a-brand-name-and-domain-that-lasts.jpg",
-   "alt": "Cover image for: How to Pick a Brand Name and Domain That Lasts",
-   "title": "How to Pick a Brand Name and Domain That Lasts"
+   "alt": "Cover image for: How to Choose a Domain Name and Brand Name That Lasts",
+   "title": "How to Choose a Domain Name and Brand Name That Lasts"
+  },
+  "how-to-sell-a-domain-name": {
+   "file": "how-to-sell-a-domain-name.jpg",
+   "alt": "Cover image for: How to Sell a Domain Name: A Step-by-Step Guide for Owners",
+   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners"
   },
   "how-to-value-a-premium-domain-name": {
    "file": "how-to-value-a-premium-domain-name.jpg",
-   "alt": "Cover image for: How to Value a Premium Domain Name: A Practical Method",
-   "title": "How to Value a Premium Domain Name: A Practical Method"
+   "alt": "Cover image for: How to Value a Premium Domain: A Domain Valuation Method",
+   "title": "How to Value a Premium Domain: A Domain Valuation Method"
+  },
+  "ib-backorder-a": {
+   "file": "ib-backorder-a.png",
+   "alt": "Domain backorder. What typically happens after a domain expires: Expiry, Grace period, Redemption, Pending delete, Released",
+   "title": "Domain backorder. What typically happens after a domain expires: Expiry, Grace period, Red"
+  },
+  "ib-backorder-b": {
+   "file": "ib-backorder-b.png",
+   "alt": "Checks before you buy an expired domain: History, Spam, Trademarks, Backlinks, Penalties, Price",
+   "title": "Checks before you buy an expired domain: History, Spam, Trademarks, Backlinks, Penalties, "
+  },
+  "ib-brandable-a": {
+   "file": "ib-brandable-a.png",
+   "alt": "Common patterns in brandable domain names: Real word, Compound, Blend, Invented, Suffix, Metaphor",
+   "title": "Common patterns in brandable domain names: Real word, Compound, Blend, Invented, Suffix, M"
+  },
+  "ib-brandable-b": {
+   "file": "ib-brandable-b.png",
+   "alt": "Testing a brandable name: Say it, Spell it, Search it, Check it",
+   "title": "Testing a brandable name: Say it, Spell it, Search it, Check it"
+  },
+  "ib-business-a": {
+   "file": "ib-business-a.png",
+   "alt": "Domain names for business. What a good business domain does: Easy to say, Easy to spell, Fits the brand, Right extension, Clear legally, Room to grow",
+   "title": "Domain names for business. What a good business domain does: Easy to say, Easy to spell, F"
+  },
+  "ib-business-b": {
+   "file": "ib-business-b.png",
+   "alt": "Choosing a domain name for a business: List, Test, Check, Decide",
+   "title": "Choosing a domain name for a business: List, Test, Check, Decide"
+  },
+  "ib-domseo-a": {
+   "file": "ib-domseo-a.png",
+   "alt": "Domain name SEO checks before you buy: archive, search, links, trademarks and Search Console",
+   "title": "Domain name SEO checks before you buy: archive, search, links, trademarks and Search Conso"
+  },
+  "ib-domseo-b": {
+   "file": "ib-domseo-b.png",
+   "alt": "Domain name SEO comparison: what a strong name does and does not do for rankings",
+   "title": "Domain name SEO comparison: what a strong name does and does not do for rankings"
+  },
+  "ib-escrow-a": {
+   "file": "ib-escrow-a.png",
+   "alt": "How domain escrow works: Agree, Pay, Transfer, Confirm, Release",
+   "title": "How domain escrow works: Agree, Pay, Transfer, Confirm, Release"
+  },
+  "ib-escrow-b": {
+   "file": "ib-escrow-b.png",
+   "alt": "Signs of a fake escrow site: New website, Seller's choice, Odd payment, Spelling, Pressure, No licence",
+   "title": "Signs of a fake escrow site: New website, Seller's choice, Odd payment, Spelling, Pressure"
+  },
+  "ib-ext-a": {
+   "file": "ib-ext-a.png",
+   "alt": "Domain extensions registry rules: residency, HTTPS security, use limits, renewals, policy changes and stability",
+   "title": "Domain extensions registry rules: residency, HTTPS security, use limits, renewals, policy "
+  },
+  "ib-ext-b": {
+   "file": "ib-ext-b.png",
+   "alt": "Five questions for choosing between domain extensions: customers, voice, budget, rivals and stability",
+   "title": "Five questions for choosing between domain extensions: customers, voice, budget, rivals an"
+  },
+  "ib-finance-a": {
+   "file": "ib-finance-a.png",
+   "alt": "Domain financing compared with paying in full",
+   "title": "Domain financing compared with paying in full"
+  },
+  "ib-finance-b": {
+   "file": "ib-finance-b.png",
+   "alt": "Six things to compare in any domain financing offer",
+   "title": "Six things to compare in any domain financing offer"
+  },
+  "ib-flipping-a": {
+   "file": "ib-flipping-a.png",
+   "alt": "The domain flipping cycle: Research, Buy, Hold, List, Sell",
+   "title": "The domain flipping cycle: Research, Buy, Hold, List, Sell"
+  },
+  "ib-flipping-b": {
+   "file": "ib-flipping-b.png",
+   "alt": "Domain flipping: costs and risks: Renewals, Slow sales, Fees, Trademarks, Price swings, Your time",
+   "title": "Domain flipping: costs and risks: Renewals, Slow sales, Fees, Trademarks, Price swings, Yo"
+  },
+  "ib-invest-a": {
+   "file": "ib-invest-a.png",
+   "alt": "Premium domain investment risks: no income, renewal costs, slow sales, legal claims, market shifts and fraud",
+   "title": "Premium domain investment risks: no income, renewal costs, slow sales, legal claims, marke"
+  },
+  "ib-invest-b": {
+   "file": "ib-invest-b.png",
+   "alt": "Reviewing a premium domain investment each year: keep, sell, build or let go",
+   "title": "Reviewing a premium domain investment each year: keep, sell, build or let go"
+  },
+  "ib-launch-a": {
+   "file": "ib-launch-a.png",
+   "alt": "Website launch checklist for the first week, from securing the domain to the quality check",
+   "title": "Website launch checklist for the first week, from securing the domain to the quality check"
+  },
+  "ib-launch-b": {
+   "file": "ib-launch-b.png",
+   "alt": "Website launch checklist final tests: addresses, forms, titles, noindex, 404 page and backup",
+   "title": "Website launch checklist final tests: addresses, forms, titles, noindex, 404 page and back"
+  },
+  "ib-leasing-a": {
+   "file": "ib-leasing-a.png",
+   "alt": "Domain leasing. Leasing, lease to own and payment plans: Lease, Lease to own, Payment plan",
+   "title": "Domain leasing. Leasing, lease to own and payment plans: Lease, Lease to own, Payment plan"
+  },
+  "ib-leasing-b": {
+   "file": "ib-leasing-b.png",
+   "alt": "Check these before you sign: Ownership, Missed payment, Total cost, Early payoff, Use rights, End of term",
+   "title": "Check these before you sign: Ownership, Missed payment, Total cost, Early payoff, Use righ"
+  },
+  "ib-mkt-a": {
+   "file": "ib-mkt-a.png",
+   "alt": "A 30 day domain name marketing plan in four weekly steps",
+   "title": "A 30 day domain name marketing plan in four weekly steps"
+  },
+  "ib-mkt-b": {
+   "file": "ib-mkt-b.png",
+   "alt": "Measuring domain name marketing: tagged links, campaign pages, conversions, brand searches, direct visits and referrals",
+   "title": "Measuring domain name marketing: tagged links, campaign pages, conversions, brand searches"
+  },
+  "ib-naming-a": {
+   "file": "ib-naming-a.png",
+   "alt": "How to choose a domain name: six mistakes that force a rename",
+   "title": "How to choose a domain name: six mistakes that force a rename"
+  },
+  "ib-naming-b": {
+   "file": "ib-naming-b.png",
+   "alt": "How to choose a domain name to match your brand in five steps",
+   "title": "How to choose a domain name to match your brand in five steps"
+  },
+  "ib-parking-a": {
+   "file": "ib-parking-a.png",
+   "alt": "Domain parking. Three ways to use an unused domain: Ad parking, For-sale page, Build a site",
+   "title": "Domain parking. Three ways to use an unused domain: Ad parking, For-sale page, Build a sit"
+  },
+  "ib-parking-b": {
+   "file": "ib-parking-b.png",
+   "alt": "When to park and when to build: Park it, Build on it",
+   "title": "When to park and when to build: Park it, Build on it"
+  },
+  "ib-pillar-a": {
+   "file": "ib-pillar-a.png",
+   "alt": "How to buy a domain name for a website. Two ways to get a domain name: Register a new name, Buy a taken name",
+   "title": "How to buy a domain name for a website. Two ways to get a domain name: Register a new name"
+  },
+  "ib-pillar-b": {
+   "file": "ib-pillar-b.png",
+   "alt": "Buying a domain name for a website: Decide, Check, Agree, Pay, Launch",
+   "title": "Buying a domain name for a website: Decide, Check, Agree, Pay, Launch"
+  },
+  "ib-premium-a": {
+   "file": "ib-premium-a.png",
+   "alt": "What is a premium domain compared with a normal domain",
+   "title": "What is a premium domain compared with a normal domain"
+  },
+  "ib-premium-b": {
+   "file": "ib-premium-b.png",
+   "alt": "What is a premium domain: short, real words, the right extension, brandable, proven demand and clean history",
+   "title": "What is a premium domain: short, real words, the right extension, brandable, proven demand"
+  },
+  "ib-safe-a": {
+   "file": "ib-safe-a.png",
+   "alt": "Checks before buying premium domains: trademarks, history, sound, renewal price, registration record and the seller",
+   "title": "Checks before buying premium domains: trademarks, history, sound, renewal price, registrat"
+  },
+  "ib-safe-b": {
+   "file": "ib-safe-b.png",
+   "alt": "Buying premium domains from a private owner, a marketplace or a broker compared",
+   "title": "Buying premium domains from a private owner, a marketplace or a broker compared"
+  },
+  "ib-sell-a": {
+   "file": "ib-sell-a.png",
+   "alt": "Sell my domain. Selling a domain name, step by step: Value, Price, List, Agree, Transfer",
+   "title": "Sell my domain. Selling a domain name, step by step: Value, Price, List, Agree, Transfer"
+  },
+  "ib-sell-b": {
+   "file": "ib-sell-b.png",
+   "alt": "Warning signs when selling a domain: Upfront fees, Fake appraisal, Move first, Odd payment, Urgency, Look-alike sites",
+   "title": "Warning signs when selling a domain: Upfront fees, Fake appraisal, Move first, Odd payment"
+  },
+  "ib-seo-a": {
+   "file": "ib-seo-a.png",
+   "alt": "Change domain name seo. Moving to a new domain without losing rankings: Map, Redirect, Notify, Update, Monitor",
+   "title": "Change domain name seo. Moving to a new domain without losing rankings: Map, Redirect, Not"
+  },
+  "ib-seo-b": {
+   "file": "ib-seo-b.png",
+   "alt": "Common domain move mistakes: Home page only, Temporary redirects, Old sitemap, Lost tracking, Expired old domain, Changing everything",
+   "title": "Common domain move mistakes: Home page only, Temporary redirects, Old sitemap, Lost tracki"
+  },
+  "ib-shortnames-a": {
+   "file": "ib-shortnames-a.png",
+   "alt": "Short domain names. How many short letter combinations exist: 2 letters, 3 letters, 4 letters",
+   "title": "Short domain names. How many short letter combinations exist: 2 letters, 3 letters, 4 lett"
+  },
+  "ib-shortnames-b": {
+   "file": "ib-shortnames-b.png",
+   "alt": "What moves the price of a short domain: Length, Extension, Pattern, Letters, Meaning, History",
+   "title": "What moves the price of a short domain: Length, Extension, Pattern, Letters, Meaning, Hist"
+  },
+  "ib-someone-a": {
+   "file": "ib-someone-a.png",
+   "alt": "How to buy a domain name from someone. Buying a domain name from its owner: Look up, Research, Approach, Agree, Transfer",
+   "title": "How to buy a domain name from someone. Buying a domain name from its owner: Look up, Resea"
+  },
+  "ib-someone-b": {
+   "file": "ib-someone-b.png",
+   "alt": "Do it yourself or use a broker: Contact the owner yourself, Use a domain broker",
+   "title": "Do it yourself or use a broker: Contact the owner yourself, Use a domain broker"
+  },
+  "ib-transfer-a": {
+   "file": "ib-transfer-a.png",
+   "alt": "Checks before you transfer a domain: recent changes, expiry date, contact email, account, DNS records and extension rules",
+   "title": "Checks before you transfer a domain: recent changes, expiry date, contact email, account, "
+  },
+  "ib-transfer-b": {
+   "file": "ib-transfer-b.png",
+   "alt": "After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and save records",
+   "title": "After you transfer a domain: check the record, lock it, two-factor sign-in, auto-renew and"
+  },
+  "ib-value-a": {
+   "file": "ib-value-a.png",
+   "alt": "Domain valuation factors that move the price down or up",
+   "title": "Domain valuation factors that move the price down or up"
+  },
+  "ib-value-b": {
+   "file": "ib-value-b.png",
+   "alt": "Six domain valuation mistakes to avoid",
+   "title": "Six domain valuation mistakes to avoid"
   },
   "infographic-i1": {
    "file": "infographic-i1.png",
-   "alt": "Infographic of six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history",
-   "title": "Infographic of six factors that decide domain value: length, extension, keyword fit, brand"
+   "alt": "Infographic showing what is a premium domain through six factors that decide domain value: length, extension, keyword fit, brandability, comparable sales and clean history",
+   "title": "Infographic showing what is a premium domain through six factors that decide domain value:"
   },
   "infographic-i10": {
    "file": "infographic-i10.png",
-   "alt": "Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it",
-   "title": "Four ways a premium domain earns its keep: build on it, sell it, lease it or develop it"
+   "alt": "Four ways a premium domain investment earns its keep: build on it, sell it, lease it or develop it",
+   "title": "Four ways a premium domain investment earns its keep: build on it, sell it, lease it or de"
   },
   "infographic-i11": {
    "file": "infographic-i11.png",
@@ -57,8 +342,8 @@
   },
   "infographic-i2": {
    "file": "infographic-i2.png",
-   "alt": "Five step infographic: find, check, agree, pay safely through escrow and transfer",
-   "title": "Five step infographic: find, check, agree, pay safely through escrow and transfer"
+   "alt": "Five step infographic on buying premium domains: find, check, agree, pay safely through escrow and transfer",
+   "title": "Five step infographic on buying premium domains: find, check, agree, pay safely through es"
   },
   "infographic-i3": {
    "file": "infographic-i3.png",
@@ -67,48 +352,53 @@
   },
   "infographic-i4": {
    "file": "infographic-i4.png",
-   "alt": "Checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, analytics and Search Console, and the core pages",
-   "title": "Checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, "
+   "alt": "Website launch checklist infographic with six launch tasks: DNS, HTTPS, email authentication, redirects, analytics and Search Console, and the core pages",
+   "title": "Website launch checklist infographic with six launch tasks: DNS, HTTPS, email authenticati"
   },
   "infographic-i5": {
    "file": "infographic-i5.png",
-   "alt": "Infographic showing six marketing channels where a short memorable domain helps: email, paid ads, print and QR codes, social profiles, word of mouth and search",
-   "title": "Infographic showing six marketing channels where a short memorable domain helps: email, pa"
+   "alt": "Domain name marketing infographic showing six channels where a short memorable domain helps: email, paid ads, print and QR codes, social profiles, word of mouth and search",
+   "title": "Domain name marketing infographic showing six channels where a short memorable domain help"
   },
   "infographic-i6": {
    "file": "infographic-i6.png",
-   "alt": "Two column infographic: what moves search rankings (content, speed, structure, links, technical health) and what a strong domain adds (clicks, brand searches, links, trust, fewer mistypes)",
-   "title": "Two column infographic: what moves search rankings (content, speed, structure, links, tech"
+   "alt": "Domain name SEO infographic in two columns: what moves search rankings (content, speed, structure, links, technical health) and what a strong domain adds (clicks, brand searches, links, trust, fewer mistypes)",
+   "title": "Domain name SEO infographic in two columns: what moves search rankings (content, speed, st"
   },
   "infographic-i7": {
    "file": "infographic-i7.png",
-   "alt": "Five step infographic of a domain transfer: unlock, share the EPP code, request the transfer, approve it, then secure the domain",
-   "title": "Five step infographic of a domain transfer: unlock, share the EPP code, request the transf"
+   "alt": "How to transfer a domain in five steps: unlock, share the EPP code, request the transfer, approve it, then secure the domain",
+   "title": "How to transfer a domain in five steps: unlock, share the EPP code, request the transfer, "
   },
   "infographic-i8": {
    "file": "infographic-i8.png",
-   "alt": "Four tests for a brand name: the phone test, the radio test, the search test and the picture test",
-   "title": "Four tests for a brand name: the phone test, the radio test, the search test and the pictu"
+   "alt": "Four tests for how to choose a domain name and brand name: the phone test, the radio test, the search test and the picture test",
+   "title": "Four tests for how to choose a domain name and brand name: the phone test, the radio test,"
   },
   "infographic-i9": {
    "file": "infographic-i9.png",
-   "alt": "Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, use the domain while it stays with the seller until the final payment, own it after the final payment",
-   "title": "Three stage infographic of a payment plan: pay by choosing a three to twelve month plan, u"
+   "alt": "Three stage infographic of domain financing with a payment plan: pay by choosing a three to twelve month plan, use the domain while it stays with the seller until the final payment, own it after the final payment",
+   "title": "Three stage infographic of domain financing with a payment plan: pay by choosing a three t"
   },
   "premium-domain-names-complete-guide": {
    "file": "premium-domain-names-complete-guide.jpg",
-   "alt": "Cover image for: The Complete Guide to Premium Domain Names",
-   "title": "The Complete Guide to Premium Domain Names"
+   "alt": "Cover image for: Premium Domains: The Complete Guide to Value, Buying and Use",
+   "title": "Premium Domains: The Complete Guide to Value, Buying and Use"
   },
   "premium-domain-payment-plans-and-financing": {
    "file": "premium-domain-payment-plans-and-financing.jpg",
-   "alt": "Cover image for: Premium Domain Payment Plans and Financing",
-   "title": "Premium Domain Payment Plans and Financing"
+   "alt": "Cover image for: Domain Financing: Premium Domain Payment Plans Explained",
+   "title": "Domain Financing: Premium Domain Payment Plans Explained"
   },
   "premium-domains-as-business-assets-and-investments": {
    "file": "premium-domains-as-business-assets-and-investments.jpg",
-   "alt": "Cover image for: Premium Domains as Business Assets and Investments",
-   "title": "Premium Domains as Business Assets and Investments"
+   "alt": "Cover image for: Premium Domain Investment: Domains as Business Assets",
+   "title": "Premium Domain Investment: Domains as Business Assets"
+  },
+  "short-domain-names": {
+   "file": "short-domain-names.jpg",
+   "alt": "Cover image for: Short Domain Names: Two, Three and Four Letter Domains",
+   "title": "Short Domain Names: Two, Three and Four Letter Domains"
   },
   "trademarks-and-domain-disputes-udrp-basics": {
    "file": "trademarks-and-domain-disputes-udrp-basics.jpg",
@@ -117,8 +407,8 @@
   },
   "website-launch-checklist-after-buying-a-domain": {
    "file": "website-launch-checklist-after-buying-a-domain.jpg",
-   "alt": "Cover image for: Website Launch Checklist After Buying a Domain",
-   "title": "Website Launch Checklist After Buying a Domain"
+   "alt": "Cover image for: Website Launch Checklist: The First Week After Buying a Domain",
+   "title": "Website Launch Checklist: The First Week After Buying a Domain"
   },
   "what-is-a-premium-domain-name": {
    "file": "what-is-a-premium-domain-name.jpg",
@@ -128,10 +418,32 @@
  },
  "articles": [
   {
-   "slug": "premium-domain-names-complete-guide",
-   "title": "The Complete Guide to Premium Domain Names",
+   "key": "how-to-buy-a-domain-name-for-a-website",
+   "slug": "how-to-buy-a-domain-name-for-a-website",
+   "title": "How to Buy a Domain Name for a Website: A Complete Guide",
    "role": "pillar",
-   "excerpt": "Everything you need to know about premium domain names: what they are, how to value one, how to buy it safely, how to pay for it, and how to turn it into traffic, trust and sales.",
+   "excerpt": "How to buy a domain name for a website, step by step: choose the name, check who owns it, register or buy it, agree a price, pay, transfer it and launch.",
+   "tags": [
+    "buying domains",
+    "domain names",
+    "premium domains",
+    "domain transfer"
+   ],
+   "file": "how-to-buy-a-domain-name-for-a-website.html",
+   "featured": "how-to-buy-a-domain-name-for-a-website",
+   "images": [
+    "ib-pillar-a",
+    "ib-pillar-b",
+    "infographic-i7"
+   ],
+   "words": 1957
+  },
+  {
+   "key": "premium-domain-names-complete-guide",
+   "slug": "premium-domain-names-complete-guide",
+   "title": "Premium Domains: The Complete Guide to Value, Buying and Use",
+   "role": "pillar",
+   "excerpt": "Premium domains explained: what they are, how to value one, how to buy safely, how to pay over time, and how to turn a great name into traffic and trust.",
    "tags": [
     "premium domains",
     "domain names",
@@ -146,13 +458,57 @@
     "infographic-i4",
     "infographic-i5"
    ],
-   "words": 2950
+   "words": 3017
   },
   {
-   "slug": "choosing-a-domain-extension-com-ca-io-and-more",
-   "title": "Choosing a Domain Extension: .com, .ca, .io and More",
+   "key": "brandable-domain-names",
+   "slug": "brandable-domain-names",
+   "title": "Brandable Domain Names: How to Choose, Test and Check One",
    "role": "spoke",
-   "excerpt": "How to choose between .com, country codes like .ca, technology extensions like .io and .ai, and new descriptive extensions. Trust, price, renewal cost and who each one suits.",
+   "excerpt": "What makes brandable domain names work, the patterns behind strong brand name domains, how to test a shortlist on real people, and the trademark checks to run.",
+   "tags": [
+    "brandable domain names",
+    "brandable domains",
+    "brand name domain",
+    "naming"
+   ],
+   "file": "brandable-domain-names.html",
+   "featured": "brandable-domain-names",
+   "images": [
+    "ib-brandable-a",
+    "ib-brandable-b",
+    "infographic-i8"
+   ],
+   "words": 1642
+  },
+  {
+   "key": "change-domain-name-without-losing-seo",
+   "slug": "change-domain-name-without-losing-seo",
+   "title": "Change Domain Name SEO: How to Move Without Losing Rankings",
+   "role": "spoke",
+   "excerpt": "A practical change domain name SEO checklist: map 301 redirects page to page, use the Change of Address tool, update sitemaps and links, and monitor recovery.",
+   "tags": [
+    "domain migration",
+    "SEO",
+    "301 redirects",
+    "rebrand",
+    "change domain name"
+   ],
+   "file": "change-domain-name-without-losing-seo.html",
+   "featured": "change-domain-name-without-losing-seo",
+   "images": [
+    "ib-seo-a",
+    "ib-seo-b",
+    "infographic-i6"
+   ],
+   "words": 1685
+  },
+  {
+   "key": "choosing-a-domain-extension-com-ca-io-and-more",
+   "slug": "choosing-a-domain-extension-com-ca-io-and-more",
+   "title": "Domain Extensions: Choosing .com, .ca, .io and More",
+   "role": "spoke",
+   "excerpt": "Domain extensions compared: when to pick .com, a country code like .ca, a tech ending like .io or .ai, or a new descriptive one, and what each costs to renew.",
    "tags": [
     "domain extensions",
     "TLD",
@@ -163,15 +519,18 @@
    "file": "choosing-a-domain-extension-com-ca-io-and-more.html",
    "featured": "choosing-a-domain-extension-com-ca-io-and-more",
    "images": [
+    "ib-ext-a",
+    "ib-ext-b",
     "infographic-i3"
    ],
-   "words": 769
+   "words": 1470
   },
   {
+   "key": "do-premium-domains-help-seo",
    "slug": "do-premium-domains-help-seo",
-   "title": "Do Premium Domains Help SEO? What Google Says",
+   "title": "Domain Name SEO: Do Premium Domains Help Your Rankings?",
    "role": "spoke",
-   "excerpt": "Does a premium or exact-match domain improve search rankings? What Google's own guidance says, how a better domain still helps your marketing, and how to move to a new domain without losing traffic.",
+   "excerpt": "Domain name SEO explained: what Google says about keyword domains, how a premium name lifts clicks and trust, and how to switch domains without losing traffic.",
    "tags": [
     "SEO",
     "domain names",
@@ -181,15 +540,104 @@
    "file": "do-premium-domains-help-seo.html",
    "featured": "do-premium-domains-help-seo",
    "images": [
+    "ib-domseo-a",
+    "ib-domseo-b",
     "infographic-i6"
    ],
-   "words": 714
+   "words": 1485
   },
   {
-   "slug": "domain-name-marketing-playbook",
-   "title": "The Domain Name Marketing Playbook",
+   "key": "domain-backorder-and-expired-domains",
+   "slug": "domain-backorder-and-expired-domains",
+   "title": "Domain Backorder Guide: How to Buy Expired Domains Safely",
    "role": "spoke",
-   "excerpt": "How to market with a premium domain: branded email, paid ads, print and QR codes, social profiles, vanity URLs, campaign pages and word of mouth, with a 30 day plan to launch a new name.",
+   "excerpt": "How a domain backorder works, how names expire and drop, how drop catching and auctions work, the risks to check, and when buying a listed name is simpler.",
+   "tags": [
+    "domain backorder",
+    "expired domains",
+    "drop catching",
+    "domain auctions"
+   ],
+   "file": "domain-backorder-and-expired-domains.html",
+   "featured": "domain-backorder-and-expired-domains",
+   "images": [
+    "ib-backorder-a",
+    "ib-backorder-b",
+    "infographic-i1"
+   ],
+   "words": 1707
+  },
+  {
+   "key": "domain-escrow-explained",
+   "slug": "domain-escrow-explained",
+   "title": "Domain Escrow Explained: How It Works, Fees and Scams to Avoid",
+   "role": "spoke",
+   "excerpt": "Domain escrow explained: how a domain escrow service holds payment until the transfer, what fees to expect, how to spot fake escrow sites, and the alternatives.",
+   "tags": [
+    "domain escrow",
+    "buying domains",
+    "selling domains",
+    "domain transfer",
+    "online safety"
+   ],
+   "file": "domain-escrow-explained.html",
+   "featured": "domain-escrow-explained",
+   "images": [
+    "ib-escrow-a",
+    "ib-escrow-b",
+    "infographic-i7"
+   ],
+   "words": 1659
+  },
+  {
+   "key": "domain-flipping",
+   "slug": "domain-flipping",
+   "title": "Domain Flipping: An Honest Guide to Buying and Reselling Names",
+   "role": "spoke",
+   "excerpt": "Domain flipping explained honestly: how investors pick, price, list and resell domains, what renewals cost, trademark risks and why most names never sell.",
+   "tags": [
+    "domain flipping",
+    "domain investing",
+    "domain name investing",
+    "resell domains"
+   ],
+   "file": "domain-flipping.html",
+   "featured": "domain-flipping",
+   "images": [
+    "ib-flipping-a",
+    "ib-flipping-b",
+    "infographic-i10"
+   ],
+   "words": 1632
+  },
+  {
+   "key": "domain-leasing-and-lease-to-own",
+   "slug": "domain-leasing-and-lease-to-own",
+   "title": "Domain Leasing and Lease to Own: How They Work and What to Check",
+   "role": "spoke",
+   "excerpt": "Domain leasing explained: who holds the name, how lease to own works, what happens if you miss a payment, the contract points to check, and the alternatives.",
+   "tags": [
+    "domain leasing",
+    "lease to own",
+    "domain rental",
+    "domain buying",
+    "payment plans"
+   ],
+   "file": "domain-leasing-and-lease-to-own.html",
+   "featured": "domain-leasing-and-lease-to-own",
+   "images": [
+    "ib-leasing-a",
+    "ib-leasing-b",
+    "infographic-i9"
+   ],
+   "words": 1729
+  },
+  {
+   "key": "domain-name-marketing-playbook",
+   "slug": "domain-name-marketing-playbook",
+   "title": "Domain Name Marketing: A Playbook for Premium Domains",
+   "role": "spoke",
+   "excerpt": "Domain name marketing for premium domains: branded email, ads, print and QR codes, social profiles, vanity URLs and a 30 day plan to launch a new name.",
    "tags": [
     "domain marketing",
     "digital marketing",
@@ -199,33 +647,81 @@
    "file": "domain-name-marketing-playbook.html",
    "featured": "domain-name-marketing-playbook",
    "images": [
+    "ib-mkt-a",
+    "ib-mkt-b",
     "infographic-i5"
    ],
-   "words": 712
+   "words": 1412
   },
   {
-   "slug": "domain-transfers-epp-codes-and-dns-explained",
-   "title": "Domain Transfers, EPP Codes and DNS Explained",
+   "key": "domain-names-for-business",
+   "slug": "domain-names-for-business",
+   "title": "Domain Names for Business: How to Choose the Right One",
    "role": "spoke",
-   "excerpt": "How a domain transfer works from start to finish: registrar, registry and registrant, the EPP authorisation code, the transfer lock, waiting periods, DNS records and what to check so nothing breaks.",
+   "excerpt": "How to judge domain names for business: what makes a name strong, descriptive vs brandable, choosing an extension, trademark checks and what to do if taken.",
    "tags": [
-    "domain transfer",
-    "EPP code",
-    "DNS",
-    "registrar"
+    "business domains",
+    "domain names",
+    "branding",
+    "company domain"
    ],
-   "file": "domain-transfers-epp-codes-and-dns-explained.html",
-   "featured": "domain-transfers-epp-codes-and-dns-explained",
+   "file": "domain-names-for-business.html",
+   "featured": "domain-names-for-business",
    "images": [
-    "infographic-i7"
+    "ib-business-a",
+    "ib-business-b",
+    "infographic-i8"
    ],
-   "words": 797
+   "words": 1637
   },
   {
-   "slug": "how-to-buy-a-premium-domain-safely",
-   "title": "How to Buy a Premium Domain Safely, Step by Step",
+   "key": "domain-parking",
+   "slug": "domain-parking",
+   "title": "Domain Parking: What It Is, How It Pays and When to Build",
    "role": "spoke",
-   "excerpt": "A safe buying process for premium domains: how to check the seller and the name, use escrow, agree terms, take the transfer and secure the domain, plus the red flags that should make you stop.",
+   "excerpt": "Domain parking explained: ad parking versus for-sale pages, what a parked domain really earns, how parking affects SEO, and when to park a name or build on it.",
+   "tags": [
+    "domain parking",
+    "parked domain",
+    "domain investing",
+    "selling domains"
+   ],
+   "file": "domain-parking.html",
+   "featured": "domain-parking",
+   "images": [
+    "ib-parking-a",
+    "ib-parking-b",
+    "infographic-i10"
+   ],
+   "words": 1625
+  },
+  {
+   "key": "how-to-buy-a-domain-name-from-someone",
+   "slug": "how-to-buy-a-domain-name-from-someone",
+   "title": "How to Buy a Domain Name from Someone: A Step-by-Step Guide",
+   "role": "spoke",
+   "excerpt": "How to buy a domain name from someone who already owns it: find the owner, value the name, make contact, negotiate, use a broker, then pay and transfer safely.",
+   "tags": [
+    "buying domains",
+    "domain brokerage",
+    "domain negotiation",
+    "domain transfer"
+   ],
+   "file": "how-to-buy-a-domain-name-from-someone.html",
+   "featured": "how-to-buy-a-domain-name-from-someone",
+   "images": [
+    "ib-someone-a",
+    "ib-someone-b",
+    "infographic-i1"
+   ],
+   "words": 1759
+  },
+  {
+   "key": "how-to-buy-a-premium-domain-safely",
+   "slug": "how-to-buy-a-premium-domain-safely",
+   "title": "Buying Premium Domains Safely: A Step-by-Step Guide",
+   "role": "spoke",
+   "excerpt": "Buying premium domains safely: check the seller and the name, agree terms in writing, pay the right way, take the transfer, lock it, and spot the red flags.",
    "tags": [
     "buy a domain",
     "escrow",
@@ -235,15 +731,18 @@
    "file": "how-to-buy-a-premium-domain-safely.html",
    "featured": "how-to-buy-a-premium-domain-safely",
    "images": [
+    "ib-safe-a",
+    "ib-safe-b",
     "infographic-i2"
    ],
-   "words": 717
+   "words": 1565
   },
   {
-   "slug": "how-to-pick-a-brand-name-and-domain-that-lasts",
-   "title": "How to Pick a Brand Name and Domain That Lasts",
+   "key": "how-to-pick-a-brand-name-and-domain-that-lasts",
+   "slug": "how-to-choose-a-domain-name",
+   "title": "How to Choose a Domain Name and Brand Name That Lasts",
    "role": "spoke",
-   "excerpt": "A practical naming method for founders: what makes a name memorable, the tests to run before you commit, the mistakes that force a rename, and how to match the name to a domain you can own.",
+   "excerpt": "How to choose a domain name and brand name that last: what makes a name memorable, four tests to run, the mistakes that force a rename and how to secure it.",
    "tags": [
     "branding",
     "naming",
@@ -253,15 +752,39 @@
    "file": "how-to-pick-a-brand-name-and-domain-that-lasts.html",
    "featured": "how-to-pick-a-brand-name-and-domain-that-lasts",
    "images": [
+    "ib-naming-a",
+    "ib-naming-b",
     "infographic-i8"
    ],
-   "words": 802
+   "words": 1402
   },
   {
-   "slug": "how-to-value-a-premium-domain-name",
-   "title": "How to Value a Premium Domain Name: A Practical Method",
+   "key": "domain-transfers-epp-codes-and-dns-explained",
+   "slug": "how-to-transfer-a-domain",
+   "title": "How to Transfer a Domain: EPP Codes, Locks and DNS Explained",
    "role": "spoke",
-   "excerpt": "A step-by-step method for valuing a premium domain: score the name on six factors, check comparable sales, estimate what the name is worth to your business, and set a fair offer.",
+   "excerpt": "How to transfer a domain from start to finish: who does what, the EPP code, transfer locks, waiting periods, DNS records and the checks that stop problems.",
+   "tags": [
+    "domain transfer",
+    "EPP code",
+    "DNS",
+    "registrar"
+   ],
+   "file": "domain-transfers-epp-codes-and-dns-explained.html",
+   "featured": "domain-transfers-epp-codes-and-dns-explained",
+   "images": [
+    "ib-transfer-a",
+    "ib-transfer-b",
+    "infographic-i7"
+   ],
+   "words": 1555
+  },
+  {
+   "key": "how-to-value-a-premium-domain-name",
+   "slug": "how-to-value-a-premium-domain-name",
+   "title": "How to Value a Premium Domain: A Domain Valuation Method",
+   "role": "spoke",
+   "excerpt": "A practical domain valuation method: score a premium name on six factors, check comparable sales, estimate what it is worth to your business, set a fair offer.",
    "tags": [
     "premium domains",
     "domain valuation",
@@ -270,32 +793,18 @@
    "file": "how-to-value-a-premium-domain-name.html",
    "featured": "how-to-value-a-premium-domain-name",
    "images": [
+    "ib-value-a",
+    "ib-value-b",
     "infographic-i1"
    ],
-   "words": 931
+   "words": 1516
   },
   {
-   "slug": "premium-domain-payment-plans-and-financing",
-   "title": "Premium Domain Payment Plans and Financing",
+   "key": "premium-domains-as-business-assets-and-investments",
+   "slug": "premium-domain-investment",
+   "title": "Premium Domain Investment: Domains as Business Assets",
    "role": "spoke",
-   "excerpt": "How payment plans for premium domains work, what to compare (term, interest, ownership and missed-payment rules), and how to decide between paying in full and paying over three to twelve months.",
-   "tags": [
-    "domain payment plans",
-    "domain financing",
-    "premium domains"
-   ],
-   "file": "premium-domain-payment-plans-and-financing.html",
-   "featured": "premium-domain-payment-plans-and-financing",
-   "images": [
-    "infographic-i9"
-   ],
-   "words": 926
-  },
-  {
-   "slug": "premium-domains-as-business-assets-and-investments",
-   "title": "Premium Domains as Business Assets and Investments",
-   "role": "spoke",
-   "excerpt": "How premium domains work as business assets and as investments: where the value comes from, how owners earn from them, the risks, how to hold and account for a domain, and a sensible way to start.",
+   "excerpt": "Premium domain investment explained: where a name's value comes from, how owners benefit, the risks and costs, how to judge a name and how to start sensibly.",
    "tags": [
     "domain investing",
     "business assets",
@@ -304,11 +813,76 @@
    "file": "premium-domains-as-business-assets-and-investments.html",
    "featured": "premium-domains-as-business-assets-and-investments",
    "images": [
+    "ib-invest-a",
+    "ib-invest-b",
     "infographic-i10"
    ],
-   "words": 781
+   "words": 1454
   },
   {
+   "key": "premium-domain-payment-plans-and-financing",
+   "slug": "premium-domain-payment-plans-and-financing",
+   "title": "Domain Financing: Premium Domain Payment Plans Explained",
+   "role": "spoke",
+   "excerpt": "Domain financing explained: how premium domain payment plans work, what to compare in the terms, and choosing between paying in full or over 3 to 12 months.",
+   "tags": [
+    "domain payment plans",
+    "domain financing",
+    "premium domains"
+   ],
+   "file": "premium-domain-payment-plans-and-financing.html",
+   "featured": "premium-domain-payment-plans-and-financing",
+   "images": [
+    "ib-finance-a",
+    "ib-finance-b",
+    "infographic-i9"
+   ],
+   "words": 1490
+  },
+  {
+   "key": "how-to-sell-a-domain-name",
+   "slug": "sell-my-domain",
+   "title": "How to Sell a Domain Name: A Step-by-Step Guide for Owners",
+   "role": "spoke",
+   "excerpt": "Thinking \"how do I sell my domain?\" Learn to value the name, set a price, choose where to sell domain names, avoid scams and get paid before you transfer.",
+   "tags": [
+    "sell domain name",
+    "domain selling",
+    "domain valuation",
+    "domain transfer"
+   ],
+   "file": "how-to-sell-a-domain-name.html",
+   "featured": "how-to-sell-a-domain-name",
+   "images": [
+    "ib-sell-a",
+    "ib-sell-b",
+    "infographic-i1"
+   ],
+   "words": 1706
+  },
+  {
+   "key": "short-domain-names",
+   "slug": "short-domain-names",
+   "title": "Short Domain Names: Two, Three and Four Letter Domains",
+   "role": "spoke",
+   "excerpt": "Short domain names explained: how many two, three and four letter combinations exist, LLL vs pronounceable names, what sets the price and how to buy one safely.",
+   "tags": [
+    "short domains",
+    "premium domains",
+    "3 letter domains",
+    "4 letter domains"
+   ],
+   "file": "short-domain-names.html",
+   "featured": "short-domain-names",
+   "images": [
+    "ib-shortnames-a",
+    "ib-shortnames-b",
+    "infographic-i1"
+   ],
+   "words": 1606
+  },
+  {
+   "key": "trademarks-and-domain-disputes-udrp-basics",
    "slug": "trademarks-and-domain-disputes-udrp-basics",
    "title": "Trademarks and Domain Disputes: UDRP Basics",
    "role": "spoke",
@@ -324,13 +898,14 @@
    "images": [
     "infographic-i11"
    ],
-   "words": 806
+   "words": 1501
   },
   {
+   "key": "website-launch-checklist-after-buying-a-domain",
    "slug": "website-launch-checklist-after-buying-a-domain",
-   "title": "Website Launch Checklist After Buying a Domain",
+   "title": "Website Launch Checklist: The First Week After Buying a Domain",
    "role": "spoke",
-   "excerpt": "What to do in the first week after you buy a domain: secure it, connect DNS, turn on HTTPS, set up authenticated email, redirect properly, add analytics and Search Console, and publish the core pages.",
+   "excerpt": "A website launch checklist for the first week after you buy a domain: secure it, connect DNS, turn on HTTPS, set up email, add Search Console and publish.",
    "tags": [
     "website",
     "launch checklist",
@@ -341,15 +916,18 @@
    "file": "website-launch-checklist-after-buying-a-domain.html",
    "featured": "website-launch-checklist-after-buying-a-domain",
    "images": [
+    "ib-launch-a",
+    "ib-launch-b",
     "infographic-i4"
    ],
-   "words": 677
+   "words": 1545
   },
   {
+   "key": "what-is-a-premium-domain-name",
    "slug": "what-is-a-premium-domain-name",
    "title": "What Is a Premium Domain Name? Meaning and Examples",
    "role": "spoke",
-   "excerpt": "A premium domain is a short, memorable, high-demand name that sells for far more than a normal registration. Learn the two meanings of the term, the main types, and how to tell a real premium name from an overpriced one.",
+   "excerpt": "What is a premium domain? A short, high-demand name worth far more than a registration fee. See both meanings of the term, the main types and how to judge one.",
    "tags": [
     "premium domains",
     "domain names",
@@ -358,9 +936,11 @@
    "file": "what-is-a-premium-domain-name.html",
    "featured": "what-is-a-premium-domain-name",
    "images": [
+    "ib-premium-a",
+    "ib-premium-b",
     "infographic-i1"
    ],
-   "words": 924
+   "words": 1549
   }
  ]
 }

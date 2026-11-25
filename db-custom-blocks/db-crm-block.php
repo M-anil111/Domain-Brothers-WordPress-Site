@@ -112,8 +112,29 @@ if ( ! function_exists( 'db_crm_clean_offer_amount' ) ) {
 		if ( null === $raw || '' === $raw ) {
 			return null;
 		}
-		$clean = preg_replace( '/[^0-9.]/', '', (string) $raw );
-		return is_numeric( $clean ) ? (float) $clean : null;
+		return db_money_parse( $raw );
+	}
+}
+
+if ( ! function_exists( 'db_money_parse' ) ) {
+	/**
+	 * Pure: a US dollar amount, or null when the text is not one. Accepts 15000, 15000.5, $15,000
+	 * and 15,000.00; refuses 15k, 1.500 (European thousands) and 2,5 (decimal comma), which the old
+	 * "strip everything but digits and dots" read as $15, $1.50 and $25 (bug register batch 2, AC-10).
+	 *
+	 * @param mixed $raw Typed amount.
+	 * @return float|null
+	 */
+	function db_money_parse( $raw ) {
+		if ( ! is_scalar( $raw ) ) {
+			return null;
+		}
+		$t = trim( str_replace( array( "\xc2\xa0", ' ' ), '', (string) $raw ) );
+		$t = preg_replace( '/^(?:US)?\$|(?:USD|US\$)$/i', '', $t );
+		if ( ! preg_match( '/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?$/', (string) $t ) ) {
+			return null;
+		}
+		return (float) str_replace( ',', '', (string) $t );
 	}
 }
 
@@ -573,10 +594,10 @@ if ( ! function_exists( 'db_crm_page_leads' ) ) {
 					<div class="tablenav-pages">
 						<span class="displaying-num"><?php echo esc_html( number_format( $total ) ); ?> items</span>
 						<?php if ( $total_pages > 1 ) : ?>
-							<?php for ( $p = 1; $p <= $total_pages; $p++ ) : ?>
-								<a href="<?php echo esc_url( add_query_arg( 'paged', $p, $base_url . ( $filter_status ? '&status=' . rawurlencode( $filter_status ) : '' ) ) ); ?>"
-								   class="<?php echo $p === $paged ? 'button button-primary' : 'button'; ?>"><?php echo esc_html( $p ); ?></a>
-							<?php endfor; ?>
+							<?php
+							// A few links around the current page instead of one button per page (AD-10).
+							echo paginate_links( array( 'base' => add_query_arg( 'paged', '%#%', $base_url . ( $filter_status ? '&status=' . rawurlencode( $filter_status ) : '' ) ), 'format' => '', 'current' => $paged, 'total' => $total_pages, 'end_size' => 1, 'mid_size' => 2 ) ); // phpcs:ignore WordPress.Security.EscapeOutput
+							?>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -945,7 +966,7 @@ if ( ! function_exists( 'db_crm_csv_safe' ) ) {
 	 */
 	function db_crm_csv_safe( $value ) {
 		$value = (string) $value;
-		if ( '' !== $value && false !== strpos( "=+-@\t", $value[0] ) ) {
+		if ( '' !== $value && false !== strpos( "=+-@\t\r", $value[0] ) ) {
 			return "'" . $value;
 		}
 		return $value;
@@ -1523,3 +1544,53 @@ if ( ! function_exists( 'db_crm_get_admin_js' ) ) {
 JS;
 	}
 }
+
+// Contact Form 7 offer forms: an amount that is not a plain dollar figure is refused with a
+// message, instead of being saved as a much smaller offer (AC-10).
+add_filter( 'wpcf7_validate', function ( $result, $tags ) {
+	if ( ! function_exists( 'db_money_parse' ) ) {
+		return $result;
+	}
+	foreach ( (array) $tags as $tag ) {
+		$name = is_object( $tag ) ? $tag->name : ( $tag['name'] ?? '' );
+		if ( ! in_array( $name, array( 'your-offer', 'offer', 'amount', 'offer-amount', 'offer-price' ), true ) ) {
+			continue;
+		}
+		$raw = isset( $_POST[ $name ] ) ? wp_unslash( $_POST[ $name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		if ( is_string( $raw ) && '' !== trim( $raw ) && null === db_money_parse( $raw ) ) {
+			$result->invalidate( $tag, 'Enter your offer as a whole dollar amount, for example 15000 or 15,000.' );
+		}
+	}
+	return $result;
+}, 20, 2 );
+
+// Offers only for names that can be bought: the domain comes from a hidden field the visitor can
+// edit, so a sold, reserved or not-for-sale listing is refused here, on the server (CK-23).
+// Names that are not listed at all stay allowed: a broker can still source them.
+add_filter( 'wpcf7_validate', function ( $result, $tags ) {
+	if ( ! function_exists( 'db_offer_value' ) || ! function_exists( 'db_listing_post_for_domain' ) || ! function_exists( 'db_listing_is_sellable' ) ) {
+		return $result;
+	}
+	$form = class_exists( 'WPCF7_ContactForm' ) ? WPCF7_ContactForm::get_current() : null;
+	if ( function_exists( 'db_is_offer_form' ) && ! db_is_offer_form( $form ) ) {
+		return $result;
+	}
+	$domain = strtolower( db_offer_value( wp_unslash( $_POST ), 'domain' ) ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$post   = '' !== $domain ? db_listing_post_for_domain( $domain ) : null;
+	if ( ! $post || db_listing_is_sellable( $post ) ) {
+		return $result;
+	}
+	$target = null;
+	foreach ( (array) $tags as $tag ) {
+		$name   = is_object( $tag ) ? $tag->name : ( $tag['name'] ?? '' );
+		$target = $target ? $target : $tag;
+		if ( in_array( $name, db_offer_field_map()['domain'], true ) ) {
+			$target = $tag;
+			break;
+		}
+	}
+	if ( $target ) {
+		$result->invalidate( $target, $post->post_title . ' is not available for offers. Browse other names on our All Domains page.' );
+	}
+	return $result;
+}, 21, 2 );

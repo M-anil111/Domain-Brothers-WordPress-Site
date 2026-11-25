@@ -1,0 +1,29 @@
+/*
+Theme Name: DomainFolio
+Theme URI: http://www.scriptinglab.com/
+Author: ScriptingLab
+Author URI: http://www.scriptinglab.com/
+Description: Domain portfolio theme for domainers to showcase domains easily and professionally.
+Tags: left-sidebar, right-sidebar, responsive-layout, custom-background, custom-menu, theme-options, threaded-comments, translation-ready
+Version: 4.0
+License: GNU General Public License v2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: DomainFolio
+
+This theme, like WordPress, is licensed under the GPL.
+Use it to make something cool, have fun, and share what you've learned with others.
+*/
+
+
+/**
+ *
+ * This file doesn't load by DomainFolio. If you need to add custom CSS rules
+ * We recommend using `Custom CSS` feature integrated with DomainFolio Customizer.
+ *
+ * Go to Appearance > Customize > Custom CSS.
+ *
+ */
+
+body.db-ui-active .dbx p{
+	max-width:100% !important;
+}

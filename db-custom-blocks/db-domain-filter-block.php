@@ -36,7 +36,16 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
+		// Re-entry guard: the index's own query runs pre_get_posts, and the for-sale hooks below
+		// call this function. On the home page with a cold cache that recursed until PHP ran out of
+		// memory (1 GB fatals on /?ref=db-cache-warm since 23 Nov). A nested call gets an empty
+		// list (not cached); the hooks ask db_domain_index_ids(), which then means no restriction.
+		if ( db_domain_index_building() ) {
+			return array();
+		}
+		db_domain_index_building( true );
 		$ids  = get_posts( array(
+			'db_index_build'         => true, // marks this query for the hooks below
 			'post_type'              => 'domain',
 			'post_status'            => 'publish',
 			'has_password'           => false,
@@ -73,6 +82,7 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 			$rows[] = array(
 				'id' => (int) $id,
 				'n'  => $name,
+				'd'  => function_exists( 'db_domain_display' ) ? db_domain_display( get_the_title( $id ) ) : $name, // shown name (LS-16)
 				'u'  => get_permalink( $id ),
 				'p'  => $price,
 				'c'  => $cats,
@@ -80,8 +90,38 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 				'k'  => strtolower( trim( (string) get_post_meta( $id, 'domain_keyword', true ) ) ),
 			);
 		}
-		set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS );
+		db_domain_index_building( false );
+		if ( ! function_exists( 'db_on_canonical_host' ) || db_on_canonical_host() ) {
+			set_transient( DB_DOMAIN_INDEX_KEY, $rows, HOUR_IN_SECONDS ); // never cache links built for a preview host
+		}
 		return $rows;
+	}
+}
+
+if ( ! function_exists( 'db_domain_index_building' ) ) {
+	/** True while db_domain_index() is building; pass a bool to set it. */
+	function db_domain_index_building( $set = null ) {
+		static $on = false;
+		if ( null !== $set ) {
+			$on = (bool) $set;
+		}
+		return $on;
+	}
+}
+
+if ( ! function_exists( 'db_domain_index_ids' ) ) {
+	/**
+	 * Ids of the names for sale, for query filters: null when the index is not known (it is being
+	 * built in this request, or the query is the index's own), which means "do not restrict".
+	 */
+	function db_domain_index_ids( $q = null ) {
+		if ( ( $q instanceof WP_Query && $q->get( 'db_index_build' ) ) || ! function_exists( 'db_domain_index' ) || db_domain_index_building() ) {
+			return null;
+		}
+		$idx = db_domain_index();
+		return is_array( $idx ) ? array_map( static function ( $r ) {
+			return (int) $r['id'];
+		}, $idx ) : null;
 	}
 }
 
@@ -89,6 +129,16 @@ if ( ! function_exists( 'db_domain_index' ) ) {
 add_action( 'save_post_domain', function () {
 	delete_transient( DB_DOMAIN_INDEX_KEY );
 }, 20 );
+// A price or status written straight to post meta (bulk price changes, seller edits) also rebuilds it.
+$db_index_meta_hook = function ( $meta_id, $object_id, $key ) {
+	if ( in_array( $key, array( 'domain_price', 'domain_status', 'db_listing_state', 'domain_keyword' ), true ) ) {
+		delete_transient( DB_DOMAIN_INDEX_KEY );
+	}
+};
+// New meta too: a seller listing is created first and its price written after, so an index built
+// in between would keep the name without a price until it expired.
+add_action( 'updated_post_meta', $db_index_meta_hook, 10, 3 );
+add_action( 'added_post_meta', $db_index_meta_hook, 10, 3 );
 add_action( 'set_object_terms', function ( $object_id ) {
 	if ( 'domain' === get_post_type( $object_id ) ) {
 		delete_transient( DB_DOMAIN_INDEX_KEY );
@@ -111,7 +161,7 @@ add_action( 'wp_footer', function () {
 	if ( ! is_page( 'all-domains' ) ) {
 		return;
 	}
-	$endpoint = rest_url( 'db/v1/domain-index' );
+	$endpoint = add_query_arg( 'ver', DB_BLOCKS_LOADED, rest_url( 'db/v1/domain-index' ) );
 	?>
 <style id="db-dfilter-css">
 .db-dfilter{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 16px;padding:14px;border:1px solid #e3e7ee;border-radius:10px;background:#f8fafc}
@@ -182,7 +232,7 @@ add_action( 'wp_footer', function () {
 	}
 
 	function card(r) {
-		var name = r.n.charAt(0).toUpperCase() + r.n.slice(1), hash = 0, i;
+		var name = r.d || (r.n.charAt(0).toUpperCase() + r.n.slice(1)), hash = 0, i;
 		for (i = 0; i < name.length; i++) { hash = (hash * 31 + name.charCodeAt(i)) % 360; }
 		var letter = (name.replace(/[^a-zA-Z0-9]/, '')[0] || '?').toUpperCase();
 		var price = r.p > 0
@@ -198,7 +248,7 @@ add_action( 'wp_footer', function () {
 
 	function row(r) {
 		var cats = r.c.map(function (c) { return '<a href="' + esc(c[1]) + '" rel="tag">' + esc(c[0]) + '</a>'; }).join(', ');
-		var name = r.n.charAt(0).toUpperCase() + r.n.slice(1);
+		var name = r.d || (r.n.charAt(0).toUpperCase() + r.n.slice(1));
 		var price = r.p > 0 ? '<span class="badge-price"> ' + money(r.p) + ' </span>' : '<span class="badge-price"> Make an offer </span>';
 		return '<tr><td class="data-domain"><a href="' + esc(r.u) + '" rel="bookmark" title="' + esc(r.n) + '">' + esc(name) + '</a></td>' +
 			'<td class="data-domain mbl_hd">' + cats + '</td>' +
@@ -259,7 +309,8 @@ add_action( 'wp_footer', function () {
 		if (!(qs.get('q') || qs.get('tld') || qs.get('max') || qs.get('sort'))) { return; }
 		if (qs.get('q')) { bar.elements.q.value = qs.get('q'); }
 		load().then(function () {
-			if (qs.get('tld')) { bar.elements.tld.value = qs.get('tld'); }
+			// ?tld=ca and ?tld=.CA both mean .ca; an unknown value was dropped silently (LS-15).
+			if (qs.get('tld')) { var tv = String(qs.get('tld')).trim().toLowerCase(); if (tv && tv.charAt(0) !== '.') { tv = '.' + tv; } bar.elements.tld.value = tv; }
 			if (qs.get('max')) { bar.elements.max.value = qs.get('max'); }
 			if (qs.get('sort')) { bar.elements.sort.value = qs.get('sort'); }
 			apply();
@@ -267,7 +318,305 @@ add_action( 'wp_footer', function () {
 	})();
 	// Populate the extension list as soon as someone reaches for the bar.
 	bar.addEventListener('focusin', function () { load().catch(function () {}); }, { once: true });
+	// Fill the extension list as soon as the bar is ready: loading on first focus meant the native
+	// picker opened with only 'Any' (bug register batch 2, LS-9).
+	(window.requestIdleCallback || function (f) { return setTimeout(f, 200); })(function () {
+		load().then(function () { if (count.textContent === 'Loading all listings…') { count.textContent = ''; } }).catch(function () { count.textContent = ''; });
+	});
 })();
 </script>
 	<?php
 }, 30 );
+
+/*
+ * All Domains lists every name for sale. The theme's template (page-templates/domains.php) runs
+ * its own WP_Query: one page of 100 posts, sold names included, and its price and length views
+ * also require Domain_owner = "Jay Mehta". With page 2 redirected to page 1, names past the first
+ * 100 (every new seller listing among them) never appeared, and seller names were missing from
+ * the filtered views. Here the theme's domain query on that page loads all names for sale (up to
+ * 1000), without sold names and without the owner condition.
+ */
+if ( ! function_exists( 'db_ad_fix_query_vars' ) ) {
+	/**
+	 * Pure: the corrected query vars for the theme's All Domains query.
+	 *
+	 * Names marked sold or not for sale by the plugin (db_listing_state) are left out as well as
+	 * domain_status = sold. With $for_sale_ids (the ids in db_domain_index(), which also knows the
+	 * names already taken through checkout) the list is limited to exactly those names.
+	 *
+	 * @param array      $qv           WP_Query vars.
+	 * @param array|null $for_sale_ids Ids of the names for sale, or null when not known.
+	 * @return array
+	 */
+	function db_ad_fix_query_vars( array $qv, $for_sale_ids = null ) {
+		$qv['posts_per_page'] = 1000;
+		$qv['paged']          = 1;
+		$qv['no_found_rows']  = false;
+		$meta = isset( $qv['meta_query'] ) && is_array( $qv['meta_query'] ) ? $qv['meta_query'] : array();
+		$meta = array_values( array_filter( $meta, static function ( $c ) {
+			return ! ( is_array( $c ) && isset( $c['key'] ) && 'Domain_owner' === $c['key'] );
+		} ) );
+		$has_status = (bool) array_filter( $meta, static function ( $c ) {
+			return is_array( $c ) && isset( $c['key'] ) && 'domain_status' === $c['key'];
+		} );
+		if ( ! $has_status ) {
+			$meta[] = array(
+				'relation' => 'OR',
+				array( 'key' => 'domain_status', 'value' => 'sold', 'compare' => '!=' ),
+				array( 'key' => 'domain_status', 'compare' => 'NOT EXISTS' ),
+			);
+		}
+		$meta[] = array(
+			'relation' => 'OR',
+			array( 'key' => 'db_listing_state', 'value' => array( 'sold', 'not_for_sale' ), 'compare' => 'NOT IN' ),
+			array( 'key' => 'db_listing_state', 'compare' => 'NOT EXISTS' ),
+		);
+		$qv['meta_query'] = $meta;
+		if ( is_array( $for_sale_ids ) && $for_sale_ids ) {
+			$ids = array_values( array_unique( array_map( 'intval', $for_sale_ids ) ) );
+			$qv['post__in'] = isset( $qv['post__in'] ) && is_array( $qv['post__in'] ) && $qv['post__in']
+				? array_values( array_intersect( array_map( 'intval', $qv['post__in'] ), $ids ) )
+				: $ids;
+			if ( ! $qv['post__in'] ) {
+				$qv['post__in'] = array( 0 ); // nothing for sale matches: an empty list, not every post
+			}
+		}
+		return $qv;
+	}
+}
+
+if ( ! function_exists( 'db_ad_is_theme_query' ) ) {
+	/** Pure: true for the theme template's own list queries (100 per page, or the Domain_owner filter). */
+	function db_ad_is_theme_query( array $qv ) {
+		if ( 100 === (int) ( $qv['posts_per_page'] ?? 0 ) ) {
+			return true;
+		}
+		foreach ( (array) ( $qv['meta_query'] ?? array() ) as $c ) {
+			if ( is_array( $c ) && 'Domain_owner' === ( $c['key'] ?? '' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || $q->is_main_query() || 'domain' !== $q->get( 'post_type' ) || ! did_action( 'template_redirect' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'is_page' ) || ! is_page( 'all-domains' ) || ! db_ad_is_theme_query( $q->query_vars ) ) {
+		return;
+	}
+	$for_sale = db_domain_index_ids( $q );
+	foreach ( db_ad_fix_query_vars( $q->query_vars, $for_sale ) as $k => $v ) {
+		$q->set( $k, $v );
+	}
+} );
+
+if ( ! function_exists( 'db_ad_only_for_sale_vars' ) ) {
+	/**
+	 * Pure: the sold and not-for-sale exclusion of db_ad_fix_query_vars() without its paging
+	 * changes, for list queries that must keep their own size (the home page sections).
+	 */
+	function db_ad_only_for_sale_vars( array $qv, $for_sale_ids = null ) {
+		$fixed = db_ad_fix_query_vars( $qv, $for_sale_ids );
+		foreach ( array( 'posts_per_page', 'paged', 'no_found_rows' ) as $k ) {
+			if ( array_key_exists( $k, $qv ) ) {
+				$fixed[ $k ] = $qv[ $k ];
+			} else {
+				unset( $fixed[ $k ] );
+			}
+		}
+		return $fixed;
+	}
+}
+
+// The theme's home sections (Featured Top Domains, Newly Added, Latest Addition for ...) listed
+// sold names as "Open to offers", and their offer buttons pointed at another listing (bug register
+// batch 2, LS-1 and LS-2). Same rule as All Domains: only names in the for-sale index.
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || $q->is_main_query() || ! did_action( 'template_redirect' ) || ! function_exists( 'is_front_page' ) || ! is_front_page() ) {
+		return;
+	}
+	$pt = $q->get( 'post_type' );
+	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
+		return;
+	}
+	if ( $q->get( 'db_index_build' ) ) {
+		return; // the index's own query: never filtered by the index
+	}
+	$for_sale = db_domain_index_ids( $q );
+	foreach ( db_ad_only_for_sale_vars( $q->query_vars, $for_sale ) as $k => $v ) {
+		$q->set( $k, $v );
+	}
+} );
+
+// Domain search results (?s=...&post_type=domain) list only names for sale, as the header's match
+// count does: sold names were mixed into the results (LS-11).
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( is_admin() || ! $q->is_main_query() || ! $q->is_search() || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	$pt = $q->get( 'post_type' );
+	if ( 'domain' !== $pt && array( 'domain' ) !== $pt ) {
+		return;
+	}
+	$ids = db_domain_index_ids( $q );
+	if ( null === $ids ) {
+		return;
+	}
+	$q->set( 'post__in', $ids ? $ids : array( 0 ) );
+} );
+
+if ( ! function_exists( 'db_ad_clean_rows_html' ) ) {
+	/**
+	 * Pure: in theme list tables, drops rows for names that are not for sale and makes every link
+	 * in a row point at the row's own listing (LS-1, LS-2).
+	 *
+	 * @param string   $html     Page HTML.
+	 * @param string[] $unsold   Listing slugs that are sold or not for sale.
+	 * @param string   $base     Listing URL prefix, e.g. https://example.test/domains/.
+	 * @return string
+	 */
+	function db_ad_clean_rows_html( $html, array $unsold, $base ) {
+		if ( ! is_string( $html ) || false === stripos( $html, '<tr' ) ) {
+			return $html;
+		}
+		$q    = preg_quote( rtrim( (string) $base, '/' ) . '/', '#' );
+		$drop = array_flip( array_map( 'strtolower', $unsold ) );
+		return (string) preg_replace_callback( '#<tr\b[^>]*>.*?</tr>#is', static function ( $m ) use ( $q, $drop ) {
+			if ( ! preg_match_all( '#href=([\'"])' . $q . '([a-z0-9-]+)/?\1#i', $m[0], $links ) ) {
+				return $m[0];
+			}
+			$own = strtolower( $links[2][0] );
+			if ( isset( $drop[ $own ] ) ) {
+				return '';
+			}
+			return (string) preg_replace_callback( '#(href=([\'"]))' . $q . '([a-z0-9-]+)(/?)\2#i', static function ( $l ) use ( $own ) {
+				return strtolower( $l[3] ) === $own ? $l[0] : str_replace( $l[3], $own, $l[0] );
+			}, $m[0] );
+		}, $html );
+	}
+}
+
+if ( ! function_exists( 'db_ad_unsold_slugs' ) ) {
+	/** Slugs of published listings that are sold or not for sale (cached for 10 minutes). */
+	function db_ad_unsold_slugs() {
+		$c = get_transient( 'db_ad_unsold_slugs' );
+		if ( is_array( $c ) ) {
+			return $c;
+		}
+		$ids  = get_posts( array( 'post_type' => 'domain', 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'no_found_rows' => true, 'suppress_filters' => true ) );
+		$out  = array();
+		foreach ( $ids as $id ) {
+			if ( function_exists( 'db_listing_state' ) && in_array( db_listing_state( $id ), array( 'sold', 'not_for_sale' ), true ) ) {
+				$out[] = get_post_field( 'post_name', $id );
+			}
+		}
+		set_transient( 'db_ad_unsold_slugs', $out, 10 * MINUTE_IN_SECONDS );
+		return $out;
+	}
+}
+add_action( 'updated_post_meta', static function ( $mid, $pid, $key ) {
+	if ( in_array( $key, array( 'db_listing_state', 'domain_status' ), true ) ) {
+		delete_transient( 'db_ad_unsold_slugs' );
+	}
+}, 10, 3 );
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_front_page() ) {
+		return;
+	}
+	ob_start( static function ( $html ) {
+		return db_ad_clean_rows_html( $html, db_ad_unsold_slugs(), home_url( '/domains/' ) );
+	} );
+}, -998 ); // before any route that renders and exits; inside the page cache's buffer
+
+if ( ! function_exists( 'db_ad_heading_count_html' ) ) {
+	/** Pure: replaces the number in the archive heading's "<span>N Domains</span>". */
+	function db_ad_heading_count_html( $html, $n ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		$n = (int) $n;
+		return (string) preg_replace( '#(<h1\b[^>]*class=["\'][^"\']*page-title[^>]*>.*?<span>)\d+\s+Domains?(</span>)#is', '${1}' . $n . ( 1 === $n ? ' Domain' : ' Domains' ) . '${2}', $html, 1 );
+	}
+}
+
+// Category headings counted every published name, sold ones included ("Business Names - 98
+// Domains" while 76 are listed; bug register batch 2, LS-6). The number is now the names for sale
+// in that category, the same set the list shows.
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_tax( 'domain_category' ) || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	$term = get_queried_object();
+	if ( ! $term instanceof WP_Term ) {
+		return;
+	}
+	$for_sale = array_map( static function ( $r ) {
+		return (int) $r['id'];
+	}, db_domain_index() );
+	$in_term  = get_objects_in_term( (int) $term->term_id, 'domain_category' );
+	$n        = is_array( $in_term ) ? count( array_intersect( array_map( 'intval', $in_term ), $for_sale ) ) : 0;
+	ob_start( static function ( $html ) use ( $n ) {
+		return db_ad_heading_count_html( $html, $n );
+	} );
+}, -996 );
+
+if ( ! function_exists( 'db_ad_sidebar_html' ) ) {
+	/**
+	 * Pure: the theme sidebar's "By TLD" links go to All Domains filtered by extension, with the
+	 * number for sale; extensions with nothing for sale and empty length lists are blanked (the
+	 * table keeps its shape). They used to search for '.net' and show only sold names
+	 * (bug register batch 2, LS-8).
+	 *
+	 * @param string $html      Page HTML.
+	 * @param array  $tld_count Extension (".ca") => names for sale.
+	 * @param array  $empty     Paths of list pages with nothing for sale.
+	 * @param string $all_url   All Domains URL.
+	 */
+	function db_ad_sidebar_html( $html, array $tld_count, array $empty, $all_url ) {
+		if ( ! is_string( $html ) || false === strpos( $html, 'post_type=domain' ) ) {
+			return $html;
+		}
+		$html = (string) preg_replace_callback( '#(<td\b[^>]*>)\s*<a href="[^"]*\?s=(\.[a-z.]+)&(?:amp;)?post_type=domain"[^>]*>[^<]*</a>\s*(</td>)#i', static function ( $m ) use ( $tld_count, $all_url ) {
+			$ext = strtolower( $m[2] );
+			if ( empty( $tld_count[ $ext ] ) ) {
+				return $m[1] . $m[3];
+			}
+			$url = rtrim( (string) $all_url, '?' ) . ( false === strpos( (string) $all_url, '?' ) ? '?' : '&' ) . 'tld=' . rawurlencode( $ext );
+			return $m[1] . '<a href="' . htmlspecialchars( $url, ENT_QUOTES ) . '">' . htmlspecialchars( $ext . ' (' . (int) $tld_count[ $ext ] . ')', ENT_QUOTES ) . '</a>' . $m[3];
+		}, $html );
+		foreach ( $empty as $path ) {
+			$html = (string) preg_replace( '#(<td\b[^>]*>)\s*<a href="[^"]*' . preg_quote( $path, '#' ) . '"[^>]*>[^<]*</a>\s*(</td>)#i', '$1$2', $html );
+		}
+		return $html;
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! ( is_front_page() || is_tax( 'domain_category' ) ) || ! function_exists( 'db_domain_index' ) ) {
+		return;
+	}
+	ob_start( static function ( $html ) {
+		$count = array();
+		foreach ( db_domain_index() as $r ) {
+			$n = strtolower( (string) ( $r['n'] ?? $r['name'] ?? get_the_title( (int) $r['id'] ) ) );
+			$i = strpos( $n, '.' );
+			if ( false !== $i ) {
+				$ext           = substr( $n, $i );
+				$count[ $ext ] = ( $count[ $ext ] ?? 0 ) + 1;
+			}
+		}
+		$empty = array();
+		if ( function_exists( 'db_pages_listing_counts' ) ) {
+			foreach ( (array) db_pages_listing_counts() as $slug => $c ) {
+				if ( 0 === (int) $c ) {
+					$empty[] = '/' . $slug . '/';
+				}
+			}
+		}
+		return db_ad_sidebar_html( $html, $count, $empty, home_url( '/all-domains/' ) );
+	} );
+}, -995 );

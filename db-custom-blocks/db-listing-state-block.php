@@ -116,6 +116,9 @@ if ( ! function_exists( 'db_listing_mark_sold' ) ) {
 			return;
 		}
 		update_post_meta( $post->ID, 'db_listing_state', 'sold' );
+		// The theme's search results, archive rows and prev/next links read domain_status, so a name
+		// sold through checkout kept 'Make an Offer' there (bug register batch 2, LS-4).
+		update_post_meta( $post->ID, 'domain_status', 'sold' );
 		update_post_meta( $post->ID, 'db_sold_at', time() );
 		if ( (float) $price > 0 ) {
 			update_post_meta( $post->ID, 'db_sold_price', round( (float) $price, 2 ) );
@@ -344,7 +347,32 @@ if ( ! function_exists( 'db_listing_sold_css' ) ) {
 			. '.db-sold-quote figcaption{margin-top:22px;font-size:18px;font-weight:600;color:#2e7d14}.db-sold-stars{margin-top:12px;color:#e5a400;font-size:22px;letter-spacing:4px}'
 			. '.db-sold-dots{display:flex;justify-content:center;gap:12px;margin-top:14px}.db-sold-dot{width:24px;height:24px;border-radius:50%;border:0;background:transparent;position:relative;cursor:pointer;padding:0}.db-sold-dot::after{content:"";position:absolute;inset:6px;border-radius:50%;border:2px solid #67bd3c;background:#fff}.db-sold-dot.is-on::after{background:#67bd3c}.db-sold-dot:focus-visible{outline:3px solid #0a1628;outline-offset:1px}'
 			. '@media (max-width:860px){.db-sold-card{flex-basis:calc((100% - 20px)/2)}}@media (max-width:560px){.db-sold-carousel{padding:0 4px}.db-sold-arrow{display:none}.db-sold-card{flex-basis:86%}}'
-			. '@media (prefers-reduced-motion:reduce){.db-sold-track{scroll-behavior:auto}}';
+			. '@media (prefers-reduced-motion:reduce){.db-sold-track{scroll-behavior:auto}}'
+			/* 2026-11 redesign: dark rounded hero, owner services, card testimonials. */
+			. '.db-sold-band{max-width:1320px;margin:24px auto 0;border-radius:28px;background:radial-gradient(1100px 380px at 85% -10%,rgba(20,147,159,.45),transparent 60%),linear-gradient(135deg,#0a1628 0%,#10263f 55%,#0e3b45 100%);padding:clamp(34px,6vw,64px) 20px clamp(36px,6vw,64px);box-shadow:0 20px 50px rgba(10,22,40,.18)}'
+			. '@media(max-width:1350px){.db-sold-band{margin:16px 15px 0}}'
+			. '.db-sold .db-sold-name{color:#fff!important;font-family:inherit;font-weight:800;letter-spacing:-.02em}.db-sold .db-sold-lead{color:#d6e0ea!important;max-width:640px}'
+			. '.db-sold-sign{min-height:0}.db-sold-sign img{width:96px;height:96px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}'
+			. '.db-sold-btn{border-radius:999px!important;background:#b5e61d!important;border-color:#b5e61d!important;color:#0a1628!important;min-height:50px;padding:0 26px!important;font-weight:800!important}.db-sold-btn--ghost{background:transparent!important;color:#fff!important;border:1.5px solid rgba(255,255,255,.7)!important}'
+			. '.db-sold .db-sold-h2{color:#0a1628!important;font-weight:800;letter-spacing:-.02em;font-size:clamp(26px,4vw,36px)}'
+			. '.db-own{padding-top:clamp(40px,6vw,64px);padding-bottom:10px}.db-own-head{text-align:center;max-width:720px;margin:0 auto 26px}.db-own-head .db-sold-h2{margin-bottom:10px!important}'
+			. '.db-own-eyebrow{display:inline-block;margin:0 0 12px;padding:6px 14px;border-radius:999px;background:#e9f6c3;color:#3d5a00;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}'
+			. '.db-own-lead{margin:0;font-size:18px;line-height:1.6;color:#374151}'
+			. '.db-own-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}@media(max-width:900px){.db-own-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.db-own-grid{grid-template-columns:1fr}}'
+			. '.db-own-card{display:flex;flex-direction:column;gap:8px;padding:24px;border:1px solid #dfe5e1;border-radius:20px;background:#fff;box-shadow:0 6px 20px rgba(10,22,40,.05);transition:transform .2s,box-shadow .2s,border-color .2s}'
+			. '.db-own-card:hover,.db-own-card:focus-within{transform:translateY(-3px);box-shadow:0 14px 30px rgba(10,22,40,.10);border-color:#0a1628}'
+			. '.db-own-ic{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:14px;background:#0a1628;color:#b5e61d}'
+			. '.db-sold .db-own-card h3{margin:6px 0 0!important;font-size:19px;font-weight:800;color:#0a1628}.db-own-card p{margin:0!important;font-size:15.5px;line-height:1.6;color:#4b5563;flex:1}'
+			. '.db-own-card a{margin-top:6px;font-weight:700;color:#0b6b36!important;text-decoration:none!important}.db-own-card a:hover,.db-own-card a:focus-visible{text-decoration:underline!important}'
+			. '.db-own-cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:22px;padding:26px 28px;border-radius:22px;background:#f2f8f0;border:1px solid #d9eccf}'
+			. '.db-sold .db-own-cta h3{margin:0 0 4px!important;font-size:21px;font-weight:800;color:#0a1628}.db-own-cta p{margin:0!important;color:#374151}'
+			. '.db-own-btn{display:inline-flex;align-items:center;min-height:50px;padding:0 26px;border-radius:999px;background:#0a1628;color:#fff!important;font-weight:700;text-decoration:none!important}.db-own-btn:hover,.db-own-btn:focus-visible{background:#16324f}'
+			. '.db-sold-news{background:none;padding-top:40px}.db-sold-card{border-radius:18px;border-color:#dfe5e1;box-shadow:0 6px 20px rgba(10,22,40,.05);padding-bottom:24px;min-height:0}.db-sold-card h3 a{color:#0a1628!important;font-weight:700}.db-sold-date{position:static;display:inline-flex;gap:4px;width:auto;margin-top:12px;padding:4px 10px;border-radius:999px;background:#eef2ef;color:#374151;font-size:12.5px}.db-sold-date b,.db-sold-date i{display:inline;font-size:12.5px;font-weight:700}'
+			. '.db-sold-arrow{background:#0a1628}'
+			. '.db-sold-testi{padding:40px 0 64px;background:none!important}.db-sold-tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}@media(max-width:900px){.db-sold-tgrid{grid-template-columns:1fr}}'
+			. '.db-sold-tcard{margin:0;padding:24px;border-radius:20px;background:#fff;border:1px solid #dfe5e1;box-shadow:0 6px 20px rgba(10,22,40,.05)}.db-sold-tcard .db-sold-stars{margin:0 0 10px;font-size:18px;color:#d99a00}'
+			. '.db-sold .db-sold-tcard blockquote{margin:0!important;padding:0!important;border:0!important;background:none!important}.db-sold .db-sold-tcard blockquote::before,.db-sold .db-sold-tcard blockquote::after{content:none!important}.db-sold-tcard p{margin:0!important;font-size:15.5px;line-height:1.65;color:#1f2937}.db-sold-tcard figcaption{margin-top:14px;font-weight:700;color:#0b6b36}'
+			. '@media(prefers-reduced-motion:reduce){.db-own-card{transition:none}.db-own-card:hover{transform:none}}';
 	}
 }
 
@@ -429,6 +457,39 @@ if ( ! function_exists( 'db_listing_nfs_sign' ) ) {
 	}
 }
 
+
+if ( ! function_exists( 'db_listing_owner_html' ) ) {
+	/** "Do you own this domain now?": what Domain Brothers can do for the new owner. */
+	function db_listing_owner_html( $name ) {
+		$u    = function ( $p ) { return home_url( $p ); };
+		$sell = function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? $u( '/sell-your-domains/' ) : $u( '/domain-brokerage-services/' );
+		$ic   = array(
+			'web'   => '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M7 21h10M12 18v3"/>',
+			'mkt'   => '<path d="M4 15V9l11-5v16L4 15z"/><path d="M15 9a3 3 0 010 6M7 15l1 5h3l-1-4"/>',
+			'app'   => '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+			'code'  => '<path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 4l-4 16"/>',
+			'sell'  => '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/>',
+			'guard' => '<path d="M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+		);
+		$cards = array(
+			array( 'web', 'Build the website', 'A fast, modern site designed to turn visitors into customers, on WordPress or custom code.', 'Plan my website', $u( '/website-design-development/' ) ),
+			array( 'mkt', 'Market it', 'Search, ads and content so people find ' . $name . ' and remember it.', 'Grow my traffic', $u( '/digital-marketing-services/' ) ),
+			array( 'app', 'Launch an app', 'iOS and Android apps that carry the name into your customers\' pockets.', 'Talk about an app', $u( '/mobile-app-development-services/' ) ),
+			array( 'code', 'Custom software', 'Booking systems, portals and tools built around how your business works.', 'Scope my software', $u( '/custom-software-development-services/' ) ),
+			array( 'sell', 'Sell it to someone else', 'Not using it? List it with us. Listing is free and our brokers find the buyer.', 'Sell this domain', $sell ),
+			array( 'guard', 'Keep it safe', 'Renewals, DNS, privacy and transfer locks handled, so you never lose the name.', 'Protect my domain', $u( '/domain-management-services/' ) ),
+		);
+		$h = '<section class="db-sold-in db-own" aria-labelledby="db-own-h"><div class="db-own-head"><p class="db-own-eyebrow">For the new owner</p><h2 class="db-sold-h2" id="db-own-h">Do you own ' . esc_html( $name ) . ' now?</h2>'
+			. '<p class="db-own-lead">Congratulations. A great name is a head start. We are web developers, marketers and app builders, and we can turn it into a business that works.</p></div><ul class="db-own-grid">';
+		foreach ( $cards as $c ) {
+			$h .= '<li class="db-own-card"><span class="db-own-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' . $ic[ $c[0] ] . '</svg></span>'
+				. '<h3>' . esc_html( $c[1] ) . '</h3><p>' . esc_html( $c[2] ) . '</p><a href="' . esc_url( $c[4] ) . '">' . esc_html( $c[3] ) . ' <span aria-hidden="true">&rarr;</span></a></li>';
+		}
+		$h .= '</ul><div class="db-own-cta"><div><h3>Tell us what you want to build</h3><p>One conversation, a clear plan and a fixed quote. A person replies within one business day.</p></div><a class="db-own-btn" href="' . esc_url( $u( '/contact-us/' ) ) . '">Talk to our team</a></div></section>';
+		return $h;
+	}
+}
+
 if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 	/**
 	 * Body of the sold / not-for-sale page, after the production "sold" design:
@@ -452,8 +513,8 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 		$h .= $sold ? '<img src="' . esc_url( $assets . 'sold-sign.png' ) . '" width="120" height="120" alt="Sold">' : db_listing_nfs_sign();
 		$h .= '</div><h1 class="db-sold-name" id="db-sold-h">' . esc_html( ucfirst( $name ) ) . '</h1>';
 		if ( $sold ) {
-			$h .= '<p class="db-sold-lead">This domain has a new owner' . ( $sold_at ? ' (sold ' . esc_html( wp_date( 'F j, Y', $sold_at ) ) . ')' : '' ) . '. We have similar names that are still available.</p>';
-			$h .= '<div class="db-sold-actions"><a class="db-un-btn db-sold-btn" href="' . esc_url( $browse ) . '">Browse available domains</a><a class="db-un-btn db-sold-btn db-sold-btn--ghost" href="' . esc_url( $contact ) . '">Tell us what you need</a></div>';
+			$h .= '<p class="db-sold-lead">This domain found a new owner' . ( $sold_at ? ' on ' . esc_html( wp_date( 'F j, Y', $sold_at ) ) : '' ) . '. Own it now? We can build on it. Still looking? Similar names are for sale below.</p>';
+			$h .= '<div class="db-sold-actions"><a class="db-un-btn db-sold-btn" href="#db-own-h">I own this domain</a><a class="db-un-btn db-sold-btn db-sold-btn--ghost" href="' . esc_url( $browse ) . '">Browse available domains</a></div>';
 		} else {
 			$h .= '<p class="db-sold-lead">The owner is not selling this domain right now. If you would still like it, we can ask whether they would consider an offer.</p>';
 		}
@@ -465,8 +526,9 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 			if ( 'ok' === $inq ) {
 				$h .= '<p class="db-un-note db-un-note--ok" role="status">Thanks. We have your request and will come back to you by email.</p>';
 			} else {
-				if ( in_array( $inq, array( 'bad', 'wait' ), true ) ) {
-					$h .= '<p class="db-un-note db-un-note--err" role="alert">' . ( 'wait' === $inq ? 'Please wait a little before sending another request.' : 'Please enter a valid email address and try again.' ) . '</p>';
+				if ( in_array( $inq, array( 'bad', 'wait', 'check' ), true ) ) {
+					$msg = array( 'wait' => 'Please wait a little before sending another request.', 'check' => 'The security check did not complete. Please try again.' );
+					$h  .= '<p class="db-un-note db-un-note--err" role="alert">' . ( $msg[ $inq ] ?? 'Please enter a valid email address and try again.' ) . '</p>';
 				}
 				$h .= '<form class="db-un-form" id="inquiry" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
 				$h .= '<h2>Ask the owner</h2><p>Leave your email. We will let you know what they say.</p>';
@@ -474,9 +536,14 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 				$h .= '<div class="db-un-hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>';
 				$h .= '<label for="db-un-email">Your email</label><input type="email" id="db-un-email" name="email" required autocomplete="email" maxlength="190">';
 				$h .= '<label for="db-un-msg">Anything we should tell the owner? (optional)</label><textarea id="db-un-msg" name="message" rows="3" maxlength="600"></textarea>';
-				$h .= '<button type="submit">Ask the owner</button></form>';
+				$h .= '<div class="db-ts"></div><button type="submit">Ask the owner</button></form>';
 			}
 			$h .= '</section>';
+		}
+
+		// Sold: help the new owner do something with the name.
+		if ( $sold ) {
+			$h .= db_listing_owner_html( $name );
 		}
 
 		// Similar domains that can be bought.
@@ -499,16 +566,11 @@ if ( ! function_exists( 'db_listing_unavailable_html' ) ) {
 		}
 
 		// Testimonials.
-		$h .= '<section class="db-sold-testi" style="background-image:linear-gradient(#fff 0,rgba(255,255,255,0) 38%),url(' . esc_url( $assets . 'testimonials-bg.jpg' ) . ')" aria-labelledby="db-sold-testi-h"><div class="db-sold-in"><h2 class="db-sold-h2" id="db-sold-testi-h">Testimonials</h2><div class="db-sold-quotes" data-db-quotes>';
-		foreach ( db_listing_testimonials() as $i => $t ) {
-			$h .= '<figure class="db-sold-quote' . ( 0 === $i ? ' is-on' : '' ) . '"><blockquote><p>' . esc_html( $t[0] ) . '</p></blockquote><figcaption>' . esc_html( $t[1] ) . '</figcaption>'
-				. '<div class="db-sold-stars" role="img" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div></figure>';
+		$h .= '<section class="db-sold-testi" aria-labelledby="db-sold-testi-h"><div class="db-sold-in"><h2 class="db-sold-h2" id="db-sold-testi-h">What buyers say</h2><div class="db-sold-tgrid">';
+		foreach ( db_listing_testimonials() as $t ) {
+			$h .= '<figure class="db-sold-tcard"><div class="db-sold-stars" role="img" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote><p>' . esc_html( $t[0] ) . '</p></blockquote><figcaption>' . esc_html( $t[1] ) . '</figcaption></figure>';
 		}
-		$h .= '<div class="db-sold-dots" role="group" aria-label="Choose a testimonial">';
-		foreach ( db_listing_testimonials() as $i => $t ) {
-			$h .= '<button type="button" class="db-sold-dot' . ( 0 === $i ? ' is-on' : '' ) . '" aria-label="Testimonial ' . ( $i + 1 ) . '"' . ( 0 === $i ? ' aria-current="true"' : '' ) . '></button>';
-		}
-		$h .= '</div></div></div></section></div>';
+		$h .= '</div></div></section></div>';
 		return $h;
 	}
 }
@@ -539,6 +601,19 @@ if ( ! function_exists( 'db_listing_handle_inquiry' ) ) {
 		$t = isset( $_POST['t'] ) ? (int) $_POST['t'] : 0;
 		if ( $t > 0 && ( time() - $t ) < 3 ) {
 			$go( 'wait' );
+		}
+		if ( function_exists( 'db_ts_enabled' ) && db_ts_enabled() ) {
+			$token = isset( $_POST['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) ) : '';
+			if ( ! db_ts_verify( $token, function_exists( 'db_wl_ip' ) ? db_wl_ip() : '' ) ) {
+				$go( 'check' );
+			}
+		}
+		if ( function_exists( 'db_spam_score' ) ) {
+			$verdict = db_spam_score( array( 'email' => isset( $_POST['email'] ) ? (string) wp_unslash( $_POST['email'] ) : '', 'message' => isset( $_POST['message'] ) ? (string) wp_unslash( $_POST['message'] ) : '' ) );
+			if ( $verdict['score'] >= DB_SPAM_THRESHOLD ) {
+				error_log( 'DB spam: blocked a listing enquiry (' . implode( '; ', $verdict['reasons'] ) . ').' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				$go( 'ok' ); // look successful, send nothing.
+			}
 		}
 		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$key = 'db_inq_' . md5( $ip );
@@ -576,3 +651,33 @@ if ( ! function_exists( 'db_listing_handle_inquiry' ) ) {
 		// phpcs:enable
 	}
 }
+
+if ( ! function_exists( 'db_listing_offer_page_html' ) ) {
+	/**
+	 * Pure: fixes the theme's legacy page for offer-only listings (bug register batch 2, CR-3).
+	 * The visible "The domain name X is for sale!" line becomes the page's H1 (the only H1 sat in a
+	 * hidden block); the hidden one becomes a paragraph; the "100% Money Back Gaurentee" and
+	 * "Get this domain in less than 2 hours" items are removed (all sales are final, and the same
+	 * page says transfers take days).
+	 */
+	function db_listing_offer_page_html( $html ) {
+		if ( ! is_string( $html ) || false === stripos( $html, 'banner_contant' ) ) {
+			return $html;
+		}
+		$html = (string) preg_replace( '#(<header class="entry-header"[^>]*display:\s*none[^>]*>\s*)<h1\b([^>]*)>(.*?)</h1>#is', '$1<p$2>$3</p>', $html, 1 );
+		$html = (string) preg_replace( '#(<div class="text_normal">\s*)<h2>(.*?)</h2>#is', '$1<h1 class="db-offer-h1">$2</h1>', $html, 1 );
+		$html = (string) preg_replace( '#<li>\s*<i class="sprite_ic money_back_ic">.*?</li>#is', '', $html );
+		return (string) preg_replace( '#<li>\s*<i class="sprite_ic domain_ic">(?:(?!</li>).)*?less than 2 hours.*?</li>#is', '', $html );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_singular( 'domain' ) ) {
+		return;
+	}
+	$post = get_queried_object();
+	if ( ! $post instanceof WP_Post || 'offer' !== db_listing_state( $post ) ) {
+		return;
+	}
+	ob_start( 'db_listing_offer_page_html' );
+}, -994 );

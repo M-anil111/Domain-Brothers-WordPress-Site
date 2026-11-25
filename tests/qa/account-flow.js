@@ -19,6 +19,9 @@
  */
 const { chromium } = require('playwright');
 
+// Turnstile test keys apply only to requests carrying the QA cookie (CLAUDE.md); TS_QA_KEY holds its value.
+const QA_COOKIE = process.env.TS_QA_KEY ? [{ name: 'db_ts_qa', value: process.env.TS_QA_KEY, url: (process.env.QA_BASE || 'https://beta.domainbrothers.com') + '/' }] : [];
+
 const BASE = process.env.QA_BASE || 'https://beta.domainbrothers.com';
 const STAMP = Date.now().toString(36);
 const A = `qa-acct-a-${STAMP}.com`;
@@ -43,6 +46,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 
 	const addDomain = async (title, price) => {
 		await admin.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+		await admin.waitForLoadState('load'); await admin.waitForTimeout(1500); // the editor's scripts must be ready before typing
 		await admin.fill('#title', title);
 		if (price) { await admin.fill('input[name=domain_price]', String(price)); }
 		await admin.selectOption('select[name=domain_status]', 'sale');
@@ -57,9 +61,12 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 	const testCode = async (email) => { const r = await actx.request.get(`${BASE}/wp-json/db/v1/wishlist/test-code?email=${encodeURIComponent(email)}`, { headers: { 'X-WP-Nonce': await nonce() } }); return r.ok() ? (await r.json()).code : ''; };
 	const testMail = async (email, run) => { const r = await actx.request.get(`${BASE}/wp-json/db/v1/account/test-mail?email=${encodeURIComponent(email)}${run ? '&run=1' : ''}`, { headers: { 'X-WP-Nonce': await nonce() } }); return r.ok() ? (await r.json()) : { mail: '' }; };
 
+	// Turnstile: staging accepts any token while db_turnstile_test_until is ahead (CLAUDE.md).
+	const TS = process.env.TS_TOKEN || 'XXXX.DUMMY.TOKEN.XXXX';
 	const signIn = async (email, post) => {
 		const ctx = await browser.newContext({ ...creds, viewport: { width: 1280, height: 1000 } });
-		const call = (path, body) => ctx.request.fetch(`${BASE}/wp-json/db/v1/${path}`, { method: 'POST', headers: { Origin: BASE, 'Content-Type': 'text/plain' }, data: JSON.stringify(body || {}) });
+		await ctx.addCookies(QA_COOKIE);
+		const call = (path, body) => ctx.request.fetch(`${BASE}/wp-json/db/v1/${path}`, { method: 'POST', headers: { Origin: BASE, 'Content-Type': 'text/plain' }, data: JSON.stringify({ ts: TS, ...(body || {}) }) });
 		await call('wishlist/code', { email });
 		const code = await testCode(email);
 		const v = await (await call('wishlist/verify', { email, code, post: post || 0 })).json();
@@ -73,6 +80,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 
 	// 3. price drop
 	await admin.goto(`${BASE}/wp-admin/post.php?post=${idA}&action=edit`, { waitUntil: 'domcontentloaded' });
+	await admin.waitForLoadState('load'); await admin.waitForTimeout(1500);
 	await admin.fill('input[name=domain_price]', '1800');
 	await Promise.all([admin.waitForURL(/message=1/, { timeout: 90000 }), admin.click('#publish')]);
 	const page = await f.ctx.newPage();
@@ -114,6 +122,7 @@ const check = (name, pass, detail = '') => { results.push({ name, pass }); conso
 
 	// 6. sold
 	await admin.goto(`${BASE}/wp-admin/post.php?post=${idA}&action=edit`, { waitUntil: 'domcontentloaded' });
+	await admin.waitForLoadState('load'); await admin.waitForTimeout(1500);
 	await admin.check('input[name=db_listing_state][value=sold]');
 	await Promise.all([admin.waitForURL(/message=1/, { timeout: 90000 }), admin.click('#publish')]);
 	await page.goto(`${BASE}/my-wishlist/?tab=alerts&x=${STAMP}d`, { waitUntil: 'load' });

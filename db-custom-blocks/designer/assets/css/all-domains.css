@@ -1,0 +1,1078 @@
+/*!
+ * Domain Brothers – All Domains UI redesign.
+ * Presentation only. Scoped to the All Domains page (body.dbp-all.dbp-all).
+ * Relies on the existing markup: .dbl-head, .resp_table, .db-viewbar,
+ * form.db-dfilter, .db-domain-grid, .db-domain-card and the html.db-view-grid /
+ * html.db-view-list classes set by the existing view toggle script.
+ */
+
+html body.dbp-all.dbp-all {
+	--dbr-navy: #0f1b2d;
+	--dbr-navy-deep: #0c1424;
+	--dbr-ink: #0f172a;
+	--dbr-text: #374151;
+	--dbr-muted: #6b7280;
+	--dbr-line: #e4e7ec;
+	--dbr-line-soft: #eef0f4;
+	--dbr-panel: #f1f3f6;
+	--dbr-pill: #eceef2;
+	--dbr-zebra: #f8f9fb;
+	--dbr-lime: #b5e61d;
+	--dbr-lime-strong: #a3d016;
+	--dbr-lime-ink: #3f6212;
+	--dbr-lime-tint: #f6fbe6;
+	--dbr-focus: 0 0 0 3px rgba(181, 230, 29, 0.55);
+	--dbr-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 6px 18px rgba(16, 24, 40, 0.05);
+	--dbr-card-shadow-hover: 0 0 0 1px var(--dbr-lime), 0 12px 28px rgba(16, 24, 40, 0.09);
+	--dbr-hero-img: url("../img/hero-domain.webp");
+	--dbr-list-cols: 36px minmax(0, 1fr) 160px 160px;
+}
+
+/* =========================================================================
+   1. Banner
+   ========================================================================= */
+
+html body.dbp-all.dbp-all .dbl-head {
+	position: relative !important;
+	isolation: isolate !important;
+	overflow: hidden !important;
+	padding: 52px 56px 40px !important;
+	border-radius: 24px !important;
+	background-color: var(--dbr-navy-deep) !important;
+	background-image:
+		radial-gradient(620px 360px at 88% 30%, rgba(25, 179, 166, 0.34) 0%, rgba(25, 179, 166, 0) 70%),
+		radial-gradient(700px 380px at 0% 100%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0) 60%),
+		linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px) !important;
+	background-size: auto, auto, 44px 44px, 44px 44px !important;
+	box-shadow: 0 18px 40px rgba(12, 20, 36, 0.16) !important;
+}
+
+/* 3D ".com" illustration on the right. */
+html body.dbp-all.dbp-all .dbl-head::after {
+	content: "" !important;
+	position: absolute !important;
+	z-index: -1 !important;
+	/* The theme's .dbl-head::after uses inset: 0 and a mask; reset both so the
+	   illustration is anchored to the right edge and fully visible. */
+	inset: auto !important;
+	top: 50% !important;
+	right: 4% !important;
+	left: auto !important;
+	bottom: auto !important;
+	width: min(36%, 410px) !important;
+	height: auto !important;
+	aspect-ratio: 3 / 2 !important;
+	background: var(--dbr-hero-img) center / contain no-repeat !important;
+	-webkit-mask-image: none !important;
+	mask-image: none !important;
+	opacity: 1 !important;
+	transform: translateY(-58%) rotate(-3deg) !important;
+	filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.35)) !important;
+	pointer-events: none !important;
+}
+
+/* Keep copy clear of the illustration. */
+html body.dbp-all.dbp-all .dbl-head > .dbp-eyebrow,
+html body.dbp-all.dbp-all .dbl-head > .dbl-title,
+html body.dbp-all.dbp-all .dbl-head > .dbx-lede,
+html body.dbp-all.dbp-all .dbl-head > .dbl-intro,
+html body.dbp-all.dbp-all .dbl-head > .dbl-chips {
+	max-width: 62% !important;
+}
+
+/* Requirement: no domain search bar inside the banner. */
+html body.dbp-all.dbp-all .dbl-head form,
+html body.dbp-all.dbp-all .dbl-head [role="search"],
+html body.dbp-all.dbp-all .dbl-head input[type="search"] {
+	display: none !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbp-eyebrow {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	margin: 0 0 14px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	color: var(--dbr-lime) !important;
+	font-size: 14px !important;
+	font-weight: 800 !important;
+	letter-spacing: 0.08em !important;
+	text-transform: uppercase !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbp-eyebrow::before {
+	background: var(--dbr-lime) !important;
+	box-shadow: 0 0 0 4px rgba(181, 230, 29, 0.18) !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-title {
+	margin: 0 0 14px !important;
+	max-width: 72% !important;
+	color: #fff !important;
+	font-size: clamp(32px, 3.8vw, 48px) !important;
+	font-weight: 900 !important;
+	line-height: 1.06 !important;
+	letter-spacing: -0.025em !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbx-lede {
+	margin: 0 0 10px !important;
+	color: rgba(255, 255, 255, 0.78) !important;
+	font-size: 17px !important;
+	line-height: 1.55 !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-intro {
+	margin: 0 0 24px !important;
+	color: rgba(255, 255, 255, 0.9) !important;
+	font-size: 16px !important;
+	line-height: 1.5 !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-intro strong {
+	color: var(--dbr-lime) !important;
+	font-weight: 800 !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-chips {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 10px !important;
+	margin: 0 0 28px !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-chips a {
+	display: inline-flex !important;
+	align-items: center !important;
+	min-height: 40px !important;
+	padding: 0 18px !important;
+	border: 1px solid rgba(255, 255, 255, 0.28) !important;
+	border-radius: 999px !important;
+	background: rgba(255, 255, 255, 0.04) !important;
+	color: #fff !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	text-decoration: none !important;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-chips a:hover {
+	border-color: rgba(255, 255, 255, 0.6) !important;
+	background: rgba(255, 255, 255, 0.1) !important;
+	color: #fff !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-chips a[aria-current] {
+	border-color: #fff !important;
+	background: rgba(255, 255, 255, 0.14) !important;
+	color: #fff !important;
+	box-shadow: inset 0 0 0 1px #fff !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-chips a:focus-visible {
+	outline: none !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-trust {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	gap: 10px 28px !important;
+	margin: 0 !important;
+	padding: 20px 0 0 !important;
+	border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+	list-style: none !important;
+	color: rgba(255, 255, 255, 0.8) !important;
+	font-size: 14px !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-trust li {
+	margin: 0 !important;
+	color: inherit !important;
+}
+
+html body.dbp-all.dbp-all .dbl-head .dbl-trust li > span {
+	color: var(--dbr-lime) !important;
+}
+
+/* =========================================================================
+   2. Search & filter panel + results bar
+   The existing <form> is kept intact (display: contents only removes its box)
+   so its submit/reset/change handlers and field names are untouched.
+   ========================================================================= */
+
+html body.dbp-all.dbp-all .resp_table {
+	display: grid !important;
+	grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr)) auto !important;
+	column-gap: 16px !important;
+	row-gap: 0 !important;
+	align-items: end !important;
+	position: relative !important;
+	margin: 22px 0 0 !important;
+	padding: 0 !important;
+	min-width: 0 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table::before {
+	content: "" !important;
+	grid-column: 1 / -1 !important;
+	grid-row: 1 !important;
+	align-self: stretch !important;
+	border: 1px solid #e7eaef !important;
+	border-radius: 16px !important;
+	background: var(--dbr-panel) !important;
+}
+
+html body.dbp-all.dbp-all .resp_table > form.db-dfilter {
+	display: contents !important;
+}
+
+/* Field labels */
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 7px !important;
+	min-width: 0 !important;
+	margin: 20px 0 !important;
+	padding: 0 !important;
+	color: var(--dbr-text) !important;
+	font-size: 13px !important;
+	font-weight: 600 !important;
+	line-height: 1.2 !important;
+	text-transform: none !important;
+	letter-spacing: 0 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label.db-dfilter-q { grid-area: 1 / 1 !important; margin-left: 22px !important; }
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="tld"]) { grid-area: 1 / 2 !important; }
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="len"]) { grid-area: 1 / 3 !important; }
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="max"]) { grid-area: 1 / 4 !important; }
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter input[type="search"],
+html body.dbp-all.dbp-all .resp_table form.db-dfilter select {
+	box-sizing: border-box !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	height: 44px !important;
+	margin: 0 !important;
+	padding: 0 14px !important;
+	border: 1px solid #d6dbe2 !important;
+	border-radius: 9px !important;
+	background-color: #fff !important;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04) !important;
+	color: var(--dbr-ink) !important;
+	font-family: inherit !important;
+	font-size: 15px !important;
+	font-weight: 500 !important;
+	line-height: 1.2 !important;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter input[type="search"] {
+	padding-left: 40px !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: 13px 50% !important;
+	background-size: 17px 17px !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter input[type="search"]::placeholder {
+	color: #9aa1ab !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter select {
+	padding-right: 38px !important;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+	appearance: none !important;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 12 8'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat !important;
+	background-position: right 14px center !important;
+	background-size: 12px 8px !important;
+	cursor: pointer !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter input[type="search"]:hover,
+html body.dbp-all.dbp-all .resp_table form.db-dfilter select:hover {
+	border-color: #b8c0cb !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter input[type="search"]:focus,
+html body.dbp-all.dbp-all .resp_table form.db-dfilter select:focus {
+	outline: none !important;
+	border-color: var(--dbr-navy) !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+/* Clear button */
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > button[type="reset"] {
+	grid-area: 1 / 5 !important;
+	align-self: end !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 44px !important;
+	margin: 20px 22px 20px 0 !important;
+	padding: 0 22px !important;
+	border: 1.5px solid #c7cdd6 !important;
+	border-radius: 999px !important;
+	background: #fff !important;
+	color: var(--dbr-ink) !important;
+	font-family: inherit !important;
+	font-size: 14.5px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+	white-space: nowrap !important;
+	cursor: pointer !important;
+	box-shadow: none !important;
+	transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > button[type="reset"]::after {
+	content: "\00a0 filters" !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > button[type="reset"]:hover {
+	border-color: var(--dbr-navy) !important;
+	background: var(--dbr-navy) !important;
+	color: #fff !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > button[type="reset"]:focus-visible {
+	outline: none !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+/* Results heading (added by all-domains.js) */
+html body.dbp-all.dbp-all .resp_table .dbr-results {
+	grid-area: 2 / 1 / 3 / 4 !important;
+	align-self: end !important;
+	min-width: 0 !important;
+	margin: 30px 0 18px !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .dbr-results__title {
+	margin: 0 !important;
+	color: var(--dbr-ink) !important;
+	font-size: 24px !important;
+	font-weight: 800 !important;
+	line-height: 1.2 !important;
+	letter-spacing: -0.01em !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .dbr-results__sub {
+	margin: 4px 0 0 !important;
+	color: var(--dbr-muted) !important;
+	font-size: 14.5px !important;
+	line-height: 1.4 !important;
+}
+
+/* Sort – stays inside the form, only repositioned. */
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="sort"]) {
+	grid-area: 2 / 4 !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: flex-end !important;
+	gap: 12px !important;
+	margin: 30px 0 18px !important;
+	color: var(--dbr-text) !important;
+	font-size: 14.5px !important;
+	font-weight: 600 !important;
+	white-space: nowrap !important;
+}
+
+html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="sort"]) select {
+	flex: 1 1 auto !important;
+	max-width: 200px !important;
+}
+
+/* Live count stays in the DOM (aria-live) but is shown through .dbr-results. */
+html body.dbp-all.dbp-all .resp_table.dbr form.db-dfilter > .db-dfilter-count {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	margin: -1px !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	clip: rect(0 0 0 0) !important;
+	white-space: nowrap !important;
+	border: 0 !important;
+}
+
+/* View toggle */
+html body.dbp-all.dbp-all .resp_table > .db-viewbar {
+	grid-area: 2 / 5 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: flex-end !important;
+	margin: 30px 0 18px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	background: none !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewbar__label {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	margin: -1px !important;
+	padding: 0 !important;
+	overflow: hidden !important;
+	clip: rect(0 0 0 0) !important;
+	white-space: nowrap !important;
+	border: 0 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle {
+	display: inline-flex !important;
+	gap: 2px !important;
+	margin: 0 !important;
+	padding: 3px !important;
+	border: 1px solid #d6dbe2 !important;
+	border-radius: 11px !important;
+	background: #fff !important;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04) !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	height: 38px !important;
+	margin: 0 !important;
+	padding: 0 16px !important;
+	border: 0 !important;
+	border-radius: 8px !important;
+	background: transparent !important;
+	color: var(--dbr-ink) !important;
+	font-family: inherit !important;
+	font-size: 14.5px !important;
+	font-weight: 600 !important;
+	line-height: 1 !important;
+	cursor: pointer !important;
+	box-shadow: none !important;
+	transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button[data-view="grid"] { order: -1 !important; }
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button svg {
+	width: 16px !important;
+	height: 16px !important;
+	fill: none !important;
+	stroke: currentColor !important;
+	stroke-width: 2 !important;
+	stroke-linecap: round !important;
+	stroke-linejoin: round !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button:hover {
+	background: var(--dbr-panel) !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button[aria-pressed="true"] {
+	background: var(--dbr-navy) !important;
+	color: #fff !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-viewtoggle button:focus-visible {
+	outline: none !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+/* List column header (added by all-domains.js) */
+html body.dbp-all.dbp-all .resp_table .dbr-listhead {
+	display: none !important;
+	grid-area: 3 / 1 / 4 / -1 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+	grid-area: 4 / 1 / 5 / -1 !important;
+	min-width: 0 !important;
+}
+
+/* =========================================================================
+   3. Shared card parts
+   ========================================================================= */
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+	box-sizing: border-box !important;
+	position: relative !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	color: var(--dbr-ink) !important;
+	transform: none !important;
+}
+
+/* Theme draws a blue accent bar on card hover; the redesign uses the lime border instead. */
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card::before {
+	display: none !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mono {
+	display: inline-grid !important;
+	place-items: center !important;
+	flex: 0 0 auto !important;
+	width: 34px !important;
+	height: 34px !important;
+	margin: 0 !important;
+	border-radius: 8px !important;
+	color: #fff !important;
+	font-size: 16px !important;
+	font-weight: 800 !important;
+	line-height: 1 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name {
+	min-width: 0 !important;
+	margin: 0 !important;
+	color: var(--dbr-ink) !important;
+	font-size: 21px !important;
+	font-weight: 800 !important;
+	line-height: 1.25 !important;
+	letter-spacing: -0.01em !important;
+	text-decoration: none !important;
+	overflow-wrap: anywhere !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name:hover {
+	color: var(--dbr-ink) !important;
+	text-decoration: underline !important;
+	text-decoration-thickness: 2px !important;
+	text-underline-offset: 3px !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name:focus-visible {
+	outline: none !important;
+	border-radius: 4px !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+/* Extension labels are not shown on cards (grid or list). Hidden here too in
+   case a cached copy of the old script still adds them. */
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .dbr-ext {
+	display: none !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__row {
+	display: contents !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__pricewrap {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 3px !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price--offer {
+	margin: 0 !important;
+	color: var(--dbr-ink) !important;
+	font-size: 19px !important;
+	font-weight: 800 !important;
+	line-height: 1.2 !important;
+	white-space: nowrap !important;
+}
+
+/* No "USD" prefix on card prices (all views and breakpoints). */
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price::before {
+	content: none !important;
+	display: none !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price--offer {
+	font-size: 17px !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mo {
+	margin: 0 !important;
+	color: var(--dbr-muted) !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	line-height: 1.3 !important;
+}
+
+/* Primary action (existing Buy Now / Make an Offer links) */
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+	display: inline-flex !important;
+	min-height: 0 !important;
+	min-width: 0 !important;
+	align-items: center !important;
+	justify-content: center !important;
+	box-sizing: border-box !important;
+	height: 42px !important;
+	margin: 0 !important;
+	padding: 0 18px !important;
+	border: 0 !important;
+	border-radius: 9px !important;
+	background: var(--dbr-navy) !important;
+	color: #fff !important;
+	text-decoration: none !important;
+	white-space: nowrap !important;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12) !important;
+	transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy .badge,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer .badge {
+	display: inline !important;
+	position: static !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: none !important;
+	box-shadow: none !important;
+	color: inherit !important;
+	font-size: 15px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+	letter-spacing: 0 !important;
+	text-transform: none !important;
+	white-space: nowrap !important;
+	min-width: 0 !important;
+	height: auto !important;
+	width: auto !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy:hover,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer:hover {
+	background: #1c2c46 !important;
+	color: #fff !important;
+	text-decoration: none !important;
+	box-shadow: 0 6px 14px rgba(15, 27, 45, 0.22) !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy:focus-visible,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer:focus-visible {
+	outline: none !important;
+	box-shadow: var(--dbr-focus) !important;
+}
+
+
+
+
+/* =========================================================================
+   4. Grid view (default, and html.db-view-grid)
+   ========================================================================= */
+
+html body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+	display: grid !important;
+	grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+	gap: 20px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+	display: flex !important;
+	flex-direction: row !important;
+	flex-wrap: wrap !important;
+	justify-content: flex-start !important;
+	align-items: center !important;
+	column-gap: 8px !important;
+	row-gap: 0 !important;
+	padding: 18px 20px 20px !important;
+	border: 1px solid var(--dbr-line) !important;
+	border-radius: 14px !important;
+	background: #fff !important;
+	box-shadow: var(--dbr-card-shadow) !important;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:hover,
+html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:focus-within {
+	border-color: var(--dbr-lime) !important;
+	box-shadow: var(--dbr-card-shadow-hover) !important;
+	transform: translateY(-2px) !important;
+}
+
+/* Grid card layout: mono / name + ext / price / actions */
+html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mono {
+	margin: 0 calc(100% - 34px) 14px 0 !important;
+}
+
+html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name {
+	flex: 0 1 auto !important;
+}
+
+html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__pricewrap {
+	flex: 1 0 100% !important;
+	margin-top: 8px !important;
+}
+
+html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+	flex: 0 0 100% !important;
+	margin-top: 18px !important;
+}
+
+
+/* =========================================================================
+   5. List view (html.db-view-list)
+   ========================================================================= */
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .dbr-listhead {
+	display: grid !important;
+	grid-template-columns: var(--dbr-list-cols) !important;
+	column-gap: 18px !important;
+	align-items: center !important;
+	padding: 15px 24px !important;
+	border: 1px solid var(--dbr-line) !important;
+	border-bottom: 0 !important;
+	border-radius: 16px 16px 0 0 !important;
+	background: #f3f5f8 !important;
+	color: var(--dbr-text) !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1.2 !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .dbr-listhead__name { grid-column: 1 / 3 !important; }
+html.db-view-list body.dbp-all.dbp-all .dbr-listhead__price { grid-column: 3 !important; text-align: right !important; }
+html.db-view-list body.dbp-all.dbp-all .dbr-listhead__actions { grid-column: 4 !important; }
+
+html.db-view-list body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 0 !important;
+	overflow: hidden !important;
+	border: 1px solid var(--dbr-line) !important;
+	border-radius: 0 0 16px 16px !important;
+	background: #fff !important;
+	box-shadow: var(--dbr-card-shadow) !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+	display: grid !important;
+	grid-template-columns: var(--dbr-list-cols) !important;
+	column-gap: 18px !important;
+	align-items: center !important;
+	padding: 11px 24px !important;
+	border: 0 !important;
+	border-top: 1px solid var(--dbr-line-soft) !important;
+	border-radius: 0 !important;
+	background: #fff !important;
+	box-shadow: none !important;
+	transform: none !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:first-child {
+	border-top: 0 !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:nth-child(even) {
+	background: var(--dbr-zebra) !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:hover,
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:focus-within {
+	border-color: var(--dbr-line-soft) !important;
+	background: var(--dbr-lime-tint) !important;
+	box-shadow: inset 3px 0 0 var(--dbr-lime) !important;
+	transform: none !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mono { grid-column: 1 !important; grid-row: 1 !important; }
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name { grid-column: 2 !important; grid-row: 1 !important; font-size: 19px !important; }
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__pricewrap {
+	grid-column: 3 !important;
+	grid-row: 1 !important;
+	align-items: flex-end !important;
+	text-align: right !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price::before {
+	content: none !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price {
+	font-size: 18px !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__price--offer {
+	font-size: 15px !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mo {
+	font-size: 12px !important;
+	white-space: nowrap !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+	grid-column: 4 !important;
+	grid-row: 1 !important;
+	width: 100% !important;
+	height: 38px !important;
+	padding: 0 12px !important;
+}
+
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy .badge,
+html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer .badge {
+	font-size: 14px !important;
+}
+
+
+/* =========================================================================
+   6. Responsive
+   ========================================================================= */
+
+/* Laptop */
+@media (max-width: 1199.98px) {
+	html body.dbp-all.dbp-all {
+		--dbr-list-cols: 34px minmax(0, 1fr) 140px 148px;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head {
+		padding: 44px 44px 34px !important;
+	}
+}
+
+/* Tablet */
+@media (max-width: 991.98px) {
+	html body.dbp-all.dbp-all .dbl-head {
+		padding: 40px 32px 30px !important;
+		border-radius: 20px !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head::after {
+		right: 3% !important;
+		width: 30% !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head > .dbp-eyebrow,
+	html body.dbp-all.dbp-all .dbl-head > .dbl-title,
+	html body.dbp-all.dbp-all .dbl-head > .dbx-lede,
+	html body.dbp-all.dbp-all .dbl-head > .dbl-intro {
+		max-width: 66% !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head > .dbl-chips {
+		max-width: none !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head .dbl-title {
+		max-width: 66% !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		column-gap: 14px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table::before {
+		grid-row: 1 / 4 !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label {
+		margin: 12px 0 0 !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label.db-dfilter-q {
+		grid-area: 1 / 1 / 2 / -1 !important;
+		margin: 18px 18px 0 !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="tld"]) { grid-area: 2 / 1 !important; margin-left: 18px !important; }
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="len"]) { grid-area: 2 / 2 !important; margin-right: 18px !important; }
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="max"]) { grid-area: 3 / 1 !important; margin-left: 18px !important; margin-bottom: 18px !important; }
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > button[type="reset"] {
+		grid-area: 3 / 2 !important;
+		width: calc(100% - 18px) !important;
+		margin: 12px 18px 18px 0 !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .dbr-results {
+		grid-area: 4 / 1 / 5 / -1 !important;
+		margin: 26px 0 12px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="sort"]) {
+		grid-area: 5 / 1 !important;
+		justify-content: flex-start !important;
+		margin: 0 0 16px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="sort"]) select {
+		max-width: none !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table > .db-viewbar {
+		grid-area: 5 / 2 !important;
+		margin: 0 0 16px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .dbr-listhead { grid-area: 6 / 1 / 7 / -1 !important; }
+	html body.dbp-all.dbp-all .resp_table > .db-domain-grid { grid-area: 7 / 1 / 8 / -1 !important; }
+
+	html body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 16px !important;
+	}
+
+	html body.dbp-all.dbp-all {
+		--dbr-list-cols: 32px minmax(0, 1fr) 120px 132px;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .dbr-listhead,
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+		column-gap: 12px !important;
+		padding-left: 18px !important;
+		padding-right: 18px !important;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name {
+		font-size: 17px !important;
+	}
+}
+
+/* Mobile */
+@media (max-width: 767.98px) {
+	html body.dbp-all.dbp-all .dbl-head {
+		padding: 30px 22px 24px !important;
+		border-radius: 18px !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head::after {
+		display: none !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head > .dbp-eyebrow,
+	html body.dbp-all.dbp-all .dbl-head > .dbl-title,
+	html body.dbp-all.dbp-all .dbl-head > .dbx-lede,
+	html body.dbp-all.dbp-all .dbl-head > .dbl-intro,
+	html body.dbp-all.dbp-all .dbl-head > .dbl-chips {
+		max-width: none !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head .dbx-lede { font-size: 15.5px !important; }
+	html body.dbp-all.dbp-all .dbl-head .dbl-intro { font-size: 15px !important; margin-bottom: 20px !important; }
+
+	html body.dbp-all.dbp-all .dbl-head .dbl-chips {
+		gap: 8px !important;
+		margin-bottom: 22px !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head .dbl-chips a {
+		min-height: 36px !important;
+		padding: 0 14px !important;
+		font-size: 13.5px !important;
+	}
+
+	html body.dbp-all.dbp-all .dbl-head .dbl-trust {
+		flex-direction: column !important;
+		gap: 8px !important;
+		font-size: 13.5px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .dbr-results__title { font-size: 21px !important; }
+	html body.dbp-all.dbp-all .resp_table .dbr-results__sub { font-size: 13.5px !important; }
+
+	/* List view becomes stacked rows */
+	html.db-view-list body.dbp-all.dbp-all .resp_table .dbr-listhead {
+		display: none !important;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+		border-radius: 16px !important;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+		grid-template-columns: 34px minmax(0, 1fr) auto !important;
+		grid-template-areas:
+			"mono name  name"
+			".    price price"
+			"buy  buy   buy" !important;
+		column-gap: 12px !important;
+		row-gap: 6px !important;
+		padding: 16px 16px 14px !important;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__mono { grid-area: mono !important; }
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__name { grid-area: name !important; font-size: 18px !important; }
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card__pricewrap {
+		grid-area: price !important;
+		flex-direction: row !important;
+		flex-wrap: wrap !important;
+		align-items: baseline !important;
+		justify-content: flex-start !important;
+		justify-self: start !important;
+		gap: 2px 10px !important;
+		text-align: left !important;
+	}
+
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+	html.db-view-list body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+		grid-area: buy !important;
+		margin-top: 6px !important;
+	}
+}
+
+/* Small mobile */
+@media (max-width: 575.98px) {
+	html body.dbp-all.dbp-all .resp_table > .db-domain-grid {
+		grid-template-columns: minmax(0, 1fr) !important;
+		gap: 14px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table form.db-dfilter > label:has(select[name="sort"]) {
+		grid-area: 5 / 1 / 6 / -1 !important;
+		gap: 10px !important;
+		margin: 0 0 12px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table > .db-viewbar {
+		grid-area: 6 / 1 / 7 / -1 !important;
+		justify-content: stretch !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .db-viewtoggle {
+		flex: 1 1 auto !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .db-viewtoggle button {
+		flex: 1 1 0 !important;
+		justify-content: center !important;
+		height: 38px !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .dbr-listhead { grid-area: 7 / 1 / 8 / -1 !important; }
+	html body.dbp-all.dbp-all .resp_table > .db-domain-grid { grid-area: 8 / 1 / 9 / -1 !important; }
+}
+
+@media (max-width: 379.98px) {
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card {
+		padding: 16px !important;
+	}
+
+	html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+	html:not(.db-view-list) body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+		flex-basis: 100% !important;
+	}
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card,
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-buy,
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid a.db-act-offer {
+		transition: none !important;
+	}
+
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:hover,
+	html body.dbp-all.dbp-all .resp_table .db-domain-grid .db-domain-card:focus-within {
+		transform: none !important;
+	}
+}

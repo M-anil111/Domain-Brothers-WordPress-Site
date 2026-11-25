@@ -1,0 +1,5 @@
+lato-bold-latin.woff2 is a Latin subset of Lato Bold (the theme's lato-bold.woff2),
+made for faster loading. Copyright (c) 2011-2015 by tyPoland Lukasz Dziedzic
+(http://www.typoland.com/) with Reserved Font Name "Lato".
+Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org/
+The subset keeps the copyright and license notices in its name table.

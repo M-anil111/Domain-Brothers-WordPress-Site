@@ -41,6 +41,7 @@ const body = async (p) => (await p.locator('body').innerText()).replace(/\s+/g, 
 
 	// 1. a temporary listing
 	await admin.goto(`${BASE}/wp-admin/post-new.php?post_type=domain`, { waitUntil: 'domcontentloaded' });
+	await admin.waitForLoadState('load'); await admin.waitForTimeout(1500); // the editor's scripts must be ready before typing
 	await admin.fill('#title', DOMAIN);
 	await admin.fill('input[name=domain_price]', '3000');
 	await admin.selectOption('select[name=domain_status]', 'sale');

@@ -292,10 +292,18 @@ if ( ! function_exists( 'db_mail_wrap' ) ) {
 // Every HTML email also carries a plain-text version.
 add_action( 'phpmailer_init', function ( $m ) {
 	if ( 'text/html' === $m->ContentType && '' === (string) $m->AltBody ) {
-		$t = preg_replace( '#<(br|/p|/h[1-6]|/li|/tr)\s*/?>#i', "\n", (string) $m->Body );
-		$t = preg_replace( '#<style.*?</style>#is', '', $t );
-		$t = preg_replace( '#<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', '$2 ($1)', $t );
-		$m->AltBody = trim( preg_replace( "/\n{3,}/", "\n\n", html_entity_decode( wp_strip_all_tags( $t ), ENT_QUOTES, 'UTF-8' ) ) );
+		// Without the head, the title and the hidden preview line (it began every text version with
+		// the subject and 20 spacer characters), cells separated, links kept as "label (url)" (batch 2, AD-3).
+		$t = preg_replace( '#<(div|span|p)\b[^>]*display\s*:\s*none[^>]*>.*?</\1>#is', '', (string) $m->Body );
+		$t = preg_replace_callback( '#<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>#is', static function ( $a ) {
+			$label = trim( wp_strip_all_tags( $a[2] ) );
+			return '' === $label ? '' : $label . ' (' . $a[1] . ')'; // an image-only link (the logo) adds nothing
+		}, (string) $t );
+		// Detail rows are a label and a value in two block spans: "Amount: $8,000.00", not "Amount$8,000.00".
+		$t = preg_replace( '#(<span[^>]*display\s*:\s*block[^>]*>.*?</span>)\s*(?=<span[^>]*display\s*:\s*block)#is', '$1: ', (string) $t );
+		$t = db_mail_html_to_text( (string) $t );
+		$t = preg_replace( '/[\x{2007}\x{034F}\x{200B}\x{200C}\x{00A0}]+/u', ' ', (string) $t );
+		$m->AltBody = trim( (string) preg_replace( "/[ \t]+\n/", "\n", (string) $t ) );
 	}
 } );
 
@@ -375,7 +383,7 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 			'plan_started'     => array(
 				'group' => 'Payments', 'label' => 'Payment plan started (to the buyer)', 'to' => 'customer', 'critical' => true,
 				'when'  => 'The first payment of a payment plan clears.',
-				'vars'  => $dom + array( 'amount' => array( 'First payment', '$733.00' ), 'months' => array( 'Number of payments', '12' ), 'rate' => array( 'Interest', '0% interest' ), 'total' => array( 'Total of the plan', '$8,800.00' ), 'schedule_html' => array( 'The payment schedule', '<p>1. Today, $733.00</p>' ), 'terms_html' => array( 'The plan terms', '<p>The domain stays with Domain Brothers until the final payment.</p>' ), 'reminder_days' => array( 'Days before each payment we remind', '3' ) ),
+				'vars'  => $dom + array( 'amount' => array( 'First payment', '$733.00' ), 'months' => array( 'Number of payments', '12' ), 'rate' => array( 'Interest', '10% interest' ), 'total' => array( 'Total of the plan', '$8,800.00' ), 'schedule_html' => array( 'The payment schedule', '<p>1. Today, $733.00</p>' ), 'terms_html' => array( 'The plan terms', '<p>The domain stays with Domain Brothers until the final payment.</p>' ), 'reminder_days' => array( 'Days before each payment we remind', '3' ) ),
 				'subject' => 'Your payment plan for {{domain}} has started', 'eyebrow' => 'Payment plan active', 'heading' => 'Your plan for {{domain}} is active',
 				'body'  => '<p>We received your first payment of <strong>{{amount}}</strong>. Your plan is <strong>{{months}} monthly payments</strong>, {{rate}}.</p>{{schedule_html}}<p>The remaining payments are charged to the card you used. You can use the domain during the plan: reply to this email and we will point its DNS to your hosting. Ownership transfers after the final payment; until then it stays with Domain Brothers.</p>{{terms_html}}<p style="font-size:14px">We email a reminder {{reminder_days}} days before each payment.</p>',
 				'details' => "Domain|{{domain}}\nPlan total|{{total}}", 'cta' => '', 'cta_var' => '', 'tone' => 'good',
@@ -423,7 +431,7 @@ if ( ! function_exists( 'db_mail_registry' ) ) {
 			'admin_plan_payment' => array(
 				'group' => 'Team notices', 'label' => 'Plan payment (to the team)', 'to' => 'team', 'critical' => false,
 				'when'  => 'A payment plan starts or an instalment is paid.',
-				'vars'  => $dom + array( 'headline' => array( 'Plan started / Payment 3 of 12', 'Plan started' ), 'amount' => array( 'Amount', '$733.00' ), 'plan' => array( 'Plan summary', '12 months, 0% interest, total $8,800.00' ), 'customer' => array( 'Customer', 'buyer@example.com' ), 'time' => array( 'When', 'March 3, 2026 10:15' ), 'subject_line' => array( 'Subject line', 'PLAN STARTED: brandable.com' ) ),
+				'vars'  => $dom + array( 'headline' => array( 'Plan started / Payment 3 of 12', 'Plan started' ), 'amount' => array( 'Amount', '$733.00' ), 'plan' => array( 'Plan summary', '12 months, 10% interest, total $8,800.00' ), 'customer' => array( 'Customer', 'buyer@example.com' ), 'time' => array( 'When', 'March 3, 2026 10:15' ), 'subject_line' => array( 'Subject line', 'PLAN STARTED: brandable.com' ) ),
 				'subject' => '{{subject_line}}', 'eyebrow' => 'Payment plan', 'heading' => '{{headline}}: {{domain}}',
 				'body'  => '<p>A payment plan payment was received.</p>',
 				'details' => "Domain|{{domain}}\nPayment|{{amount}}\nPlan|{{plan}}\nCustomer|{{customer}}\nTime|{{time}}", 'cta' => '', 'cta_var' => '', 'tone' => 'good',
@@ -980,3 +988,32 @@ add_action( 'rest_api_init', function () {
 		},
 	) );
 } );
+
+if ( ! function_exists( 'db_mail_subject_marker' ) ) {
+	/**
+	 * Pure: the marker added to an email subject. '[beta] ' on staging; '[TEST] ' on sale and plan
+	 * emails while Stripe is in test mode. A QA checkout on beta mailed 'DOMAIN SOLD' to the owner,
+	 * identical to a real sale (bug register batch 2, AD-6).
+	 */
+	function db_mail_subject_marker( $subject, $staging, $test_mode ) {
+		$subject = (string) $subject;
+		$mark    = '';
+		if ( $test_mode && ! $staging && preg_match( '/sold|sale|payment|plan|installment|instalment|paid/i', $subject ) ) {
+			$mark = '[TEST] ';
+		}
+		if ( $staging ) {
+			$mark = '[beta] ';
+		}
+		return ( '' === $mark || 0 === strpos( $subject, $mark ) ) ? $subject : $mark . $subject;
+	}
+}
+
+add_filter( 'wp_mail', function ( $args ) {
+	if ( ! is_array( $args ) || ! isset( $args['subject'] ) ) {
+		return $args;
+	}
+	$staging = function_exists( 'db_wl_is_staging' ) && db_wl_is_staging();
+	$test    = function_exists( 'db_stripe_mode' ) && 'test' === db_stripe_mode();
+	$args['subject'] = db_mail_subject_marker( $args['subject'], $staging, $test );
+	return $args;
+}, 5 );

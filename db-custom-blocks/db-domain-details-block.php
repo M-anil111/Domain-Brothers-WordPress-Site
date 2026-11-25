@@ -108,8 +108,8 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 		);
 		if ( $f['cats'] ) { $rows['Category'] = implode( ', ', $f['cats'] ); }
 		if ( $f['price'] > 0 ) {
-			$rows['Price']    = '$' . number_format( $f['price'], 0 );
-			$rows['Payments'] = 'From ' . db_dd_monthly( $f['price'] ) . '/month over 12 months (3 and 6 month plans are interest-free)';
+			$rows['Price']    = db_usd( $f['price'] );
+			$rows['Payments'] = 'From ' . db_dd_monthly( $f['price'] ) . '/month over 12 months (the 3-month plan is interest-free)';
 		} else {
 			$rows['Price'] = 'Make an offer';
 		}
@@ -124,8 +124,8 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			$buy   = $urls['buy'];
 			$plan  = $urls['plan'];
 			$exp   = function_exists( 'db_exp_variant' ) ? db_exp_variant() : 'A';
-			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" data-exp="' . esc_attr( $exp ) . '" href="' . esc_url( $buy ) . '">' . esc_html( function_exists( 'db_exp_cta_label' ) ? db_exp_cta_label() : 'Buy now' ) . ' &mdash; $' . esc_html( number_format( $f['price'], 0 ) ) . '</a>'
-				. '<a class="db-dd-btn" href="' . esc_url( $plan ) . '">Pay monthly from ' . esc_html( db_dd_monthly( $f['price'] ) ) . '/mo</a></div>';
+			$out  .= '<div class="db-dd-cta"><a class="db-dd-btn db-dd-btn--primary" href="' . esc_url( $buy ) . '" data-exp="' . esc_attr( $exp ) . '">' . esc_html( function_exists( 'db_exp_cta_label' ) ? db_exp_cta_label() : 'Buy now' ) . ' &mdash; ' . esc_html( db_usd( $f['price'] ) ) . '</a>'
+				. ( ! function_exists( 'db_plan_offered' ) || db_plan_offered( $f['price'] ) ? '<a class="db-dd-btn" href="' . esc_url( $plan ) . '">Pay monthly from ' . esc_html( db_dd_monthly( $f['price'] ) ) . '/mo</a>' : '' ) . '</div>';
 		}
 
 		$out .= '<h3>How buying works</h3><ol class="db-dd-steps">'
@@ -155,6 +155,7 @@ if ( ! function_exists( 'db_dd_html' ) ) {
 			. '.db-dd-btn--primary{background:#0a1628;color:#fff !important}.db-dd-steps{padding-left:22px;list-style:decimal !important}.db-dd-steps li{list-style:decimal !important}.db-dd-steps li{margin:6px 0}'
 			. '.db-dd-terms{font-size:13px;background:#fff8e6;border:1px solid #f0d58a;border-radius:10px;padding:12px 14px;display:block !important}'
 			. '.db-dd-rec-intro{font-size:14px;color:#4b5563;margin:0 0 12px}' . db_rec_css() . '</style>';
+		$out .= function_exists( 'db_tools_domain_html' ) ? db_tools_domain_html( $post ) : '';
 		$out .= function_exists( 'db_sales_value_html' ) ? db_sales_value_html( $post ) : '';
 		return $out;
 	}

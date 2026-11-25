@@ -37,17 +37,20 @@ add_action( 'wp_footer', function () {
 		'Home'          => $home,
 		'Browse Domains'=> esc_url( home_url( '/all-domains/' ) ),
 		// Not /payment-plan-setup/: that page is the checkout step for a
-		// domain already chosen, and renders a $0.00 order without one. The
-		// FAQ is where the plans are actually explained.
-		'Payment Plans' => esc_url( home_url( '/faqs/' ) ),
+		// domain already chosen, and redirects away without one. The plans
+		// are explained on /payment-terms/ (db-payment-plans-block.php).
+		'Payment Terms' => esc_url( home_url( '/payment-terms/' ) ),
 		'Services'      => esc_url( home_url( '/our-services/' ) ),
 		'News'          => esc_url( home_url( '/news/' ) ),
 		'About'         => esc_url( home_url( '/about-us/' ) ),
 		// /contact/ 301s to /contact-us/; link the destination directly so
 		// every menu click doesn't pay for a redirect hop.
 		'Contact'       => esc_url( home_url( '/contact-us/' ) ),
-		'Wishlist'      => esc_url( home_url( '/my-wishlist/' ) ),
 	);
+	// Home, Payment Plans, News, About and Contact live in the footer menu
+	// only: the top menu (desktop bar and drawer) carries the two things a
+	// visitor comes for, the names and the services, plus the account links.
+	$links = array_diff_key( $links, array_flip( (array) apply_filters( 'db_nav_footer_only', array( 'Home', 'Payment Terms', 'News', 'About', 'Contact' ) ) ) );
 	// The 5 dedicated service pages (see db_service_page_defs() in
 	// db-custom-blocks.php — each already has its own real content and SEO
 	// meta) had no path into this drawer at all: an earlier attempt at
@@ -61,10 +64,10 @@ add_action( 'wp_footer', function () {
 	// hovered — the whole drawer is a touch/click surface).
 	$service_pages = array(
 		'Website Design & Development' => esc_url( home_url( '/website-design-development/' ) ),
-		'Digital Marketing'            => esc_url( home_url( '/digital-marketing/' ) ),
-		'Software Development'         => esc_url( home_url( '/software-development/' ) ),
-		'Mobile App Development'       => esc_url( home_url( '/mobile-app-development/' ) ),
-		'Other Services'               => esc_url( home_url( '/other-services/' ) ),
+		'Digital Marketing'            => esc_url( home_url( '/digital-marketing-services/' ) ),
+		'Software Development'         => esc_url( home_url( '/custom-software-development-services/' ) ),
+		'Mobile App Development'       => esc_url( home_url( '/mobile-app-development-services/' ) ),
+		'Hosting & Maintenance'        => esc_url( home_url( '/web-hosting-maintenance-services/' ) ),
 	);
 	$logo = function_exists( 'db_brand_logo_url' ) ? db_brand_logo_url() : home_url( '/wp-content/uploads/2017/03/Domain-Brothers.png' );
 	?>
@@ -84,19 +87,23 @@ add_action( 'wp_footer', function () {
 	 */
 	?>
 	<nav id="db-desktop-nav" class="db-desktop-nav" aria-label="Primary">
-		<a class="db-desktop-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="148" height="40" decoding="async"></a>
+		<a class="db-desktop-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home"><img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="148" height="40" decoding="async" loading="eager" fetchpriority="high"></a>
 		<ul>
 			<?php foreach ( $links as $label => $href ) : ?>
 				<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
 			<?php endforeach; ?>
+			<?php echo db_nav_account_items( 'desktop' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
 		</ul>
 	</nav>
 	<nav id="db-mnav" class="db-mnav" aria-label="Primary" aria-hidden="true" inert>
 		<div class="db-mnav-inner">
 			<a class="db-mnav-logo" href="<?php echo $home; // escaped ?>" aria-label="Domain Brothers home">
-				<img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="200" height="64" decoding="async">
+				<img src="<?php echo esc_url( $logo ); ?>" alt="Domain Brothers" width="200" height="54" decoding="async">
 			</a>
 			<ul>
+				<?php if ( function_exists( 'db_mnav_panels_html' ) && '' !== ( $db_panels = db_mnav_panels_html() ) ) : ?>
+					<?php echo $db_panels; // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
+				<?php else : ?>
 				<?php foreach ( $links as $label => $href ) : ?>
 					<?php if ( 'Services' === $label ) : ?>
 						<li class="db-mnav-has-sub">
@@ -116,11 +123,14 @@ add_action( 'wp_footer', function () {
 						<li><a href="<?php echo $href; // already escaped ?>"><?php echo esc_html( $label ); ?></a></li>
 					<?php endif; ?>
 				<?php endforeach; ?>
+				<?php endif; ?>
+				<?php echo db_nav_account_items( 'drawer' ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside. ?>
 			</ul>
 		</div>
 	</nav>
 	<div id="db-mnav-scrim" class="db-mnav-scrim" hidden></div>
 
+	<?php ob_start(); ?>
 	<style>
 	/* The drawer sits off-screen via a translateX on a position:fixed box,
 	   not a negative offset — some browsers still count that post-transform
@@ -164,6 +174,9 @@ add_action( 'wp_footer', function () {
 	.db-mnav-inner { padding: 26px 18px 28px; }
 	.db-mnav-logo { display: block; margin: 0 6px 18px; padding-bottom: 18px; border-bottom: 1px solid rgba(157,199,251,.15); }
 	.db-mnav-logo img { height: 46px; width: auto; max-width: 200px; display: block; }
+	/* Keep the logo clear of the fixed close button (46px, 12px from the right) (LS-22). */
+	.db-mnav-logo { margin-right: 62px; }
+	.db-mnav-logo img { max-width: 100%; height: auto; max-height: 46px; }
 	.db-mnav ul { list-style: none; margin: 0; padding: 0; }
 	.db-mnav li {
 		opacity: 0; transform: translateX(14px);
@@ -201,6 +214,8 @@ add_action( 'wp_footer', function () {
 	.db-mnav-sub { list-style: none; margin: 0; padding: 0 0 6px; background: rgba(0,0,0,.16); }
 	.db-mnav-sub li { border-bottom: none; opacity: 1 !important; transform: none !important; }
 	.db-mnav-sub a { padding: 12px 12px 12px 30px; font-size: 15px; font-weight: 500; }
+	.db-mnav-subtoggle.db-mnav-subtoggle--wide { flex: 1; width: auto; display: flex; align-items: center; justify-content: space-between; padding: 14px 12px; text-align: left; color: inherit; font: inherit; font-size: 17px; font-weight: 700; }
+	.db-mnav-subhead { padding: 12px 12px 4px 30px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .7 !important; }
 	.db-mnav-scrim {
 		/* Below #wpadminbar (99999) so a logged-in admin's bar stays usable. */
 		position: fixed; inset: 0; z-index: 99998; background: rgba(6,14,28,.5);
@@ -224,8 +239,27 @@ add_action( 'wp_footer', function () {
 	@media (prefers-reduced-motion: reduce) {
 		.db-mnav, .db-mnav li, .db-mnav-bar, .db-mnav-scrim { transition: none !important; }
 	}
+	/* Account links: Sign in / Create account (My account / Sign out once signed in). */
+	.db-desk-acct[hidden], .db-mnav-acct[hidden] { display: none !important; }
+	.db-mnav li.db-mnav-acct--in { margin-top: 14px; border-top: 1px solid rgba(157,199,251,.25); }
+	.db-mnav-acct-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #94bf1e; vertical-align: middle; }
+	.db-mnav .db-mnav-who { padding: 10px 12px 6px 30px; font-size: 13px; color: rgba(255,255,255,.7); overflow-wrap: anywhere; }
+	.db-mnav .db-mnav-sub a.db-mnav-out { color: #fca5a5 !important; }
+	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; background: var(--m-ink, #0a1628); color: #fff !important; box-shadow: none; }
+	html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:hover, html body.db-ui-active .db-desktop-nav .db-desk-acct--cta a:focus-visible { background: #137a3e; color: #fff !important; box-shadow: none; }
+	/* Up to 1299px the extra button pushed the menu past the screen (iPad Pro 1024, small laptops). Sign in also creates accounts. */
+	@media (max-width: 1299px) { .db-desktop-nav .db-desk-acct--cta { display: none !important; } }
+	@media (min-width: 992px) and (max-width: 1299px) { html body.db-ui-active .db-desktop-nav ul { gap: 9px !important; } html body.db-ui-active .db-desktop-nav a { font-size: 14px !important; } }
+	.db-mnav li.db-mnav-acct { border-bottom: 0; }
+	.db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) { margin-top: 14px; padding-top: 8px; border-top: 1px solid rgba(157,199,251,.25); }
+	.db-mnav li.db-mnav-acct--cta a { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0; padding: 0 20px; border-radius: 999px; background: #94bf1e; color: #0a1628 !important; font-weight: 700; }
+	html.db-signed-in .db-mnav li.db-mnav-acct:has(> [data-db-acct="signin"]) a::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: #94bf1e; vertical-align: middle; }
 	</style>
+	<?php
+	db_external_style_tag( 'mobilenav', (string) ob_get_clean() );
+	?>
 
+	<?php ob_start(); ?>
 	<script>
 	(function () {
 		'use strict';
@@ -256,6 +290,13 @@ add_action( 'wp_footer', function () {
 			// inert keeps the closed drawer out of the tab order even in
 			// browsers that still paint it during the slide-out transition.
 			if (open) { n.removeAttribute('inert'); } else { n.setAttribute('inert', ''); }
+			// The page behind the open drawer is inert too, so screen-reader swipe navigation stays
+			// in the menu (AX-16). Only siblings this code made inert are released on close.
+			Array.prototype.forEach.call(document.body.children, function (el) {
+				if (el === n || el === t || el.contains(n) || el.contains(t) || /^(SCRIPT|STYLE|LINK|NOSCRIPT)$/.test(el.tagName)) { return; }
+				if (open) { if (!el.hasAttribute('inert')) { el.setAttribute('inert', ''); el.setAttribute('data-db-mnav-inert', ''); } }
+				else if (el.hasAttribute('data-db-mnav-inert')) { el.removeAttribute('inert'); el.removeAttribute('data-db-mnav-inert'); }
+			});
 			if (open) {
 				lastFocus = document.activeElement;
 				s.hidden = false;
@@ -278,8 +319,7 @@ add_action( 'wp_footer', function () {
 		s.addEventListener('click', function () { setOpen(false); });
 		n.addEventListener('click', function (e) { if (e.target.closest('a')) { setOpen(false); } });
 
-		var subToggle = document.querySelector('.db-mnav-subtoggle');
-		if (subToggle) {
+		document.querySelectorAll('.db-mnav-subtoggle').forEach(function (subToggle) {
 			var sub = document.getElementById(subToggle.getAttribute('aria-controls'));
 			subToggle.addEventListener('click', function (e) {
 				e.stopPropagation(); // don't let the "any link click closes the drawer" handler above see this
@@ -287,7 +327,7 @@ add_action( 'wp_footer', function () {
 				subToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 				if (sub) { sub.hidden = !open; }
 			});
-		}
+		});
 		document.addEventListener('keydown', function (e) {
 			if (!t.classList.contains('is-open')) { return; }
 			if (e.key === 'Escape') { setOpen(false); return; }
@@ -303,4 +343,136 @@ add_action( 'wp_footer', function () {
 	})();
 	</script>
 	<?php
+	db_external_script( 'mobilenav', (string) ob_get_clean() );
+	?>
+	<?php
 }, 100 );
+
+if ( ! function_exists( 'db_nav_account_items' ) ) {
+	/**
+	 * Sign in / Create account / Sign out for the menus. Without JavaScript the
+	 * links open the account page with the sign-in or register dialog; with it,
+	 * the site script opens the dialog in place and shows "My account" and
+	 * "Sign out" once signed in (pages are cached, so the state is read by the script).
+	 */
+	function db_nav_account_items( $where ) {
+		$signin   = esc_url( home_url( '/my-wishlist/?auth=signin' ) ); // final address, not the /sign-in/ redirect
+		$register = esc_url( home_url( '/register/' ) );
+		$cls      = 'drawer' === $where ? 'db-mnav-acct' : 'db-desk-acct';
+		$email    = function_exists( 'db_wl_email' ) ? db_wl_email() : '';
+		if ( '' !== $email && function_exists( 'db_acct_menu_links' ) ) {
+			// Signed in (these pages bypass the cache): one "My account" group, Sign out inside it.
+			$page = esc_url( home_url( '/my-wishlist/' ) );
+			if ( 'drawer' !== $where ) {
+				return '<li class="' . $cls . '"><a href="' . $page . '">My account</a></li>';
+			}
+			$h = '<li class="db-mnav-has-sub ' . $cls . ' db-mnav-acct--in"><div class="db-mnav-row"><a href="' . $page . '"><span class="db-mnav-acct-dot" aria-hidden="true"></span>My account</a>'
+				. '<button type="button" class="db-mnav-subtoggle" aria-expanded="false" aria-controls="db-mnav-sub-acct" aria-label="Show account menu"><span class="db-mnav-chevron" aria-hidden="true"></span></button></div>'
+				. '<ul id="db-mnav-sub-acct" class="db-mnav-sub" hidden><li class="db-mnav-who">' . esc_html( $email ) . '</li>';
+			foreach ( db_acct_menu_links() as $l ) {
+				$h .= '<li><a href="' . esc_url( $l[1] ) . '">' . esc_html( $l[0] ) . '</a></li>';
+			}
+			$url = function_exists( 'db_acct_signout_url' ) ? db_acct_signout_url() : home_url( '/my-wishlist/' );
+			return $h . '<li><a class="db-mnav-out" href="' . esc_url( $url ) . '">Sign out</a></li></ul></li>';
+		}
+		return '<li class="' . $cls . '"><a href="' . $signin . '" data-href="' . $signin . '" data-db-acct="signin">Sign in</a></li>'
+			. '<li class="' . $cls . ' ' . $cls . '--cta"><a href="' . $register . '" data-db-acct="register">Create account</a></li>'
+			. '<li class="' . $cls . '" hidden><a href="' . esc_url( home_url( '/my-wishlist/' ) ) . '" data-db-acct="signout">Sign out</a></li>';
+	}
+}
+
+/*
+ * "Home" left the top menu together with News, Payment Plans, About and Contact.
+ * The theme's footer already lists the other four; this adds Home as the first
+ * link of its Explore column so all five stay reachable from the bottom menu.
+ */
+if ( ! function_exists( 'db_nav_blog_url' ) ) {
+	/** Where "Blog" goes: the on-site guides archive. */
+	function db_nav_blog_url() {
+		return (string) apply_filters( 'db_nav_blog_url', home_url( '/category/domain-guides/' ) );
+	}
+}
+
+if ( ! function_exists( 'db_nav_footer_home' ) ) {
+	function db_nav_footer_home( $html ) {
+		if ( false === strpos( $html, 'id="db-ft-explore"' ) && false === stripos( $html, 'blog.domainbrothers.com' ) ) {
+			return $html;
+		}
+		$item = '<li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li>';
+		$out  = preg_replace( '#(<h2 id="db-ft-explore">.*?</h2>\s*<ul[^>]*>)#s', '$1 ' . $item, $html, 1 );
+		$out  = null === $out ? $html : $out;
+		// The blog lives on this site (the guides); the old blog subdomain no
+		// longer answers, so links to its front page point here instead.
+		$blog = esc_url( db_nav_blog_url() );
+		$out2 = preg_replace( '#<a\b([^>]*?)href="https?://blog\.domainbrothers\.com/?"([^>]*)>#i', '<a$1href="' . $blog . '"$2>', $out );
+		$out  = null === $out2 ? $out : $out2;
+		return str_replace( '<a href="' . $blog . '" target="_blank" rel="noopener">', '<a href="' . $blog . '">', $out );
+	}
+}
+add_action( 'template_redirect', function () {
+	if ( ! is_admin() && ! is_feed() && ! is_customize_preview() ) {
+		ob_start( 'db_nav_footer_home' );
+	}
+}, 0 );
+
+// /blog/ opens the guides archive (WordPress would otherwise guess a post whose
+// address merely starts with "blog").
+add_action( 'template_redirect', function () {
+	$uri  = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$path = trim( (string) wp_parse_url( $uri, PHP_URL_PATH ), '/' );
+	$home = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+	if ( '' !== $home && 0 === strpos( $path, $home ) ) {
+		$path = trim( substr( $path, strlen( $home ) ), '/' );
+	}
+	// The old sell-a-domain page: a permanent move to "Sell your domains" now that the seller
+	// marketplace exists, or to Contact while it is switched off (SE-22).
+	if ( 'sell-domains-service' === $path && ! is_admin() && ! is_user_logged_in() ) {
+		$on = function_exists( 'db_seller_enabled' ) && db_seller_enabled();
+		wp_safe_redirect( home_url( $on ? '/sell-your-domains/' : '/contact-us/' ), $on ? 301 : 302 );
+		exit;
+	}
+	if ( 'blog' === $path && ! is_admin() ) {
+		wp_safe_redirect( db_nav_blog_url(), 301 );
+		exit;
+	}
+}, 0 );
+
+
+if ( ! function_exists( 'db_mnav_panels_html' ) ) {
+	/**
+	 * The phone drawer, built from the same panels as the desktop mega menu (db_header_panels()),
+	 * so the finder, collections, wishlist, domain services, About and Contact are reachable on a
+	 * phone too (bug register batch 2, LS-10). One expandable section per panel.
+	 */
+	function db_mnav_panels_html() {
+		if ( ! function_exists( 'db_header_panels' ) ) {
+			return '';
+		}
+		$h = '';
+		foreach ( (array) db_header_panels() as $i => $panel ) {
+			$label = (string) ( $panel['label'] ?? '' );
+			if ( '' === $label ) {
+				continue;
+			}
+			$id    = 'db-mnav-sub-' . sanitize_key( $label );
+			$items = '';
+			foreach ( (array) ( $panel['cols'] ?? array() ) as $col ) {
+				$links = array_filter( (array) ( $col[1] ?? array() ) );
+				if ( ! $links ) {
+					continue;
+				}
+				$items .= '<li class="db-mnav-subhead" aria-hidden="true">' . esc_html( (string) ( $col[0] ?? '' ) ) . '</li>';
+				foreach ( $links as $l ) {
+					$items .= '<li><a href="' . esc_url( (string) $l[1] ) . '">' . esc_html( (string) $l[0] ) . '</a></li>';
+				}
+			}
+			if ( ! empty( $panel['card'][3] ) ) {
+				$items .= '<li><a href="' . esc_url( (string) $panel['card'][3] ) . '">' . esc_html( (string) $panel['card'][2] ) . '</a></li>';
+			}
+			$h .= '<li class="db-mnav-has-sub"><div class="db-mnav-row"><button type="button" class="db-mnav-subtoggle db-mnav-subtoggle--wide" aria-expanded="false" aria-controls="' . esc_attr( $id ) . '">'
+				. '<span class="db-mnav-sublabel">' . esc_html( $label ) . '</span><span class="db-mnav-chevron" aria-hidden="true"></span></button></div>'
+				. '<ul id="' . esc_attr( $id ) . '" class="db-mnav-sub" hidden>' . $items . '</ul></li>';
+		}
+		return $h;
+	}
+}

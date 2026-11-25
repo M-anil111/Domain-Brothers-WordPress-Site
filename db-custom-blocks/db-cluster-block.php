@@ -108,7 +108,10 @@ if ( ! function_exists( 'db_cluster_import' ) ) {
 				$id = $ids[ $mm[2] ] ?? 0;
 				return 'ID' === $mm[1] ? (string) (int) $id : ( $id ? (string) wp_get_attachment_image_url( $id, 'large' ) : '' );
 			}, $content );
-			$existing = db_cluster_post_for( $a['slug'] );
+			// The key stays fixed when a slug changes, so the same post is updated
+			// and WordPress keeps the old address as a redirect (_wp_old_slug).
+			$key      = (string) ( $a['key'] ?? $a['slug'] );
+			$existing = db_cluster_post_for( $key );
 			$args     = array(
 				'post_type'    => 'post',
 				'post_title'   => $a['title'],
@@ -135,7 +138,7 @@ if ( ! function_exists( 'db_cluster_import' ) ) {
 				$res['errors'][] = $a['slug'] . ': ' . $pid->get_error_message();
 				continue;
 			}
-			update_post_meta( $pid, '_db_cluster_key', $a['slug'] );
+			update_post_meta( $pid, '_db_cluster_key', $key );
 			update_post_meta( $pid, '_db_cluster_role', $a['role'] );
 			if ( ! empty( $ids[ $a['featured'] ] ) ) {
 				set_post_thumbnail( $pid, $ids[ $a['featured'] ] );
@@ -224,3 +227,47 @@ add_filter( 'body_class', function ( $c ) {
 	}
 	return $c;
 } );
+
+/*
+ * Old guide addresses. When a post's slug changes, WordPress keeps the old one
+ * in _wp_old_slug and redirects from it in template_redirect, but Rank Math's
+ * "redirect 404s to the home page" fallback runs earlier and sends visitors to
+ * the home page instead. On a one-segment 404 that matches an old slug of a
+ * published post, send a permanent redirect to the post's current address.
+ */
+add_action( 'wp', function ( $wp ) {
+	// A cover image can carry the same name as the old slug, in which case the
+	// address resolves to that image's attachment page (which Rank Math also
+	// sends to the home page), so attachment pages are checked as well.
+	if ( is_admin() || ! ( is_404() || is_attachment() ) || ! $wp instanceof WP ) {
+		return;
+	}
+	$path = trim( (string) $wp->request, '/' );
+	if ( '' === $path || false !== strpos( $path, '/' ) || sanitize_title( $path ) !== $path ) {
+		return;
+	}
+	$ids = get_posts(
+		array(
+			'post_type'        => 'post',
+			'post_status'      => 'publish',
+			'meta_key'         => '_wp_old_slug', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value'       => $path, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'fields'           => 'ids',
+			'numberposts'      => 1,
+			'suppress_filters' => true,
+		)
+	);
+	if ( ! $ids ) {
+		return;
+	}
+	$url = get_permalink( (int) $ids[0] );
+	if ( ! $url ) {
+		return;
+	}
+	$query = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_QUERY ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	if ( '' !== $query ) {
+		$url .= ( false === strpos( $url, '?' ) ? '?' : '&' ) . $query;
+	}
+	wp_safe_redirect( $url, 301, 'Domain Brothers old slug' );
+	exit;
+}, 0 );

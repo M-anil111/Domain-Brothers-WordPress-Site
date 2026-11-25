@@ -74,6 +74,18 @@ add_action( 'init', function () {
 		) {$cs};" );
 		update_option( 'db_wl_table_version', DB_WL_TABLE_VERSION );
 	}
+	// SC-18: one code per address and browser, so a code someone else asks for never replaces yours.
+	if ( '1' !== get_option( 'db_wl_codes_sid' ) ) {
+		global $wpdb;
+		$t = $wpdb->prefix . 'db_wl_codes';
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$has = $wpdb->get_var( "SHOW COLUMNS FROM {$t} LIKE 'sid'" );
+		$ok  = $has ? true : false !== $wpdb->query( "ALTER TABLE {$t} ADD COLUMN sid CHAR(32) NOT NULL DEFAULT '' AFTER email, DROP PRIMARY KEY, ADD PRIMARY KEY (email, sid)" );
+		// phpcs:enable
+		if ( $ok ) {
+			update_option( 'db_wl_codes_sid', '1', true );
+		}
+	}
 	if ( ! wp_next_scheduled( 'db_wl_purge' ) ) {
 		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'db_wl_purge' );
 	}
@@ -118,23 +130,60 @@ if ( ! function_exists( 'db_wl_hash' ) ) {
 
 if ( ! function_exists( 'db_wl_ip' ) ) {
 	function db_wl_ip() {
-		$ip = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? (string) $_SERVER['HTTP_CF_CONNECTING_IP'] : ( isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-		return $ip;
+		// REMOTE_ADDR only. The server already sets it to the visitor's address for requests that
+		// come through Cloudflare; the CF-Connecting-IP header itself can be sent by anyone who
+		// reaches the origin directly, which gave a fresh rate-limit quota per request (TL-16).
+		return isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 	}
 }
 
 if ( ! function_exists( 'db_wl_allow' ) ) {
 	/** Counts one use of $key; false once it has been used $limit times inside $window seconds. */
 	function db_wl_allow( $key, $limit, $window ) {
-		$k = 'db_wl_rl_' . md5( $key );
-		$n = (int) get_transient( $k );
-		if ( $n >= $limit ) {
-			return false;
+		// One atomic counter per key with a fixed window (TL-16, AC-13): the old transient was read
+		// and then written, so parallel requests all saw the same count, and every hit pushed the
+		// window out again.
+		global $wpdb;
+		$t   = $wpdb->prefix . 'db_rate';
+		$now = time();
+		$win = max( 1, (int) $window );
+		db_wl_rate_table();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$ok = $wpdb->query( $wpdb->prepare(
+			"INSERT INTO {$t} (k, n, ws) VALUES (%s, 1, %d) ON DUPLICATE KEY UPDATE n = IF(ws + %d <= %d, 1, n + 1), ws = IF(ws + %d <= %d, %d, ws)",
+			md5( $key ), $now, $win, $now, $win, $now, $now
+		) );
+		if ( false === $ok ) {
+			return true; // the limiter must never lock everyone out when the table is missing
 		}
-		set_transient( $k, $n + 1, $window );
-		return true;
+		$n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT n FROM {$t} WHERE k = %s", md5( $key ) ) );
+		// phpcs:enable
+		return $n <= (int) $limit;
 	}
 }
+
+if ( ! function_exists( 'db_wl_rate_table' ) ) {
+	/** Creates the counter table once. */
+	function db_wl_rate_table() {
+		if ( '1' === get_option( 'db_rate_table_v' ) ) {
+			return;
+		}
+		global $wpdb;
+		$wpdb->query( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}db_rate (k CHAR(32) NOT NULL PRIMARY KEY, n INT UNSIGNED NOT NULL DEFAULT 0, ws INT UNSIGNED NOT NULL DEFAULT 0, KEY ws (ws)) " . $wpdb->get_charset_collate() ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		update_option( 'db_rate_table_v', '1', true );
+	}
+}
+
+// Old counters are removed daily (rows whose window ended over a day ago).
+add_action( 'db_wl_rate_cleanup', static function () {
+	global $wpdb;
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_rate WHERE ws < %d", time() - DAY_IN_SECONDS ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+} );
+add_action( 'init', static function () {
+	if ( ! wp_next_scheduled( 'db_wl_rate_cleanup' ) ) {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'db_wl_rate_cleanup' );
+	}
+} );
 
 if ( ! function_exists( 'db_wl_same_origin' ) ) {
 	/** The request was made by a page of this site. */
@@ -150,22 +199,59 @@ if ( ! function_exists( 'db_wl_same_origin' ) ) {
 
 /* ───────────────────────────── 3. Codes and sessions ──────────────────── */
 
+if ( ! function_exists( 'db_wl_sid' ) ) {
+	/**
+	 * A random id for this browser (httpOnly cookie db_sid, one day). Codes and pending sign-up
+	 * details are kept per address and per browser, so a stranger who types your address cannot
+	 * replace them or use up your code (SC-18).
+	 */
+	function db_wl_sid() {
+		static $sid = null;
+		if ( null !== $sid ) {
+			return $sid;
+		}
+		$c = isset( $_COOKIE['db_sid'] ) ? (string) $_COOKIE['db_sid'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( preg_match( '/^[a-f0-9]{32}$/', $c ) ) {
+			$sid = $c;
+			return $sid;
+		}
+		$sid = bin2hex( random_bytes( 16 ) );
+		if ( ! headers_sent() ) {
+			setcookie( 'db_sid', $sid, array( 'expires' => time() + DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
+		}
+		$_COOKIE['db_sid'] = $sid;
+		return $sid;
+	}
+}
+
+if ( ! function_exists( 'db_reg_pending_key' ) ) {
+	/** Transient key of a pending sign-up: the address and the browser that started it (SC-18). */
+	function db_reg_pending_key( $email ) {
+		return 'db_reg_' . md5( strtolower( (string) $email ) . '|' . db_wl_sid() );
+	}
+}
+
 if ( ! function_exists( 'db_wl_send_code' ) ) {
 	/** Issues a code for $email. Returns false when rate limited (the caller still answers the same way). */
 	function db_wl_send_code( $email ) {
 		global $wpdb;
-		if ( ! db_wl_allow( 'email:' . $email, 5, HOUR_IN_SECONDS ) || ! db_wl_allow( 'ip:' . db_wl_ip(), 20, HOUR_IN_SECONDS ) ) {
+		// Five an hour for this address from this browser, so someone else's requests do not use up
+		// yours; a looser cap per address stops the inbox being flooded (SC-18).
+		$sid = db_wl_sid();
+		if ( ! db_wl_allow( 'email:' . $email . '|' . $sid, 5, HOUR_IN_SECONDS ) || ! db_wl_allow( 'email-all:' . $email, 25, HOUR_IN_SECONDS ) || ! db_wl_allow( 'ip:' . db_wl_ip(), 20, HOUR_IN_SECONDS ) ) {
 			return false;
 		}
 		$code = (string) random_int( 100000, 999999 );
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery
-		$wpdb->replace( $wpdb->prefix . 'db_wl_codes', array(
+		$row  = array(
 			'email'      => $email,
 			'code_hash'  => db_wl_hash( $email . '|' . $code ),
 			'attempts'   => 0,
 			'expires_at' => time() + DB_WL_CODE_TTL,
-		) );
-		// phpcs:enable
+		);
+		if ( '1' === get_option( 'db_wl_codes_sid' ) ) {
+			$row['sid'] = $sid;
+		}
+		$wpdb->replace( $wpdb->prefix . 'db_wl_codes', $row ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		if ( db_wl_is_staging() ) {
 			set_transient( 'db_wl_dbg_' . md5( $email ), $code, DB_WL_CODE_TTL ); // read back only by the admin-only staging test route
 		}
@@ -186,21 +272,32 @@ if ( ! function_exists( 'db_wl_check_code' ) ) {
 		if ( 6 !== strlen( $code ) ) {
 			return false;
 		}
+		// Per address, across codes: a new code resets the per-code counter, this one is not (AC-13).
+		// Counted per browser too (SC-18): wrong guesses from elsewhere cannot lock the owner out, and
+		// they could only ever be checked against codes that other browser asked for.
+		$by  = '1' === get_option( 'db_wl_codes_sid' );
+		$sid = $by ? db_wl_sid() : '';
+		if ( ! db_wl_allow( 'verify-email:' . strtolower( (string) $email ) . '|' . $sid, 10, HOUR_IN_SECONDS ) ) {
+			return false;
+		}
 		$t = $wpdb->prefix . 'db_wl_codes';
+		$w = $by ? $wpdb->prepare( ' AND sid = %s', $sid ) : '';
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s", $email ) );
-		if ( ! $row || (int) $row->expires_at < time() ) {
+		// Claim one guess atomically before comparing: parallel guesses each need their own claim,
+		// so at most five are ever checked against one code (AC-13).
+		$claimed = $wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s AND attempts < 5 AND expires_at >= %d", $email, time() ) . $w );
+		if ( ! $claimed ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND ( attempts >= 5 OR expires_at < %d )", $email, time() ) . $w );
 			return false;
 		}
-		if ( (int) $row->attempts >= 5 ) {
-			$wpdb->delete( $t, array( 'email' => $email ) );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$t} WHERE email = %s", $email ) . $w );
+		if ( ! $row || ! hash_equals( $row->code_hash, db_wl_hash( $email . '|' . $code ) ) ) {
 			return false;
 		}
-		if ( ! hash_equals( $row->code_hash, db_wl_hash( $email . '|' . $code ) ) ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$t} SET attempts = attempts + 1 WHERE email = %s", $email ) );
+		// A code works once: only the request that deletes it signs in.
+		if ( ! $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE email = %s AND code_hash = %s", $email, $row->code_hash ) . $w ) ) {
 			return false;
 		}
-		$wpdb->delete( $t, array( 'email' => $email ) ); // a code works once
 		// phpcs:enable
 		return true;
 	}
@@ -226,6 +323,10 @@ if ( ! function_exists( 'db_wl_start_session' ) ) {
 			) );
 		}
 		$_COOKIE[ DB_WL_COOKIE ] = $token;
+		if ( ! headers_sent() ) {
+			// Readable hint (no secret) so a cached page can tell the browser to load the account menu.
+			setcookie( 'db_in', '1', array( 'expires' => time() + DB_WL_SESSION_TTL, 'path' => '/', 'secure' => is_ssl(), 'httponly' => false, 'samesite' => 'Lax' ) );
+		}
 	}
 }
 
@@ -258,6 +359,7 @@ if ( ! function_exists( 'db_wl_end_session' ) ) {
 		}
 		if ( ! headers_sent() ) {
 			setcookie( DB_WL_COOKIE, '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ) );
+			setcookie( 'db_in', '', array( 'expires' => time() - DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => false, 'samesite' => 'Lax' ) );
 		}
 		unset( $_COOKIE[ DB_WL_COOKIE ] );
 	}
@@ -300,7 +402,9 @@ if ( ! function_exists( 'db_wl_toggle' ) ) {
 		if ( ! $post || 'domain' !== $post->post_type || 'publish' !== $post->post_status || '' !== $post->post_password ) {
 			return new WP_Error( 'db_wl_bad', 'That domain cannot be saved.', array( 'status' => 404 ) );
 		}
-		if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE email = %s", $email ) ) >= DB_WL_MAX_ITEMS ) {
+		// Count only names the person can see and remove: unpublished ones are hidden, so they
+		// used up the 200 slots with no way to clear them (AC-19).
+		if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} w JOIN {$wpdb->posts} p ON p.ID = w.post_id AND p.post_status = 'publish' AND p.post_password = '' WHERE w.email = %s", $email ) ) >= DB_WL_MAX_ITEMS ) {
 			return new WP_Error( 'db_wl_full', 'Your wishlist is full.', array( 'status' => 400 ) );
 		}
 		$wpdb->insert( $t, array( 'email' => $email, 'post_id' => (int) $post_id ) );
@@ -338,15 +442,22 @@ add_action( 'rest_api_init', function () {
 			if ( ! db_wl_same_origin() ) {
 				return $send( array( 'ok' => false, 'message' => 'Please use the website.' ), 403 );
 			}
-			$body = $json( $req );
-			if ( function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
+			$body  = $json( $req );
+			$email = db_wl_clean_email( $body['email'] ?? '' );
+			// A sign-up that already passed the check at /register/ (its pending record exists) may ask
+			// for a new code from the code step, where no fresh check can be solved: at most 3 times in
+			// 30 minutes (bug register batch 2, AC-2).
+			$resend = '' !== $email && false !== get_transient( db_reg_pending_key( $email ) ) && db_wl_allow( 'reg-resend:' . $email, 3, 30 * MINUTE_IN_SECONDS );
+			if ( ! $resend && function_exists( 'db_ts_verify' ) && ! db_ts_verify( $body['ts'] ?? '', db_wl_ip() ) ) {
 				return $send( array( 'ok' => false, 'message' => 'Please complete the check, then try again.' ), 400 );
 			}
-			$email = db_wl_clean_email( $body['email'] ?? '' );
 			if ( '' === $email ) {
 				return $send( array( 'ok' => false, 'message' => 'Enter a valid email address.' ), 400 );
 			}
-			db_wl_send_code( $email ); // the same answer whether or not it was sent
+			// The limit is per address, so saying so reveals nothing about whether an account exists (AC-6).
+			if ( ! db_wl_send_code( $email ) ) {
+				return $send( array( 'ok' => false, 'message' => 'Too many codes were asked for this address in the last hour. Use the newest code you received, or try again in an hour.' ), 429 );
+			}
 			return $send( array( 'ok' => true, 'message' => 'If that address is right, a 6-digit code is on its way. It works for 10 minutes.' ) );
 		},
 	) );
@@ -367,6 +478,11 @@ add_action( 'rest_api_init', function () {
 				return $send( array( 'ok' => false, 'message' => 'That code did not work. Check it, or ask for a new one.' ), 400 );
 			}
 			db_wl_start_session( $email );
+			// A code sign-in for a new address creates the account record (no consent yet: Profile
+			// asks for it), so every signed-in person is in Accounts (bug register batch 2, AC-7).
+			if ( function_exists( 'db_acct_row' ) && function_exists( 'db_acct_upsert' ) && ! db_acct_row( $email ) ) {
+				db_acct_upsert( $email, array() );
+			}
 			$added = null;
 			if ( ! empty( $d['post'] ) ) {
 				$ids = db_wl_ids( $email );
@@ -439,6 +555,28 @@ add_action( 'wp_footer', function () {
 	echo db_wl_script( (int) $post->ID, wp_strip_all_tags( $post->post_title ) ); // phpcs:ignore WordPress.Security.EscapeOutput
 }, 70 );
 
+// Every other public page gets the same script without a domain, so the
+// Sign in / Create account links in the menus open the dialog anywhere.
+add_action( 'wp_footer', function () {
+	if ( is_admin() || is_singular( 'domain' ) || db_wl_is_page_request() || is_customize_preview() ) {
+		return;
+	}
+	echo db_wl_script( 0, '' ); // phpcs:ignore WordPress.Security.EscapeOutput
+}, 70 );
+
+// Friendly addresses: /sign-in/, /login/, /register/, /sign-up/, /account/ open the account page with the dialog.
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! function_exists( 'db_sales_request_path' ) ) {
+		return;
+	}
+	$map  = array( 'sign-in' => 'signin', 'signin' => 'signin', 'login' => 'signin', 'log-in' => 'signin', 'account' => 'signin', 'my-account' => 'signin' );
+	$path = db_sales_request_path();
+	if ( isset( $map[ $path ] ) ) {
+		wp_safe_redirect( add_query_arg( 'auth', $map[ $path ], home_url( '/my-wishlist/' ) ), 302 );
+		exit;
+	}
+}, 2 );
+
 if ( ! function_exists( 'db_wl_script' ) ) {
 	/** The shared client script: button + sign-in dialog on a domain page, or the sign-in box on the wishlist page. */
 	function db_wl_script( $post_id, $title ) {
@@ -447,6 +585,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 			'post'  => (int) $post_id,
 			'title' => strtolower( $title ),
 			'page'  => esc_url_raw( home_url( '/my-wishlist/' ) ),
+			'home'  => esc_url_raw( home_url( '/' ) ),
 		);
 		ob_start();
 		?>
@@ -454,7 +593,7 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 (function () {
 	'use strict';
 	var C = <?php echo wp_json_encode( $cfg ); ?>;
-	var state = { signedIn: false, saved: [] }, dlg, pendingPost = 0;
+	var state = { signedIn: false, saved: [] };
 
 	function api(path, method, body) {
 		return fetch(C.api + path, { method: method, credentials: 'same-origin', headers: body ? { 'Content-Type': 'text/plain' } : {}, body: body ? JSON.stringify(body) : undefined })
@@ -463,45 +602,15 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 	function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
 	function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-	/* ---- dialog ---- */
-	function ensureDialog() {
-		if (dlg) { return dlg; }
-		dlg = el('<dialog class="db-wl-dialog" aria-labelledby="db-wl-title">' +
-			'<form method="dialog" class="db-wl-x"><button aria-label="Close">&times;</button></form>' +
-			'<h2 id="db-wl-title">Save to your wishlist</h2>' +
-			'<p class="db-wl-lead">We email you a 6-digit code. No password needed.</p>' +
-			'<form class="db-wl-step" data-step="email"><label>Email address<input type="email" name="email" autocomplete="email" required maxlength="190" placeholder="you@example.com"></label><div class="db-ts"></div><button type="submit" class="db-wl-primary">Email me a code</button></form>' +
-			'<form class="db-wl-step" data-step="code" hidden><label>6-digit code<input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><button type="submit" class="db-wl-primary">Sign in</button><button type="button" class="db-wl-link" data-back>Use a different email</button></form>' +
-			'<p class="db-wl-msg" role="status" aria-live="polite"></p></dialog>');
-		document.body.appendChild(dlg);
-		var emailForm = dlg.querySelector('[data-step=email]'), codeForm = dlg.querySelector('[data-step=code]'), msg = dlg.querySelector('.db-wl-msg'), email = '';
-		function say(t, bad) { msg.textContent = t; msg.className = 'db-wl-msg' + (bad ? ' is-bad' : ''); }
-		emailForm.addEventListener('submit', function (e) {
-			e.preventDefault(); email = emailForm.email.value.trim(); say('Sending…');
-			api('code', 'POST', { email: email, ts: window.dbTsToken ? window.dbTsToken(emailForm) : '' }).then(function (j) {
-				if (j.ok) { emailForm.hidden = true; codeForm.hidden = false; codeForm.code.focus(); say(j.message); } else { say(j.message || 'Something went wrong.', true); }
-			}).catch(function () { say('Could not reach the server. Try again.', true); });
-		});
-		codeForm.addEventListener('submit', function (e) {
-			e.preventDefault(); say('Checking…');
-			api('verify', 'POST', { email: email, code: codeForm.code.value, post: pendingPost || 0 }).then(function (j) {
-				if (j.ok) { state.signedIn = true; state.saved = j.saved || []; dlg.close(); refresh(); toast(j.added === 'added' ? 'Saved to your wishlist.' : 'You are signed in.'); if (onSignedIn) { onSignedIn(); } }
-				else { say(j.message || 'That code did not work.', true); }
-			}).catch(function () { say('Could not reach the server. Try again.', true); });
-		});
-		codeForm.querySelector('[data-back]').addEventListener('click', function () { codeForm.hidden = true; emailForm.hidden = false; emailForm.email.focus(); say(''); });
-		dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); } });
-		return dlg;
-	}
+	/* ---- sign in is a page, not a popup ---- */
 	var onSignedIn = null;
-	function openSignIn(post) {
-		pendingPost = post || 0;
-		var d = ensureDialog();
-		d.querySelector('[data-step=email]').hidden = false; d.querySelector('[data-step=code]').hidden = true; d.querySelector('.db-wl-msg').textContent = '';
-		if (d.showModal) { d.showModal(); } else { d.setAttribute('open', ''); }
-			if (window.dbTsRender) { window.dbTsRender(d); }
-		d.querySelector('input[name=email]').focus();
+	function signInUrl(post, mode) {
+		if (mode === 'register') { return C.home + 'register/'; }
+		var q = '?auth=signin';
+		if (post) { q += '&add=' + encodeURIComponent(post) + '&name=' + encodeURIComponent(C.title || '') + '&next=' + encodeURIComponent(location.href.split('#')[0]); }
+		return C.page + q;
 	}
+	function openSignIn(post, mode) { window.location.href = signInUrl(post, mode); }
 
 	/* ---- toast ---- */
 	function toast(t) {
@@ -541,9 +650,48 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 
 	/* ---- wishlist page ---- */
 	function mountPage() {
-		var box = document.getElementById('db-wl-signin');
+		var box = document.getElementById('db-au');
+		var qs = new URLSearchParams(location.search), addId = parseInt(qs.get('add') || '0', 10) || 0, nextUrl = qs.get('next') || '';
+		if (nextUrl.indexOf(C.home) !== 0) { nextUrl = ''; }
 		if (box) {
-			var b = box.querySelector('button'); if (b) { b.addEventListener('click', function () { onSignedIn = function () { window.location.reload(); }; openSignIn(0); }); }
+			if (addId) {
+				var note = document.createElement('p'); note.className = 'db-au-note'; note.setAttribute('role', 'status');
+				// Only a domain name is shown: free text in ?name= was a spoofing vector (AC-16).
+				var nm = String(qs.get('name') || '').trim();
+				if (nm.length > 80 || !/^[a-z0-9](?:[a-z0-9-]{0,62}\.)+[a-z]{2,24}$/i.test(nm)) { nm = 'this domain'; }
+				note.textContent = 'Sign in to save ' + nm + ' to your wishlist. New here? The same code creates your account.';
+				var first = box.querySelector('form'); if (first) { first.parentNode.insertBefore(note, first); }
+			}
+			var ef = box.querySelector('[data-step=email]'), cf = box.querySelector('[data-step=code]'), m = box.querySelector('.db-au-msg'), mail = '';
+			// The message is tied to the field being edited, which is marked invalid on an error (AX-20).
+			if (!m.id) { m.id = 'db-au-msg'; }
+			var tell = function (t, bad) {
+				m.textContent = t; m.className = 'db-au-msg' + (bad ? ' is-bad' : '');
+				var fld = !cf.hidden ? cf.code : ef.email;
+				[ef.email, cf.code].forEach(function (x) { if (x) { x.removeAttribute('aria-invalid'); } });
+				if (fld) { fld.setAttribute('aria-describedby', m.id); if (bad) { fld.setAttribute('aria-invalid', 'true'); } }
+			};
+			if (qs.get('plan') === '1' && !addId) {
+				var pn = document.createElement('p'); pn.className = 'db-au-note'; pn.setAttribute('role', 'status');
+				pn.textContent = 'Payment plans need a free account, so you can see your schedule and next payment in My account. Enter your email for a sign-in code; new here, the same code creates your account. You go straight back to checkout.';
+				var f0 = box.querySelector('form'); if (f0) { f0.parentNode.insertBefore(pn, f0); }
+			}
+			if (window.dbTsRender) { window.dbTsRender(box); }
+			ef.addEventListener('submit', function (e) {
+				e.preventDefault(); mail = ef.email.value.trim(); tell('Sending your code…');
+				api('code', 'POST', { email: mail, ts: window.dbTsToken ? window.dbTsToken(ef) : '' }).then(function (j) {
+					if (j.ok) { ef.hidden = true; cf.hidden = false; cf.code.focus(); tell(j.message); } else { tell(j.message || 'Something went wrong. Try again.', true); }
+				}).catch(function () { tell('Could not reach the server. Try again.', true); });
+			});
+			cf.addEventListener('submit', function (e) {
+				e.preventDefault(); tell('Checking…');
+				api('verify', 'POST', { email: mail, code: cf.code.value, post: addId }).then(function (j) {
+					// Say "saved" only when the server saved it (or it was already saved): an unpublished
+					// name or a full wishlist is not saved (AC-17).
+					if (j.ok) { var kept = addId && (j.added === 'added' || (j.saved || []).map(Number).indexOf(addId) > -1); tell(!addId ? 'You are signed in.' : (kept ? 'You are signed in and the domain is saved.' : 'You are signed in. We could not save that domain.'), addId && !kept); window.location.href = nextUrl || C.page; } else { tell(j.message || 'That code did not work.', true); }
+				}).catch(function () { tell('Could not reach the server. Try again.', true); });
+			});
+			cf.querySelector('[data-back]').addEventListener('click', function () { cf.hidden = true; ef.hidden = false; ef.email.focus(); tell(''); });
 		}
 		var out = document.getElementById('db-wl-signout');
 		if (out) { out.addEventListener('click', function () { api('logout', 'POST', {}).then(function () { window.location.reload(); }); }); }
@@ -558,8 +706,52 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 		});
 	}
 
+	/* ---- account links in the menus (Sign in / Create account / My account / Sign out) ---- */
+	function paintAccount() {
+		document.querySelectorAll('[data-db-acct]').forEach(function (a) {
+			var kind = a.getAttribute('data-db-acct'), li = a.closest('li') || a;
+			if (kind === 'signin') { a.textContent = state.signedIn ? 'My account' : 'Sign in'; a.href = state.signedIn ? C.page : a.getAttribute('data-href'); }
+			if (kind === 'register') { li.hidden = state.signedIn; }
+			if (kind === 'signout') { li.hidden = !state.signedIn; }
+		});
+		document.documentElement.classList.toggle('db-signed-in', state.signedIn);
+		if (state.signedIn && window.dbHdAcctLoad) { window.dbHdAcctLoad(); }
+	}
+	function goAccount() { if (location.pathname.indexOf('/my-wishlist') === 0) { window.location.reload(); } else { window.location.href = C.page; } }
+	document.addEventListener('click', function (e) {
+		var a = e.target.closest && e.target.closest('[data-db-acct]');
+		if (!a) { return; }
+		var kind = a.getAttribute('data-db-acct');
+		if (kind === 'signout') {
+			e.preventDefault();
+			api('logout', 'POST', {}).then(function () { window.location.href = C.home; });
+			return;
+		}
+		if (state.signedIn) { return; }
+		// Sign in and Create account are pages (/sign-in/, /register/), not a popup: let the link go.
+		if (kind === 'signin' || kind === 'register') { return; }
+		e.preventDefault();
+		var toggle = document.getElementById('db-mnav-toggle');
+		if (toggle && toggle.getAttribute('aria-expanded') === 'true') { toggle.click(); }
+		onSignedIn = goAccount;
+		openSignIn(0, kind === 'register' ? 'register' : 'signin');
+	});
+	window.dbAccount = { open: function (mode) { onSignedIn = goAccount; openSignIn(0, mode === 'register' ? 'register' : 'signin'); }, signedIn: function () { return state.signedIn; } };
+
 	function start() {
-		api('state', 'GET').then(function (j) { state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); }).catch(function () {});
+		var ready = function (j) {
+			state.signedIn = !!j.signedIn; state.saved = j.saved || []; refresh(); paintAccount();
+			var m = /[?&]auth=(signin|register)\b/.exec(location.search);
+			if (m && !state.signedIn && !document.getElementById('db-au') && m[1] === 'signin') { onSignedIn = goAccount; openSignIn(0, m[1]); }
+		};
+		// Saving needs an account, and signing in sets the db_in hint cookie. Without it the answer is
+		// always "signed out, nothing saved", so no request is made: this call took about 1 s of PHP on
+		// every page view for every visitor and added to the host's 508 limit (2026-11-24).
+		if (!/(?:^|;\s*)db_in=1(?:;|$)/.test(document.cookie)) {
+			ready({ signedIn: false, saved: [] });
+		} else {
+			api('state', 'GET').then(ready).catch(function () {});
+		}
 		mountButton(); mountPage();
 	}
 	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); } else { start(); }
@@ -567,6 +759,71 @@ if ( ! function_exists( 'db_wl_script' ) ) {
 </script>
 		<?php
 		return (string) ob_get_clean();
+	}
+}
+
+if ( ! function_exists( 'db_wl_auth_html' ) ) {
+	/**
+	 * The signed-out account page: a centred sign-in card, or the create-account
+	 * card with the reasons to have an account beside it. Sign-in here has no
+	 * password: the visitor enters an email, then the 6-digit code we send.
+	 *
+	 * @param string $mode 'signin' or 'register'.
+	 * @return string
+	 */
+	function db_wl_auth_html( $mode ) {
+		$register = 'register' === $mode;
+		$signin   = esc_url( home_url( '/sign-in/' ) );
+		$signup   = esc_url( home_url( '/register/' ) );
+		$icon     = function ( $path ) {
+			return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $path . '</svg>';
+		};
+		$mail = $icon( '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>' );
+		$key  = $icon( '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>' );
+
+		$email_field = '<label class="db-au-label" for="db-au-email">' . ( $register ? 'Email address <span aria-hidden="true">*</span>' : 'Your email' ) . '</label>'
+			. '<div class="db-au-field"><span class="db-au-ico">' . $mail . '</span><input id="db-au-email" type="email" name="email" autocomplete="email" required maxlength="190" placeholder="you@example.com"></div>';
+		$terms = $register
+			? '<label class="db-au-check"><input type="checkbox" name="terms" required> <span>I agree to the <a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">terms of use</a> and the <a href="' . esc_url( home_url( '/privacy-policy/' ) ) . '">privacy policy</a>. <span aria-hidden="true">*</span></span></label>'
+			: '';
+		$forms = '<form class="db-au-step" data-step="email">' . $email_field . $terms . '<div class="db-ts"></div>'
+			. '<button type="submit" class="db-au-btn">' . ( $register ? 'Create account' : 'Sign in' ) . '</button>'
+			. '<p class="db-au-hint">No password to remember. We email you a 6-digit code.</p></form>'
+			. '<form class="db-au-step" data-step="code" hidden><label class="db-au-label" for="db-au-code">Your 6-digit code</label>'
+			. '<div class="db-au-field"><span class="db-au-ico">' . $key . '</span><input id="db-au-code" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></div>'
+			. '<button type="submit" class="db-au-btn">' . ( $register ? 'Confirm and create account' : 'Confirm and sign in' ) . '</button>'
+			. '<button type="button" class="db-au-link" data-back>Use a different email</button></form>'
+			. '<p class="db-au-msg" role="status" aria-live="polite"></p>';
+
+		if ( ! $register ) {
+			$chips = '';
+			foreach ( array( 'Wishlist' => '#0b7a75', 'Price alerts' => '#d97706', 'Offers' => '#7c3aed', 'Payment plans' => '#2563eb' ) as $label => $color ) {
+				$chips .= '<li><span style="background:' . esc_attr( $color ) . '"></span>' . esc_html( $label ) . '</li>';
+			}
+			return '<section id="db-au" class="db-au db-au--signin" aria-labelledby="db-au-h">'
+				. '<span class="db-au-blob db-au-blob--a" aria-hidden="true"></span><span class="db-au-blob db-au-blob--b" aria-hidden="true"></span>'
+				. '<h1 id="db-au-h" class="db-au-title">Good to see you again</h1>'
+				. '<div class="db-au-card">' . $forms
+				. '<p class="db-au-links"><a href="' . $signup . '">Don&rsquo;t have an account?</a><a href="' . esc_url( home_url( '/contact-us/' ) ) . '">Trouble signing in?</a></p></div>'
+				. '<ul class="db-au-chips" aria-label="What your account holds">' . $chips . '</ul>'
+				. ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? '<div class="db-au-box db-au-box--sell"><h2>Own domains you no longer use?</h2><p>List them on Domain Brothers for free. Our brokers handle every buyer, and you pay a commission only when a name sells.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">Sell your domains</a></div>' : '' ) . '</section>';
+		}
+
+		$props = '';
+		$items = array(
+			array( 'Price and status alerts', 'Follow a name and hear when its price changes, when someone makes an offer or when it sells.', '<path d="M6 16V11a6 6 0 1112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/>' ),
+			array( 'Your offers in one place', 'Make an offer, see the reply and pick up the conversation from any device.', '<path d="M4 6h16v11H9l-5 4z"/><path d="M8 10h8M8 13h5"/>' ),
+			array( 'A wishlist that follows you', 'Save the names you like once. They are there on your phone, tablet and desktop.', '<path d="M12 20s-7-4.4-8.6-8.8C2.300 8 4.200 5 7.300 5c1.900 0 3.200 1 4.700 2.800C13.500 6 14.800 5 16.700 5c3.100 0 5 3 3.900 6.200C19 15.600 12 20 12 20z"/>' ),
+		);
+		foreach ( $items as $it ) {
+			$props .= '<li><span class="db-au-pico">' . $icon( $it[2] ) . '</span><p><strong>' . esc_html( $it[0] ) . '</strong> ' . esc_html( $it[1] ) . '</p></li>';
+		}
+		return '<section id="db-au" class="db-au db-au--register" aria-labelledby="db-au-h"><div class="db-au-grid">'
+			. '<div class="db-au-card"><h1 id="db-au-h" class="db-au-title">Create account</h1><p class="db-au-sub">Get started with a free account.</p><p class="db-au-req"><span aria-hidden="true">*</span> indicates a required field.</p>'
+			. $forms . '<p class="db-au-alt">Already have an account? <a href="' . $signin . '">Sign in</a>.</p></div>'
+			. '<div class="db-au-side"><h2>Never lose track of a name you want.</h2><p>An account keeps every domain you are watching, and every offer you have made, in one place.</p><ul class="db-au-props">' . $props . '</ul>'
+			. '<div class="db-au-box"><h2>Want a name that is not listed?</h2><p>You do not need an account to ask. Tell us the domain and a broker replies within one business day.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/acquire-premium-domain/' ) ) . '">Acquire a domain</a></div>' . ( function_exists( 'db_seller_enabled' ) && db_seller_enabled() ? '<div class="db-au-box db-au-box--sell"><h2>Own domains you no longer use?</h2><p>List them on Domain Brothers for free. Our brokers handle every buyer, and you pay a commission only when a name sells.</p><a class="db-au-btn2" href="' . esc_url( home_url( '/sell-your-domains/' ) ) . '">Sell your domains</a></div>' : '' ) . '</div>'
+			. '</div></section>';
 	}
 }
 
@@ -596,7 +853,7 @@ if ( ! function_exists( 'db_wl_row_html' ) ) {
 		$state = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'offer';
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$label = array(
-			'standard'     => $price > 0 ? '$' . number_format( $price, 0 ) : 'Open to offers',
+			'standard'     => $price > 0 ? db_usd( $price ) : 'Open to offers',
 			'offer'        => 'Open to offers',
 			'sold'         => 'Sold',
 			'not_for_sale' => 'Not for sale',
@@ -624,6 +881,7 @@ add_action( 'template_redirect', function () {
 	global $wp_query;
 	$wp_query->is_404 = false;
 
+	$GLOBALS['db_drawn_page'] = true; // og:url (db-rankmath-block.php)
 	$email = db_wl_email();
 	$stop  = function_exists( 'db_acct_handle_stop' ) ? db_acct_handle_stop() : '';
 	get_header();
@@ -631,11 +889,24 @@ add_action( 'template_redirect', function () {
 	echo '<nav class="db-breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="' . esc_url( home_url( '/' ) ) . '">Home</a></li><li><span aria-current="page">My account</span></li></ol></nav>';
 	if ( 'ok' === $stop ) {
 		echo '<div class="db-wl-card db-ac-notice" role="status"><h2>Alert emails are off</h2><p>We will not email you about domains you follow. You can still see every alert in your account, and turn emails back on from the Alerts tab.</p></div>';
+	} elseif ( 'confirm' === $stop ) {
+		echo '<div class="db-wl-card db-ac-notice" role="status"><h2>Stop alert emails?</h2><p>We will stop emailing you about domains you follow. You can still see every alert in your account, and turn emails back on from the Alerts tab.</p>'
+			. '<form method="post" action="' . esc_url( add_query_arg( null, null ) ) . '"><button type="submit" class="db-wl-primary">Stop alert emails</button></form></div>';
 	} elseif ( 'bad' === $stop ) {
 		echo '<div class="db-wl-card db-ac-notice" role="alert"><h2>That link did not work</h2><p>Sign in and use the switch on the Alerts tab to stop these emails.</p></div>';
 	}
 	if ( '' === $email ) {
-		echo '<h1 class="page-title">My account</h1><div class="db-wl-card" id="db-wl-signin"><h2>Sign in with your email</h2><p>Save the domains you like and follow them: we tell you when the price changes, a domain sells or someone makes an offer. See recently listed and hot domains, and make and track your offers. We email you a 6-digit code; there is no password to remember.</p><button type="button" class="db-wl-primary">Email me a code</button></div>';
+		if ( isset( $_GET['auth'] ) && 'register' === sanitize_key( wp_unslash( $_GET['auth'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			wp_safe_redirect( home_url( '/register/' ), 302 );
+			exit;
+		}
+		if ( function_exists( 'db_wl_intro_active' ) && db_wl_intro_active() ) {
+			// No ?auth= card requested: explain the wishlist first (db-wishlist-intro-block.php).
+			echo db_wl_intro_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+		} else {
+			$auth_mode = isset( $_GET['auth'] ) && 'register' === sanitize_key( wp_unslash( $_GET['auth'] ) ) ? 'register' : 'signin'; // phpcs:ignore WordPress.Security.NonceVerification
+			echo db_wl_auth_html( $auth_mode ); // phpcs:ignore WordPress.Security.EscapeOutput -- built from escaped parts.
+		}
 	} else {
 		$ids  = db_wl_ids( $email );
 		$rows = '';
@@ -715,7 +986,8 @@ add_action( 'admin_post_db_wl_export', function () {
 	fputcsv( $out, array( 'Domain', 'Watching', 'Last added (UTC)', 'Emails' ) );
 	foreach ( db_wl_admin_rows() as $r ) {
 		$name = strtolower( $r->post_title );
-		fputcsv( $out, array( ( '' !== $name && false !== strpos( '=+-@', $name[0] ) ) ? "'" . $name : $name, (int) $r->watchers, $r->last_at, $r->emails ) );
+		// Every text cell is escaped: emails can start with = + - @ too (AC-18).
+		fputcsv( $out, array( db_crm_csv_safe( $name ), (int) $r->watchers, $r->last_at, db_crm_csv_safe( $r->emails ) ) );
 	}
 	fclose( $out );
 	exit;
@@ -728,3 +1000,32 @@ add_filter( 'rest_post_dispatch', function ( $res, $server, $req ) {
 	}
 	return $res;
 }, 10, 3 );
+
+/*
+ * The account page is rendered by this plugin on top of a 404 query, so the
+ * theme and Rank Math titled it "Page Not Found" (bug RS-2). Give it a real
+ * title and description for whoever is looking: signed in or not.
+ */
+if ( ! function_exists( 'db_wl_page_title' ) ) {
+	function db_wl_page_title() {
+		$signed = function_exists( 'db_wl_email' ) && '' !== db_wl_email();
+		return ( $signed ? 'My account' : 'Sign in or create an account' ) . ' | Domain Brothers';
+	}
+}
+foreach ( array( 'pre_get_document_title', 'rank_math/frontend/title', 'rank_math/opengraph/facebook/og_title' ) as $db_wl_hook ) {
+	add_filter( $db_wl_hook, function ( $t ) {
+		return db_wl_is_page_request() ? db_wl_page_title() : $t;
+	}, 999 );
+}
+foreach ( array( 'rank_math/frontend/description', 'rank_math/opengraph/facebook/og_description' ) as $db_wl_hook ) {
+	add_filter( $db_wl_hook, function ( $d ) {
+		return db_wl_is_page_request() ? 'Your Domain Brothers account: saved domains, price alerts, offers, payment plans and transfers in one place. Sign in with a one-time email code.' : $d;
+	}, 999 );
+}
+unset( $db_wl_hook );
+add_filter( 'rank_math/frontend/robots', function ( $r ) {
+	if ( db_wl_is_page_request() ) {
+		$r['index'] = 'noindex';
+	}
+	return $r;
+}, 999 );

@@ -50,7 +50,7 @@ const VIEWPORTS = [
 	['desktop-1920', 1920, 1080, false],
 ];
 
-const PAGES = [
+const CORE_PAGES = [
 	['home', '/'],
 	['domain', '/domains/fatality-ca/'],
 	['all-domains', '/all-domains/'],
@@ -66,6 +66,31 @@ const PAGES = [
 	['plan', '/payment-plan-setup/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D'],
 	['wishlist', '/my-wishlist/'],
 ];
+
+// QA_ALL=1 scans every page type on the site: every WordPress page, the pages the
+// plugin renders, both kinds of domain page, posts and archives.
+const MORE_PAGES = [
+	['domain-offer', '/domains/mycaymanproperty-com/'],
+	['domain-priced-2', '/domains/247callers-com/'],
+	['cluster-post', '/website-launch-checklist-after-buying-a-domain/'],
+	['tag', '/tag/domain-names/'],
+	['news-category', '/category/domain-news/'],
+	['chars-3', '/3-character-domains/'], ['chars-4', '/4-character-domains/'], ['chars-5', '/5-character-domains/'], ['chars-6', '/6-character-domains/'],
+	['numeric', '/numeric-domains-for-sale/'], ['deals', '/premium-domain-deals/'],
+	['svc-appraisal', '/domain-appraisal-services/'], ['svc-management', '/domain-management-services/'], ['svc-brokerage', '/domain-brokerage-services/'],
+	['svc-marketing', '/digital-marketing-services/'], ['svc-solutions', '/comprehensive-digital-solutions/'], ['svc-hosting', '/web-hosting-maintenance-services/'],
+	['svc-mobile', '/mobile-app-development-services/'], ['svc-software', '/custom-software-development-services/'],
+	['sell-handles', '/sell-social-media-handles/'], ['acquire-handles', '/acquire-social-media-handles/'], ['about-db', '/about-domain-brothers/'],
+	['handle-form', '/acquire-a-handle-now/'], ['acquire-premium', '/acquire-premium-domain/'], ['transfer', '/domain-transfer/'],
+	['epp', '/epp-guidelines/'], ['under-review', '/domains-under-review/'], ['thank-you', '/thank-you/'], ['not-found', '/this-page-does-not-exist/'],
+	['sell-service', '/sell-domains-service/'], ['digital-marketing', '/digital-marketing/'],
+	['mobile-app', '/mobile-app-development/'], ['other-services', '/other-services/'], ['software', '/software-development/'], ['web-design', '/website-design-development/'],
+	['team', '/our-team/'], ['team-member', '/our-team/jay-mehta/'],
+	['privacy', '/privacy-policy/'], ['refund', '/refund-policy/'], ['terms', '/terms-of-use/'], ['site-map', '/site-map/'],
+	['finder', '/find-a-domain/'], ['trust', '/trust-center/'], ['collections', '/collections/'], ['compare', '/compare-domains/?d=fatality.ca,247callers.com'],
+	['checkout', '/checkout/?d=ZmF0YWxpdHkuY2E%3D&p=MjUwMA%3D%3D'],
+];
+const PAGES = process.env.QA_ALL ? CORE_PAGES.concat(MORE_PAGES) : CORE_PAGES;
 
 const MEASURE = () => {
 	const w = document.documentElement.clientWidth;

@@ -97,6 +97,47 @@ if ( ! function_exists( 'db_news_og_image' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_render_news_cached' ) ) {
+	/**
+	 * The news block without making a visitor wait for the feeds (bug P-1): the last
+	 * rendering is served at once, and a stale one is rebuilt in the background by cron.
+	 * Only the very first rendering (nothing stored yet) is built during the request.
+	 */
+	function db_render_news_cached( $limit = 6 ) {
+		$key   = 'db_news_html_' . (int) $limit;
+		$saved = get_option( $key );
+		if ( is_array( $saved ) && isset( $saved['html'], $saved['ts'] ) ) {
+			// A copy built by another plugin version may have old markup (AX-15): rebuilt in the background too.
+			$old_build = defined( 'DB_BLOCKS_LOADED' ) && ( $saved['v'] ?? '' ) !== DB_BLOCKS_LOADED;
+			if ( ( $old_build || time() - (int) $saved['ts'] > DB_NEWS_TTL ) && ! wp_next_scheduled( 'db_news_refresh', array( (int) $limit ) ) ) {
+				wp_schedule_single_event( time(), 'db_news_refresh', array( (int) $limit ) );
+			}
+			// The stored copy may be from yesterday: the date line is always today's.
+			return (string) preg_replace_callback( '#<p class="db-an-day">[^<]*</p>#', static function () {
+				return '<p class="db-an-day">' . esc_html( date_i18n( 'l, F j' ) ) . '</p>';
+			}, (string) $saved['html'], 1 );
+		}
+		return db_news_refresh( $limit );
+	}
+}
+
+if ( ! function_exists( 'db_news_refresh' ) ) {
+	/** Builds the news block and stores it (empty results keep the previous copy). */
+	function db_news_refresh( $limit = 6 ) {
+		$html = db_render_news( (int) $limit );
+		$key  = 'db_news_html_' . (int) $limit;
+		if ( '' !== $html || ! get_option( $key ) ) {
+			update_option( $key, array( 'html' => $html, 'ts' => time(), 'v' => defined( 'DB_BLOCKS_LOADED' ) ? DB_BLOCKS_LOADED : '' ), false );
+		}
+		if ( '' === $html ) {
+			$old = get_option( $key );
+			return is_array( $old ) ? (string) $old['html'] : '';
+		}
+		return $html;
+	}
+}
+add_action( 'db_news_refresh', 'db_news_refresh' );
+
 if ( ! function_exists( 'db_render_news' ) ) {
 	function db_render_news( $limit = 6 ) {
 		if ( ! function_exists( 'fetch_feed' ) ) {
@@ -137,47 +178,37 @@ if ( ! function_exists( 'db_render_news' ) ) {
 		usort( $items, function ( $a, $b ) { return $b['date'] <=> $a['date']; } );
 		$items = array_slice( $items, 0, $limit );
 
-		$html  = '<div class="db-news-live">';
-		$html .= '<h2 class="db-news-live-heading">Latest From The Industry</h2>';
-		$html .= '<div class="db-news-grid">';
-		foreach ( $items as $it ) {
+		$card = function ( $it, $class, $eager ) {
 			$date_str = $it['date'] ? date_i18n( get_option( 'date_format' ), $it['date'] ) : '';
 			$image    = db_news_og_image( $it['link'] );
-			// A single click target for the whole card that opens the
-			// on-site preview (db-ui-enhancer.js) instead of navigating away
-			// — the actual external link only appears once, inside that
-			// preview, clearly labelled as leaving the site. data-* carries
-			// everything the preview needs so no second network round trip
-			// is needed to build it.
-			$html .= '<article class="db-news-card">';
-			$html .= '<button type="button" class="db-news-card__trigger"'
-				. ' data-title="' . esc_attr( $it['title'] ) . '"'
-				. ' data-excerpt="' . esc_attr( $it['excerpt'] ) . '"'
-				. ' data-source="' . esc_attr( $it['source'] ) . '"'
-				. ' data-date="' . esc_attr( $date_str ) . '"'
-				. ' data-link="' . esc_url( $it['link'] ) . '"'
-				. ( $image ? ' data-image="' . esc_url( $image ) . '"' : '' )
-				. '>';
-			if ( $image ) {
-				$html .= '<span class="db-news-thumb"><img src="' . esc_url( $image ) . '" alt="" loading="lazy" decoding="async"></span>';
+			$source   = trim( (string) preg_replace( '/\s*\|.*$/', '', (string) $it['source'] ) );
+			// One link for the whole card: the publisher's article in a new tab. Its accessible name is
+			// "Title, Source (opens in a new tab)" rather than all the card text read in a row (AX-15).
+			$label = $it['title'] . ( '' !== $source ? ', ' . $source : '' ) . ' (opens in a new tab)';
+			$h     = '<article class="db-an-card ' . esc_attr( $class ) . '"><a class="db-an-hit" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener noreferrer" aria-label="' . esc_attr( $label ) . '">';
+			$h .= '<span class="db-an-img">' . db_img_placeholder( '' !== $source ? $source : 'Domain news', $it['title'] ) . ( $image ? '<img src="' . esc_url( $image ) . '" alt="" ' . ( $eager ? 'loading="eager"' . ( 1 === $eager ? ' fetchpriority="high"' : '' ) : 'loading="lazy"' ) . ' decoding="async">' : '' ) . '</span>';
+			$h .= '<span class="db-an-txt">';
+			if ( '' !== $source ) {
+				$h .= '<span class="db-an-src">' . esc_html( $source ) . '</span>';
 			}
-			$html .= '<span class="db-news-title">' . esc_html( $it['title'] ) . '</span>';
-			$html .= '<span class="db-news-meta">';
-			if ( $it['source'] ) {
-				$html .= '<span class="db-news-source">' . esc_html( $it['source'] ) . '</span>';
+			$h .= '<span class="db-an-title">' . esc_html( $it['title'] ) . '</span>';
+			if ( $it['excerpt'] ) {
+				$h .= '<span class="db-an-ex">' . esc_html( $it['excerpt'] ) . '</span>';
 			}
 			if ( $date_str ) {
-				$html .= '<span class="db-news-date">' . esc_html( $date_str ) . '</span>';
+				$h .= '<span class="db-an-date">' . esc_html( $date_str ) . '</span>';
 			}
-			$html .= '</span>';
-			if ( $it['excerpt'] ) {
-				$html .= '<span class="db-news-excerpt">' . esc_html( $it['excerpt'] ) . '</span>';
-			}
-			$html .= '<span class="db-news-readmore">Read more</span>';
-			$html .= '</button>';
-			$html .= '</article>';
+			return $h . '</span></a></article>';
+		};
+
+		$html  = '<div class="db-news-live db-an">';
+		$html .= '<header class="db-an-head"><p class="db-an-day">' . esc_html( date_i18n( 'l, F j' ) ) . '</p><h1 class="db-an-h1">Domain News</h1><p class="db-an-sub">The stories moving the domain industry today, from the publications that cover it.</p></header>';
+		// One card design for every story on the page.
+		$html .= '<h2 class="db-an-sec db-news-live-heading">Latest from the industry</h2><div class="db-an-grid">';
+		foreach ( $items as $n => $it ) {
+			$html .= $card( $it, 'db-an-tile', $n < 4 ? $n + 1 : 0 );
 		}
-		$html .= '</div></div>';
+		$html .= '</div><h2 class="db-an-sec db-an-sec--own">From Domain Brothers</h2></div>';
 
 		return $html;
 	}
@@ -194,7 +225,14 @@ add_action( 'template_redirect', function () {
 		if ( false !== strpos( $html, 'db-news-live' ) ) {
 			return $html; // already inserted (defensive, shouldn't recurse)
 		}
-		$news_html = db_render_news( 6 );
+		// Page 2 and later list older posts only: the live feed (the same 8 stories on all 308 pages)
+		// and an unnumbered H1 made every archive page a duplicate (SE-13).
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		if ( $paged > 1 ) {
+			$html = preg_replace( '#(<h1 class="db-an-h1">)([^<]*)(</h1>)#', '$1$2, page ' . $paged . '$3', $html, 1 );
+			return db_news_own_cards( $html );
+		}
+		$news_html = db_render_news_cached( 8 );
 		if ( '' === $news_html ) {
 			return $html; // all feeds unreachable this request — leave the archive as-is
 		}
@@ -203,9 +241,56 @@ add_action( 'template_redirect', function () {
 		if ( false === $pos ) {
 			return $html;
 		}
-		return substr_replace( $html, $news_html, $pos, 0 );
+		return db_news_own_cards( substr_replace( $html, $news_html, $pos, 0 ) );
 	} );
 }, 20 );
+
+if ( ! function_exists( 'db_news_own_cards' ) ) {
+	/**
+	 * The theme prints the site's own posts as a plain list. Each entry becomes
+	 * the same card the feed stories use, in the same grid. Private posts (only
+	 * ever visible to a signed-in administrator) are left out.
+	 *
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	function db_news_own_cards( $html ) {
+		$n   = 0;
+		$out = preg_replace_callback( '#<div class="news-cnt">\s*(<article\b[^>]*>.*?</article>)\s*</div>#s', function ( $m ) use ( &$n ) {
+			$a = $m[1];
+			if ( preg_match( '#^<article\b[^>]*\bstatus-private\b#', $a ) ) {
+				return '';
+			}
+			if ( ! preg_match( '#<h[1-6][^>]*class="[^"]*entry-title[^"]*"[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>#s', $a, $t ) ) {
+				return $m[0];
+			}
+			$title = trim( wp_strip_all_tags( $t[2] ) );
+			$title = (string) preg_replace( '/^Private:\s*/', '', $title );
+			$img   = preg_match( '#<img[^>]*\bsrc="([^"]+)"#', $a, $i ) ? $i[1] : '';
+			$date  = preg_match( '#<time[^>]*>(.*?)</time>#s', $a, $d ) ? trim( wp_strip_all_tags( $d[1] ) ) : '';
+			if ( '' === $date && preg_match( '#((?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4})#', wp_strip_all_tags( $a ), $d ) ) {
+				$date = $d[1];
+			}
+			$cat = preg_match( '#rel="category tag"[^>]*>(.*?)</a>#s', $a, $c ) ? trim( wp_strip_all_tags( $c[1] ) ) : 'Domain Brothers';
+			++$n;
+			return '<article class="db-an-card db-an-tile"><a class="db-an-hit" href="' . esc_url( $t[1] ) . '">'
+				. '<span class="db-an-img">' . db_img_placeholder( $cat, $title ) . ( '' !== $img ? '<img src="' . esc_url( $img ) . '" alt="" loading="lazy" decoding="async">' : '' ) . '</span>'
+				. '<span class="db-an-txt"><span class="db-an-src">' . esc_html( $cat ) . '</span><span class="db-an-title">' . esc_html( $title ) . '</span>'
+				. ( '' !== $date ? '<span class="db-an-date">' . esc_html( $date ) . '</span>' : '' ) . '</span></a></article>';
+		}, $html );
+		if ( null === $out || 0 === $n ) {
+			return $html;
+		}
+		// Wrap the run of cards in the shared grid.
+		$first = strpos( $out, '<article class="db-an-card db-an-tile"><a class="db-an-hit"' );
+		$last  = strrpos( $out, '</a></article>' );
+		if ( false === $first || false === $last ) {
+			return $html;
+		}
+		$last += strlen( '</a></article>' );
+		return substr( $out, 0, $first ) . '<div class="db-an-grid db-an-own">' . substr( $out, $first, $last - $first ) . '</div>' . substr( $out, $last );
+	}
+}
 
 /* Individual news post pages duplicate the featured image: the theme
    already renders it above the content (<figure class="feature-image">),
@@ -517,4 +602,51 @@ add_action( 'init', function () {
 	$mode  = $commit ? 'COMMITTED' : 'DRY RUN — nothing saved';
 	$next  = $commit ? '' : '<p><a href="' . esc_url( wp_nonce_url( add_query_arg( array( 'db_fix_post_images' => '1', 'commit' => '1' ), home_url( '/' ) ), 'db_fix_post_images' ) ) . '">Commit these changes</a></p>';
 	wp_die( '<p><strong>' . $mode . '</strong> — ' . count( $report ) . ' post(s) affected:</p><p>' . implode( '</p><p>', $report ) . '</p>' . $next, 'DB Post Image Repair', array( 'response' => 200 ) );
+} );
+
+/*
+ * Category archives (the guides blog at /category/domain-guides/ and the news
+ * categories) use the same cards and grid as /news/, under a masthead with the
+ * category name and description.
+ */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_category() ) {
+		return;
+	}
+	$term = get_queried_object();
+	if ( ! $term instanceof WP_Term ) {
+		return;
+	}
+	ob_start( function ( $html ) use ( $term ) {
+		$guides = 'domain-guides' === $term->slug;
+		$title  = $guides ? 'Domain Guides' : $term->name;
+		$desc   = trim( wp_strip_all_tags( term_description( $term ) ) );
+		if ( '' === $desc ) {
+			$desc = $guides
+				? 'Practical guides to buying, valuing, transferring and marketing premium domain names, written by the Domain Brothers team.'
+				: sprintf( 'Posts filed under %s on the Domain Brothers blog.', $term->name ); // no false "collected daily" (CR-7)
+		}
+		$paged = max( 1, (int) get_query_var( 'paged' ) );
+		$head  = '<header class="db-an-head db-an-head--cat"><p class="db-an-day">' . ( 'domain-news' === $term->slug ? 'Domain news' : 'The Domain Brothers blog' ) . '</p><h1 class="db-an-h1">' . esc_html( $title ) . ( $paged > 1 ? ' <span class="db-an-page">Page ' . (int) $paged . '</span>' : '' ) . '</h1><p class="db-an-sub">' . esc_html( $desc ) . '</p></header>';
+		$out   = preg_replace( '#<header class="page-header">.*?</header>#s', '', $html, 1 );
+		$out   = null === $out ? $html : $out;
+		$out   = db_news_own_cards( $out );
+		$pos   = strpos( $out, '<div class="db-an-grid db-an-own">' );
+		if ( false === $pos ) {
+			return $html;
+		}
+		$end = strpos( $out, '</div>', strrpos( $out, '</a></article>' ) );
+		if ( false === $end ) {
+			return $html;
+		}
+		$out = substr_replace( $out, '</div></div>', $end, strlen( '</div>' ) );
+		return substr_replace( $out, '<div class="db-an db-an--cat">' . $head, $pos, 0 );
+	} );
+}, 20 );
+
+// A fuller first page for category archives: 12 cards (three rows of four).
+add_action( 'pre_get_posts', function ( $q ) {
+	if ( ! is_admin() && $q->is_main_query() && $q->is_category() ) {
+		$q->set( 'posts_per_page', 12 );
+	}
 } );

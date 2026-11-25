@@ -30,7 +30,7 @@ body #main#main.db-faq-main { padding: 0 !important; margin: 0 !important; max-w
 	--f-radius: 14px;
 	--f-radius-sm: 10px;
 	--f-shadow: 0 1px 2px rgba(15, 26, 46, .04), 0 4px 16px rgba(15, 26, 46, .05);
-	--f-font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+	--f-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
 	--f-header: 88px;
 	display: block;
 	color: var(--f-text);

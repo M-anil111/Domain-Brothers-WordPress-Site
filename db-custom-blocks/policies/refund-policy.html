@@ -1,0 +1,153 @@
+<!-- wp:html -->
+<style>
+
+body.page-id-__ID__{overflow-x:clip}
+body.page-id-__ID__ #page .db-breadcrumbs,body.page-id-__ID__ #page article.post-__ID__>.entry-title,body.page-id-__ID__ #page .db-ad{display:none!important}
+body.page-id-__ID__ #page #content{padding-bottom:0!important}
+body.page-id-__ID__ #page #content #main.site-main,body.page-id-__ID__ #page #content article.post-__ID__{margin-top:0!important;padding-top:0!important;margin-bottom:0!important;padding-bottom:0!important}
+body.page-id-__ID__ .entry-content{margin:0;padding:0}
+#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
+#dbr *,#dbr *::before,#dbr *::after{box-sizing:border-box}
+#dbr h1,#dbr h2,#dbr p,#dbr ul,#dbr ol,#dbr li{margin:0;padding:0;font-family:inherit;text-transform:none;border:0;background:none;letter-spacing:normal}
+#dbr .dbr-bleed{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+#dbr .dbr-wrap{width:100%;max-width:1224px;margin:0 auto;padding:0 20px}
+#dbr a{text-decoration:none;box-shadow:none}
+/* Banner */
+#dbr .dbr-hero{background:linear-gradient(180deg,#eef2f7 0%,#f1f4f8 100%);border-top:1px solid #e6eaf0;border-bottom:1px solid #e6eaf0}
+#dbr .dbr-hero .dbr-wrap{padding-top:34px;padding-bottom:36px}
+#dbr .dbr-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:9px;list-style:none;font-size:16px;line-height:1.4;margin:0 0 30px}
+#dbr .dbr-crumbs li{display:flex;align-items:center;gap:9px;color:var(--muted);list-style:none}
+#dbr .dbr-crumbs li+li::before{content:"/";color:#8a93a1}
+#dbr .dbr-crumbs a{color:var(--muted)!important;transition:color .2s}
+#dbr .dbr-crumbs a:hover{color:var(--navy)!important}
+#dbr .dbr-crumbs [aria-current]{color:var(--navy);font-weight:700}
+#dbr .dbr-title{position:relative;padding-left:30px}
+#dbr .dbr-title::before{content:"";position:absolute;left:0;top:0;width:6px;height:clamp(40px,3.6vw,52px);background:var(--lime);border-radius:1px}
+#dbr .dbr-h1{font-size:clamp(36px,3.9vw,54px);line-height:1;font-weight:800;letter-spacing:-.025em;color:var(--navy);margin:0 0 18px}
+#dbr .dbr-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.5;color:var(--text)}
+/* Layout */
+#dbr .dbr-body{padding:50px 0 68px;background:#fff}
+#dbr .dbr-grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:46px;align-items:stretch}
+#dbr .dbr-aside{border-right:1px solid var(--line);padding-right:34px}
+#dbr .dbr-toc{position:sticky;top:110px}
+#dbr .dbr-toc-title{font-size:22px;font-weight:800;letter-spacing:-.01em;color:var(--navy);margin:0 0 20px;line-height:1.3}
+#dbr .dbr-toc ul{list-style:none;border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:24px}
+#dbr .dbr-toc li{list-style:none;margin:0 0 2px}
+#dbr .dbr-toc li a{display:block;padding:9px 20px;border-left:4px solid transparent;border-radius:0 4px 4px 0;font-size:17px;line-height:1.3;font-weight:500;color:var(--text)!important;transition:background .2s,color .2s}
+#dbr .dbr-toc li a:hover{color:var(--navy)!important;background:#f5f7fa}
+#dbr .dbr-toc li a.is-active{background:var(--lime-soft);border-left-color:var(--navy);color:var(--navy)!important;font-weight:700}
+#dbr .dbr-top{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:500;color:var(--navy)!important;transition:color .2s}
+#dbr .dbr-top svg{width:15px;height:15px}
+#dbr .dbr-top:hover{color:var(--lime-ink)!important}
+/* Content */
+#dbr .dbr-content{max-width:790px;min-width:0}
+#dbr .dbr-sec{padding:0 0 26px;margin:0 0 26px;border-bottom:1px solid #d9dee6;scroll-margin-top:110px}
+#dbr .dbr-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+#dbr .dbr-sec h2{font-size:clamp(25px,2.25vw,32px);line-height:1.2;font-weight:800;letter-spacing:-.015em;color:var(--navy);margin:0 0 10px}
+#dbr .dbr-sec p{font-size:17px;line-height:1.42;color:var(--text);margin:0 0 14px;text-wrap:pretty}
+#dbr .dbr-sec p:last-child{margin-bottom:0}
+#dbr .dbr-mail{font-weight:700;color:var(--navy)!important;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere;transition:color .2s}
+#dbr .dbr-mail:hover{color:var(--lime-ink)!important}
+/* Responsive */
+@media (max-width:1199px){#dbr .dbr-grid{grid-template-columns:230px minmax(0,1fr);gap:40px}#dbr .dbr-aside{padding-right:28px}#dbr .dbr-toc li a{padding:8px 16px;font-size:16px}}
+@media (max-width:991px){
+#dbr .dbr-hero .dbr-wrap{padding-top:30px;padding-bottom:32px}
+#dbr .dbr-crumbs{font-size:15px;margin-bottom:22px}
+#dbr .dbr-body{padding:32px 0 56px}
+#dbr .dbr-grid{grid-template-columns:minmax(0,1fr);gap:32px}
+#dbr .dbr-aside{border-right:0;padding-right:0}
+#dbr .dbr-toc{position:static;background:var(--tint);border:1px solid var(--line);border-radius:12px;padding:20px 20px 16px}
+#dbr .dbr-toc-title{font-size:19px;margin-bottom:12px}
+#dbr .dbr-toc ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;border-bottom:0;padding-bottom:0;margin-bottom:0}
+#dbr .dbr-toc li a{padding:8px 14px;font-size:15.5px}
+#dbr .dbr-toc li a:hover{background:#fff}
+#dbr .dbr-top{display:none}
+#dbr .dbr-content{max-width:none}
+#dbr .dbr-sec{scroll-margin-top:90px}
+}
+@media (max-width:640px){
+#dbr .dbr-title{padding-left:20px}
+#dbr .dbr-title::before{width:5px}
+#dbr .dbr-h1{margin-bottom:14px}
+#dbr .dbr-toc ul{grid-template-columns:minmax(0,1fr)}
+#dbr .dbr-sec{padding-bottom:22px;margin-bottom:22px}
+#dbr .dbr-sec p{font-size:16px;line-height:1.55}
+}
+
+
+#dbr .dbr-sec ul,#dbr .dbr-sec ol{margin:0 0 14px 0;padding-left:22px;list-style:disc}
+#dbr .dbr-sec ol{list-style:decimal}
+#dbr .dbr-sec li{font-size:17px;line-height:1.5;color:var(--text);margin:0 0 6px;padding:0;list-style:inherit;text-wrap:pretty}
+#dbr .dbr-sec strong{color:var(--navy);font-weight:700}
+#dbr .dbr-sec p a,#dbr .dbr-sec li a{color:var(--navy)!important;font-weight:600;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere}
+#dbr .dbr-sec p a:hover,#dbr .dbr-sec li a:hover{color:var(--lime-ink)!important}
+#dbr .dbr-tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+#dbr .dbr-sec table{border-collapse:collapse;width:100%;min-width:520px;font-size:16px;line-height:1.45}
+#dbr .dbr-sec th,#dbr .dbr-sec td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+#dbr .dbr-sec th{background:var(--tint);color:var(--navy);font-weight:700}
+#dbr .dbr-sec tr:last-child td{border-bottom:0}
+#dbr .dbr-meta{font-size:15px;color:var(--muted);margin:0 0 22px}
+@media (max-width:640px){#dbr .dbr-sec li{font-size:16px}}
+
+</style>
+<div id="dbr">
+<section class="dbr-hero dbr-bleed"><div class="dbr-wrap">
+<ol class="dbr-crumbs" aria-label="Breadcrumb"><li><a href="/">Home</a></li><li><span aria-current="page">Refund Policy</span></li></ol>
+<div class="dbr-title"><h1 class="dbr-h1">Refund Policy</h1>
+<p class="dbr-sub">All sales are final. Please read this before you pay.</p></div>
+</div></section>
+<section class="dbr-body dbr-bleed"><div class="dbr-wrap dbr-grid">
+<aside class="dbr-aside" aria-label="On this page"><div class="dbr-toc" id="dbr-toc">
+<p class="dbr-toc-title">On this page</p>
+<ul>
+<li><a href="#dbr-our-rule" class="is-active">Our rule</a></li>
+<li><a href="#dbr-why">Why</a></li>
+<li><a href="#dbr-what-this-covers">What this covers</a></li>
+<li><a href="#dbr-offers-and-agreed-prices">Offers and agreed prices</a></li>
+<li><a href="#dbr-payment-plans">Payment plans</a></li>
+<li><a href="#dbr-chargebacks-and-payment-disputes">Chargebacks and payment disputes</a></li>
+<li><a href="#dbr-two-things-that-are-not-refunds-of-a-sale">Two things that are not refunds of a sale</a></li>
+<li><a href="#dbr-your-legal-rights">Your legal rights</a></li>
+<li><a href="#dbr-before-you-buy">Before you buy</a></li>
+<li><a href="#dbr-questions">Questions</a></li>
+</ul>
+<a class="dbr-top" href="#page">Back to top <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13.5V2.5M3.5 7 8 2.5 12.5 7"/></svg></a>
+</div></aside>
+<div class="dbr-content">
+<div class="dbr-sec" id="dbr-our-rule"><h2>Our rule</h2>
+<p><strong>All sales are final. Domain Brothers does not give refunds, returns, exchanges or credits once a payment has been made, for any reason.</strong> This applies to every purchase made through DomainBrothers.com, whether you pay in full or on a payment plan, and to every payment, instalment, interest charge and fee.</p></div>
+<div class="dbr-sec" id="dbr-why"><h2>Why</h2>
+<p>A domain name is a unique digital asset. It is delivered electronically, it cannot be handed back in the state it was sold in, and once a transfer has started we cannot undo it. Sellers of domain names work this way across the industry. By paying, you accept that the sale cannot be reversed.</p></div>
+<div class="dbr-sec" id="dbr-what-this-covers"><h2>What this covers</h2>
+<p>No refund, return, exchange or credit is available for any of these reasons, whether the reason is yours or not:</p>
+<ul><li>You change your mind, no longer need the name, or cannot afford it.</li><li>You find the same or a similar name elsewhere, or for less.</li><li>You mistyped, misspelled or chose the wrong name or extension. Check the exact spelling and extension before you pay.</li><li>A trademark owner or anyone else objects to the name, or you receive a complaint or a dispute notice. Checking trademarks and legal rights before you buy is your responsibility.</li><li>The name does not bring the traffic, search ranking, customers, resale value or income you expected. We do not promise any of these.</li><li>Your plans for the name, your business or your website change.</li><li>Your registrar, hosting provider or bank delays or blocks the transfer, or you give us incorrect registrar details.</li><li>You are charged renewal, registrar, bank, currency or other third-party fees.</li><li>You do not use the name, or you let it expire after the transfer.</li></ul></div>
+<div class="dbr-sec" id="dbr-offers-and-agreed-prices"><h2>Offers and agreed prices</h2>
+<p>An offer we have accepted in writing is a commitment to buy at that price. An accepted offer is a sale and is final when you pay.</p></div>
+<div class="dbr-sec" id="dbr-payment-plans"><h2>Payment plans</h2>
+<p>Every instalment you pay is non-refundable, and so is any interest in the plan. Stopping or cancelling future payments does not entitle you to a refund of what you have paid. If a payment is not made, the plan ends, the domain returns to our inventory and may be sold to someone else, and the payments already made are kept and are not credited toward any other purchase. The full rules are in our <a href="/payment-terms/">Payment Terms</a>.</p></div>
+<div class="dbr-sec" id="dbr-chargebacks-and-payment-disputes"><h2>Chargebacks and payment disputes</h2>
+<p>If you think a charge is wrong, contact us first at <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>. We will look into it quickly.</p>
+<p>If you start a chargeback or payment dispute for a purchase you made and received, we will contest it with our records, including your order, your recorded acceptance of our terms and the transfer history. While a dispute is open we may suspend or cancel the domain and related services, and we may recover dispute fees and costs to the extent the law allows. We may refuse future sales to anyone who disputes a valid purchase.</p></div>
+<div class="dbr-sec" id="dbr-two-things-that-are-not-refunds-of-a-sale"><h2>Two things that are not refunds of a sale</h2>
+<p>These are corrections, not returns of a completed sale:</p>
+<ul><li><strong>A charge we make in error.</strong> If we take a payment by mistake, for example the same instalment twice, we reverse the extra charge.</li><li><strong>An order we cannot deliver.</strong> If we decline an order, or cannot deliver the domain before it has been transferred to you, the payment for that order is returned to the card it came from.</li></ul></div>
+<div class="dbr-sec" id="dbr-your-legal-rights"><h2>Your legal rights</h2>
+<p>This policy applies as far as the law allows. If the law where you live gives you a right that cannot be waived, this policy does not take that right away.</p></div>
+<div class="dbr-sec" id="dbr-before-you-buy"><h2>Before you buy</h2>
+<p>Take a few minutes to check that:</p>
+<ul><li>the name and extension are exactly what you want;</li><li>you have searched the trademark register in each country where you will use the name;</li><li>the price, and the payment plan if you choose one, fit your budget, including renewals at your registrar;</li><li>you have read our <a href="/terms-of-use/">Terms of Use</a> and <a href="/payment-terms/">Payment Terms</a>.</li></ul></div>
+<div class="dbr-sec" id="dbr-questions"><h2>Questions</h2>
+<p>Write to <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> before you pay if anything is unclear. Asking a question does not oblige us to issue a refund.</p>
+<p>By paying on DomainBrothers.com you confirm that you have read, understood and agree to this Refund Policy.</p></div>
+</div>
+</div></section>
+</div>
+<script>
+(function(){var toc=document.getElementById('dbr-toc');if(!toc)return;var links=[].slice.call(toc.querySelectorAll('ul a'));var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+function setActive(id){links.forEach(function(a){a.classList.toggle('is-active',a.getAttribute('href')==='#'+id)})}
+function onScroll(){var y=window.scrollY+140,cur=secs[0];secs.forEach(function(s){if(s.getBoundingClientRect().top+window.scrollY<=y)cur=s});if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4)cur=secs[secs.length-1];if(cur)setActive(cur.id)}
+links.forEach(function(a){a.addEventListener('click',function(e){var t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();var off=window.innerWidth<992?90:110;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off+2,behavior:'smooth'});history.replaceState(null,'',a.getAttribute('href'))})});
+var top=toc.querySelector('.dbr-top');if(top)top.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();})();
+</script>
+<!-- /wp:html -->

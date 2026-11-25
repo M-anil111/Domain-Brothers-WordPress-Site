@@ -232,6 +232,7 @@ if ( ! function_exists( 'db_orders_query' ) ) {
 if ( ! function_exists( 'db_orders_filters' ) ) {
 	function db_orders_filters() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		// 'all' is an explicit value, so the choice survives paging (AD-9); no mode means the current one.
 		$mode = isset( $_GET['mode'] ) ? sanitize_key( wp_unslash( $_GET['mode'] ) ) : db_orders_mode();
 		return array(
 			'mode' => in_array( $mode, array( 'test', 'live' ), true ) ? $mode : '',
@@ -257,10 +258,15 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 
 		// Summary of what matches the filters (not just this page).
 		$all = db_orders_query( $f, 5000, 0 );
-		$sum = array( 'n' => $all['total'], 'collected' => 0.0, 'plans' => 0, 'overdue' => 0 );
+		$sum = array( 'n' => $all['total'], 'collected' => 0.0, 'collected_test' => 0.0, 'plans' => 0, 'overdue' => 0 );
 		foreach ( $all['rows'] as $r ) {
 			$live = db_orders_live( $r );
-			$sum['collected'] += $live['paid'];
+			// Test money is never added to real money (AD-9): it gets its own figure.
+			if ( 'test' === ( $r->mode ?? '' ) ) {
+				$sum['collected_test'] += $live['paid'];
+			} else {
+				$sum['collected'] += $live['paid'];
+			}
 			if ( (int) $r->plan_months > 0 && 'active' === preg_replace( '/^plan_/', '', $live['status'] ) ) {
 				$sum['plans']++;
 			}
@@ -278,13 +284,13 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 		}
 		echo '<style>.dbs-tiles{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}.dbs-tile{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:12px 18px;min-width:150px}.dbs-tile b{display:block;font-size:22px}.dbs-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#eef2f7;color:#334155}.dbs-pill.paid,.dbs-pill.plan_completed,.dbs-pill.completed{background:#e7f6ec;color:#137a3e}.dbs-pill.active,.dbs-pill.plan_active{background:#e0f0ff;color:#0a5aa8}.dbs-pill.past_due,.dbs-pill.plan_past_due{background:#fff4e0;color:#8a5a00}.dbs-pill.terminated,.dbs-pill.plan_terminated{background:#fee2e2;color:#991b1b}.dbs-kind{font-weight:600}.dbs-sub{color:#646970;font-size:12px}</style>';
 		printf(
-			'<div class="dbs-tiles"><div class="dbs-tile"><span>Orders</span><b>%d</b></div><div class="dbs-tile"><span>Collected</span><b>$%s</b></div><div class="dbs-tile"><span>Active plans</span><b>%d</b></div><div class="dbs-tile"><span>Overdue</span><b>%d</b></div></div>',
-			(int) $sum['n'], esc_html( number_format( $sum['collected'], 2 ) ), (int) $sum['plans'], (int) $sum['overdue']
+			'<div class="dbs-tiles"><div class="dbs-tile"><span>Orders</span><b>%d</b></div><div class="dbs-tile"><span>Collected (live)</span><b>$%s</b>%s</div><div class="dbs-tile"><span>Active plans</span><b>%d</b></div><div class="dbs-tile"><span>Overdue</span><b>%d</b></div></div>',
+			(int) $sum['n'], esc_html( number_format( $sum['collected'], 2 ) ), $sum['collected_test'] > 0 ? '<small>Test: $' . esc_html( number_format( $sum['collected_test'], 2 ) ) . '</small>' : '', (int) $sum['plans'], (int) $sum['overdue']
 		);
 
 		// Filters.
 		echo '<form method="get" style="margin:10px 0"><input type="hidden" name="page" value="db-sales">';
-		echo '<select name="mode"><option value="">Test and live</option><option value="live"' . selected( $f['mode'], 'live', false ) . '>Live</option><option value="test"' . selected( $f['mode'], 'test', false ) . '>Test</option></select> ';
+		echo '<select name="mode"><option value="all"' . selected( $f['mode'], '', false ) . '>Test and live</option><option value="live"' . selected( $f['mode'], 'live', false ) . '>Live</option><option value="test"' . selected( $f['mode'], 'test', false ) . '>Test</option></select> ';
 		echo '<select name="kind"><option value="">All types</option>';
 		foreach ( $kinds as $k => $label ) {
 			echo '<option value="' . esc_attr( $k ) . '"' . selected( $f['kind'], $k, false ) . '>' . esc_html( $label ) . '</option>';
@@ -324,7 +330,7 @@ if ( ! function_exists( 'db_orders_page' ) ) {
 
 		$pages = (int) ceil( $res['total'] / $per );
 		if ( $pages > 1 ) {
-			echo '<p>' . paginate_links( array( 'base' => add_query_arg( 'paged', '%#%', $base ), 'format' => '', 'current' => $paged, 'total' => $pages, 'add_args' => array_filter( $f ) ) ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput
+			echo '<p>' . paginate_links( array( 'base' => add_query_arg( 'paged', '%#%', $base ), 'format' => '', 'current' => $paged, 'total' => $pages, 'add_args' => array_merge( array_filter( $f ), array( 'mode' => '' !== $f['mode'] ? $f['mode'] : 'all' ) ) ) ) . '</p>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 		echo '</div>';
 	}
@@ -382,12 +388,20 @@ add_action( 'admin_post_db_orders_import', function () {
 		foreach ( $plan['history'] as $h ) {
 			$paid += (float) ( $h['amount_usd'] ?? 0 );
 		}
-		$ps   = (string) ( $plan['status'] ?? 'active' );
-		$mode = ( 0 === strpos( $o->option_name, 'db_stripe_test_' ) ) ? 'test' : 'live';
+		$ps    = (string) ( $plan['status'] ?? 'active' );
+		$mode  = ( 0 === strpos( $o->option_name, 'db_stripe_test_' ) ) ? 'test' : 'live';
+		$email = sanitize_email( (string) ( $plan['customer_email'] ?? '' ) );
+		// A plan bought through a negotiated offer is a custom offer, as on the live path (AD-14):
+		// the plan record has no lead id, so find the buyer's paid or accepted deal for the name.
+		$lead_id = 0;
+		if ( function_exists( 'db_deal_table' ) && '' !== $email ) {
+			$dt      = db_deal_table();
+			$lead_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT lead_id FROM {$dt} WHERE domain = %s AND LOWER(buyer_email) = %s AND state IN ('paid','accepted') ORDER BY id DESC LIMIT 1", strtolower( (string) $plan['domain'] ), strtolower( $email ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$ok = $wpdb->query( $wpdb->prepare(
-			"INSERT IGNORE INTO {$t} (created_at, mode, domain, kind, price, paid, plan_months, buyer_email, pi_id, status) VALUES (%s,%s,%s,'plan',%f,%f,%d,%s,%s,%s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			gmdate( 'Y-m-d H:i:s', (int) ( $first['ts'] ?? time() ) ), $mode, strtolower( (string) $plan['domain'] ), (float) ( $plan['price_usd'] ?? 0 ), $paid, (int) ( $plan['total_months'] ?? 0 ), sanitize_email( (string) ( $plan['customer_email'] ?? '' ) ), $pi, 'plan_' . $ps
+			"INSERT IGNORE INTO {$t} (created_at, mode, domain, kind, price, paid, plan_months, buyer_email, pi_id, lead_id, status) VALUES (%s,%s,%s,%s,%f,%f,%d,%s,%s,%d,%s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			gmdate( 'Y-m-d H:i:s', (int) ( $first['ts'] ?? time() ) ), $mode, strtolower( (string) $plan['domain'] ), $lead_id ? 'custom_offer' : 'plan', (float) ( $plan['price_usd'] ?? 0 ), $paid, (int) ( $plan['total_months'] ?? 0 ), $email, $pi, $lead_id, 'plan_' . $ps
 		) );
 		if ( $ok ) {
 			$n++;
@@ -430,7 +444,12 @@ add_action( 'admin_post_db_orders_reset_test', function () {
 			do_action( 'litespeed_purge_post', $post->ID );
 		}
 		$n += (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$t} WHERE mode = 'test' AND domain = %s", $domain ) );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_epp WHERE domain = %s", strtolower( trim( $domain ) ) ) ); // test transfer-code records go with the test sale
+		// Test transfer-code records go with the test sale. The EPP table has no mode column, so
+		// a domain with a live sale keeps its records (CK-22).
+		$live = get_option( 'db_stripe_sold_' . $key ) || (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$t} WHERE mode = 'live' AND domain = %s", $domain ) ) > 0;
+		if ( ! $live ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}db_epp WHERE domain = %s", strtolower( trim( $domain ) ) ) );
+		}
 	}
 	// phpcs:enable
 	delete_transient( defined( 'DB_DOMAIN_INDEX_KEY' ) ? DB_DOMAIN_INDEX_KEY : 'db_domain_index_v3' );

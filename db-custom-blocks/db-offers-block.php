@@ -316,7 +316,9 @@ if ( ! function_exists( 'db_deal_transition' ) ) {
 			if ( 'offer' === $action && $can_restart ) {
 				return 'open';
 			}
-		} elseif ( 'system' === $actor && 'paid' === $action && in_array( $state, array( 'accepted', 'countered', 'open' ), true ) ) {
+		} elseif ( 'system' === $actor && 'paid' === $action && in_array( $state, array( 'accepted', 'countered', 'open', 'expired' ), true ) ) {
+			// 'expired' too: an offer can expire between opening checkout and paying, and a captured
+			// payment is final, so the deal must close as paid (CK-26).
 			return 'paid';
 		}
 		return null;
@@ -667,7 +669,7 @@ if ( ! function_exists( 'db_deal_buyer_html' ) ) {
 				$h .= '<div class="db-of-box" style="text-align:center"><h2>Or pay monthly</h2><div class="db-of-grid">';
 				foreach ( array( 3, 6, 9, 12 ) as $m ) {
 					$first = db_stripe_installment_cents( (float) $deal->amount, $m, 1 ) / 100;
-					$h    .= '<a class="db-of-plan" href="' . esc_url( db_deal_pay_url( $deal, $m ) ) . '"><b>' . (int) $m . ' months</b><span>' . esc_html( '$' . number_format( $first, 2 ) ) . '/month</span><span>' . ( in_array( $m, array( 3, 6 ), true ) ? '0% interest' : ( 9 === $m ? '5% interest' : '10% interest' ) ) . '</span></a>';
+					$h    .= '<a class="db-of-plan" href="' . esc_url( db_deal_pay_url( $deal, $m ) ) . '"><b>' . (int) $m . ' months</b><span>' . esc_html( '$' . number_format( $first, 2 ) ) . '/month</span><span>' . ( function_exists( 'db_plan_rate' ) ? rtrim( rtrim( number_format( (float) db_plan_rate( $m ), 2 ), '0' ), '.' ) . '% interest' : '' ) . '</span></a>';
 				}
 				$h .= '</div></div>';
 			}
@@ -1107,3 +1109,39 @@ add_action( 'admin_notices', function () {
 		echo '<div class="notice notice-error"><p><strong>Email is failing.</strong> ' . count( $recent ) . ' message(s) could not be sent in the last 24 hours (latest: ' . esc_html( $last['error'] ) . '). Offers and sales are still recorded, but you and your customers are not being emailed. Check the site\'s SMTP settings.</p></div>';
 	}
 } );
+
+if ( ! function_exists( 'db_offer_strip_trackers' ) ) {
+	/**
+	 * Pure: removes analytics, tag manager, ad and chat loaders from a page, and puts a no-op
+	 * gtag()/dataLayer first so the site's own event calls keep working. The private offer link
+	 * (?c=<token>) is the only credential for a deal; GA4 sent the full URL, token included, to
+	 * Google, and every tag GTM loads could read it (bug register batch 2, SC-9).
+	 */
+	function db_offer_strip_trackers( $html ) {
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+		$hosts  = 'googletagmanager\.com|google-analytics\.com|googlesyndication\.com|clarity\.ms|hs-scripts\.com|connect\.facebook\.net';
+		$define = "gtm\.start|function\s+gtag\s*\(|gtag\(\s*['\"](?:config|js)['\"]|clarity\(\s*['\"]|fbq\(\s*['\"]init";
+		$html   = (string) preg_replace_callback( '#<script\b([^>]*)>(.*?)</script>#is', static function ( $m ) use ( $hosts, $define ) {
+			$loader = preg_match( '#\b(?:data-)?src=["\'][^"\']*(?:' . $hosts . ')#i', $m[1] );
+			$tag    = preg_match( '#' . $define . '#i', $m[2] );
+			return ( $loader || $tag ) ? '' : $m[0];
+		}, $html );
+		$html = (string) preg_replace( '#<noscript>\s*<iframe[^>]*googletagmanager\.com[^>]*>\s*</iframe>\s*</noscript>#is', '', $html );
+		$html = (string) preg_replace( '#<ins\b[^>]*class=["\'][^"\']*adsbygoogle[^>]*>.*?</ins>#is', '', $html );
+		$stub = '<script data-no-delay>window.dataLayer=[];window.gtag=function(){};</script>';
+		return (string) preg_replace( '#<head\b[^>]*>#i', '$0' . $stub, $html, 1 );
+	}
+}
+
+add_action( 'template_redirect', function () {
+	if ( is_admin() || empty( $_GET['c'] ) || ! is_string( $_GET['c'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		return;
+	}
+	if ( ! headers_sent() ) {
+		header( 'Referrer-Policy: no-referrer' );
+		header( 'Cache-Control: private, no-store, max-age=0' );
+	}
+	ob_start( 'db_offer_strip_trackers' );
+}, -997 );

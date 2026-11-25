@@ -702,3 +702,245 @@ A pillar guide and twelve supporting articles about premium domains, websites an
 - The two new database tables: the code creates them on load, but no page reads them back directly, so the creation is not confirmed in the database.
 
 **Still not built:** transfer document upload; a multi-variant experiment framework (one CTA test exists); automatic response timers beyond the 24-hour offer alert.
+
+## 37. Domain tools, sign-in everywhere, cron fallback, registry records, Site Health (v3.72.0 - v3.75.0)
+
+**What was built**
+- **Domain tools** (`db-domain-tools-block.php`):
+  - compare up to 3 names (`/compare-domains/`, noindex);
+  - price history with a drop badge;
+  - a payment-plan chooser with the full schedule;
+  - registry record (first registered year and registrar, from public RDAP);
+  - a sticky buy bar and recently viewed listings.
+- **Sign in / Create account across the site:** in the desktop nav and the phone drawer, on every public page. Routes `/login`, `/sign-in`, `/register`, `/sign-up`, `/account` and their variants open the right dialog.
+- **Cron fallback (v3.74.0):** when a scheduled job is more than 10 minutes late, due jobs run after the page has been sent (25 s budget, 5-minute lock). Launch checks now reports "WordPress cron runs on time".
+- **Registry lookups (v3.75.0):**
+  - A registry HTTP 429 pauses every lookup for its Retry-After (60 s to 1 h; 15 min when absent). Earlier records are kept, and the listing is retried after the pause.
+  - The admin batch spaces lookups 0.7 s apart and stops at the first 429.
+  - A 404 is recorded as "not registered at the registry" and retried weekly.
+  - A new hourly job checks 10 listings per run, so all listings fill without anyone pressing the batch button.
+
+**Staging changes (wp-admin)**
+- Deleted WPForms Lite (inactive; 0 forms, 0 uses; audited in section 13).
+- Installed Twenty Twenty-Five as the fallback theme. It is not active; DomainFolio stays active.
+- Site Health now passes "Scheduled events are running" (the Wordfence failed-event warning cleared once cron ran on time).
+
+**Checks (all on beta, v3.75.0, 2026-11-15)**
+
+| Suite | Result |
+|---|---|
+| site-qa | 407/407 |
+| content-cluster | 159/159 |
+| account-flow | 27/27 |
+| domain-tools | 23/23 |
+| wishlist-flow | 20/20 |
+| offer-flow | 17/17 |
+| sold-epp | 17/17 |
+| account-entry | 16/16 |
+| sales-features | 14/14 |
+| email-templates | 14/14 |
+| sales-security | 13/13 |
+| turnstile | 12/12 |
+| hits-offers | 11/11 |
+| listing-templates | 6/6 |
+| axe WCAG 2.1 A/AA | 32/32 scans |
+| Responsive | 280 scans, 0 issues |
+| Stripe test purchase | Full and 3-month plan: pass |
+| Offline PHP suites | 12/12 pass |
+| admin-sweep | 19/20 (see below) |
+
+**Open, owner or host action**
+- **WordPress core:** beta runs 6.9.11, while WordPress.org's current release is 7.1.4 (checked against `api.wordpress.org/core/version-check`). On beta, update-core.php offers no upgrade, and Site Health says it is "Unable to check" for new versions. The host is blocking or hiding core offers, so the upgrade has to be done in the hosting panel. Take a backup first, because this is a jump across two major versions. Then re-run this suite matrix.
+- **mississaugacontractors.ca:** the .ca registry (CIRA) answers "Domain not found". The name is listed for sale but appears to be unregistered. Confirm ownership, or unpublish the listing.
+- **Registry records:** 102 of 207 listings have a record. The registry rate-limited the backfill, and the hourly job fills the remaining ~105 over about 10 hours.
+- **Persistent object cache:** a host setting. The server supports Redis, Memcached and APCu.
+- **"Page cache not detected":** on beta this comes from Basic Auth, which bypasses the cache.
+
+## 38. Speed, object cache, unregistered listing, WordPress core (v3.76.0 - v3.77.5)
+
+**What the server is.** Domain Brothers > Platform (new) reads it from inside PHP:
+- **Server:** nginx with PHP-FPM, PHP 8.5.12, OPcache on.
+- **Page cache:** LiteSpeed Cache's page cache needs a LiteSpeed server, so no page was ever served from cache. Every visit built the page in PHP: 0.55-1.75 s before the first byte, about 3 s to the load event, about 1.25 MB per page.
+- **Object cache:** no Redis or Memcached daemon is running; APCu is available (32 MB).
+- **OPcache:** checks every file on every request (`revalidate_freq=0`), and this plan disables `.user.ini`.
+- **WordPress core:** runs from a host-managed shared copy (`/opt/h5g/flavors/wp-6.9.11`). WordPress.org offers 7.1.4, but WordPress cannot update itself here.
+
+**What was built**
+- **Page cache** (`db-pagecache-block.php`, `pagecache/serve.php`, drop-in `advanced-cache.php`).
+  - **Serving:** saved pages go to signed-out visitors before plugins load.
+  - **Key:** host, path, buy-button experiment variant, and a hash of the Authorization header. A staging password can never be bypassed; without credentials beta still answers 401.
+  - **Skipped:** sign-in and account cookies, query strings other than tracking parameters, and checkout, thank-you, account, compare, finder, trust-center and sign-in paths.
+  - **Never saved:** pages that set a cookie (other than the experiment cookie), pages that are not 200 text/html, previews, searches and 404s.
+  - **Headers:** security headers and `X-Robots-Tag` are saved and replayed.
+  - **Lifetime:** 10 hours, inside the life of the form nonces a page carries.
+  - **Purge:**
+    - any published content change, menu, widget, theme or plugin change, or a settings form saved in wp-admin clears everything;
+    - a registry-record refresh clears only that listing's page;
+    - a new plugin version clears everything.
+  - **Warming:** pages are rebuilt after a purge and each hour, both experiment variants for domain pages. It pauses while the site asks for a password, as staging does.
+  - **Tracking:** listing views and experiment views are counted by a beacon while the cache is on, so each view counts once.
+- **Object cache** (drop-in `object-cache.php`, APCu).
+  - Keys are per site, with generation-based flush and per-group flush.
+  - Requests without APCu (WP-CLI) touch a flag file, so the next web request flushes; a change made outside the web server never leaves stale data.
+  - Queries per page dropped from 55-96 to 14-36.
+- **Drop-in safety.** Each drop-in is written, then checked with a loopback request, and removed again if the site stops answering. Both are removed when the plugin is deactivated. A drop-in owned by another plugin is never overwritten (LiteSpeed Cache's own page-cache drop-in is replaced only on a non-LiteSpeed server, where it does nothing).
+- **Third-party scripts** (`db-delay-block.php`). Tag Manager (and the tags it loads), AdSense, Funding Choices, HubSpot, AddToAny and Clarity start on the first scroll, tap or key press, or 2.5 s after the load event. Facebook, YouTube, Maps and Vimeo iframes are lazy-loaded. Ad slots and `dataLayer` events queue until the scripts start. A visitor who leaves within 2.5 s without touching the page is not counted by analytics.
+- **Main image.** It is no longer lazy-loaded when it is marked high priority (About hero).
+- **Platform page.** Shows the server, OPcache, reachable cache back ends, WordPress.org's offer, host-managed core, the Speed switches, and per-phase timing (`?db_timing=1` when signed in).
+
+**Found and fixed while building**
+- The purge hook called `current_user_can()` while LiteSpeed Cache saved an option before WordPress had loaded its user functions. The fatal broke the plugin overwrite during deploys. It is guarded now; the plugin's fatal log (Tools > DB Fatal Log) showed the trace.
+- Deactivating LiteSpeed Cache removes `WP_CACHE` from wp-config, which turns any page cache off. LiteSpeed Cache stays active for that reason.
+
+**Measured on beta (desktop Chromium from the test runner, through Cloudflare)**
+
+| Page | Before (load event) | After (load event) |
+|---|---|---|
+| Home | 3.15 s | 0.45-0.71 s |
+| Domain page | 2.86 s | 0.75-0.94 s |
+| All domains | n/a | 0.66-0.77 s |
+| About | n/a | 0.88 s |
+| Contact | n/a | 0.71 s |
+| News | n/a | 0.65 s |
+| FAQs | n/a | 0.81 s |
+| My wishlist (personal page, never cached) | n/a | 1.05 s |
+
+- **Page weight:** fell from about 1.25 MB to 190-535 KB.
+- **Server response on a cache hit:** about 0.2-0.45 s from the runner. A static file from the same server takes 0.36 s (median), and Cloudflare's edge alone 0.13 s. The rest is the network path between Cloudflare and the host.
+- **Cache miss:** 0.3-0.5 s of PHP. Wordfence takes 110-170 ms of that, LiteSpeed Cache 33-47 ms, and this plugin 20-30 ms.
+- **Caveat:** beta's password adds one uncached round trip on a browser's first visit. Production has no password.
+
+**Staging changes**
+- mississaugacontractors.ca is unpublished (draft). The .ca registry answers "Domain not found", so the name is not registered. QA check FN-32 now uses mississaugahomefinder.ca.
+- LiteSpeed Cache was deactivated and reactivated once to deploy the fix above. It is active.
+
+**Checks (v3.77.4 matrix, 2026-11-15)**
+
+| Suite | Result |
+|---|---|
+| site-qa | 406/407 (FN-32 used the unpublished listing; fixed) |
+| content-cluster | 159/159 |
+| account-flow | 27/27 |
+| domain-tools | 23/23 (22/23 in the matrix: smooth-scroll race in the test, fixed) |
+| wishlist-flow | 20/20 |
+| offer-flow | 17/17 |
+| sold-epp | 17/17 |
+| account-entry | 16/16 |
+| sales-features | 14/14 |
+| email-templates | 14/14 |
+| sales-security | 13/13 |
+| turnstile | 12/12 |
+| hits-offers | 11/11 (re-run; the matrix run timed out loading an admin page after all checks passed) |
+| listing-templates | 6/6 (re-run; one slow response in the matrix) |
+| axe | Clean |
+| Responsive | 280 scans, 0 issues |
+| Stripe full and plan purchase | Pass |
+| Offline | All pass, including `tests/speed/speed-test.php` 31/31 and `tests/speed/object-cache-test.php` 22/22 (both now in CI) |
+| admin-sweep | 19/20 (WordPress core version, host-managed) |
+
+Site Health: 0 critical, 1 recommendation (the WordPress version).
+
+**Open, owner or host action**
+- **WordPress core:** take a backup, then set 7.1.4 in hPanel.
+- **Production:** domainbrothers.com answers HTTP 500 on every page (a different server from staging).
+- **Further speed options:**
+  - cache HTML at Cloudflare's edge (needs Cloudflare access);
+  - ask Hostinger for `opcache.revalidate_freq=60`;
+  - review whether Wordfence is needed behind Cloudflare.
+
+## 39. Lighthouse on every page (v3.78.0 - v3.78.9)
+
+**How it was run**
+- **Tool:** Lighthouse 12.6.1 (Chromium 141), mobile (the default slow-4G phone profile) and desktop.
+- **Coverage:**
+  - mobile: all 1,831 URLs in the WordPress sitemap (1,525 news posts, 206 domain pages, 41 pages, 58 archives, and the home page);
+  - desktop: the 306 non-news URLs.
+- **Staging password:** answered for the beta host only (Puppeteer `page.authenticate`), never sent to third parties.
+- **Cache:** each page was warmed in the page cache before its run, so the numbers are what a visitor gets on a cache hit.
+- **Blocked request:** one, Cloudflare Zaraz's `google.com/ads/ga-audiences` ping. It never finishes in a browser, so Lighthouse would always wait its full 45 s.
+- **Results:** every URL in `docs/lighthouse/lighthouse-2026-11-15.csv`.
+
+**What Lighthouse found, and what was fixed**
+
+| Finding | Fix | Version |
+|---|---|---|
+| Tag Manager, ads, Funding Choices and Clarity ran inside the load window (about 1 s of blocking on a phone). Zaraz keeps a request open, so any timer fired while Lighthouse was still recording. | Delayed scripts start on first interaction only (filter `db_delay_fallback_ms`). Zaraz still sends the GA page view. | 3.78.3 |
+| The view beacons never read their response, so the page never "finished loading" | Responses are read | 3.78.3 |
+| 7 render-blocking stylesheets on the home page | Adjacent plugin stylesheets served as one file, same order; LiteSpeed's empty dummy CSS dropped | 3.78.0 |
+| Manifest declared a 100x100 icon as 512 and 192 (console error) | Real sizes declared | 3.78.0 |
+| Domain-page hero: full 1700px photos on phones (up to 321 KB), plus a preload of the production banner image | 900px phone versions with media-matched preloads; obsolete preload removed | 3.78.4 |
+| Theme font lato-bold.woff2 is 227 KB | 31 KB Latin subset with unicode-range (OFL notices kept) | 3.78.5 |
+| Heading order (service pages, accordions), unlabelled transfer-form fields, contrast of domain-page headings and the staging ad placeholder | aria-level outline, aria-labels, colours | 3.78.4 - 3.78.8 |
+| JavaScript syntax error on /site-map/: the noopener filter edited a link inside a theme script | Scripts skipped | 3.78.6 |
+| Main image lazy-loaded (team page, About hero) | First main image and high-priority images load at once | 3.77.5, 3.78.6 |
+| Footer logo forced to 200:70 and header logo squeezed into a narrow column (image-aspect-ratio on most pages) | Real 200:54 ratio; height scales with width | 3.78.8 - 3.78.9 |
+| Inline color:red and Bootstrap label colours in old posts, unnamed selects and YouTube iframes | Readable colours, names and titles | 3.78.6 - 3.78.7 |
+
+**Results**
+
+Mobile, all 1,831 URLs:
+
+| Group | Pages | Performance (median / lowest) | Accessibility (median / lowest) | Best practices (median) | LCP median |
+|---|---|---|---|---|---|
+| News posts | 1,525 | 97 / 72 | 100 / 89 | 96 | 1.9 s |
+| Domain pages | 206 | 93 / 90 | 100 / 100 | 100 | 2.9 s |
+| Pages | 41 | 98 / 77 | 100 / 97 | 100 | 1.9 s |
+| Archives | 58 | 98 / 91 | 100 / 100 | 100 | 1.9 s |
+| Home | 1 | 94 | 100 | 79 | 2.7 s |
+
+- **Performance spread:** 1,767 pages (96.5%) score 90-100 and 64 score 50-89. None scores below 50.
+- **Spot-checks:** before these fixes, the home and domain pages scored 65-71.
+
+Desktop, 306 URLs: every page scores 90-100. Median Performance is 99-100 and Accessibility is 100 for every page.
+
+**Final version (3.78.9), 24-page sample across all types, both modes**
+- Accessibility 100 with no failures.
+- Best practices median 100; the logo-ratio warnings are gone.
+- Mobile performance median 95.5. Pages measured earlier scored 97.5 median, which is within run-to-run noise.
+
+**SEO is 61 on every page by design.** Staging sends `noindex` and its robots.txt disallows crawling. These are the only SEO failures apart from 3 pages with link-text items in old post content. Production will not have them.
+
+**Remaining items: content, owner or Cloudflare**
+- **News posts with slow lead images (the 64 pages under 90).** They use large original uploads (JPEG or PNG, up to 2638 px). Mobile LCP is 5-10 s on those posts. Fix: bulk-convert the media library to WebP at sensible sizes, for example with LiteSpeed Cache's image optimisation (QUIC.cloud, works on this server) or another image optimiser. This is the largest remaining opportunity (modern-image-formats on 601 pages).
+- **Malformed HTML in imported ICANN articles.** Empty links and list items wrapped in links (link-name on 72 pages, list/listitem on 7) need editing in those posts. The same goes for hot-linked images from other sites that no longer load (console errors on 273 posts).
+- **Cloudflare.** Its bot-detection script (`/cdn-cgi/challenge-platform/`, from Bot Fight Mode or JavaScript Detections) uses a deprecated browser API, which costs about 4 Best-practices points on pages where it runs. Zaraz also loads GA alongside Tag Manager, which itself loads the same GA property, so GA is loaded twice. Settings for both are in the Cloudflare dashboard.
+- **Logo.** The only logo is 200x54 px. On phones Lighthouse asks for about 2x (image-size-responsive on 651 pages). Upload a 400 px or SVG logo.
+
+## 40. Page redesign: 30 pages (v3.80.0 - v3.80.6)
+
+**Scope.** The 30 pages on the owner's "pending design" list. Code: `db-custom-blocks/db-pages-block.php` and `assets/pages.css` (loaded only on these pages). Content stays in WordPress; the block reshapes it at render time. Tests: `tests/pages/pages-test.php`, 32/32.
+
+| Group | Pages | What changed |
+|---|---|---|
+| Service pages | 8 services, 2 social-handle pages, About Domain Brothers | Hero (title, tagline, intro, two buttons), an "at a glance" card built from the page's own bullets, benefit cards, native collapsible FAQ, closing call-to-action band |
+| Listing pages | 3, 4, 5, 6-character, numeric, sold | Rendered by the plugin instead of the theme's tables: title with live count, links between lists, search, sort, cards with price and monthly price. The theme showed "Nothing Found" for an empty list and mixed sold names into for-sale lists. |
+| Deals, All domains | 2 | Same header and list links. An empty deals result becomes an empty state. All domains keeps its filter and list. |
+| Forms | Acquire a handle, Acquire premium domain, Domain transfer | Handle form: headline, three steps and a form card. The other two restyled; the transfer page's illustration no longer overlaps the header. |
+| EPP guidelines | 1 | One collapsible section per registrar under a hero with jump links |
+| 404, Domains under review | 2 | Centred card designs |
+| Home, News, domain page, blog post, Thank-you | 5 | Already on the new design. Speed and contrast fixes only (below). |
+
+**Speed and accessibility fixes found by Lighthouse**
+- News: the first row of thumbnails loads eagerly (the first at high priority). Mobile performance 83 to 92.
+- Blog post: the featured image is preloaded; tag links on the dark footer strip are readable. Accessibility 96 to 100; mobile LCP 3.6 s to 2.1 s.
+- The top ad slot goes under the new header panels, never inside them.
+
+**Lighthouse, mobile (slow-4G phone profile), v3.80.4 - v3.80.6**
+
+| Group | Performance | Accessibility |
+|---|---|---|
+| Service pages (11) | 93-100 | 100 |
+| Listing pages (8, with All domains) | 93-100 | 100 |
+| Forms, EPP, under review, thank-you | 95-100 | 100 |
+| Home | 94 | 100 |
+| News | 92 | 100 |
+| Blog post | 95 | 100 |
+| Domain page | 85-90 | 100 |
+
+Desktop: 98-100 on the 25 pages that finished. The 404 page cannot be audited (Lighthouse refuses a 404 response); it was checked by screenshot.
+
+**Open**
+- Domain page (85-90 mobile): about 2 s of render delay comes from render-blocking theme CSS (`style.css`, 51 KB) and jQuery in the head. Removing them needs a pass over the theme's inline scripts.
+- News thumbnails are hot-linked from the source sites; storing them locally would remove the dependency on those servers.
+- Blog post: a 0.07 layout shift remains (inside the "good" range).
+- Design polish of Home, News and the domain page beyond these fixes has not been done.

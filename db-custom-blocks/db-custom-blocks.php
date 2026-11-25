@@ -3,7 +3,7 @@
  * Plugin Name: Domain Brothers Custom Blocks
  * Plugin URI:  https://www.domainbrothers.com
  * Description: All Domain Brothers custom functionality — Stripe checkout & webhooks, CRM lead management, branded email system, thank-you flows, SMTP routing, offer flow, payment plans, modern UI, AEO/SEO, performance hardening, honeypot anti-spam, dynamic meta, and service pages.
- * Version:     3.73.1
+ * Version:     3.150.63
  * Author:      Domain Brothers
  * License:     Proprietary
  * Text Domain: db-blocks
@@ -26,7 +26,66 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( defined( 'DB_BLOCKS_LOADED' ) ) {
 	return;
 }
-define( 'DB_BLOCKS_LOADED', '3.73.1' );
+
+/*
+ * The designer's "DB All Domains Redesign" now ships inside this plugin
+ * (designer/). If the standalone copy is still active it has already loaded
+ * (plugins load alphabetically) and defined DBR_ADR_VERSION, so this is skipped.
+ */
+if ( ! defined( 'DBR_ADR_VERSION' ) && is_readable( __DIR__ . '/designer/db-all-domains-redesign.php' ) ) {
+	require_once __DIR__ . '/designer/db-all-domains-redesign.php';
+}
+define( 'DB_BLOCKS_LOADED', '3.150.63' );
+$GLOBALS['db_t_plugin_start'] = microtime( true ); // Page timing (db-platform-block.php).
+
+/*
+ * Query parameters this plugin reads are all single values. Sent as arrays (?d[]=x) several of
+ * them reached string functions and threw a TypeError: an HTTP 500 on any URL, on demand, which
+ * also filled the fatal log and sent alert emails (bug register batch 2, SC-8). They are dropped
+ * here, before any hook runs. Tests: tests/security/query-arrays-test.php.
+ */
+if ( ! function_exists( 'db_scalar_query_keys' ) ) {
+	function db_scalar_query_keys() {
+		return array( '_wpnonce', 'alerts', 'amt', 'auth', 'author', 'bad', 'broker', 'bulk_done', 'c', 'cancelled', 'cleared', 'commit', 'connect', 'd', 'db_ads_preview', 'db_clear', 'db_create_webhook', 'db_crm_export', 'db_db_maint', 'db_db_report', 'db_domain_inventory', 'db_epp', 'db_exit_test', 'db_fix_post_images', 'db_fix_services_page', 'db_fullcss', 'db_mailtest', 'db_make_service_pages', 'db_manifest', 'db_news_refresh', 'db_nodelay', 'db_ops_stop', 'db_perf', 'db_purge_cache', 'db_seo_setup', 'db_signout', 'db_stripe_log', 'db_stripe_wh', 'db_sw', 'db_timing', 'db_update_card', 'deal', 'deleted', 'dom', 'domain', 'done', 'e', 'edit', 'err', 'f', 'form', 'from', 'go', 'handle', 'id', 'imported', 'inq', 'k', 'kind', 'lead', 'lead_deleted', 'lead_id', 'lead_saved', 'lis', 'mode', 'months', 'msg', 'newsletter', 'offer', 'order', 'orderby', 'p', 'paged', 'payment_intent', 'plan_months', 'platform', 'q', 'ref', 'reset', 's', 'saved', 'session_id', 'sig', 'since', 'smtp_saved', 'statement', 'status', 'step', 't', 'tab', 'template', 'to', 'topic', 'tpl', 'type', 'view' );
+	}
+}
+if ( ! function_exists( 'db_drop_array_query_values' ) ) {
+	/** Pure: removes array values for the given keys. */
+	function db_drop_array_query_values( array $q, array $keys ) {
+		foreach ( $keys as $k ) {
+			if ( isset( $q[ $k ] ) && ! is_scalar( $q[ $k ] ) ) {
+				unset( $q[ $k ] );
+			}
+		}
+		return $q;
+	}
+}
+if ( ! function_exists( 'db_theme_scalar_query_keys' ) ) {
+	/**
+	 * Keys the DomainFolio theme reads from $_GET/$_REQUEST as strings (footer.php, header.php,
+	 * page templates; listed from the theme on 2026-11-24). The theme passes several straight to
+	 * base64_decode(), so ?m[]=1 or ?rn[]=1 was an HTTP 500 on any page. The theme is not edited,
+	 * so they are guarded here too. Payment-form POST fields are not listed: no form posts arrays.
+	 */
+	function db_theme_scalar_query_keys() {
+		return array( 'agree_terms', 'alertmoth', 'bids', 'cd', 'char', 'character', 'charlen', 'checkout_type', 'clear', 'cm', 'comm', 'custom', 'dmb', 'dt', 'email', 'epp', 'hd', 'hd_domain', 'hd_price', 'i', 'installment', 'item_name', 'm', 'max_Value', 'method', 'min_Value', 'o', 'pp', 'price', 'r', 'request_order', 'rn', 'search_domain', 'sellerprice', 'st', 'tld', 'total', 'tx', 'txn_id' );
+	}
+}
+$_GET     = db_drop_array_query_values( $_GET, array_merge( db_scalar_query_keys(), db_theme_scalar_query_keys() ) ); // phpcs:ignore WordPress.Security.NonceVerification
+$_REQUEST = db_drop_array_query_values( $_REQUEST, array_merge( db_scalar_query_keys(), db_theme_scalar_query_keys() ) ); // phpcs:ignore WordPress.Security.NonceVerification
+
+/*
+ * Who writes the SEO tags in <head>. When Rank Math is active and the site is
+ * switched to it (option db_rankmath_owns_head = 1, set from the bridge in
+ * db-rankmath-block.php), Rank Math emits title, description, robots,
+ * canonical, Open Graph and schema, and this plugin supplies its built-in copy
+ * as the fallback for URLs with no Rank Math fields. Otherwise this plugin
+ * emits the tags itself. Read from the options here because Rank Math loads
+ * after this file.
+ */
+if ( ! defined( 'DB_RANKMATH_OWNS_HEAD' ) ) {
+	define( 'DB_RANKMATH_OWNS_HEAD', in_array( 'seo-by-rank-math/rank-math.php', (array) get_option( 'active_plugins', array() ), true ) && '1' === (string) get_option( 'db_rankmath_owns_head', '0' ) );
+}
 
 if ( ! function_exists( 'db_brand_logo_url' ) ) {
 	/**
@@ -66,8 +125,10 @@ if ( ! function_exists( 'db_seo_other_plugin' ) ) {
 	 * RankMath, so they were double-emitting meta alongside Yoast.
 	 */
 	function db_seo_other_plugin() {
-		return class_exists( 'RankMath' )
-			|| defined( 'RANK_MATH_VERSION' )
+		// Rank Math runs here as an editor-side analysis tool only (see
+		// db-rankmath-block.php): its front-end output is switched off and this
+		// plugin keeps emitting the tags, unless DB_RANKMATH_OWNS_HEAD is true.
+		return ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD )
 			|| defined( 'WPSEO_VERSION' )
 			|| class_exists( 'WPSEO_Options' );
 	}
@@ -403,9 +464,9 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			array( 'award', '27+ Years Combined Experience' ),
 			array( 'globe', '5,000+ Domains Sold' ),
 			array( 'clock', 'Domains Transferred in Under 2 Hours' ),
-			array( 'lock', 'Buyer Protection Program' ),
+			array( 'lock', 'Secure Stripe Checkout' ),
 			array( 'calendar', 'Pay Over 3 to 12 Months' ),
-			array( 'check', '100% Money-Back Guarantee' ),
+			array( 'check', 'Name Held for You During Your Plan' ),
 		);
 		$pill = static function ( $item, $hidden ) use ( $icons ) {
 			return '<li class="db-hp-titem"' . ( $hidden ? ' aria-hidden="true"' : '' ) . '><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . $icons[ $item[0] ] . '</svg><span>' . esc_html( $item[1] ) . '</span></li>';
@@ -424,7 +485,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Burger menu links (no WP nav menu is registered on this theme).
 		$menu = array(
 			'Browse Domains' => $browse_href,
-			'Payment Plans'  => esc_url( home_url( '/payment-plan-setup/' ) ),
+			'Payment Terms'  => esc_url( home_url( '/payment-terms/' ) ),
 			'Services'       => esc_url( home_url( '/website-design-development/' ) ),
 			'News'           => esc_url( home_url( '/news/' ) ),
 			'Contact'        => $offer_href,
@@ -443,7 +504,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		// Brand bar at the top of the hero: logo left, burger right.
 		$html .= '<div class="db-hp-nav">';
 		$html .= '<a class="db-hp-logo" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Domain Brothers home">';
-		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="64" decoding="async">';
+		$html .= '<img src="' . esc_url( $logo_url ) . '" alt="Domain Brothers" width="200" height="54" decoding="async">';
 		$html .= '</a>';
 		if ( $show_burger ) {
 			$html .= '<button type="button" class="db-hp-burger" aria-label="Open menu" aria-expanded="false" aria-controls="db-hp-menu">';
@@ -456,7 +517,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		}
 		$html .= '<div class="db-hp-inner">';
 		$html .= '<p class="db-hp-eyebrow">Premium Domain Marketplace</p>';
-		$html .= '<h1 class="db-hp-h1">The right domain<br>changes everything.</h1>';
+		$html .= '<h1 class="db-hp-h1">The right domain<br>changes <span class="db-hp-mark">everything</span>.</h1>';
 		$html .= '<p class="db-hp-sub">Own the domain that defines your brand. With 27+ years of combined experience, every purchase includes a step-by-step transfer and is eligible for flexible payment plans.</p>';
 		// A search-first hero: one big search box, then the extensions people actually browse.
 		$html .= '<form role="search" method="get" class="db-hp-search" action="' . esc_url( home_url( '/all-domains/' ) ) . '">';
@@ -467,7 +528,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 		if ( function_exists( 'db_domain_index' ) ) {
 			$tlds = array();
 			foreach ( (array) db_domain_index() as $row ) {
-				$dot = strrpos( (string) $row['n'], '.' );
+				$dot = strpos( (string) $row['n'], '.' ); // first dot, as the All Domains filter uses (.co.uk, not .uk; LS-18)
 				if ( false !== $dot ) {
 					$t          = substr( $row['n'], $dot );
 					$tlds[ $t ] = ( $tlds[ $t ] ?? 0 ) + 1;
@@ -479,6 +540,7 @@ if ( ! function_exists( 'db_hp_hero_html' ) ) {
 			}
 		}
 		$html .= '<div class="db-hp-ctas">' . ( '' !== $chips ? '<span class="db-hp-chips-label">Popular:</span>' . $chips : '' ) . '<a href="' . $browse_href . '" class="db-hp-btn-primary db-hp-browse-btn">Browse all premium domains</a></div>';
+		$html .= (string) apply_filters( 'db_hp_hero_showcase', '' ); // Real listings under the search box (db-hero-showcase-block.php).
 		$html .= '<div class="db-hp-trust db-hp-marquee" role="group" aria-label="Why buyers choose Domain Brothers"><div class="db-hp-viewport">' . $trust_html . '</div><button type="button" class="db-hp-pause" aria-pressed="false" aria-label="Pause scrolling"><span aria-hidden="true">&#10074;&#10074;</span></button></div>';
 		$html .= '<script>(function(){var b=document.querySelector(".db-hp-pause");if(!b){return;}b.addEventListener("click",function(){var m=b.closest(".db-hp-marquee"),p=m.classList.toggle("is-paused");b.setAttribute("aria-pressed",p?"true":"false");b.setAttribute("aria-label",p?"Resume scrolling":"Pause scrolling");b.firstChild.innerHTML=p?"&#9654;":"&#10074;&#10074;";});})();</script>';
 		$html .= '</div></section>';
@@ -526,6 +588,10 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 			}
 			// Callback, not '$1' . $html: any "$<digit>" in the hero (a price)
 			// would be expanded as a backreference.
+			// The theme's hidden "brothers of the web" block still carried an old phone number, an
+			// "over 10 years" claim and a Facebook iframe; crawlers read hidden text (SE-19).
+			$html = db_strip_div_by_class( $html, 'brothers-content' );
+			$html = db_hp_main_wraps_content( $html );
 			$hero = db_hp_hero_html();
 			return preg_replace_callback( '/<body[^>]*>/i', function ( $m ) use ( $hero ) {
 				return $m[0] . $hero;
@@ -540,6 +606,59 @@ if ( 'the_content' === DB_HERO_USE_HOOK ) {
 		$GLOBALS['db_hero_rendered'] = true;
 		echo db_hp_hero_html();
 	} );
+}
+
+if ( ! function_exists( 'db_strip_div_by_class' ) ) {
+	/** Removes the first <div> carrying $class, with everything inside it (nested divs counted). Pure. */
+	function db_strip_div_by_class( $html, $class ) {
+		if ( ! preg_match( '/<div\b[^>]*class="[^"]*\b' . preg_quote( $class, '/' ) . '\b[^"]*"[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$start = $m[0][1];
+		$pos   = $start + strlen( $m[0][0] );
+		$depth = 1;
+		while ( $depth > 0 && preg_match( '#<(/?)div\b[^>]*>#i', $html, $t, PREG_OFFSET_CAPTURE, $pos ) ) {
+			$depth += '' === $t[1][0] ? 1 : -1;
+			$pos    = $t[0][1] + strlen( $t[0][0] );
+		}
+		return $depth > 0 ? $html : substr( $html, 0, $start ) . substr( $html, $pos );
+	}
+}
+
+if ( ! function_exists( 'db_hp_main_wraps_content' ) ) {
+	/**
+	 * DomainFolio's front page closes <main> (and #primary) straight after the first section, so the
+	 * market pulse, who-it-is-for, how-it-works, welcome and why-us blocks sat outside every landmark
+	 * (AX-17). Moves "</main></div>" to just before #content closes. Script and style bodies are
+	 * masked while counting divs. Returns the input unchanged when the shape is not the expected one. Pure.
+	 */
+	function db_hp_main_wraps_content( $html ) {
+		if ( ! preg_match( '/<div\b[^>]*\bid="content"[^>]*>/i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
+			return $html;
+		}
+		$mask = preg_replace_callback( '#<(script|style)\b[^>]*>.*?</\1>#is', function ( $x ) { return str_repeat( ' ', strlen( $x[0] ) ); }, $html );
+		$mask = preg_replace_callback( '#<!--.*?-->#s', function ( $x ) { return str_repeat( ' ', strlen( $x[0] ) ); }, $mask );
+		$pos   = $m[0][1] + strlen( $m[0][0] );
+		$depth = 1;
+		$end   = -1;
+		while ( preg_match( '#<(/?)div\b[^>]*>#i', $mask, $t, PREG_OFFSET_CAPTURE, $pos ) ) {
+			$depth += '' === $t[1][0] ? 1 : -1;
+			if ( 0 === $depth ) {
+				$end = $t[0][1];
+				break;
+			}
+			$pos = $t[0][1] + strlen( $t[0][0] );
+		}
+		if ( $end < 0 || ! preg_match( '#</main>\s*</div>#i', $mask, $c, PREG_OFFSET_CAPTURE, $m[0][1] ) || $c[0][1] > $end ) {
+			return $html;
+		}
+		$at  = $c[0][1];
+		$len = strlen( $c[0][0] );
+		if ( '' === trim( substr( $mask, $at + $len, $end - $at - $len ) ) ) {
+			return $html;
+		}
+		return substr( $html, 0, $at ) . substr( $html, $at + $len, $end - $at - $len ) . substr( $html, $at, $len ) . substr( $html, $end );
+	}
 }
 
 if ( ! function_exists( 'db_hp_css' ) ) {
@@ -651,7 +770,9 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 		font-size: clamp(40px, 7vw, 80px); font-weight: 700; line-height: 1.04;
 		letter-spacing: -0.04em; color: #f5f7fb !important; margin: 0 0 24px;
 		text-wrap: balance;
-		animation: db-fade-up 0.6s 0.10s ease both;
+		/* Slides in without fading: an element that starts at opacity 0 is not "painted" for LCP until
+		   it shows, which put home's LCP at 1.6-1.9 s although the page drew at 0.5 s. */
+		animation: db-rise 0.7s cubic-bezier(.2,.7,.2,1) both;
 	}
 	.db-hp-sub {
 		font-size: clamp(16px, 2vw, 20px); line-height: 1.65; color: rgba(245,247,251,0.86) !important;
@@ -684,6 +805,7 @@ if ( ! function_exists( 'db_hp_css' ) ) {
 	.db-hp-titem { padding: 4px 14px; white-space: nowrap; }
 	.db-hp-tdot { display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: rgba(79,156,249,0.55); vertical-align: middle; }
 	@keyframes db-fade-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+	@keyframes db-rise { from { transform: translateY(18px); } to { transform: translateY(0); } }
 	@media (prefers-reduced-motion: reduce) {
 		.db-hp-eyebrow, .db-hp-h1, .db-hp-sub, .db-hp-ctas, .db-hp-trust, .db-hp-sell { animation: none; }
 		.db-hp-btn-primary:hover, .db-hp-btn-ghost:hover { transform: none; }
@@ -746,23 +868,75 @@ if ( ! function_exists( 'db_plan_terms' ) ) {
 	}
 }
 
-if ( ! function_exists( 'db_plan_rate' ) ) {
+if ( ! function_exists( 'db_plan_rate_legacy' ) ) {
 	/**
-	 * Interest rate (percent) per plan term — the live site's published
-	 * schedule: 3 and 6 months are interest-free, 9 months carries 5%, 12
-	 * months 10%. Single source of truth for the plan chooser (JS), the
-	 * Stripe charges (PHP) and every piece of copy that quotes a rate.
+	 * The schedule in force before 2026-11-20: 3 and 6 months interest-free, 9 months 5%, 12 months 10%.
+	 * A plan record without a stored rate_pct was started under it, so it keeps these rates.
 	 */
-	function db_plan_rate( $months ) {
+	function db_plan_rate_legacy( $months ) {
 		$rates = array( 3 => 0, 6 => 0, 9 => 5, 12 => 10 );
 		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
 	}
 }
 
+if ( ! function_exists( 'db_plan_rate' ) ) {
+	/**
+	 * Interest rate (percent) a NEW plan pays for its term: 3 months interest-free, 6 months 5%,
+	 * 9 months 8%, 12 months 10%. Single source of truth for the plan chooser (JS), the first
+	 * Stripe charge (PHP) and every piece of copy that quotes a rate. A plan keeps the rate it
+	 * started with (see db_plan_rate_of()), so changing this never reprices a plan in progress.
+	 */
+	function db_plan_rate( $months ) {
+		$rates = array( 3 => 0, 6 => 5, 9 => 8, 12 => 10 );
+		return isset( $rates[ (int) $months ] ) ? (float) $rates[ (int) $months ] : 0.0;
+	}
+}
+
+if ( ! function_exists( 'db_plan_add_months' ) ) {
+	/**
+	 * The date $n months after $ts, in the site's time zone, keeping the time of day. A day the
+	 * month does not have becomes the month's last day (Jan 31 + 1 = Feb 28/29), as in the plan
+	 * chooser's script. One rule for the chooser, the checkout, emails and the charges (batch 2).
+	 */
+	function db_plan_add_months( $ts, $n ) {
+		$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$d  = ( new DateTimeImmutable( '@' . (int) $ts ) )->setTimezone( $tz );
+		$y  = (int) $d->format( 'Y' );
+		$m  = (int) $d->format( 'n' ) + (int) $n;
+		$y += intdiv( $m - 1, 12 );
+		$m  = ( ( $m - 1 ) % 12 ) + 1;
+		$last = (int) ( new DateTimeImmutable( sprintf( '%04d-%02d-01', $y, $m ), $tz ) )->format( 't' );
+		$day  = min( (int) $d->format( 'j' ), $last );
+		return ( new DateTimeImmutable( sprintf( '%04d-%02d-%02d %s', $y, $m, $day, $d->format( 'H:i:s' ) ), $tz ) )->getTimestamp();
+	}
+}
+
+if ( ! function_exists( 'db_plan_is_due' ) ) {
+	/** True once the due date has arrived in the site's time zone (charged on the date shown, not a day late). */
+	function db_plan_is_due( $due_ts, $now ) {
+		if ( (int) $due_ts <= 0 ) {
+			return false;
+		}
+		$f = function_exists( 'wp_date' ) ? 'wp_date' : 'gmdate';
+		return $f( 'Y-m-d', (int) $due_ts ) <= $f( 'Y-m-d', (int) $now );
+	}
+}
+
+if ( ! function_exists( 'db_plan_rate_of' ) ) {
+	/** The rate a stored plan was started with: its rate_pct, or the legacy schedule for plans that predate it. */
+	function db_plan_rate_of( array $plan ) {
+		if ( isset( $plan['rate_pct'] ) && is_numeric( $plan['rate_pct'] ) ) {
+			return (float) $plan['rate_pct'];
+		}
+		return db_plan_rate_legacy( (int) ( $plan['total_months'] ?? 0 ) );
+	}
+}
+
 if ( ! function_exists( 'db_plan_total_cents' ) ) {
-	/** Total owed in cents for a plan: listing price plus the term's interest. */
-	function db_plan_total_cents( $price_usd, $months ) {
-		return (int) round( (float) $price_usd * ( 100 + db_plan_rate( $months ) ) );
+	/** Total owed in cents for a plan: listing price plus interest. $rate defaults to a new plan's rate for the term. */
+	function db_plan_total_cents( $price_usd, $months, $rate = null ) {
+		$rate = null === $rate ? db_plan_rate( $months ) : (float) $rate;
+		return (int) round( (float) $price_usd * ( 100 + $rate ) );
 	}
 }
 
@@ -777,6 +951,86 @@ if ( ! function_exists( 'db_plan_b64' ) ) {
 		if ( empty( $_GET[ $key ] ) ) { return ''; }
 		$raw = base64_decode( wp_unslash( $_GET[ $key ] ), true );
 		return ( false === $raw ) ? '' : $raw;
+	}
+}
+
+if ( ! function_exists( 'db_usd' ) ) {
+	/**
+	 * A USD amount as shown to buyers: "$1,500" for whole dollars, "$1,500.75" when there are cents.
+	 * One formatter for listings, the plan chooser, checkout and confirmation (QA report DB-17).
+	 */
+	function db_usd( $amount ) {
+		$a = round( (float) $amount, 2 );
+		return '$' . number_format( $a, floor( $a ) == $a ? 0 : 2 );
+	}
+}
+
+if ( ! function_exists( 'db_domain_display' ) ) {
+	/**
+	 * A domain name as shown to visitors: the name keeps its stored casing (OttawaBroker, fatality)
+	 * and the extension is lower case (.ky, not .Ky), so a card reads the same filtered or not
+	 * (LS-16). Pure.
+	 */
+	function db_domain_display( $title ) {
+		$title = trim( wp_strip_all_tags( (string) $title ) );
+		$dot   = strpos( $title, '.' );
+		if ( false === $dot || preg_match( '/\s/', $title ) ) {
+			return $title;
+		}
+		$label = substr( $title, 0, $dot );
+		return $label . strtolower( substr( $title, $dot ) );
+	}
+}
+// Domain listing titles use the same display form everywhere the theme prints them (LS-16).
+add_filter( 'the_title', function ( $title, $id = 0 ) {
+	if ( $id && ! is_admin() && 'domain' === get_post_type( $id ) ) {
+		return db_domain_display( $title );
+	}
+	return $title;
+}, 10, 2 );
+
+if ( ! function_exists( 'db_strip_webfont_css' ) ) {
+	/**
+	 * Page content built with its own <style> loaded Figtree from Google Fonts (About, FAQs, Our
+	 * Team, Contact). The site uses one system font stack: the @import is removed and the family
+	 * dropped from font stacks, so the browser falls through to the system face. Pure.
+	 */
+	function db_strip_webfont_css( $html ) {
+		if ( false === strpos( (string) $html, 'Figtree' ) ) {
+			return $html;
+		}
+		$html = preg_replace( '#@import\s+url\(\s*[\'"]?https://fonts\.googleapis\.com/[^)]*\)\s*;?#i', '', (string) $html );
+		return preg_replace( '#([\'"])Figtree\1\s*,\s*#', '', $html );
+	}
+}
+add_filter( 'the_content', 'db_strip_webfont_css', 99 );
+
+if ( ! function_exists( 'db_newtab_hint' ) ) {
+	/**
+	 * Adds a hidden " (opens in a new tab)" to every link with target="_blank" that does not
+	 * already say so, so screen-reader users are warned before a new tab opens (AX-22). Pure.
+	 */
+	function db_newtab_hint( $html ) {
+		if ( false === stripos( (string) $html, '_blank' ) ) {
+			return $html;
+		}
+		return preg_replace_callback( '#(<a\b[^>]*\btarget=["\']_blank["\'][^>]*>)(.*?)(</a>)#is', static function ( $m ) {
+			if ( false !== stripos( $m[2], 'new tab' ) || false !== stripos( $m[1], 'new tab' ) ) {
+				return $m[0];
+			}
+			return $m[1] . $m[2] . '<span class="screen-reader-text"> (opens in a new tab)</span>' . $m[3];
+		}, (string) $html );
+	}
+}
+add_filter( 'the_content', 'db_newtab_hint', 99 );
+
+if ( ! function_exists( 'db_plan_offered' ) ) {
+	/**
+	 * Whether a price can be paid monthly. The FAQ and listing cards promise plans from
+	 * DB_DEAL_MIN_PLAN_AMOUNT ($600); every chooser, link and charge path uses this (CK-15).
+	 */
+	function db_plan_offered( $price ) {
+		return (float) $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? (float) DB_DEAL_MIN_PLAN_AMOUNT : 600.0 );
 	}
 }
 
@@ -804,14 +1058,26 @@ function db_plan_widget_html() {
 		if ( null === $listed ) { return ''; }
 		$price = $listed;
 	}
-	if ( $price <= 0 ) { return ''; }
+	if ( $price <= 0 || ! db_plan_offered( $price ) ) { return ''; } // under the plan floor: the listing offers Buy now
 
 	$terms = db_plan_terms();
 	$cur   = DB_PLAN_CURRENCY;
 	$d_b64 = isset( $_GET['d'] ) ? sanitize_text_field( wp_unslash( $_GET['d'] ) ) : '';
 	$p_b64 = isset( $_GET['p'] ) ? sanitize_text_field( wp_unslash( $_GET['p'] ) ) : '';
 
+	$pa_bar = '';
+	$proof  = '';
+	if ( function_exists( 'db_pa_html' ) ) {
+		$dp_post = get_page_by_title( $domain, OBJECT, 'domain' );
+		$dp_url  = $dp_post ? get_permalink( $dp_post ) : home_url( '/' );
+		$pa_bar  = db_pa_html( array( 'back_url' => $dp_url, 'back_label' => 'Back to ' . $domain, 'share_url' => $dp_url, 'share_title' => $domain . ' is for sale at Domain Brothers' ) );
+		if ( function_exists( 'db_proof_html' ) ) {
+			$proof = db_proof_html( $dp_post ? $dp_post->ID : 0, $domain );
+		}
+	}
+
 	ob_start();
+	echo '<div class="db-plan-bar">' . $pa_bar . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
 	?>
 	<div class="db-plan" id="db-plan"
 		data-price="<?php echo esc_attr( $price ); ?>"
@@ -821,13 +1087,15 @@ function db_plan_widget_html() {
 		data-p="<?php echo esc_attr( $p_b64 ); ?>"
 		data-cur="<?php echo esc_attr( $cur ); ?>"
 		data-rates="<?php echo esc_attr( wp_json_encode( array_combine( array_map( 'strval', $terms ), array_map( 'db_plan_rate', $terms ) ) ) ); ?>"
+		data-today="<?php echo esc_attr( wp_date( 'Y-m-d' ) ); ?>"
 		data-buynow="<?php echo esc_attr( home_url( '/buy-now/' ) ); ?>">
 
 		<div class="db-plan-head">
-			<h2>Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h2>
-			<p class="db-plan-total">Total price: <strong><?php echo esc_html( $cur . number_format( $price, 0 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
+			<h1 class="db-plan-h1">Choose your payment plan<?php echo $domain ? ' for <span class="db-plan-domain">' . esc_html( $domain ) . '</span>' : ''; ?></h1>
+			<p class="db-plan-total">Domain price: <strong><?php echo esc_html( '$' === $cur ? db_usd( $price ) : $cur . number_format( $price, 2 ) ); ?></strong> &middot; <span class="db-plan-zero" id="db-plan-rate-badge">0% interest</span></p>
 		</div>
-		<div class="db-plan-terms" role="tablist" aria-label="Payment terms"></div>
+		<?php echo $proof ? '<div class="db-plan-proof">' . $proof . '</div>' : ''; // phpcs:ignore WordPress.Security.EscapeOutput ?>
+		<div class="db-plan-terms" role="group" aria-label="Payment terms"></div><?php // toggle buttons, not half-built tabs (AX-11) ?>
 		<div class="db-plan-summary">
 			<div class="db-plan-monthly">
 				<span class="db-plan-monthly-label">Monthly payment</span>
@@ -851,8 +1119,8 @@ function db_plan_widget_html() {
 	</div>
 	<style>
 		.db-plan{max-width:760px;margin:32px auto;padding:0 4px;font-family:inherit;color:#1a1a1a;}
-		.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
-		.db-plan-domain{color:#0a6ed1;}
+		.db-plan-head h1,.db-plan-head h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0 0 8px;font-weight:700;}
+		.db-plan-domain{background:linear-gradient(90deg,#0b7a4b,#1d5fb8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:#0b6b36;}.db-plan-bar{max-width:760px;margin:24px auto 0;padding:0 4px}.db-plan-bar .db-pa{margin-bottom:0}.db-plan-proof{margin:0 0 18px;padding:14px 16px;background:#f3f8f5;border:1px solid #dbe8e0;border-radius:14px}
 		.db-plan-total{font-size:15px;color:#444;margin:0 0 20px;}
 		.db-plan-zero{display:inline-block;background:#e7f6ec;color:#137a3e;font-weight:600;padding:2px 10px;border-radius:999px;font-size:13px;}
 		.db-plan-terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 24px;}
@@ -920,11 +1188,25 @@ function db_plan_widget_html() {
 				var b=document.createElement('button');
 				b.type='button';
 				b.className='db-plan-term'+(m===active?' is-active':'');
-				b.setAttribute('role','tab');
-				b.setAttribute('aria-selected',m===active?'true':'false');
+				b.setAttribute('aria-pressed',m===active?'true':'false');
 				b.innerHTML='<span class="t-months">'+m+' months</span><span class="t-per">'+money(per)+'/mo</span><span class="t-per">'+(rateOf(m)?rateOf(m)+'% interest':'0% interest')+'</span>';
-				b.addEventListener('click',function(){active=m;renderTerms();renderSummary();});
+				b.setAttribute('data-m',m);
+				// Update the existing buttons instead of rebuilding them, so keyboard focus stays on
+				// the chosen term (QA report DB-18); arrow keys move between terms.
+				b.addEventListener('click',function(){active=m;markTerms();renderSummary();});
+				b.addEventListener('keydown',function(e){
+					var k=e.key,all=[].slice.call(wrap.querySelectorAll('.db-plan-term')),i=all.indexOf(b),j=-1;
+					if(k==='ArrowRight'||k==='ArrowDown'){j=(i+1)%all.length;}else if(k==='ArrowLeft'||k==='ArrowUp'){j=(i-1+all.length)%all.length;}else if(k==='Home'){j=0;}else if(k==='End'){j=all.length-1;}
+					if(j>-1){e.preventDefault();all[j].focus();}
+				});
 				wrap.appendChild(b);
+			});
+		}
+		function markTerms(){
+			[].forEach.call(root.querySelectorAll('.db-plan-term'),function(b){
+				var on=+b.getAttribute('data-m')===active;
+				b.classList.toggle('is-active',on);
+				b.setAttribute('aria-pressed',on?'true':'false');
 			});
 		}
 		function renderSummary(){
@@ -936,7 +1218,8 @@ function db_plan_widget_html() {
 			if(badge){ badge.textContent=rt?rt+'% interest':'0% interest'; }
 			var body=document.getElementById('db-plan-schedule-body');
 			body.innerHTML='';
-			var today=new Date();
+			/* The site's date, the same one checkout uses (CO-5): never the visitor's clock. */
+			var tp=(root.getAttribute('data-today')||'').split('-'),today=tp.length===3?new Date(+tp[0],+tp[1]-1,+tp[2]):new Date();
 			arr.forEach(function(amt,i){
 				var tr=document.createElement('tr');
 				var dt=i===0?today:addMonths(today,i);
@@ -985,7 +1268,11 @@ function db_plan_takeover( $html ) {
 	// below): db_plan_widget_html() uses ob_start(), which is a fatal inside
 	// an output-buffer handler and would blank the whole page.
 	$widget = isset( $GLOBALS['db_plan_widget_prebuilt'] ) ? (string) $GLOBALS['db_plan_widget_prebuilt'] : '';
-	if ( ! is_string( $html ) || '' === $widget || false !== strpos( $html, 'id="db-plan"' ) ) { return $html; }
+	if ( ! is_string( $html ) ) { return $html; }
+	// The theme template hard-codes a phone-input library that is not in the theme (two 404s on
+	// every plan page) and that this page does not use (QA report DB-03, CK-21).
+	$html = preg_replace( '#<link[^>]+intlTelInput\.css[^>]*>\s*|<script[^>]+intlTelInput\.js[^>]*>\s*</script>\s*#i', '', $html );
+	if ( '' === $widget || false !== strpos( $html, 'id="db-plan"' ) ) { return $html; }
 	$open = stripos( $html, '<main' );
 	$oend = false === $open ? false : strpos( $html, '>', $open );
 	$close = strripos( $html, '</main>' );
@@ -995,8 +1282,18 @@ function db_plan_takeover( $html ) {
 
 add_action( 'template_redirect', function () {
 	if ( is_admin() || ! db_is_plan_page() ) { return; }
-	$GLOBALS['db_plan_widget_prebuilt'] = db_plan_widget_html();
-	if ( '' === $GLOBALS['db_plan_widget_prebuilt'] ) { return; }
+	$domain = strtolower( trim( db_plan_b64( 'd' ) ) );
+	$post   = '' !== $domain ? get_page_by_title( $domain, OBJECT, 'domain' ) : null;
+	$state  = ( $post && function_exists( 'db_listing_state' ) ) ? db_listing_state( $post ) : '';
+	$GLOBALS['db_plan_widget_prebuilt'] = in_array( $state, array( 'sold', 'not_for_sale' ), true ) ? '' : db_plan_widget_html();
+	if ( '' === $GLOBALS['db_plan_widget_prebuilt'] ) {
+		// No plan for this link (offer-only, sold or unlisted name, or an edited price): send the
+		// visitor to the listing instead of the theme's legacy template, which priced the plan from
+		// the URL and promised terms that do not exist (bug register batch 2, CK-2).
+		$to = ( $post && 'publish' === $post->post_status ) ? get_permalink( $post ) : home_url( '/all-domains/' );
+		wp_safe_redirect( $to, 302 );
+		exit;
+	}
 	ob_start( 'db_plan_takeover' );
 }, 27 );
 
@@ -1206,8 +1503,13 @@ if ( ! function_exists( 'db_offer_resolved_form_id' ) ) {
 	}
 }
 
-add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
-	if ( ! db_is_offer_form( $contact_form ) ) { return; }
+// The buyer's acknowledgement (with their private offer page link) goes out whether or not the
+// team email succeeded: CF7 fires wpcf7_mail_sent only on success, so a mail failure left the buyer
+// with nothing although the lead was saved (bug register batch 2, AD-4). Once per submission.
+$db_offer_ack = function ( $contact_form ) {
+	static $done = false;
+	if ( $done || ! db_is_offer_form( $contact_form ) ) { return; }
+	$done = true;
 	$submission = class_exists( 'WPCF7_Submission' ) ? WPCF7_Submission::get_instance() : null;
 	if ( ! $submission ) { return; }
 	$data = $submission->get_posted_data();
@@ -1236,7 +1538,9 @@ add_action( 'wpcf7_mail_sent', function ( $contact_form ) {
 			wp_mail( $mail['to'], $mail['subject'], $mail['body'], array( 'Content-Type: text/html; charset=UTF-8' ) );
 		}
 	}
-}, 20, 1 ); // after the CRM lead (and its offer page) exists
+};
+add_action( 'wpcf7_mail_sent', $db_offer_ack, 20, 1 ); // after the CRM lead (and its offer page) exists
+add_action( 'wpcf7_mail_failed', $db_offer_ack, 20, 1 );
 
 add_action( 'wp_footer', function () {
 	$form_id  = db_offer_resolved_form_id();
@@ -1334,7 +1638,7 @@ add_shortcode( 'db_sitemap', function ( $atts ) {
 		echo '</ul>';
 	}
 	?>
-	<style>.db-sitemap{max-width:820px;margin:0 auto;}.db-sitemap-h2{font-size:20px;font-weight:700;margin:36px 0 12px;border-bottom:2px solid #e6e6e6;padding-bottom:8px;}.db-sitemap-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 24px;}.db-sitemap-list li{padding:4px 0;}.db-sitemap-list a{color:#0b3d91;text-decoration:none;font-size:15px;}.db-sitemap-list a:hover{text-decoration:underline;}.db-sitemap-date{font-size:12px;color:#888;margin-left:8px;}</style>
+	<style>.db-sitemap{max-width:820px;margin:0 auto;}.db-sitemap-h2{font-size:20px;font-weight:700;margin:36px 0 12px;border-bottom:2px solid #e6e6e6;padding-bottom:8px;}.db-sitemap-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 24px;}.db-sitemap-list li{padding:4px 0;}.db-sitemap-list a{color:#0b3d91;text-decoration:none;font-size:15px;}.db-sitemap-list a:hover{text-decoration:underline;}.db-sitemap-date{font-size:12px;color:#5b6472;margin-left:8px;}</style>
 	</div>
 	<?php
 	return ob_get_clean();
@@ -1424,8 +1728,7 @@ add_action( 'wp_head', function () {
 		echo '<link rel="preconnect" href="https://api.stripe.com">' . "\n";
 		echo '<link rel="dns-prefetch" href="//js.stripe.com">' . "\n";
 	}
-	echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
-	echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+	// No Google Fonts preconnect: the site uses the system font stack (design audit 2026-11-24).
 }, 0 );
 
 add_action( 'send_headers', function () {
@@ -1434,6 +1737,10 @@ add_action( 'send_headers', function () {
 	header( 'X-Frame-Options: SAMEORIGIN' );
 	header( 'X-XSS-Protection: 1; mode=block' );
 	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+	// Isolate our window from pages we open, but keep payment and sign-in popups working (S-2).
+	header( 'Cross-Origin-Opener-Policy: same-origin-allow-popups' );
+	// Only our own sites may embed what WordPress serves here (no-cors loads from other sites are refused).
+	header( 'Cross-Origin-Resource-Policy: same-site' );
 	// payment: Stripe's iframe needs it for Apple Pay / Google Pay / Link; nobody else gets it.
 	header( 'Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com" "https://m.stripe.network" "https://js.stripe.network")' );
 } );
@@ -1494,7 +1801,7 @@ add_action( 'init', function () {
    BLOCK 9 — DB AEO & structured data
    ============================================================ */
 
-if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       get_bloginfo( 'name' ) );
+if ( ! defined( 'DB_AEO_ORG_NAME' ) )       define( 'DB_AEO_ORG_NAME',       'Domain Brothers' );
 if ( ! defined( 'DB_AEO_CONTACT_EMAIL' ) )   define( 'DB_AEO_CONTACT_EMAIL',  'sales@domainbrothers.com' );
 if ( ! defined( 'DB_AEO_TWITTER_HANDLE' ) )  define( 'DB_AEO_TWITTER_HANDLE', '' );
 if ( ! defined( 'DB_AEO_PRICE_META' ) )      define( 'DB_AEO_PRICE_META',     'domain_price' );
@@ -1516,6 +1823,13 @@ if ( ! function_exists( 'db_aeo_og_image' ) ) {
 
 if ( ! function_exists( 'db_aeo_emit' ) ) {
 	function db_aeo_emit( $graph_node ) {
+		// When Rank Math writes the <head> it already describes the organisation,
+		// the website, the page, the article and the breadcrumb trail; emitting
+		// them here too would give search engines each entity twice.
+		if ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD && isset( $graph_node['@type'] )
+			&& in_array( $graph_node['@type'], (array) apply_filters( 'db_aeo_rankmath_types', array( 'Organization', 'WebSite', 'WebPage', 'Article', 'BlogPosting', 'NewsArticle', 'BreadcrumbList', 'Service' ) ), true ) ) {
+			return;
+		}
 		$json = wp_json_encode( array_merge( array( '@context' => 'https://schema.org' ), $graph_node ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT );
 		echo '<script type="application/ld+json">' . "\n" . $json . "\n" . '</script>' . "\n";
 	}
@@ -1618,14 +1932,25 @@ add_action( 'wp_head', function () {
 		$list_state   = function_exists( 'db_listing_state' ) ? db_listing_state( $post ) : 'standard';
 		$product      = array( '@type' => 'Product', 'name' => $domain_name,
 			'description' => ( 'sold' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' has been sold.' : ( 'not_for_sale' === $list_state ? 'Domain name ' . esc_html( $domain_name ) . ' is not for sale.' : 'Premium domain name ' . esc_html( $domain_name ) . ' available for purchase or via flexible monthly payment plan.' ) ),
-			'url' => esc_url( $domain_url ),
-			'brand' => array( '@type' => 'Brand', 'name' => $site_name ) );
-		// No offer (and so no "in stock") for a name that is sold or not for sale.
-		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ) {
-			$price = (float) preg_replace( '/[^0-9.]/', '', $domain_price );
+			'url' => esc_url( $domain_url ) ); // no brand: a domain is not a Domain Brothers brand; we are the seller (SE-23)
+		// Product rich results need an Offer with a price and an image (RS-11). Names that are
+		// offer-only, sold or not for sale have no price to state, so they get no Product markup.
+		$price = $domain_price && is_numeric( preg_replace( '/[^0-9.]/', '', $domain_price ) ) ? (float) preg_replace( '/[^0-9.]/', '', $domain_price ) : 0.0;
+		if ( in_array( $list_state, array( 'standard', 'offer' ), true ) && $price > 0 ) {
 			$product['offers'] = array( '@type' => 'Offer', 'price' => number_format( $price, 2, '.', '' ), 'priceCurrency' => 'USD', 'availability' => 'https://schema.org/InStock', 'url' => esc_url( $domain_url ), 'seller' => array( '@type' => 'Organization', 'name' => $site_name ) );
+			$image = get_the_post_thumbnail_url( $post, 'large' );
+			if ( ! $image ) {
+				$att   = (int) get_option( 'db_og_default_attachment' );
+				$image = $att ? wp_get_attachment_url( $att ) : '';
+			}
+			if ( ! $image && $logo_url ) {
+				$image = $logo_url;
+			}
+			if ( $image ) {
+				$product['image'] = esc_url( $image );
+			}
+			db_aeo_emit( apply_filters( 'db_aeo_product', $product ) );
 		}
-		db_aeo_emit( $product );
 	}
 
 	$service_slugs = array( 'website-design-development' => 'Website Design & Development', 'digital-marketing' => 'Digital Marketing', 'software-development' => 'Software Development', 'mobile-app-development' => 'Mobile App Development', 'other-services' => 'Other Services' );
@@ -1655,7 +1980,7 @@ add_action( 'wp_head', function () {
 				$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => $term->name, 'item' => esc_url( get_term_link( $term ) ) );
 			}
 		} elseif ( is_singular( 'domain' ) ) {
-			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'Domain Listings', 'item' => esc_url( home_url( '/domains/' ) ) );
+			$items[] = array( '@type' => 'ListItem', 'position' => 2, 'name' => 'All Domains', 'item' => esc_url( home_url( '/all-domains/' ) ) );
 			$items[] = array( '@type' => 'ListItem', 'position' => 3, 'name' => get_the_title(), 'item' => esc_url( get_permalink() ) );
 		} elseif ( is_singular( 'post' ) ) {
 			// Blog posts under /news/ fell through both branches below (not
@@ -1763,6 +2088,67 @@ if ( ! function_exists( 'db_external_style' ) ) {
 			null // version is in the filename
 		);
 		return true;
+	}
+}
+
+if ( ! function_exists( 'db_external_script' ) ) {
+	/**
+	 * Prints a script block as a cached file (uploads/db-blocks/<handle>-<hash>.js) instead of
+	 * inline, so the browser downloads it once rather than with every page (bug P-2/P-3/P-6).
+	 * Runs at the same place and in the same order as the inline version (a plain, blocking
+	 * <script src>). Falls back to inline output when uploads is not writable.
+	 *
+	 * @param string $handle Short name, used for the file and the element id.
+	 * @param string $html   The full <script>…</script> block.
+	 */
+	function db_external_script( string $handle, string $html ) : void {
+		if ( ! preg_match( '#^\s*<script\b[^>]*>(.*)</script>\s*$#is', $html, $m ) ) {
+			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
+			return;
+		}
+		$url = db_external_file( $handle, trim( $m[1] ), 'js' );
+		echo '' === $url ? $html : '<script id="db-' . esc_attr( $handle ) . '" src="' . esc_url( $url ) . '"></script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller or escaped here.
+	}
+}
+
+if ( ! function_exists( 'db_external_style_tag' ) ) {
+	/**
+	 * Same as db_external_script() for a <style> block: printed as a cached stylesheet link so
+	 * repeat visits do not download it inside every page (bug P-6). Falls back to inline.
+	 */
+	function db_external_style_tag( string $handle, string $html ) : void {
+		if ( ! preg_match( '#^\s*<style\b[^>]*>(.*)</style>\s*$#is', $html, $m ) ) {
+			echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller.
+			return;
+		}
+		$url = db_external_file( $handle, trim( $m[1] ), 'css' );
+		echo '' === $url ? $html : '<link rel="stylesheet" id="db-' . esc_attr( $handle ) . '-css" href="' . esc_url( $url ) . '" media="all">' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- built by the caller or escaped here.
+	}
+}
+
+if ( ! function_exists( 'db_external_file' ) ) {
+	/**
+	 * Writes $body to uploads/db-blocks/<handle>-<hash>.<ext> once and returns its URL, or ''
+	 * when uploads cannot be written. Older versions of the same handle are removed.
+	 */
+	function db_external_file( string $handle, string $body, string $ext ) : string {
+		$upload = wp_upload_dir();
+		if ( ! empty( $upload['error'] ) || '' === $body ) {
+			return '';
+		}
+		$dir  = $upload['basedir'] . '/db-blocks';
+		$file = $dir . '/' . $handle . '-' . substr( md5( $body ), 0, 10 ) . '.' . $ext;
+		if ( ! file_exists( $file ) ) {
+			if ( ! wp_mkdir_p( $dir ) || false === file_put_contents( $file, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions
+				return '';
+			}
+			foreach ( (array) glob( $dir . '/' . $handle . '-*.' . $ext ) as $old ) {
+				if ( $old !== $file ) {
+					@unlink( $old ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+				}
+			}
+		}
+		return $upload['baseurl'] . '/db-blocks/' . basename( $file );
 	}
 }
 
@@ -2425,7 +2811,7 @@ body.db-ui-active { padding-top: 70px !important; }
 @media (min-width: 992px) {
 	.db-ui-active .site-header .domain-search { padding-right: var(--db-sp-5); justify-content: flex-start; }
 	.db-ui-active .site-header .domain-search .custom-logo-link { display: flex; }
-	.db-ui-active .site-header .domain-search .custom-logo-link img { height: 38px; width: auto; }
+	.db-ui-active .site-header .domain-search .custom-logo-link img { height: auto; max-height: 38px; width: auto; }
 	.db-ui-active .site-header .domain-search .widget { flex: 0 1 320px; max-width: 320px; margin-left: auto; }
 	.db-ui-active .db-desktop-nav {
 		display: flex; flex: 1 1 auto; justify-content: center;
@@ -3121,8 +3507,17 @@ body.page:not(.home) .entry-content > h3 + p { margin-bottom: 20px; }
 .db-ui-active .db-home-tab.is-active { background: var(--db-navy); border-color: transparent; color: #fff; }
 .db-ui-active .db-home-panel { display: none; width: 100%; }
 .db-ui-active .db-home-panel.is-active { display: block; }
-.db-ui-active .db-home-panel .View-all { display: block; margin: 0 0 var(--db-sp-4); }
-.db-ui-active .db-home-panel .View-all a { margin-left: 0; }
+/* Header row: tabs left; View all and the List/Grid switch right (2026-11). */
+.db-ui-active .db-home-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin: 0 0 22px; padding: 0 0 18px; border-bottom: 1px solid #e4e7ec; }
+.db-ui-active .db-home-head .db-home-tabbar { margin: 0; }
+.db-ui-active .db-home-tools { display: flex; align-items: center; gap: 18px; margin-left: auto; }
+html body.db-ui-active .db-home-tools .db-viewbar { margin: 0; }
+html body.db-ui-active a.db-home-viewall { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; color: #0f1b2d !important; font-size: 15px; font-weight: 700; text-decoration: underline !important; text-decoration-color: #b5e61d !important; text-decoration-thickness: 3px !important; text-underline-offset: 6px; white-space: nowrap; }
+html body.db-ui-active a.db-home-viewall:hover { text-decoration-color: #0f1b2d !important; }
+.db-ui-active .db-home-panel .View-all { display: none; }
+@media (max-width: 640px) { .db-ui-active .db-home-tools { width: 100%; justify-content: space-between; margin-left: 0; } }
+.home.db-ui-active .db-home-tabs { margin-top: 0; }
+@media (min-width: 992px) { html body.home.db-ui-active #main.homepage-listing > .row > .col-lg-4 { margin-top: 0 !important; padding-top: 0 !important; } }
 
 /* ==========================================================================
    14. LIVE NEWS FEED — /news/ (db-news-block.php)
@@ -3338,6 +3733,7 @@ add_action( 'wp_enqueue_scripts', function () {
  * This tags them with classes the design system styles (see section 10).
  */
 add_action( 'wp_footer', function () {
+	ob_start();
 	?>
 	<script id="db-ui-enhancer">
 	(function () {
@@ -3375,15 +3771,18 @@ add_action( 'wp_footer', function () {
 			};
 
 			/* 1. Hide duplicate search forms — keep the first visible one. */
-			var seen = 0;
+			var seen = 0, dupForms = [];
 			document.querySelectorAll('form').forEach(function (f) {
 				var inp = f.querySelector('input[type="text"], input[type="search"]');
 				if (!inp) { return; }
 				var ph = (inp.getAttribute('placeholder') || '').toLowerCase();
 				if (ph.indexOf('search') === -1) { return; }
 				seen++;
-				if (seen > 1 && f.offsetParent !== null) { f.style.display = 'none'; }
+				if (seen > 1) { dupForms.push(f); }
 			});
+			// Read every visibility first, then hide: reading offsetParent after a style write
+			// forced a fresh layout for each form (long task on phones).
+			dupForms.filter(function (f) { return f.offsetParent !== null; }).forEach(function (f) { f.style.display = 'none'; });
 
 			/* 2. Tag action links + "View All" by their visible text. */
 			document.querySelectorAll('a').forEach(function (a) {
@@ -3435,6 +3834,7 @@ add_action( 'wp_footer', function () {
 			   blank header nav-toggle and any icon that still fails to
 			   render after step 3.5 above. We test ACTUAL rendered size of
 			   any icon child rather than just its presence. */
+			var emptyEls = [];
 			var iconRenders = function (el) {
 				var ic = el.querySelector('img, svg, i, [class*="icon"], .dashicons');
 				if (!ic) {
@@ -3451,8 +3851,10 @@ add_action( 'wp_footer', function () {
 				if ((el.textContent || '').trim().length > 0) { return; }
 				if (iconRenders(el)) { return; }
 				if (el.getBoundingClientRect().height > 80) { return; } // never a big wrapper
-				el.style.display = 'none';
+				emptyEls.push(el);
 			});
+			// Writes after all the reads above (one layout instead of one per element).
+			emptyEls.forEach(function (el) { el.style.display = 'none'; });
 
 			/* 5. Hero burger menu toggle. */
 			var burger = document.querySelector('.db-hp-burger');
@@ -3668,7 +4070,7 @@ add_action( 'wp_footer', function () {
 				bWrap.className = 'db-browse-tabs';
 				var bBar = document.createElement('div');
 				bBar.className = 'db-browse-tabbar';
-				bBar.setAttribute('role', 'tablist');
+				bBar.setAttribute('role', 'group'); // toggle buttons, not tabs without panels (AX-11)
 				bWrap.appendChild(bBar);
 				browseSections[0].parentNode.insertBefore(bWrap, browseSections[0]);
 				browseSections.forEach(function (sec, i) {
@@ -3678,14 +4080,13 @@ add_action( 'wp_footer', function () {
 					btn.type = 'button';
 					btn.className = 'db-browse-tab' + (i === 0 ? ' is-active' : '');
 					btn.textContent = text;
-					btn.setAttribute('role', 'tab');
-					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+										btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
 					btn.addEventListener('click', function () {
 						bBar.querySelectorAll('.db-browse-tab').forEach(function (b) {
-							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+							b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false');
 						});
 						browseSections.forEach(function (s) { s.classList.remove('is-active'); });
-						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						btn.classList.add('is-active'); btn.setAttribute('aria-pressed', 'true');
 						sec.classList.add('is-active');
 					});
 					bBar.appendChild(btn);
@@ -3723,8 +4124,22 @@ add_action( 'wp_footer', function () {
 				hWrap.className = 'db-home-tabs';
 				var hBar = document.createElement('div');
 				hBar.className = 'db-home-tabbar';
-				hBar.setAttribute('role', 'tablist');
-				hWrap.appendChild(hBar);
+				hBar.setAttribute('role', 'group'); // toggle buttons, not tabs without panels (AX-11)
+				hBar.setAttribute('aria-label', 'Domain lists');
+				// One header row: tabs on the left; View all and the List/Grid switch on the right.
+				var hHead = document.createElement('div');
+				hHead.className = 'db-home-head';
+				var hTools = document.createElement('div');
+				hTools.className = 'db-home-tools';
+				var hAll = document.createElement('a');
+				hAll.className = 'db-home-viewall';
+				hAll.href = '/all-domains/';
+				hAll.innerHTML = 'View all <span aria-hidden="true">&rarr;</span>';
+				hTools.appendChild(hAll);
+				hHead.appendChild(hBar);
+				hHead.appendChild(hTools);
+				hWrap.appendChild(hHead);
+				var syncAll = function (col) { var l = col.querySelector('.View-all a'); if (l && l.href) { hAll.href = l.href; } };
 				homeDomainCols[0].parentNode.insertBefore(hWrap, homeDomainCols[0]);
 				homeDomainCols.forEach(function (col, i) {
 					var heading = col.querySelector('h2.page-title');
@@ -3733,20 +4148,20 @@ add_action( 'wp_footer', function () {
 					btn.type = 'button';
 					btn.className = 'db-home-tab' + (i === 0 ? ' is-active' : '');
 					btn.textContent = label;
-					btn.setAttribute('role', 'tab');
-					btn.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+										btn.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
 					btn.addEventListener('click', function () {
 						hBar.querySelectorAll('.db-home-tab').forEach(function (b) {
-							b.classList.remove('is-active'); b.setAttribute('aria-selected', 'false');
+							b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false');
 						});
 						homeDomainCols.forEach(function (c) { c.classList.remove('is-active'); });
-						btn.classList.add('is-active'); btn.setAttribute('aria-selected', 'true');
+						btn.classList.add('is-active'); btn.setAttribute('aria-pressed', 'true');
 						col.classList.add('is-active');
+						syncAll(col);
 					});
 					hBar.appendChild(btn);
 					col.classList.add('db-home-panel');
 					col.classList.remove('col-lg-4', 'pe-0');
-					if (i === 0) { col.classList.add('is-active'); }
+					if (i === 0) { col.classList.add('is-active'); syncAll(col); }
 					if (heading) { heading.style.display = 'none'; }
 					hWrap.appendChild(col);
 				});
@@ -4026,12 +4441,17 @@ add_action( 'wp_footer', function () {
 			}
 			document.addEventListener('click', function (e) {
 				var trigger = e.target.closest && e.target.closest('.db-news-card__trigger');
-				if (trigger) { openNewsPreview(trigger); }
+				if (trigger) {
+						/* No popup: open the publisher's article in a new tab. */
+						var href = trigger.getAttribute('data-link') || '';
+						if (/^https?:\/\//i.test(href)) { window.open(href, '_blank', 'noopener,noreferrer'); } else { openNewsPreview(trigger); }
+					}
 			});
 		} catch (e) { /* enhancement only — never break the page */ }
 	})();
 	</script>
 	<?php
+	db_external_script( 'ui-enhancer', (string) ob_get_clean() );
 }, 98 );
 
 /* ============================================================
@@ -4572,6 +4992,11 @@ require_once __DIR__ . '/db-mobilenav-block.php';
    SAFETY — fatal-error recorder + branded failure page
    ============================================================ */
 require_once __DIR__ . '/db-safety-block.php';
+require_once __DIR__ . '/db-crawl-block.php'; // canonical URLs, crawl traps, faceted noindex, robots.txt
+require_once __DIR__ . '/db-schema-block.php'; // Rank Math JSON-LD repairs (logo, author, relative ids, breadcrumbs)
+if ( is_readable( __DIR__ . '/db-log-block.php' ) ) {
+	require_once __DIR__ . '/db-log-block.php'; // log manager: Tools > Error log
+}
 
 /* ============================================================
    DOMAIN PAGE — restores theme CSS + Make an Offer modal
@@ -4607,12 +5032,16 @@ require_once __DIR__ . '/db-onpage-seo-block.php';
    /all-domains/ FILTER + SORT BAR
    ============================================================ */
 require_once __DIR__ . '/db-domain-filter-block.php';
+require_once __DIR__ . '/db-hero-showcase-block.php';
 
 /* ============================================================
    RECOMMENDED DOMAINS + EXIT OFFER ON DOMAIN PAGES
    ============================================================ */
 require_once __DIR__ . '/db-recommend-block.php';
 require_once __DIR__ . '/db-exit-offer-block.php';
+require_once __DIR__ . '/db-events-block.php';
+require_once __DIR__ . '/db-page-actions-block.php';
+require_once __DIR__ . '/db-offer-page-block.php';
 
 /* ============================================================
    DESIGN REFRESH — the exit-offer popup's look, site-wide
@@ -4633,10 +5062,214 @@ require_once __DIR__ . '/db-turnstile-block.php';
 require_once __DIR__ . '/db-launch-block.php';
 require_once __DIR__ . '/db-sales-block.php';
 require_once __DIR__ . '/db-sales-ops-block.php';
+require_once __DIR__ . '/db-domain-tools-block.php';
+require_once __DIR__ . '/db-platform-block.php';
+require_once __DIR__ . '/db-pagecache-block.php';
+require_once __DIR__ . '/db-delay-block.php';
+require_once __DIR__ . '/db-pages-block.php';
 require_once __DIR__ . '/db-sections-block.php';
 require_once __DIR__ . '/db-priced-block.php';
+require_once __DIR__ . '/db-seo-audit-block.php';
+require_once __DIR__ . '/db-rankmath-block.php';
+require_once __DIR__ . '/db-focus-block.php';
+require_once __DIR__ . '/db-header-block.php';
+require_once __DIR__ . '/db-index-policy-block.php';
+require_once __DIR__ . '/db-transfer-block.php';
+require_once __DIR__ . '/db-form-entries-block.php';
+require_once __DIR__ . '/db-service-art-block.php';
+require_once __DIR__ . '/db-handles-block.php';
+require_once __DIR__ . '/db-offer-page-block.php';
+require_once __DIR__ . '/db-designer-bridge-block.php';
+require_once __DIR__ . '/db-payment-plans-block.php';
+require_once __DIR__ . '/db-wishlist-intro-block.php';
+require_once __DIR__ . '/db-spamguard-block.php';
+require_once __DIR__ . '/db-image-guard-block.php';
+require_once __DIR__ . '/db-register-block.php';
+require_once __DIR__ . '/db-account-ui-block.php';
+require_once __DIR__ . '/db-account-data-block.php';
+require_once __DIR__ . '/db-policies-block.php';
+require_once __DIR__ . '/db-service-template-block.php';
+require_once __DIR__ . '/db-domain-lookup-block.php';
+require_once __DIR__ . '/db-tool-pages-block.php';
+require_once __DIR__ . '/db-resolve-tools-block.php';
+require_once __DIR__ . '/db-learn-pages-block.php';
+require_once __DIR__ . '/db-site-hygiene-block.php';
+require_once __DIR__ . '/db-search-log-block.php';
+require_once __DIR__ . '/db-alerts-block.php';
+require_once __DIR__ . '/db-article-block.php';
+if ( is_readable( __DIR__ . '/db-landing-pages-block.php' ) ) {
+	require_once __DIR__ . '/db-landing-pages-block.php'; // Acquire page copy and shared landing pieces
+}
+if ( is_readable( __DIR__ . '/db-links-block.php' ) ) {
+	require_once __DIR__ . '/db-links-block.php'; // internal linking network
+}
 // Loaded only when present, so a partial plugin upload (main file updated,
 // new block missing) can never take the whole site down with a fatal error.
+// Seller marketplace phase 1: list your domains with us (switch: option db_seller_on; staging only by default).
+if ( is_readable( __DIR__ . '/db-seller-block.php' ) && is_readable( __DIR__ . '/db-seller-lib.php' ) ) {
+	require_once __DIR__ . '/db-seller-block.php';
+	// Stripe Connect for sellers: onboarding, platform products, storefront, destination charges.
+	if ( is_readable( __DIR__ . '/db-connect-block.php' ) ) {
+		require_once __DIR__ . '/db-connect-block.php';
+	}
+}
+/*
+ * "?domain=name" on an ordinary page (old contact and offer links) is read by
+ * WordPress as a request for the domain post of that name, which redirected
+ * the visitor away from the page (bug RS-1). On a page URL, the parameter is
+ * only data: drop it from the query so the page itself loads.
+ */
+add_filter( 'request', function ( $vars ) {
+	if ( isset( $vars['domain'], $_GET['domain'] ) && ! is_admin() ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$path = trim( (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '', PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( '' !== $path && 0 !== strpos( $path, 'domains/' ) && get_page_by_path( $path ) ) {
+			unset( $vars['domain'], $vars['post_type'], $vars['name'] );
+			$vars['pagename'] = $path;
+		}
+	}
+	return $vars;
+} );
+
+/* Contact links from domain pages ("?dom=name&topic=develop") fill in the form, in the server HTML. */
+add_filter( 'wpcf7_form_tag', function ( $tag ) {
+	if ( is_admin() || empty( $tag['name'] ) ) {
+		return $tag;
+	}
+	$dom = isset( $_GET['dom'] ) ? $_GET['dom'] : ( isset( $_GET['domain'] ) ? $_GET['domain'] : '' ); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+	$dom = strtolower( preg_replace( '/[^a-z0-9.-]/i', '', sanitize_text_field( wp_unslash( (string) $dom ) ) ) );
+	if ( '' === $dom ) {
+		return $tag;
+	}
+	if ( 'contact-domain' === $tag['name'] ) {
+		$tag['values'] = array( $dom );
+	} elseif ( 'contact-msg' === $tag['name'] && isset( $_GET['topic'] ) && 'develop' === sanitize_key( wp_unslash( $_GET['topic'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$tag['values'] = array( 'I own ' . $dom . ' and would like help developing it (website, app or marketing).' );
+	}
+	return $tag;
+} );
+
+/*
+ * Form fields without a label (bug A-1): several service forms use
+ * placeholders only, so screen readers announced "edit text". Give every
+ * field that has no aria-label one, from its placeholder or a known name.
+ */
+add_filter( 'wpcf7_form_elements', function ( $html ) {
+	$names = array( 'contact-name' => 'Your name', 'contact-email' => 'Your email', 'contact-phone' => 'Phone number', 'contact-interest' => 'What you are interested in', 'contact-domain' => 'Domain name', 'contact-msg' => 'Your message', 'your-name' => 'Your name', 'your-email' => 'Your email', 'your-message' => 'Your message' );
+	return (string) preg_replace_callback( '/<(input|select|textarea)\b([^>]*)>/i', function ( $m ) use ( $names ) {
+		$attrs = $m[2];
+		if ( preg_match( '/\baria-label(ledby)?=/i', $attrs ) || preg_match( '/type="(hidden|submit|button|checkbox|radio)"/i', $attrs ) || ! preg_match( '/\bname="([^"]+)"/i', $attrs, $n ) ) {
+			return $m[0];
+		}
+		$label = '';
+		if ( preg_match( '/\bplaceholder="([^"]+)"/i', $attrs, $ph ) ) {
+			$label = html_entity_decode( $ph[1], ENT_QUOTES );
+		}
+		$key = preg_replace( '/\[\]$/', '', $n[1] );
+		if ( isset( $names[ $key ] ) ) {
+			$label = $names[ $key ];
+		}
+		if ( '' === trim( $label ) ) {
+			$label = ucfirst( trim( str_replace( array( '-', '_' ), ' ', $key ) ) );
+		}
+		$close = '>';
+		if ( '/' === substr( rtrim( $attrs ), -1 ) ) {
+			$attrs = substr( rtrim( $attrs ), 0, -1 );
+			$close = ' />';
+		}
+		return '<' . $m[1] . rtrim( $attrs ) . ' aria-label="' . esc_attr( $label ) . '"' . $close;
+	}, $html );
+}, 20 );
+
+/*
+ * Pagination and search edge cases (bugs RS-3, RS-4, RS-5):
+ *  - a page number past the last page of a list (/news/page/99/) is a 404;
+ *  - /all-domains/ shows every name on one page, so /all-domains/page/2/ is
+ *    a duplicate and redirects to /all-domains/;
+ *  - an empty search (/?s=) goes to the full domain list.
+ */
+add_action( 'template_redirect', function () {
+	global $wp_query;
+	if ( is_admin() || ! $wp_query instanceof WP_Query ) {
+		return;
+	}
+	$paged = (int) get_query_var( 'paged' );
+	if ( is_search() && isset( $_GET['s'] ) && '' === trim( (string) wp_unslash( $_GET['s'] ) ) ) { // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+		wp_safe_redirect( home_url( '/all-domains/' ), 302 );
+		exit;
+	}
+	if ( $paged > 1 && is_page( 'all-domains' ) ) {
+		wp_safe_redirect( get_permalink( get_queried_object_id() ), 301 );
+		exit;
+	}
+	if ( $paged > 1 && ( is_home() || is_archive() ) && $paged > max( 1, (int) $wp_query->max_num_pages ) ) {
+		$wp_query->set_404();
+		status_header( 404 );
+		nocache_headers();
+	}
+}, 2 );
+
+/* Internal links to retired slugs (bug RS-6): point them straight at the current pages, sparing a redirect. */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || wp_doing_ajax() || is_feed() ) {
+		return;
+	}
+	$map = array(
+		'/digital-marketing/'      => '/digital-marketing-services/',
+		'/software-development/'   => '/custom-software-development-services/',
+		'/other-services/'         => '/web-hosting-maintenance-services/',
+		'/mobile-app-development/' => '/mobile-app-development-services/',
+	);
+	$home = untrailingslashit( home_url() );
+	$from = array();
+	$to   = array();
+	foreach ( $map as $old => $new ) {
+		foreach ( array( $home, '' ) as $base ) {
+			$from[] = 'href="' . $base . $old . '"';
+			$to[]   = 'href="' . $home . $new . '"';
+			$from[] = 'href="' . $base . rtrim( $old, '/' ) . '"';
+			$to[]   = 'href="' . $home . $new . '"';
+		}
+	}
+	ob_start( function ( $html ) use ( $from, $to ) {
+		return is_string( $html ) && '' !== $html ? str_replace( $from, $to, $html ) : $html;
+	} );
+}, 4 );
+
+if ( ! function_exists( 'db_on_canonical_host' ) ) {
+	/**
+	 * True when the request came in on the site's own host (the stored "home"
+	 * option). Hosting preview hosts rewrite home_url() per request, so links
+	 * built there must not be cached for everyone. CLI and cron count as canonical.
+	 */
+	function db_on_canonical_host() {
+		if ( empty( $_SERVER['HTTP_HOST'] ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return true;
+		}
+		global $wpdb;
+		static $home = null;
+		if ( null === $home ) {
+			$home = strtolower( (string) wp_parse_url( (string) $wpdb->get_var( "SELECT option_value FROM {$wpdb->options} WHERE option_name = 'home' LIMIT 1" ), PHP_URL_HOST ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		}
+		$host = strtolower( preg_replace( '/:\d+$/', '', (string) wp_unslash( $_SERVER['HTTP_HOST'] ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return '' === $home || $host === $home;
+	}
+}
+// Payment plans in the customer account (plans need an account; schedule and next payment in My account).
+if ( is_readable( __DIR__ . '/db-account-plans-block.php' ) ) {
+	require_once __DIR__ . '/db-account-plans-block.php';
+}
+// The designer's UI fixes (bundled from the standalone add-on; stands down while the add-on is active).
+if ( is_readable( __DIR__ . '/db-ui-fixes-block.php' ) && is_readable( __DIR__ . '/designer/ui-fixes/includes/html-filters.php' ) ) {
+	require_once __DIR__ . '/db-ui-fixes-block.php';
+}
+// Contextual internal links: first mention of a topic links to the page that owns it.
+if ( is_readable( __DIR__ . '/db-autolink-block.php' ) ) {
+	require_once __DIR__ . '/db-autolink-block.php';
+}
+// Motion layer: scroll reveal, page cross-fade, smooth hover and press (CSS only).
+if ( is_readable( __DIR__ . '/db-motion-block.php' ) ) {
+	require_once __DIR__ . '/db-motion-block.php';
+}
 if ( is_readable( __DIR__ . '/db-faq-block.php' ) ) {
 	require_once __DIR__ . '/db-faq-block.php';
 }
@@ -4646,3 +5279,9 @@ if ( is_readable( __DIR__ . '/db-team-block.php' ) ) {
 if ( is_readable( __DIR__ . '/db-forms-block.php' ) ) {
 	require_once __DIR__ . '/db-forms-block.php';
 }
+foreach ( array( 'db-consent-block.php', 'db-footer-links-block.php', 'db-service-redirects-block.php', 'db-test-data-block.php' ) as $db_optional_block ) {
+	if ( is_readable( __DIR__ . '/' . $db_optional_block ) ) {
+		require_once __DIR__ . '/' . $db_optional_block;
+	}
+}
+unset( $db_optional_block );

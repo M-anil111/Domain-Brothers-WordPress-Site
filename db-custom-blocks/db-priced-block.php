@@ -52,7 +52,7 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		$shown = ucfirst( $name );
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$urls  = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
-		$money = '$' . number_format( $price, 0 );
+		$money = db_usd( $price );
 		$plan  = $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) && function_exists( 'db_dd_monthly' );
 		$cats  = get_the_terms( $post, 'domain_category' );
 		$cat   = null;
@@ -75,7 +75,7 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		};
 
 		$h  = '<div class="db-priced">';
-		$h .= '<div class="db-sale-band"><p>This domain <strong>' . esc_html( strtoupper( $name ) ) . '</strong> is on sale <span aria-hidden="true">&#9733;</span></p></div>';
+		$h .= '<div class="db-sale-band"><p>This domain <strong>' . esc_html( strtoupper( $name ) ) . '</strong> is for sale <span aria-hidden="true">&#9733;</span></p></div>'; // "on sale" read as a discount (LS-20)
 		$h .= '<section class="db-pr-hero" aria-labelledby="db-pr-h"><h1 id="db-pr-h">Create something meaningful with <span>' . esc_html( $shown ) . '</span></h1><p class="db-pr-ask">Are you interested in this domain? <strong>Get started here.</strong></p></section>';
 
 		// The three ways to get it.
@@ -83,18 +83,23 @@ if ( ! function_exists( 'db_priced_html' ) ) {
 		$h .= '<article class="db-pr-card"><span class="db-pr-num" aria-hidden="true">1</span><h2>Buy now</h2><p class="db-pr-price">' . esc_html( $money ) . '</p><p class="db-pr-note">One payment, full ownership</p><ul class="db-pr-list">'
 			. $li( 'Take ownership as soon as your payment clears.' )
 			. $li( $cat ? 'Listed under <a href="' . esc_url( get_term_link( $cat ) ) . '">' . esc_html( $cat->name ) . '</a>.' : 'A premium name, ready to use.' )
+			. $li( 'We guide you step by step through the transfer.' )
+			. $li( 'Pay by card, Apple Pay or Google Pay.' )
 			. '</ul><a class="db-pr-btn db-pr-btn--solid" href="' . esc_url( $urls['buy'] ) . '">Buy now</a><p class="db-pr-fine">By continuing you agree to our <a href="' . esc_url( home_url( '/terms-of-use/' ) ) . '">Terms &amp; Conditions</a>.</p></article>';
 		if ( $plan ) {
 			$h .= '<article class="db-pr-card"><span class="db-pr-num" aria-hidden="true">2</span><h2>Finance this domain</h2><p class="db-pr-price"><small>from</small> ' . esc_html( db_dd_monthly( $price ) ) . '<small>/mo</small></p><p class="db-pr-note">Pay over 3, 6, 9 or 12 months</p><ul class="db-pr-list">'
 				. $li( 'Start today with the first monthly payment.' )
-				. $li( 'Use the domain while you pay; ownership transfers after the final payment.' )
+				. $li( 'Use the domain while you pay; ownership moves after the last payment.' )
+				. $li( 'No interest over 3 months; ' . rtrim( rtrim( number_format( db_plan_rate( 6 ), 1 ), '0' ), '.' ) . '% to ' . rtrim( rtrim( number_format( db_plan_rate( 12 ), 1 ), '0' ), '.' ) . '% on longer plans.' )
+				. $li( 'Every payment date is shown first.' )
 				. '</ul><a class="db-pr-btn" href="' . esc_url( $urls['plan'] ) . '">Start payment plan</a><p class="db-pr-fine">Prefer to pay in full? Choose Buy now.</p></article>';
 		}
 		$h .= '<article class="db-pr-card db-pr-card--offer"><span class="db-pr-num" aria-hidden="true">' . ( $plan ? '3' : '2' ) . '</span><h2>Make a custom offer</h2><p class="db-pr-price db-pr-price--text">Name your price</p><p class="db-pr-note">The owner will consider other proposals</p><ul class="db-pr-list">'
 			. $li( 'No offer is too big or too small.' )
 			. $li( 'Our team negotiates on your behalf and replies personally.' )
-			. '</ul><div class="db-pr-offer"><label for="number-99">My offer (USD, excl. taxes)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div></div>'
-			. '<div id="buy_now" class="db-pr-offerbtn"><button type="button" class="db-pr-btn" data-toggle="modal" data-target="#first" onclick="checkoffervalue();">Make a custom offer</button></div><p class="db-pr-fine">Free to ask. No obligation until we agree a price.</p></article>';
+			. $li( 'Expect a reply within one business day.' )
+			. '</ul><form class="db-pr-offer" method="get" action="' . esc_url( home_url( '/make-an-offer/' ) ) . '"><input type="hidden" name="d" value="' . esc_attr( strtolower( $name ) ) . '"><label for="number-99">My offer (USD)</label><div class="db-pr-amount"><span aria-hidden="true">$</span><input type="text" id="number-99" name="amt" required inputmode="numeric" autocomplete="off" placeholder="e.g. ' . esc_attr( number_format( max( 100, round( $price * 0.8, -2 ) ), 0, '.', '' ) ) . '" onkeypress="return KeycheckOnlyPhonenumber(event)" maxlength="12"></div>'
+			. '<div id="buy_now" class="db-pr-offerbtn"><button type="submit" class="db-pr-btn">Make a custom offer</button></div></form><p class="db-pr-fine">Free to ask. No obligation until we agree a price.</p></article>';
 		$h .= '</section>';
 
 		$tld = strrchr( $name, '.' );

@@ -129,7 +129,7 @@ if ( ! function_exists( 'db_launch_checks' ) ) {
 				$late[] = $label . ' (due ' . human_time_diff( $next ) . ' ago)';
 			}
 		}
-		$add( 'cron', 'WordPress cron runs on time', $late ? 'warn' : 'ok', $late ? 'Late: ' . implode( ', ', $late ) . '. Add a real cron job that calls wp-cron.php every 5 minutes, and set DISABLE_WP_CRON in wp-config.php.' : 'Our scheduled jobs are on time.' );
+		$add( 'cron', 'WordPress cron runs on time', $late ? 'warn' : 'ok', $late ? 'Late: ' . implode( ', ', $late ) . '. ' . db_cron_fallback_note() . ' Add a real cron job that calls wp-cron.php every 5 minutes, and set DISABLE_WP_CRON in wp-config.php.' : 'Our scheduled jobs are on time.' );
 
 		// Email delivery
 		$smtp = function_exists( 'db_smtp_config' ) ? db_smtp_config() : null;
@@ -222,3 +222,78 @@ add_action( 'admin_notices', function () {
 		echo '<div class="notice notice-success is-dismissible"><p>Saved.</p></div>';
 	}
 } );
+
+// A new plugin version changes page markup and scripts, but LiteSpeed keeps
+// pages for up to a day: purge the page cache once when the version changes.
+add_action( 'init', function () {
+	if ( ! defined( 'DB_BLOCKS_LOADED' ) || get_option( 'db_blocks_cache_version', '' ) === DB_BLOCKS_LOADED ) {
+		return;
+	}
+	update_option( 'db_blocks_cache_version', DB_BLOCKS_LOADED, false );
+	do_action( 'litespeed_purge_all' );
+	do_action( 'db_page_cache_purge_all' );
+}, 99 );
+
+/* --------------------------------------------------------- cron fallback */
+
+if ( ! function_exists( 'db_cron_fallback_note' ) ) {
+	function db_cron_fallback_note() {
+		$last = (int) get_option( 'db_cron_fallback_last', 0 );
+		return $last ? 'The plugin last ran overdue jobs itself on ' . wp_date( 'M j, g:i a', $last ) . '.' : 'The plugin runs overdue jobs itself after page loads until a real cron is set up.';
+	}
+}
+
+/**
+ * Overdue scheduled jobs (plan reminders and retries, alert emails, registry
+ * records, Wordfence) are run after a page has been sent to the visitor, when
+ * WordPress's own cron has fallen more than 10 minutes behind. At most once
+ * every 5 minutes, never alongside a cron run already in progress, and only
+ * where the server can finish the response first (so no visitor waits).
+ */
+add_action( 'shutdown', function () {
+	if ( wp_doing_cron() || wp_doing_ajax() || defined( 'WP_INSTALLING' ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ! function_exists( '_get_cron_array' ) ) {
+		return;
+	}
+	if ( ! function_exists( 'litespeed_finish_request' ) && ! function_exists( 'fastcgi_finish_request' ) ) {
+		return;
+	}
+	$crons = _get_cron_array();
+	if ( ! is_array( $crons ) || ! $crons ) {
+		return;
+	}
+	$first = (int) min( array_keys( $crons ) );
+	if ( $first > time() - 10 * MINUTE_IN_SECONDS ) {
+		return; // WordPress's own cron is keeping up.
+	}
+	$running = (float) get_transient( 'doing_cron' );
+	if ( get_transient( 'db_cron_fallback_lock' ) || ( $running && $running > microtime( true ) - 60 ) ) {
+		return;
+	}
+	set_transient( 'db_cron_fallback_lock', 1, 5 * MINUTE_IN_SECONDS );
+	if ( function_exists( 'litespeed_finish_request' ) ) {
+		litespeed_finish_request();
+	} else {
+		fastcgi_finish_request();
+	}
+	ignore_user_abort( true );
+	if ( ! defined( 'DOING_CRON' ) ) {
+		define( 'DOING_CRON', true );
+	}
+	update_option( 'db_cron_fallback_last', time(), false );
+	$start = time();
+	foreach ( $crons as $ts => $hooks ) {
+		if ( $ts > time() || time() - $start > 25 ) {
+			break;
+		}
+		foreach ( (array) $hooks as $hook => $events ) {
+			foreach ( (array) $events as $event ) {
+				$args = isset( $event['args'] ) ? (array) $event['args'] : array();
+				if ( ! empty( $event['schedule'] ) ) {
+					wp_reschedule_event( $ts, $event['schedule'], $hook, $args );
+				}
+				wp_unschedule_event( $ts, $hook, $args );
+				do_action_ref_array( $hook, $args );
+			}
+		}
+	}
+}, 999 );

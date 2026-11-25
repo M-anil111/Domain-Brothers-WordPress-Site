@@ -18,34 +18,9 @@ get_header();
 			the_post();
 			$db_post = get_post();
 			echo db_priced_html( $db_post ); // phpcs:ignore WordPress.Security.EscapeOutput -- escaped inside.
-			$db_form = function_exists( 'db_offer_resolved_form_id' ) ? (int) db_offer_resolved_form_id() : 0;
 			?>
-			<div class="loginpopup modal fade popup_buy" id="firs1t" tabindex="-1" role="dialog" aria-labelledby="first" aria-hidden="true" style="display: none;">
-				<div class="modal-dialog" role="document">
-					<div class="close_btn"><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
-					<div class="modal-content clearfix">
-						<div class="confirm_Offer" style="display: none;"></div>
-						<?php
-						if ( $db_form > 0 ) {
-							echo do_shortcode( '[contact-form-7 id="' . $db_form . '"]' ); // phpcs:ignore WordPress.Security.EscapeOutput
-						}
-						?>
-					</div>
-				</div>
-			</div>
 			<script>
-			/* Same helpers the theme's own domain page defines (its header prints them only for that template). */
-			function checkoffervalue() {
-				var $ = window.jQuery;
-				if (!$) { return true; }
-				var v = String($('#number-99').val() || '').replace(/[$\s,]/g, '');
-				$('#number-99').val(v);
-				if (v === '') { $('#number-99').css('border', '1px solid red'); $('.loginpopup').prop('id', 'firs1t'); return false; }
-				$('#number-99').css('border', '');
-				$('.loginpopup').prop('id', 'first');
-				$('#offer_popup').val(v);
-				$('#offer_popup').prop('readonly', true);
-			}
+			/* The key filter the amount box uses (the theme's own domain page defines it; its header prints it only for that template). */
 			function KeycheckOnlyPhonenumber(e) {
 				var k = e.which || e.keyCode || e.charCode;
 				return !((k >= 65 && k <= 90) || (k >= 97 && k <= 122) || (k >= 33 && k <= 39) || k === 42 || k === 44 || (k >= 46 && k <= 47) || (k >= 58 && k <= 64) || (k >= 91 && k <= 96) || (k >= 123 && k <= 126));
@@ -56,35 +31,35 @@ get_header();
 			   (jQuery("#number-99").val('$2625')) and writes it back on keyup when the
 			   box is emptied. This page already shows a fixed "$" in front of the box,
 			   so the visitor saw "$ $2750". Keep the number, drop the symbol: only in
-			   this box, and only while it sits next to that fixed "$". */
+			   this box, and only while it sits next to that fixed "$".
+
+			   The box's own value setter does the cleaning, so it works whatever order
+			   the scripts run in. Cloudflare Rocket Loader delays every inline script
+			   (this one included) until after the page's load event, so timing-based
+			   clean-ups can run before the theme's script and miss it. */
 			(function () {
-				function clean() {
-					var f = document.getElementById('number-99');
-					if (!f || !f.closest || !f.closest('.db-pr-amount')) { return; }
-					var v = f.value || '', c = v.replace(/[$\s,]/g, '');
-					if (c !== v) { f.value = c; }
-				}
-				function bind() {
-					var f = document.getElementById('number-99');
-					if (!f || f.getAttribute('data-db-clean')) { clean(); return; }
+				var STRIP = /[$\s,]/g;
+				function guard(f) {
+					if (!f || f.getAttribute('data-db-clean') || !f.closest || !f.closest('.db-pr-amount')) { return; }
 					f.setAttribute('data-db-clean', '1');
-					// Registered after the theme's own keyup handler, so this runs last.
-					['input', 'keyup', 'change', 'focus', 'blur', 'paste'].forEach(function (e) {
-						f.addEventListener(e, function () { setTimeout(clean, 0); });
+					var d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+					if (d && d.get && d.set) {
+						try {
+							Object.defineProperty(f, 'value', {
+								configurable: true,
+								get: function () { return d.get.call(this); },
+								set: function (v) { d.set.call(this, String(v == null ? '' : v).replace(STRIP, '')); }
+							});
+						} catch (e) {}
+					}
+					// Pasted or typed text, and anything already in the box.
+					['input', 'keyup', 'change', 'blur', 'paste'].forEach(function (e) {
+						f.addEventListener(e, function () { setTimeout(function () { var v = f.value; if (/[$\s,]/.test(v)) { f.value = v; } }, 0); });
 					});
-					clean();
+					f.value = f.value;
 				}
-				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
-				// The theme's script can run late (deferred by Cloudflare Rocket Loader).
-				window.addEventListener('load', function () { bind(); setTimeout(clean, 300); setTimeout(clean, 1500); });
-			})();
-			</script>
-			<script>
-			(function () {
-				var domain = <?php echo wp_json_encode( strtolower( wp_strip_all_tags( $db_post->post_title ) ) ); ?>;
-				function fill() { var f = document.getElementById('hide_domainname'); if (f) { f.value = domain; } }
-				if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', fill); } else { fill(); }
-				window.addEventListener('load', fill);
+				guard(document.getElementById('number-99'));
+				document.addEventListener('DOMContentLoaded', function () { guard(document.getElementById('number-99')); });
 			})();
 			</script>
 			<?php

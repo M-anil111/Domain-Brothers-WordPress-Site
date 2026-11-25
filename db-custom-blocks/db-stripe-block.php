@@ -210,6 +210,9 @@ if ( ! function_exists( 'db_stripe_lookup_domain_price' ) ) {
 		if ( 0 !== strcasecmp( $post->post_title, $domain ) ) {
 			return null; // WP_Query's 'title' can loosely match — require exact.
 		}
+		if ( '' !== (string) $post->post_password ) {
+			return null; // Password-protected listings are private everywhere else; agreed deals use their own token (SC-17).
+		}
 
 		$raw   = (string) get_post_meta( $post->ID, 'domain_price', true );
 		$clean = preg_replace( '/[^0-9.]/', '', $raw );
@@ -266,15 +269,22 @@ add_action( 'template_redirect', static function () {
 		$price_raw = base64_decode( $p_raw, true );
 		// phpcs:enable
 
-		if ( $domain === false || $price_raw === false ) {
-			wp_die( esc_html( 'Invalid request.' ) );
+		// A malformed or edited link is not a server error: send the visitor to
+		// the name's page when it is a listing, otherwise to the marketplace.
+		$bail = static function ( $name ) {
+			$post = ( $name && function_exists( 'db_listing_post_for_domain' ) ) ? db_listing_post_for_domain( strtolower( (string) $name ) ) : null;
+			wp_safe_redirect( $post ? get_permalink( $post ) : home_url( '/all-domains/' ), 302 );
+			exit;
+		};
+		if ( $domain === false || $price_raw === false || ! preg_match( '/^[a-z0-9.-]{3,253}$/i', (string) $domain ) ) {
+			$bail( '' );
 		}
 
 		$domain       = sanitize_text_field( $domain );
 		$client_price = (float) $price_raw;
 
 		if ( ! $domain || $client_price <= 0.0 ) {
-			wp_die( esc_html( 'Invalid request parameters.' ) );
+			$bail( $domain ); // the URL price only picks the name; the real price comes from the listing
 		}
 
 		// A sold, reserved or not-for-sale name is "no longer available" (410)
@@ -294,7 +304,7 @@ add_action( 'template_redirect', static function () {
 		// Without this, anyone could edit ?p= and buy any domain for $1.
 		$price = db_stripe_lookup_domain_price( $domain );
 		if ( null === $price ) {
-			wp_die( esc_html( 'This domain listing could not be verified. Please contact support.' ) );
+			$bail( $domain ); // offer-only or unlisted: its page offers the right next step
 		}
 		$domain = db_stripe_norm( $domain );
 	}
@@ -303,8 +313,20 @@ add_action( 'template_redirect', static function () {
 	// month); a request carrying it turns the main query into an empty date
 	// archive and the buy-now page 404s before this hook can render.
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$months_raw = isset( $_GET['months'] ) ? (int) sanitize_text_field( wp_unslash( $_GET['months'] ) ) : 0;
+	$months_str = isset( $_GET['months'] ) ? trim( (string) sanitize_text_field( wp_unslash( $_GET['months'] ) ) ) : '';
+	$months_raw = ctype_digit( $months_str ) ? (int) $months_str : 0;
 	$is_plan    = in_array( $months_raw, [ 3, 6, 9, 12 ], true );
+	if ( '' !== $months_str && '0' !== $months_str && ! $is_plan ) {
+		// Not a plan we offer (2, 99, -3, "3abc"): let the buyer choose a real one
+		// instead of silently charging the full price.
+		wp_safe_redirect( function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $domain, $price )['plan'] : home_url( '/all-domains/' ), 302 );
+		exit;
+	}
+	if ( $is_plan && ! $deal_ctx && function_exists( 'db_plan_offered' ) && ! db_plan_offered( $price ) ) {
+		// Plans start at the plan floor (CK-15): take this buyer to the pay-in-full checkout.
+		wp_safe_redirect( db_dd_checkout_urls( $domain, $price )['buy'], 302 );
+		exit;
+	}
 	$months     = $is_plan ? $months_raw : 0;
 
 	// Never take a second buyer's money for a name that is already sold or on
@@ -319,12 +341,37 @@ add_action( 'template_redirect', static function () {
 		);
 	}
 
-	$pi = db_stripe_create_payment_intent( $domain, $price, $months );
+	$pi = db_stripe_checkout_pi( $domain, $price, $months );
 	db_stripe_render_checkout_page( $domain, $price, $months, $pi );
 	exit;
 } );
 
 // ─── Installment math (must match the payment-plan widget exactly) ────────────
+
+if ( ! function_exists( 'db_stripe_checkout_schedule' ) ) {
+	/**
+	 * Dates and amounts a new plan would charge, for the checkout sidebar. Payment 1 is today; each later
+	 * payment is one month after the previous, as the charge routine schedules them. Pure given its inputs.
+	 *
+	 * @param float $price  Listing price in USD.
+	 * @param int   $months Plan length.
+	 * @param int   $now    Start time (unix).
+	 * @return array<int, array{label:string,amount:string}>
+	 */
+	function db_stripe_checkout_schedule( $price, $months, $now ) {
+		$rows   = array();
+		$months = (int) $months;
+		for ( $i = 1; $i <= $months; $i++ ) {
+			$ts     = 1 === $i ? (int) $now : (int) db_plan_add_months( (int) $now, $i - 1 );
+			$when   = function_exists( 'wp_date' ) ? wp_date( 'M j, Y', $ts ) : gmdate( 'M j, Y', $ts );
+			$rows[] = array(
+				'label'  => $when . ( 1 === $i ? ' (today)' : '' ),
+				'amount' => '$' . number_format( db_stripe_installment_cents( (float) $price, $months, $i ) / 100, 2 ),
+			);
+		}
+		return $rows;
+	}
+}
 
 if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
 	/**
@@ -333,10 +380,10 @@ if ( ! function_exists( 'db_stripe_installment_cents' ) ) {
 	 * installment is round(total/months) in cents except the last, which absorbs
 	 * the rounding remainder so the sum always equals price + the term's interest.
 	 */
-	function db_stripe_installment_cents( float $price_usd, int $months, int $n ) : int {
-		// Total includes the term's interest (db_plan_rate(): 0% for 3/6
-		// months, 5% for 9, 10% for 12) — same figure the plan chooser shows.
-		$total_cents   = db_plan_total_cents( $price_usd, $months );
+	function db_stripe_installment_cents( float $price_usd, int $months, int $n, ?float $rate = null ) : int {
+		// Total includes the plan's interest. $rate is the rate a stored plan was started with
+		// (db_plan_rate_of()); null means a new plan, which pays db_plan_rate() for its term.
+		$total_cents   = db_plan_total_cents( $price_usd, $months, $rate );
 		$monthly_cents = (int) round( $total_cents / $months );
 		if ( $n < $months ) {
 			return $monthly_cents;
@@ -411,6 +458,7 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 			$body['setup_future_usage']           = 'off_session';
 			$body['metadata[total_months]']       = (string) $months;
 			$body['metadata[installment_number]'] = '1';
+			$body['metadata[rate_pct]']           = (string) db_plan_rate( $months ); // Frozen on the plan record when payment 1 succeeds.
 		}
 
 		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents', [
@@ -434,7 +482,8 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 		if ( $http_code !== 200 || empty( $data['client_secret'] ) ) {
 			$stripe_msg = $data['error']['message'] ?? 'An unexpected error occurred.';
 			error_log( 'DB Stripe: Stripe API error ' . $http_code . ' — ' . $stripe_msg );
-			return [ 'error' => $stripe_msg ];
+			// Stripe's own wording (API names, account details) is for the log, not the buyer.
+			return [ 'error' => 'We could not start the payment. Please refresh the page or contact sales@domainbrothers.com.' ];
 		}
 
 		return [
@@ -444,6 +493,128 @@ if ( ! function_exists( 'db_stripe_create_payment_intent' ) ) {
 		];
 	}
 }
+
+// ─── One PaymentIntent per buyer and listing; cancel the rest after a sale ───────
+
+if ( ! function_exists( 'db_stripe_pi_cache_key' ) ) {
+	/** Pure: transient key for a visitor's open checkout of one listing at one price and term. */
+	function db_stripe_pi_cache_key( string $mode, string $visitor, string $domain, int $months, float $price, array $meta = [] ) : string {
+		ksort( $meta );
+		return 'db_co_pi_' . md5( $mode . '|' . $visitor . '|' . strtolower( $domain ) . '|' . $months . '|' . (int) round( $price * 100 ) . '|' . wp_json_encode( $meta ) );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_pi_open_status' ) ) {
+	/** Pure: true for PaymentIntent statuses a buyer can still pay. */
+	function db_stripe_pi_open_status( string $status ) : bool {
+		return in_array( $status, [ 'requires_payment_method', 'requires_confirmation', 'requires_action' ], true );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_checkout_pi' ) ) {
+	/**
+	 * The PaymentIntent for this visitor's checkout. Every /buy-now/ view used to create a new one
+	 * (and a Customer for plans), so refreshes, bots and link previews piled up Stripe objects and
+	 * one visitor could hold many open payments for a name (bug register batch 2). Now a visitor
+	 * reuses their open PaymentIntent for 30 minutes, new ones are limited per IP address, and
+	 * every open PaymentIntent is tracked per name so a sale can cancel the others.
+	 */
+	function db_stripe_checkout_pi( string $domain, float $price, int $months ) : array {
+		$mode    = db_stripe_is_test() ? 'test' : 'live';
+		$visitor = isset( $_COOKIE['db_co_v'] ) && is_string( $_COOKIE['db_co_v'] ) && preg_match( '/^[A-Za-z0-9]{24}$/', $_COOKIE['db_co_v'] ) ? $_COOKIE['db_co_v'] : '';
+		if ( '' === $visitor ) {
+			$visitor = wp_generate_password( 24, false, false );
+			if ( ! headers_sent() ) {
+				setcookie( 'db_co_v', $visitor, [ 'expires' => time() + DAY_IN_SECONDS, 'path' => '/', 'secure' => is_ssl(), 'httponly' => true, 'samesite' => 'Lax' ] );
+			}
+		}
+		// Extra metadata (an accepted offer's lead and deal ids) is part of the key, so an offer
+		// checkout never reuses a plain checkout's PaymentIntent at the same price.
+		$key    = db_stripe_pi_cache_key( $mode, $visitor, $domain, $months, $price, (array) apply_filters( 'db_stripe_pi_metadata', [], $domain ) );
+		$cached = get_transient( $key );
+		$keys   = db_stripe_keys();
+		if ( is_array( $cached ) && ! empty( $cached['pi_id'] ) && ! empty( $keys['sec'] ) ) {
+			$r  = wp_remote_get( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( (string) $cached['pi_id'] ), [
+				'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'] ],
+				'timeout' => 10,
+			] );
+			$st = is_wp_error( $r ) ? '' : (string) ( json_decode( (string) wp_remote_retrieve_body( $r ), true )['status'] ?? '' );
+			if ( db_stripe_pi_open_status( $st ) ) {
+				return $cached;
+			}
+		}
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		if ( function_exists( 'db_wl_allow' ) && ! db_wl_allow( 'co-pi:' . $ip, 15, HOUR_IN_SECONDS ) ) {
+			return [ 'error' => 'Too many checkout attempts from your connection. Please wait a little and try again, or contact sales@domainbrothers.com.' ];
+		}
+		$pi = db_stripe_create_payment_intent( $domain, $price, $months );
+		if ( empty( $pi['error'] ) && ! empty( $pi['pi_id'] ) ) {
+			set_transient( $key, $pi, 30 * MINUTE_IN_SECONDS );
+			db_stripe_track_open_pi( $domain, (string) $pi['pi_id'] );
+		}
+		return $pi;
+	}
+}
+
+if ( ! function_exists( 'db_stripe_track_open_pi' ) ) {
+	/** Remembers an open checkout PaymentIntent for a name (two days, at most 50 per name). */
+	function db_stripe_track_open_pi( string $domain, string $pi_id ) : void {
+		$all = (array) get_option( 'db_co_open_pis', [] );
+		$k   = strtolower( $domain );
+		$now = time();
+		foreach ( $all as $d => $list ) {
+			$all[ $d ] = array_filter( (array) $list, static function ( $ts ) use ( $now ) {
+				return (int) $ts > $now - 2 * DAY_IN_SECONDS;
+			} );
+			if ( ! $all[ $d ] ) {
+				unset( $all[ $d ] );
+			}
+		}
+		$all[ $k ]           = isset( $all[ $k ] ) ? (array) $all[ $k ] : [];
+		$all[ $k ][ $pi_id ] = $now;
+		$all[ $k ]           = array_slice( $all[ $k ], -50, null, true );
+		update_option( 'db_co_open_pis', $all, false );
+	}
+}
+
+if ( ! function_exists( 'db_stripe_cancel_other_pis' ) ) {
+	/**
+	 * After a name is sold (full payment, or the first payment of a plan), cancels every other open
+	 * checkout PaymentIntent for it, so a second buyer who already had the checkout open cannot pay
+	 * for a name that is gone. db_stripe_flag_conflict() still catches a payment that lands in the
+	 * same seconds (bug register batch 2, CK, double sale).
+	 */
+	function db_stripe_cancel_other_pis( string $domain, string $paid_pi ) : int {
+		$all  = (array) get_option( 'db_co_open_pis', [] );
+		$k    = strtolower( $domain );
+		$list = isset( $all[ $k ] ) ? array_keys( (array) $all[ $k ] ) : [];
+		unset( $all[ $k ] );
+		update_option( 'db_co_open_pis', $all, false );
+		$keys = db_stripe_keys();
+		$n    = 0;
+		foreach ( $list as $pi ) {
+			if ( $pi === $paid_pi || empty( $keys['sec'] ) ) {
+				continue;
+			}
+			$r = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( (string) $pi ) . '/cancel', [
+				'headers' => [ 'Authorization' => 'Bearer ' . $keys['sec'], 'Content-Type' => 'application/x-www-form-urlencoded' ],
+				'body'    => [ 'cancellation_reason' => 'abandoned' ],
+				'timeout' => 10,
+			] );
+			if ( ! is_wp_error( $r ) && 200 === (int) wp_remote_retrieve_response_code( $r ) ) {
+				$n++;
+			}
+		}
+		return $n;
+	}
+}
+
+add_action( 'db_order_event', static function ( $type, $data ) {
+	$data = (array) $data;
+	if ( 'full' === $type || ( 'plan_installment' === $type && 1 === (int) ( $data['installment'] ?? 0 ) ) ) {
+		db_stripe_cancel_other_pis( (string) ( $data['domain'] ?? '' ), (string) ( $data['pi_id'] ?? '' ) );
+	}
+}, 20, 2 );
 
 // ─── Checkout page HTML render ─────────────────────────────────────────────────
 
@@ -472,6 +643,9 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		// first configured term.
 		$plan_terms = function_exists( 'db_plan_terms' ) ? array_map( 'intval', (array) db_plan_terms() ) : [ 3, 6, 9, 12 ];
 		$alt_months = $is_plan ? $months : ( in_array( 6, $plan_terms, true ) ? 6 : (int) reset( $plan_terms ) );
+		if ( ! $is_plan && function_exists( 'db_plan_offered' ) && ! db_plan_offered( $price ) ) {
+			$alt_months = 0; // no "Pay less up front" under the plan floor (CK-15)
+		}
 		$alt_first  = $alt_months > 0 ? db_stripe_installment_cents( $price, $alt_months, 1 ) / 100 : 0.0;
 		$alt_rate   = function_exists( 'db_plan_rate' ) ? (float) db_plan_rate( $alt_months ) : 0.0;
 		$alt_total  = function_exists( 'db_plan_total_cents' ) ? db_plan_total_cents( $price, $alt_months ) / 100 : $price;
@@ -507,7 +681,7 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		// var, and ?s=... on a page URL turns it into a search for that page
 		// (a 404 here, after every successful payment).
 		$ty_type    = $is_plan ? 'plan' : 'full';
-		$ty_amount  = number_format( $price, 0, '.', ',' );
+		$ty_amount  = number_format( $price, floor( $price ) == $price ? 0 : 2, '.', ',' ); // keep cents: $2,499.50 is not $2,500 (CK-19)
 		$return_url = home_url(
 			'/thank-you/?type=' . $ty_type
 			. '&d=' . rawurlencode( $domain )
@@ -535,28 +709,29 @@ if ( ! function_exists( 'db_stripe_render_checkout_page' ) ) {
 		add_filter( 'pre_get_document_title', static function () use ( $domain ) {
 			return 'Checkout — ' . $domain . ' — Domain Brothers';
 		} );
-		wp_enqueue_style( 'db-co-lato', 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap', [], null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+		// System font stack like the rest of the site; no Google Fonts request (design audit 2026-11-24).
 		add_action( 'wp_head', static function () {
+			ob_start();
 			?>
 <style id="db-checkout">
 /* Checkout content, isolated from the theme and db-design-block styles
    (which restyle every input, label, heading and link on the page). Every
    rule is scoped to #db-co so an id outranks those class-based rules. */
-#db-co{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#2f8a17;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-err:#c62828;position:relative;background:var(--co-bg);box-shadow:0 0 0 100vmax var(--co-bg);clip-path:inset(0 -100vmax);display:flow-root;color:var(--co-ink);font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px;padding-bottom:40px}
+#db-co{--co-navy:#00476b;--co-green:#5cb531;--co-green-btn:#3c9c1e;--co-green-text:#0b6b36;--co-green-soft:#ecf7e5;--co-ink:#1d2b36;--co-muted:#4a5864;--co-line:#c3ccd2;--co-bg:#e7edf0;--co-panel:#f1f2f3;--co-err:#c62828;position:relative;background:var(--co-bg);box-shadow:0 0 0 100vmax var(--co-bg);clip-path:inset(0 -100vmax);display:flow-root;color:var(--co-ink);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;font-size:15px;padding-bottom:40px}
 #db-co,#db-co *,#db-co *::before,#db-co *::after{box-sizing:border-box}
 #db-co *{margin:0;padding:0}
-#db-co :is(h1,h2,h3,h4,h5,h6,p,li,a,td,th,label,input,select,textarea,button,small,strong,em,dt,dd,span){font-family:Lato,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important}
+#db-co :is(h1,h2,h3,h4,h5,h6,p,li,a,td,th,label,input,select,textarea,button,small,strong,em,dt,dd,span){font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif !important}
 #db-co :is(h1,h2,h3,h4,h5,h6,p,li,dt,dd,label){color:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;text-transform:none}
 #db-co :is(ol,ul){list-style:none}
 #db-co :is(button,a,span,strong){text-transform:none;letter-spacing:inherit}
 #db-co a{color:inherit}
 #db-co :is(input,select,textarea){min-height:0;max-width:none;box-shadow:none}
-#db-co .co-wrap{width:100%;max-width:1240px;margin:0 auto;padding:0 24px}
+#db-co .co-wrap{width:100%;max-width:1320px;margin:0 auto;padding:0 15px;box-sizing:border-box}
 /* The theme's content column is boxed and padded; the checkout runs full width. */
-body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#e7edf0 !important}
+body.db-co-page #content.site-content{max-width:none !important;padding:0 !important;margin:0 !important;background:#f4f7f5 !important}
 #db-co .co-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Stepper */
-#db-co .co-steps-wrap{max-width:1290px;margin:48px auto 40px;padding:0 24px}
+#db-co .co-steps-wrap{max-width:1320px;margin:48px auto 40px;padding:0 15px;box-sizing:border-box}
 #db-co .co-steps{--w:190px;--p:.5;list-style:none;position:relative;display:flex;justify-content:space-between}
 #db-co .co-steps::before,#db-co .co-steps::after{content:"";position:absolute;top:17px;left:calc(var(--w) / 2);height:2px}
 #db-co .co-steps::before{right:calc(var(--w) / 2);background:var(--co-line)}
@@ -653,6 +828,13 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 #db-co .co-sum-amt{font-size:22px;color:var(--co-green-text);letter-spacing:.02em}
 #db-co .co-sum-note{font-size:15px;color:var(--co-ink);margin-left:auto;padding-right:24px}
 #db-co .co-sum-plan{font-size:13px;color:var(--co-muted);margin-top:10px;line-height:1.5}
+#db-co .co-sched{background:#fff;border-radius:4px;box-shadow:0 1px 6px rgba(15,34,48,.08);padding:16px 14px;margin-top:14px}
+#db-co .co-sched h2{font-size:16px;margin:0 0 10px}
+#db-co .co-sched ol{list-style:none;margin:0;padding:0}
+#db-co .co-sched li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #eef1f4;font-size:14px}
+#db-co .co-sched li:last-child{border-bottom:0}
+#db-co .co-sched-amt{font-weight:700;font-variant-numeric:tabular-nums}
+#db-co .co-sched p{font-size:13px;color:var(--co-muted);margin:10px 0 0;line-height:1.5}
 #db-co .co-cards{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 #db-co .co-cards svg{width:46px;height:32px;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 /* Next steps */
@@ -681,8 +863,8 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 	#db-co .co-left{padding:20px 20px 36px}
 }
 @media (max-width:600px){
-	#db-co .co-wrap{padding:0 16px}
-	#db-co .co-steps-wrap{padding:0 12px}
+	#db-co .co-wrap{padding:0 15px}
+	#db-co .co-steps-wrap{padding:0 15px}
 	#db-co .co-steps{--w:96px}
 	#db-co .co-step-label{font-size:12px;letter-spacing:0;line-height:1.3;white-space:normal}
 	#db-co .co-toggle{grid-template-columns:1fr;margin-left:0}
@@ -696,13 +878,54 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 @media (prefers-reduced-motion:reduce){
 	#db-co *{transition:none!important;scroll-behavior:auto!important}
 }
+/* New design layer: matches the rest of the site (navy, green, large radii). Visual only. */
+#db-co{--co-navy:#0a1628;--co-green:#16a34a;--co-green-btn:#0a1628;--co-green-text:#0b6b36;--co-green-soft:#eaf6ee;--co-line:#cfd8d3;--co-bg:#f4f7f5;--co-panel:#f4f7f5;font-size:16px}
+#db-co .co-card{border-radius:24px;box-shadow:0 12px 40px rgba(10,22,40,.08);border:1px solid #e1e8e4}
+#db-co .co-right{border-left:1px solid #e6ece8}
+#db-co .co-opt{border:1.5px solid #cfd8d3;border-radius:14px}
+#db-co .co-opt.is-on{border-color:var(--co-green);background:var(--co-green-soft)}
+#db-co .co-pill{border-radius:999px;box-shadow:none;border:1.5px solid #cfd8d3;font-size:16px;letter-spacing:0}
+/* Step titles: the page's heading at the site's compact title size, not a 16px label (checkout audit, item 7). */
+#db-co .co-pill.co-title{margin:0 0 18px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;text-align:left;font-size:clamp(24px,3vw,32px);font-weight:800;line-height:1.15;letter-spacing:-.02em;color:#0a1628}
+#db-co .co-input{height:46px;min-height:46px;border:1.5px solid #cfd8d3;border-radius:14px}
+#db-co .co-input:focus{border-color:var(--co-navy);box-shadow:0 0 0 4px rgba(22,163,74,.2)}
+#db-co .co-btn{min-height:50px;border-radius:999px;letter-spacing:.04em;background:var(--co-navy);box-shadow:0 8px 20px rgba(10,22,40,.18)}
+#db-co .co-btn:hover:not(:disabled){background:#16324f}
+#db-co .co-btn:focus-visible{outline-color:var(--co-green)}
+#db-co .co-review,#db-co .co-pe{border:1.5px solid #e1e8e4;border-radius:16px}
+#db-co .co-terms{border-radius:14px}
+#db-co .co-sum,#db-co .co-sched{border-radius:20px;border:1px solid #e1e8e4;box-shadow:0 6px 20px rgba(10,22,40,.06)}
+#db-co .co-sum h2,#db-co .co-sched h2{font-weight:800;letter-spacing:0}
+#db-co .co-sum-domain{font-weight:800}
+#db-co .co-sum-amt{font-weight:800;color:var(--co-navy)}
+#db-co .co-step-label{font-size:15px;letter-spacing:0}
+#db-co .co-step-num{border-color:#9aa8a1}
+#db-co .co-next h2{font-weight:800}
+#db-co .co-next h2::after{background:var(--co-green);height:3px;border-radius:2px}
+#db-co .co-next .co-bubble{box-shadow:0 6px 18px rgba(10,22,40,.08)}
+#db-co .co-topbar{max-width:1320px;margin:28px auto -20px;padding:0 15px;box-sizing:border-box}
+#db-co .co-topbar .db-pa{margin:0}
+#db-co .co-topbar .db-pa{display:flex;gap:10px;align-items:center}
+#db-co .co-topbar .db-pa-btn{padding:0 18px;gap:8px;background:#fff}
+#db-co .co-topbar .db-pa-note{padding:0 4px}
 </style>
+			<?php
+			db_external_style_tag( 'checkout', (string) ob_get_clean() );
+			?>
 			<?php
 		}, 120 );
 
 		get_header();
 		?>
+<main id="main" class="site-main db-co-main"><?php // landmark for the checkout (bug register batch 2, AX-12) ?>
 <div id="db-co" class="db-co">
+	<?php
+	if ( function_exists( 'db_pa_html' ) ) {
+		$co_dom  = get_page_by_title( $domain, OBJECT, 'domain' );
+		$co_page = $co_dom ? get_permalink( $co_dom ) : home_url( '/' );
+		echo '<div class="co-topbar">' . db_pa_html( array( 'back_url' => $co_page, 'back_label' => 'Back to ' . $domain, 'share_url' => $co_page, 'share_title' => $domain . ' is for sale at Domain Brothers' ) ) . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput
+	}
+	?>
 	<nav class="co-steps-wrap" aria-label="Checkout progress"><ol class="co-steps" id="co-steps">
 		<li class="co-step is-active" data-step="1"><button type="button" class="co-step-btn" aria-current="step" disabled><span class="co-step-num">1</span><span class="co-step-label">Billing Information</span></button></li>
 		<li class="co-step" data-step="2"><button type="button" class="co-step-btn" disabled><span class="co-step-num">2</span><span class="co-step-label">Order Confirmation</span></button></li>
@@ -743,7 +966,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 <?php else : ?>
 					<!-- Step 1: Billing information -->
 					<div class="co-panel" id="co-panel-1" data-panel="1">
-						<h1 class="co-pill">Please fill-in your billing information</h1>
+						<h1 class="co-pill co-title">Your billing information</h1>
 						<p class="co-intro">You will receive an invoice once your payment is processed.</p>
 						<form id="co-billing" novalidate>
 							<div class="co-field">
@@ -768,7 +991,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 
 					<!-- Step 2: Order confirmation -->
 					<div class="co-panel" id="co-panel-2" data-panel="2" hidden>
-						<h2 class="co-pill" tabindex="-1">Please confirm your order</h2>
+						<h2 class="co-pill co-title" tabindex="-1">Confirm your order</h2>
 						<div class="co-review-head"><h3>Billing information</h3><button type="button" class="co-edit" data-goto="1">Edit</button></div>
 						<dl class="co-review">
 							<div class="co-review-row"><dt>Full Name</dt><dd id="co-r-name"></dd></div>
@@ -789,7 +1012,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<p class="co-terms"><?php echo wp_kses( db_plan_terms_html(), [ 'strong' => [], 'em' => [] ] ); ?></p>
 						<label class="co-agree" for="co-agree">
 							<input type="checkbox" id="co-agree" required aria-describedby="co-agree-err">
-							<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment stays unpaid <?php echo esc_html( (string) $grace_days ); ?> days after its due date the plan ends and installments already paid are not refunded.</span>
+							<span>I agree to the payment plan terms above: the domain transfers to me only after the final installment, and if a payment is still unpaid <?php echo esc_html( (string) $grace_days ); ?> days after the first declined attempt the plan ends and installments already paid are not refunded.</span>
 						</label>
 						<p class="co-field-err" id="co-agree-err" style="margin-left:26px">Please confirm you agree to the payment plan terms.</p>
 <?php endif; ?>
@@ -801,7 +1024,7 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 
 					<!-- Step 3: Payment -->
 					<div class="co-panel" id="co-panel-3" data-panel="3" hidden>
-						<h2 class="co-pill" tabindex="-1">Enter your payment details</h2>
+						<h2 class="co-pill co-title" tabindex="-1">Your payment details</h2>
 						<div class="co-due"><span>Amount due today</span><strong><?php echo esc_html( $due_today_display ); ?></strong></div>
 						<div id="co-err" class="co-err" role="alert"></div>
 						<form id="co-pay" novalidate>
@@ -829,12 +1052,22 @@ body.db-co-page #content.site-content{max-width:none !important;padding:0 !impor
 						<div class="co-sum-price">
 							<svg class="co-ico" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2l4 3.5 5-1 1.5 5 5 1.5-1 5L38 20l-3.5 4 1 5-5 1.5-1.5 5-5-1L20 38l-4-3.5-5 1-1.5-5-5-1.5 1-5L2 20l3.5-4-1-5 5-1.5 1.5-5 5 1z" fill="#5cb531"/><circle cx="20" cy="20" r="11" fill="#fff"/><circle cx="20" cy="20" r="9" fill="none" stroke="#2f8a17" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#2f8a17">$</text></svg>
 							<span class="co-sum-amt"><?php echo esc_html( $price_display ); ?></span>
-							<span class="co-sum-note">(Excl. GST)</span>
 						</div>
 <?php if ( $is_plan ) : ?>
 						<p class="co-sum-plan"><?php echo esc_html( sprintf( '%d monthly payments, %s. %s due today, plan total $%s.', $months, $rate_label, $due_today_display, number_format( $alt_total, 2 ) ) ); ?></p>
 <?php endif; ?>
 					</div>
+<?php if ( $is_plan ) : ?>
+					<div class="co-sched" aria-labelledby="co-sched-h">
+						<h2 id="co-sched-h">When you will be charged</h2>
+						<ol>
+<?php foreach ( db_stripe_checkout_schedule( $price, $months, time() ) as $row ) : ?>
+							<li><span class="co-sched-date"><?php echo esc_html( $row['label'] ); ?></span><span class="co-sched-amt"><?php echo esc_html( $row['amount'] ); ?></span></li>
+<?php endforeach; ?>
+						</ol>
+						<p>Your first payment is taken today. Each later payment is charged <strong>automatically</strong> to the card you enter, on the date shown. We email you before each one.</p>
+					</div>
+<?php endif; ?>
 					<div class="co-cards" aria-label="Accepted cards">
 						<svg viewBox="0 0 46 32" role="img" aria-label="Mastercard"><rect width="46" height="32" fill="#1a4a8c"/><circle cx="19" cy="16" r="8" fill="#eb001b"/><circle cx="27" cy="16" r="8" fill="#f79e1b" fill-opacity=".9"/></svg>
 						<svg viewBox="0 0 46 32" role="img" aria-label="Visa"><rect width="46" height="32" fill="#fff"/><text x="23" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="900" font-style="italic" fill="#1a1f71">VISA</text></svg>
@@ -978,7 +1211,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		waitStripe(function () {
 			if (payEl) { return; }
 			stripe   = Stripe(window.DB_PUB_KEY);
-			elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '8px', colorPrimary: '#3c9c1e', colorText: '#1d2b36', colorDanger: '#c62828', fontFamily: 'Lato, -apple-system, Segoe UI, Roboto, Arial, sans-serif' } }, fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap' }] });
+			elements = stripe.elements({ clientSecret: window.DB_PI_SECRET, appearance: { theme: 'stripe', variables: { borderRadius: '8px', colorPrimary: '#3c9c1e', colorText: '#1d2b36', colorDanger: '#c62828', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif' } } });
 			payEl    = elements.create('payment', { defaultValues: { billingDetails: { name: buyer.name, email: buyer.email, phone: buyer.phone } } });
 			payEl.mount('#db-stripe-payment-element');
 		});
@@ -1027,8 +1260,9 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 		}).then(function (result) {
 			if (result.error) {
 				showErr(result.error.message || 'Payment failed. Please try again.');
-			} else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-				window.location.href = window.DB_RETURN_URL;
+			} else if (result.paymentIntent && (result.paymentIntent.status === 'succeeded' || result.paymentIntent.status === 'processing')) {
+				// The thank-you page checks this PaymentIntent with Stripe before it confirms anything.
+				window.location.href = window.DB_RETURN_URL + '&payment_intent=' + encodeURIComponent(result.paymentIntent.id);
 			} else {
 				showErr('Payment could not be confirmed. Please contact support.');
 			}
@@ -1043,6 +1277,7 @@ window.DB_EMAIL_REST = <?php echo wp_json_encode( rest_url( 'db/v1/set-receipt-e
 }());
 </script>
 <?php endif; ?>
+</main>
 		<?php
 		get_footer();
 	}
@@ -1118,11 +1353,6 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 		}
 		$pi_id = $m[1];
 
-		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php).
-		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
-			db_ops_reminder_opt_in( $pi_id, $email );
-		}
-
 		$keys = db_stripe_keys();
 		if ( empty( $keys['sec'] ) ) {
 			return new WP_REST_Response( [ 'error' => 'Payment system not configured.' ], 500 );
@@ -1143,6 +1373,13 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 		}
 		if ( ! in_array( (string) ( $pi['status'] ?? '' ), [ 'requires_payment_method', 'requires_confirmation', 'requires_action' ], true ) ) {
 			return new WP_REST_Response( [ 'error' => 'This payment can no longer be changed.' ], 409 );
+		}
+
+		// One reminder, only if the buyer ticked the box (see db-sales-ops-block.php). Recorded only
+		// after Stripe has confirmed the client secret: before, any request with a made-up secret
+		// queued a reminder row, or sent a real payment's reminder to another address (batch 2, CK).
+		if ( $request->get_param( 'remind' ) && function_exists( 'db_ops_reminder_opt_in' ) ) {
+			db_ops_reminder_opt_in( $pi_id, $email );
 		}
 
 		$response = wp_remote_post( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), [
@@ -1168,11 +1405,31 @@ if ( ! function_exists( 'db_stripe_set_receipt_email' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_wh_log_limited' ) ) {
+	/**
+	 * Writes a webhook failure to the PHP error log at most once per IP per hour, so unsigned
+	 * calls from anywhere cannot flood the log (SC-15). Repeats are counted in the same line.
+	 */
+	function db_wh_log_limited( $kind, $message ) {
+		$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$key = 'db_whlog_' . md5( $kind . '|' . $ip . '|' . gmdate( 'YmdH' ) );
+		$n   = (int) get_transient( $key );
+		set_transient( $key, $n + 1, HOUR_IN_SECONDS );
+		if ( 0 === $n ) {
+			error_log( $message . ' (further failures from this address this hour are not logged)' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
+	}
+}
+
 // ─── Init fallback webhook (?db_stripe_wh=1) ──────────────────────────────────
 
 add_action( 'init', static function () {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ! isset( $_GET['db_stripe_wh'] ) || '1' !== $_GET['db_stripe_wh'] ) {
+		return;
+	}
+	// Stripe only POSTs; a GET on any URL with this parameter is ignored (SC-15).
+	if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 		return;
 	}
 	db_stripe_handle_webhook( null );
@@ -1206,8 +1463,8 @@ if ( ! function_exists( 'db_stripe_handle_webhook' ) ) {
 		$event  = $secret ? db_stripe_verify_webhook_sig( $payload, $sig_header, $secret ) : null;
 
 		if ( null === $event ) {
-			error_log( 'DB Stripe: Webhook signature verification failed.' );
-			return db_stripe_wh_respond( $request, [ 'error' => 'Invalid signature.' ], 400 );
+			db_wh_log_limited( 'stripe', 'DB Stripe: Webhook signature verification failed.' );
+			return db_stripe_wh_respond( $request, [ 'error' => 'Bad request.' ], 400 );
 		}
 
 		$event_id   = (string) ( $event['id'] ?? '' );
@@ -1475,7 +1732,19 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 		$plan['mode']              = db_stripe_mode();
 		$plan['price_usd']         = $total_price;
 		$plan['total_months']      = $total_months;
+		if ( 1 === $installment_num && ! isset( $plan['rate_pct'] ) ) {
+			// The rate the buyer saw and paid for. A payment created before rates were stored has no meta: it used the legacy schedule.
+			$plan['rate_pct'] = isset( $meta['rate_pct'] ) && is_numeric( $meta['rate_pct'] ) ? (float) $meta['rate_pct'] : db_plan_rate_legacy( $total_months );
+		}
 		$plan['customer_email']    = $customer_email ?: ( $plan['customer_email'] ?? '' );
+		// The signed-in account that started the plan, saved with the plan itself: the order-event
+		// hook ran before this save (instalment 1 had no plan yet) and its later save was overwritten
+		// by this in-memory copy, so plans paid with another receipt email never showed under
+		// My account > Payment plans (bug register batch 2, CK-8).
+		$acct_email = isset( $meta['account_email'] ) ? strtolower( sanitize_email( (string) $meta['account_email'] ) ) : '';
+		if ( '' !== $acct_email ) {
+			$plan['account_email'] = $acct_email;
+		}
 		$plan['customer_id']       = $customer ?: (string) ( $plan['customer_id'] ?? '' );
 		$plan['payment_method']    = (string) ( $pi['payment_method'] ?? ( $plan['payment_method'] ?? '' ) );
 		$plan['paid_installments'] = $installment_num;
@@ -1518,13 +1787,17 @@ if ( ! function_exists( 'db_stripe_handle_pi_succeeded' ) ) {
 
 		$plan['status']           = 'active';
 		$plan['next_installment'] = $installment_num + 1;
-		$plan['next_charge_ts']   = strtotime( '+1 month' ) ?: ( time() + 30 * DAY_IN_SECONDS );
+		// Payment n+1 falls due on the schedule's date (start + n months), not a month after this
+		// charge happened, so charges no longer drift from the dates shown at checkout (batch 2).
+		$start_ts                 = (int) ( $plan['history'][0]['ts'] ?? time() );
+		$plan['next_charge_ts']   = db_plan_add_months( $start_ts, $installment_num );
+		unset( $plan['pending_pi'], $plan['pending_since'] );
 		update_option( $opt_key, $plan, false );
 		db_stripe_plan_index_add( $domain );
 		if ( $was_past_due && function_exists( 'db_plan_on_recovered' ) ) {
 			db_plan_on_recovered( $domain, $amount_usd );
 		} else {
-			db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email );
+			db_stripe_on_plan_payment( $domain, $total_price, $total_months, $installment_num, $amount_usd, $customer_email, db_plan_rate_of( $plan ) );
 		}
 	}
 }
@@ -1609,6 +1882,9 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 			if ( time() - (int) ( $fresh['last_attempt_ts'] ?? 0 ) < 20 * HOUR_IN_SECONDS ) {
 				return 'skipped';
 			}
+			if ( ! empty( $fresh['pending_pi'] ) && time() - (int) ( $fresh['pending_since'] ?? 0 ) < 7 * DAY_IN_SECONDS ) {
+				return 'skipped'; // A payment for this installment is still processing.
+			}
 			$plan   = $fresh;
 			$n      = (int) $plan['next_installment'];
 			$months = (int) $plan['total_months'];
@@ -1627,7 +1903,7 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 					'Idempotency-Key' => 'db-plan-' . md5( $domain . '|' . ( $plan['customer_id'] ?? '' ) ) . '-' . $n . '-' . gmdate( 'Ymd' ),
 				],
 				'body'      => [
-					'amount'                       => db_stripe_installment_cents( $price, $months, $n ),
+					'amount'                       => db_stripe_installment_cents( $price, $months, $n, db_plan_rate_of( $plan ) ),
 					'currency'                     => 'usd',
 					'customer'                     => $plan['customer_id'],
 					'payment_method'               => db_stripe_current_payment_method( $plan ),
@@ -1663,7 +1939,15 @@ if ( ! function_exists( 'db_stripe_charge_next_installment' ) ) {
 				return 'declined';
 			}
 			if ( $pi ) {
-				return 'processing'; // e.g. "processing": the webhook settles it; last_attempt_ts de-bounces.
+				// Still settling (bank debits, Cash App): remember it, so the next daily run does not create
+				// a second PaymentIntent for the same payment; the webhook clears it (batch 2).
+				if ( 'processing' === $status ) {
+					$latest                  = (array) get_option( $opt_key, [] );
+					$latest['pending_pi']    = (string) ( $pi['id'] ?? '' );
+					$latest['pending_since'] = time();
+					update_option( $opt_key, $latest, false );
+				}
+				return 'processing';
 			}
 
 			// No PaymentIntent at all: network failure, bad key, deleted
@@ -1807,11 +2091,11 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 	 * anything), and the team was never told a plan had started. Installment
 	 * 1 sends the full schedule; later ones send a short receipt.
 	 */
-	function db_stripe_on_plan_payment( string $domain, float $price, int $months, int $n, float $amount_usd, string $customer_email ) : void {
+	function db_stripe_on_plan_payment( string $domain, float $price, int $months, int $n, float $amount_usd, string $customer_email, ?float $plan_rate = null ) : void {
 		$admin_email = (string) get_option( 'admin_email' );
-		$rate        = db_plan_rate( $months );
+		$rate        = null === $plan_rate ? db_plan_rate( $months ) : $plan_rate;
 		$rate_label  = rtrim( rtrim( number_format( $rate, 1 ), '0' ), '.' ) . '% interest';
-		$total       = db_plan_total_cents( $price, $months ) / 100;
+		$total       = db_plan_total_cents( $price, $months, $rate ) / 100;
 		$d           = esc_html( $domain );
 		$paid_fmt    = '$' . number_format( $amount_usd, 2 );
 
@@ -1845,7 +2129,7 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 				$subj = sprintf( 'Your payment plan for %s has started', $domain );
 				$rows = '';
 				for ( $i = 1; $i <= $months; $i++ ) {
-					$when  = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', strtotime( '+' . ( $i - 1 ) . ' months' ) );
+					$when  = 1 === $i ? 'Today (paid)' : wp_date( 'M j, Y', db_plan_add_months( time(), $i - 1 ) );
 					$rows .= '<tr><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . (int) $i . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;">' . esc_html( $when ) . '</td><td style="padding:8px 14px;border-bottom:1px solid #f3f4f6;text-align:right;">$' . esc_html( number_format( db_stripe_installment_cents( $price, $months, $i ) / 100, 2 ) ) . '</td></tr>';
 				}
 				$body  = '<p style="font-size:20px;font-weight:700;color:#111827;margin:0 0 12px;">Your payment plan is active</p>';
@@ -1889,6 +2173,18 @@ if ( ! function_exists( 'db_stripe_on_plan_payment' ) ) {
 
 if ( ! function_exists( 'db_stripe_on_payment_failed' ) ) {
 	function db_stripe_on_payment_failed( string $domain, string $customer_email, float $amount_usd ) : void {
+		// Only checkout attempts reach this (a full purchase or plan instalment 1): the buyer is on
+		// the page and Stripe shows the decline there, and there is no reservation to keep. The old
+		// "update your payment method to keep your reservation" email went out on every declined
+		// attempt with a link to the home page (bug register batch 2, CK-11). Now: a log line, and
+		// one team email per name and buyer per hour.
+		error_log( sprintf( 'DB Stripe: checkout payment declined — %s — %s — $%s', $domain, $customer_email ?: 'unknown buyer', number_format( $amount_usd, 2 ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		$once = 'db_co_declined_' . md5( $domain . '|' . strtolower( $customer_email ) );
+		if ( get_transient( $once ) ) {
+			return;
+		}
+		set_transient( $once, 1, HOUR_IN_SECONDS );
+		$customer_email = ''; // no buyer email for a declined checkout attempt
 		$admin_email    = (string) get_option( 'admin_email' );
 		$site_name      = get_bloginfo( 'name' );
 		$amount_display = '$' . number_format( $amount_usd, 2 );

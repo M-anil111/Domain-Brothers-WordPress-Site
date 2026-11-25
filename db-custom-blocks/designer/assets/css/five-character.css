@@ -1,0 +1,54 @@
+/*!
+ * Domain Brothers – /5-character-domains/ page values and layout differences
+ * on top of length-pages.css. Presentation only.
+ */
+
+html body.dbp-listing.dbp-listing {
+	--dbl-hero-img: url("../img/hero-5-character.webp");
+	--dbl-hero-ratio: 760 / 377;
+	--dbl-tools-title: "Available 5-character domains";
+}
+
+/* "7 names available." as bold lime text instead of a pill. */
+html body.dbp-listing.dbp-listing .dbl-head .dbl-intro strong {
+	display: block !important;
+	margin: 12px 0 0 !important;
+	padding: 0 !important;
+	border-radius: 0 !important;
+	background: none !important;
+	color: var(--d4-lime) !important;
+	font-size: 17px !important;
+	font-weight: 800 !important;
+	line-height: 1.3 !important;
+}
+
+/* Toolbar: heading on its own row, then a wide search and the sort control. */
+html body.dbp-listing.dbp-listing .dbl-tools {
+	gap: 16px 18px !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools::before {
+	flex: 1 0 100% !important;
+}
+
+html body.dbp-listing.dbp-listing .dbl-tools .dbl-search {
+	flex: 0 1 460px !important;
+}
+
+@media (max-width: 991.98px) {
+	html body.dbp-listing.dbp-listing .dbl-tools .dbl-search {
+		flex: 1 1 300px !important;
+	}
+}
+
+@media (max-width: 767.98px) {
+	html body.dbp-listing.dbp-listing .dbl-tools .dbl-search {
+		flex: 1 1 100% !important;
+	}
+}
+
+/* Search icon on the left, as in the reference. */
+html body.dbp-listing.dbp-listing .dbl-tools #dbl-q {
+	padding: 0 18px 0 46px !important;
+	background-position: left 18px center !important;
+}

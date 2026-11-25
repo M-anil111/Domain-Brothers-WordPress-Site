@@ -1,0 +1,165 @@
+<!-- wp:html -->
+<style>
+
+body.page-id-__ID__{overflow-x:clip}
+body.page-id-__ID__ #page .db-breadcrumbs,body.page-id-__ID__ #page article.post-__ID__>.entry-title,body.page-id-__ID__ #page .db-ad{display:none!important}
+body.page-id-__ID__ #page #content{padding-bottom:0!important}
+body.page-id-__ID__ #page #content #main.site-main,body.page-id-__ID__ #page #content article.post-__ID__{margin-top:0!important;padding-top:0!important;margin-bottom:0!important;padding-bottom:0!important}
+body.page-id-__ID__ .entry-content{margin:0;padding:0}
+#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
+#dbr *,#dbr *::before,#dbr *::after{box-sizing:border-box}
+#dbr h1,#dbr h2,#dbr p,#dbr ul,#dbr ol,#dbr li{margin:0;padding:0;font-family:inherit;text-transform:none;border:0;background:none;letter-spacing:normal}
+#dbr .dbr-bleed{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+#dbr .dbr-wrap{width:100%;max-width:1224px;margin:0 auto;padding:0 20px}
+#dbr a{text-decoration:none;box-shadow:none}
+/* Banner */
+#dbr .dbr-hero{background:linear-gradient(180deg,#eef2f7 0%,#f1f4f8 100%);border-top:1px solid #e6eaf0;border-bottom:1px solid #e6eaf0}
+#dbr .dbr-hero .dbr-wrap{padding-top:34px;padding-bottom:36px}
+#dbr .dbr-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:9px;list-style:none;font-size:16px;line-height:1.4;margin:0 0 30px}
+#dbr .dbr-crumbs li{display:flex;align-items:center;gap:9px;color:var(--muted);list-style:none}
+#dbr .dbr-crumbs li+li::before{content:"/";color:#8a93a1}
+#dbr .dbr-crumbs a{color:var(--muted)!important;transition:color .2s}
+#dbr .dbr-crumbs a:hover{color:var(--navy)!important}
+#dbr .dbr-crumbs [aria-current]{color:var(--navy);font-weight:700}
+#dbr .dbr-title{position:relative;padding-left:30px}
+#dbr .dbr-title::before{content:"";position:absolute;left:0;top:0;width:6px;height:clamp(40px,3.6vw,52px);background:var(--lime);border-radius:1px}
+#dbr .dbr-h1{font-size:clamp(36px,3.9vw,54px);line-height:1;font-weight:800;letter-spacing:-.025em;color:var(--navy);margin:0 0 18px}
+#dbr .dbr-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.5;color:var(--text)}
+/* Layout */
+#dbr .dbr-body{padding:50px 0 68px;background:#fff}
+#dbr .dbr-grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:46px;align-items:stretch}
+#dbr .dbr-aside{border-right:1px solid var(--line);padding-right:34px}
+#dbr .dbr-toc{position:sticky;top:110px}
+#dbr .dbr-toc-title{font-size:22px;font-weight:800;letter-spacing:-.01em;color:var(--navy);margin:0 0 20px;line-height:1.3}
+#dbr .dbr-toc ul{list-style:none;border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:24px}
+#dbr .dbr-toc li{list-style:none;margin:0 0 2px}
+#dbr .dbr-toc li a{display:block;padding:9px 20px;border-left:4px solid transparent;border-radius:0 4px 4px 0;font-size:17px;line-height:1.3;font-weight:500;color:var(--text)!important;transition:background .2s,color .2s}
+#dbr .dbr-toc li a:hover{color:var(--navy)!important;background:#f5f7fa}
+#dbr .dbr-toc li a.is-active{background:var(--lime-soft);border-left-color:var(--navy);color:var(--navy)!important;font-weight:700}
+#dbr .dbr-top{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:500;color:var(--navy)!important;transition:color .2s}
+#dbr .dbr-top svg{width:15px;height:15px}
+#dbr .dbr-top:hover{color:var(--lime-ink)!important}
+/* Content */
+#dbr .dbr-content{max-width:790px;min-width:0}
+#dbr .dbr-sec{padding:0 0 26px;margin:0 0 26px;border-bottom:1px solid #d9dee6;scroll-margin-top:110px}
+#dbr .dbr-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+#dbr .dbr-sec h2{font-size:clamp(25px,2.25vw,32px);line-height:1.2;font-weight:800;letter-spacing:-.015em;color:var(--navy);margin:0 0 10px}
+#dbr .dbr-sec p{font-size:17px;line-height:1.42;color:var(--text);margin:0 0 14px;text-wrap:pretty}
+#dbr .dbr-sec p:last-child{margin-bottom:0}
+#dbr .dbr-mail{font-weight:700;color:var(--navy)!important;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere;transition:color .2s}
+#dbr .dbr-mail:hover{color:var(--lime-ink)!important}
+/* Responsive */
+@media (max-width:1199px){#dbr .dbr-grid{grid-template-columns:230px minmax(0,1fr);gap:40px}#dbr .dbr-aside{padding-right:28px}#dbr .dbr-toc li a{padding:8px 16px;font-size:16px}}
+@media (max-width:991px){
+#dbr .dbr-hero .dbr-wrap{padding-top:30px;padding-bottom:32px}
+#dbr .dbr-crumbs{font-size:15px;margin-bottom:22px}
+#dbr .dbr-body{padding:32px 0 56px}
+#dbr .dbr-grid{grid-template-columns:minmax(0,1fr);gap:32px}
+#dbr .dbr-aside{border-right:0;padding-right:0}
+#dbr .dbr-toc{position:static;background:var(--tint);border:1px solid var(--line);border-radius:12px;padding:20px 20px 16px}
+#dbr .dbr-toc-title{font-size:19px;margin-bottom:12px}
+#dbr .dbr-toc ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;border-bottom:0;padding-bottom:0;margin-bottom:0}
+#dbr .dbr-toc li a{padding:8px 14px;font-size:15.5px}
+#dbr .dbr-toc li a:hover{background:#fff}
+#dbr .dbr-top{display:none}
+#dbr .dbr-content{max-width:none}
+#dbr .dbr-sec{scroll-margin-top:90px}
+}
+@media (max-width:640px){
+#dbr .dbr-title{padding-left:20px}
+#dbr .dbr-title::before{width:5px}
+#dbr .dbr-h1{margin-bottom:14px}
+#dbr .dbr-toc ul{grid-template-columns:minmax(0,1fr)}
+#dbr .dbr-sec{padding-bottom:22px;margin-bottom:22px}
+#dbr .dbr-sec p{font-size:16px;line-height:1.55}
+}
+
+
+#dbr .dbr-sec ul,#dbr .dbr-sec ol{margin:0 0 14px 0;padding-left:22px;list-style:disc}
+#dbr .dbr-sec ol{list-style:decimal}
+#dbr .dbr-sec li{font-size:17px;line-height:1.5;color:var(--text);margin:0 0 6px;padding:0;list-style:inherit;text-wrap:pretty}
+#dbr .dbr-sec strong{color:var(--navy);font-weight:700}
+#dbr .dbr-sec p a,#dbr .dbr-sec li a{color:var(--navy)!important;font-weight:600;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere}
+#dbr .dbr-sec p a:hover,#dbr .dbr-sec li a:hover{color:var(--lime-ink)!important}
+#dbr .dbr-tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+#dbr .dbr-sec table{border-collapse:collapse;width:100%;min-width:520px;font-size:16px;line-height:1.45}
+#dbr .dbr-sec th,#dbr .dbr-sec td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+#dbr .dbr-sec th{background:var(--tint);color:var(--navy);font-weight:700}
+#dbr .dbr-sec tr:last-child td{border-bottom:0}
+#dbr .dbr-meta{font-size:15px;color:var(--muted);margin:0 0 22px}
+@media (max-width:640px){#dbr .dbr-sec li{font-size:16px}}
+
+</style>
+<div id="dbr">
+<section class="dbr-hero dbr-bleed"><div class="dbr-wrap">
+<ol class="dbr-crumbs" aria-label="Breadcrumb"><li><a href="/">Home</a></li><li><span aria-current="page">Privacy Policy</span></li></ol>
+<div class="dbr-title"><h1 class="dbr-h1">Privacy Policy</h1>
+<p class="dbr-sub">What we collect, why we collect it, who sees it and the choices you have.</p></div>
+</div></section>
+<section class="dbr-body dbr-bleed"><div class="dbr-wrap dbr-grid">
+<aside class="dbr-aside" aria-label="On this page"><div class="dbr-toc" id="dbr-toc">
+<p class="dbr-toc-title">On this page</p>
+<ul>
+<li><a href="#dbr-who-we-are" class="is-active">Who we are</a></li>
+<li><a href="#dbr-what-we-collect">What we collect</a></li>
+<li><a href="#dbr-how-we-use-it-and-why">How we use it, and why</a></li>
+<li><a href="#dbr-email">Email</a></li>
+<li><a href="#dbr-who-we-share-it-with">Who we share it with</a></li>
+<li><a href="#dbr-where-your-information-goes">Where your information goes</a></li>
+<li><a href="#dbr-keeping-it">Keeping it</a></li>
+<li><a href="#dbr-security">Security</a></li>
+<li><a href="#dbr-your-choices-and-rights">Your choices and rights</a></li>
+<li><a href="#dbr-children">Children</a></li>
+<li><a href="#dbr-links-to-other-sites">Links to other sites</a></li>
+<li><a href="#dbr-changes">Changes</a></li>
+<li><a href="#dbr-contact">Contact</a></li>
+</ul>
+<a class="dbr-top" href="#page">Back to top <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13.5V2.5M3.5 7 8 2.5 12.5 7"/></svg></a>
+</div></aside>
+<div class="dbr-content">
+<div class="dbr-sec" id="dbr-who-we-are"><h2>1. Who we are</h2>
+<p>Domain Brothers ("we", "us") operates DomainBrothers.com. We are a Mindshare Consulting Inc. company based in Ontario, Canada. We are responsible for the personal information described in this policy. This policy follows Canada's PIPEDA and anti-spam law (CASL), and we apply the principles of the GDPR, the UK GDPR and the Cayman Islands Data Protection Law where they apply to you. Contact: <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>.</p></div>
+<div class="dbr-sec" id="dbr-what-we-collect"><h2>2. What we collect</h2>
+<p><strong>What you give us</strong></p>
+<ul><li>Account details: full name, email address, optional phone number, your newsletter choice, and the answers you give about what you are looking for.</li><li>Enquiries and offers: the messages, domain names, amounts and contact details you send through forms, offers and callback requests.</li><li>Purchase and transfer details: the registrar details and registrant information you give us so we can transfer a domain, and the acceptance of our terms that we record with an order or payment plan.</li><li>Your agreement to our Terms, Privacy Policy, Refund Policy and Payment Terms, with the policy version, the time and a one-way hash of your IP address.</li></ul>
+<p><strong>What we collect automatically</strong></p>
+<ul><li>Technical data such as IP address, browser and device type, pages viewed, referring page and the time of visits.</li><li>Cookies and similar technologies, described in our <a href="/cookie-policy/">Cookie Policy</a>.</li><li>Security signals, such as results of bot checks and blocked spam attempts.</li></ul>
+<p><strong>What others send us</strong></p>
+<ul><li>Stripe tells us whether a payment succeeded and gives us limited card details such as the brand and last four digits. We never receive your full card number.</li><li>Registrars and registries tell us the status of a transfer.</li></ul></div>
+<div class="dbr-sec" id="dbr-how-we-use-it-and-why"><h2>3. How we use it, and why</h2>
+<ul><li><strong>To provide the service:</strong> run your account, send sign-in codes, answer enquiries and offers, take payments, run payment plans and transfer domains. This is needed to carry out our contract with you.</li><li><strong>To send alerts you asked for:</strong> price, sale and offer updates on names you follow, and one-click stop links in every alert email.</li><li><strong>To send our newsletter:</strong> only if you ticked the box or otherwise agreed. You can withdraw consent at any time.</li><li><strong>To keep the site and our customers safe:</strong> prevent fraud, abuse and spam, enforce our terms and resolve disputes. This is in our legitimate interest and, where needed, a legal obligation.</li><li><strong>To improve the site:</strong> understand how it is used, using analytics.</li><li><strong>To meet legal duties:</strong> tax, accounting, law-enforcement and regulatory requests.</li></ul>
+<p>We do not sell your personal information.</p></div>
+<div class="dbr-sec" id="dbr-email"><h2>4. Email</h2>
+<p>We always send messages that are part of your service, such as sign-in codes, receipts, payment reminders and transfer updates. We send marketing email only with your consent, and every marketing email has an unsubscribe link.</p></div>
+<div class="dbr-sec" id="dbr-who-we-share-it-with"><h2>5. Who we share it with</h2>
+<p>We share information only as needed, with:</p>
+<ul><li><strong>Service providers</strong> that work for us under agreements: Stripe (payments), our email delivery providers, Cloudflare (security, bot checks and delivery), our hosting provider, and analytics and marketing measurement tools such as Google Analytics, Google Ads measurement, Microsoft Clarity and HubSpot.</li><li><strong>Registrars and registries</strong>, when we transfer a domain, as the transfer requires.</li><li><strong>Professional advisers</strong>, such as lawyers and accountants.</li><li><strong>Authorities</strong>, when the law requires it or to protect rights, safety and against fraud.</li><li><strong>A buyer of the business</strong>, if we are sold, under the same protections.</li></ul></div>
+<div class="dbr-sec" id="dbr-where-your-information-goes"><h2>6. Where your information goes</h2>
+<p>Our providers may store and process information in Canada, the United States and other countries. These countries may have different data-protection laws. We use providers that protect information and, where required, safeguards such as standard contractual clauses.</p></div>
+<div class="dbr-sec" id="dbr-keeping-it"><h2>7. Keeping it</h2>
+<p>We keep information for as long as we need it for the purposes above. Account details are kept until you ask us to delete the account. Order, payment and transfer records are kept as long as needed for tax, accounting and legal reasons, which is commonly up to seven years. Sign-in codes expire after 10 minutes and sign-in sessions after 30 days. We delete or anonymise information we no longer need.</p></div>
+<div class="dbr-sec" id="dbr-security"><h2>8. Security</h2>
+<p>We use encryption in transit, store authorisation (EPP) codes encrypted, limit who can see personal information, record and review errors, and use bot protection on forms. Card numbers go directly to Stripe. No system is completely secure, so please protect your email account, which is how you sign in.</p></div>
+<div class="dbr-sec" id="dbr-your-choices-and-rights"><h2>9. Your choices and rights</h2>
+<p>Depending on where you live, you may have the right to access the information we hold about you, correct it, delete it, receive a copy, object to or restrict some uses, and withdraw consent. You can change your details and newsletter choice in your account Profile, and you can ask us to delete your account there. To make a request, email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>. We reply within 30 days. We may need to keep some information to meet legal duties or to protect against fraud, and we will tell you if so.</p>
+<p>If you are not satisfied, you may complain to the Office of the Privacy Commissioner of Canada or to the data-protection authority where you live.</p></div>
+<div class="dbr-sec" id="dbr-children"><h2>10. Children</h2>
+<p>Our services are for adults. We do not knowingly collect information from anyone under 18, and if we learn that we have, we delete it.</p></div>
+<div class="dbr-sec" id="dbr-links-to-other-sites"><h2>11. Links to other sites</h2>
+<p>The site links to other websites. We do not control them and are not responsible for their privacy practices.</p></div>
+<div class="dbr-sec" id="dbr-changes"><h2>12. Changes</h2>
+<p>We may update this policy. The date at the top of the page shows when it last changed. If a change is significant, we will say so on the site or by email.</p></div>
+<div class="dbr-sec" id="dbr-contact"><h2>13. Contact</h2>
+<p>Privacy questions and requests: <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>, or use our <a href="/contact-us/">contact page</a>.</p></div>
+</div>
+</div></section>
+</div>
+<script>
+(function(){var toc=document.getElementById('dbr-toc');if(!toc)return;var links=[].slice.call(toc.querySelectorAll('ul a'));var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+function setActive(id){links.forEach(function(a){a.classList.toggle('is-active',a.getAttribute('href')==='#'+id)})}
+function onScroll(){var y=window.scrollY+140,cur=secs[0];secs.forEach(function(s){if(s.getBoundingClientRect().top+window.scrollY<=y)cur=s});if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4)cur=secs[secs.length-1];if(cur)setActive(cur.id)}
+links.forEach(function(a){a.addEventListener('click',function(e){var t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();var off=window.innerWidth<992?90:110;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off+2,behavior:'smooth'});history.replaceState(null,'',a.getAttribute('href'))})});
+var top=toc.querySelector('.dbr-top');if(top)top.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();})();
+</script>
+<!-- /wp:html -->

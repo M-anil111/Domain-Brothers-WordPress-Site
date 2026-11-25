@@ -27,8 +27,10 @@
 defined( 'ABSPATH' ) || exit;
 
 if ( ! defined( 'DB_SEO_ACTIVE' ) ) {
-	// Only RankMath fully renders <head> meta; if it's present, stand down.
-	define( 'DB_SEO_ACTIVE', ! ( class_exists( 'RankMath' ) || defined( 'RANK_MATH_VERSION' ) ) );
+	// Stand down only when Rank Math is present AND has been given the <head>
+	// (DB_RANKMATH_OWNS_HEAD). By default Rank Math is used for its editor
+	// analysis only and this block stays the single owner of the tags.
+	define( 'DB_SEO_ACTIVE', ! ( defined( 'DB_RANKMATH_OWNS_HEAD' ) && DB_RANKMATH_OWNS_HEAD ) );
 }
 
 if ( ! defined( 'DB_SEO_SUFFIX' ) ) {
@@ -166,7 +168,7 @@ if ( ! function_exists( 'db_seo_page_defs' ) ) {
 			),
 			'offer' => array(
 				'title' => 'Make an Offer on a Premium Domain | Domain Brothers',
-				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Step-by-step support and flexible payment plans apply. Submit your offer now.',
+				'desc'  => 'Make an offer on any premium domain in our inventory and a broker replies personally. Flexible payment plans apply. Submit your offer now.',
 				'kw'    => 'make an offer',
 			),
 			'domain-transfer' => array(
@@ -415,15 +417,20 @@ if ( ! function_exists( 'db_seo_domain_def' ) ) {
 		$title = $price
 			? sprintf( '%s for Sale, %s%s', $name, $price, DB_SEO_SUFFIX )
 			: sprintf( '%s for Sale%s', $name, DB_SEO_SUFFIX );
+		// Plans are mentioned only where one is offered: a listed price of at least the plan floor.
+		// Offer-only names have no listed plan (SE-11).
+		$plans = $price && ( ! function_exists( 'db_plan_offered' ) || db_plan_offered( (float) $clean ) );
 		$desc  = $price
-			? sprintf( 'Buy %s for %s. A premium domain with step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
-			: sprintf( 'Buy %s, a premium domain, with an step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name );
+			? ( $plans
+				? sprintf( 'Buy %s for %s. A premium domain with step-by-step transfer and 0%% interest payment plans available. Secure it today at Domain Brothers.', $name, $price )
+				: sprintf( 'Buy %s for %s. A premium domain with a step-by-step transfer. Secure it today at Domain Brothers.', $name, $price ) )
+			: sprintf( 'Make an offer on %s, a premium domain, with a step-by-step transfer once you agree a price. Domain Brothers replies personally.', $name );
 		// Long names (e.g. canadaimmigrationcounsel.ca) pushed this to 162–168
 		// characters, past the 160 that search results show.
 		if ( mb_strlen( $desc ) > 160 ) {
 			$desc = $price
-				? sprintf( 'Buy %s for %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name, $price )
-				: sprintf( 'Buy %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name );
+				? ( $plans ? sprintf( 'Buy %s for %s. Step-by-step transfer and 0%% interest payment plans at Domain Brothers.', $name, $price ) : sprintf( 'Buy %s for %s. Step-by-step transfer at Domain Brothers.', $name, $price ) )
+				: sprintf( 'Make an offer on %s. Step-by-step transfer at Domain Brothers.', $name );
 		}
 
 		return array( 'title' => $title, 'desc' => $desc, 'kw' => strtolower( $name ) );
@@ -526,9 +533,10 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 			if ( ! $post instanceof WP_Post ) {
 				return null;
 			}
-			$desc = has_excerpt( $post ) ? get_the_excerpt( $post ) : $post->post_content;
+			$desc = has_excerpt( $post ) ? get_the_excerpt( $post ) : db_seo_prose_only( $post->post_content );
 			$desc = db_seo_trim_desc( $desc );
-			if ( '' === $desc ) {
+			// Text that is mostly prices or table cells is not a description (SE-7).
+			if ( '' === $desc || preg_match_all( '/\$\s?\d|\bBuy Now\b/i', $desc ) >= 3 ) {
 				$desc = sprintf(
 					'%s at Domain Brothers, a premium domain marketplace offering step-by-step transfers and 0%% interest payment plans on every listing.',
 					$post->post_title
@@ -568,7 +576,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 				$desc = $is_blog_term
 					? sprintf( 'Posts filed under %s on the Domain Brothers blog — domain industry news and market insights.', $term->name )
 					: sprintf(
-						'Browse %s domains for sale at Domain Brothers. Every listing includes an step-by-step transfer and 0%% interest payment plans. Find yours today.',
+						'Browse %s domains for sale at Domain Brothers. Every listing includes a step-by-step transfer, and payment plans on names from $600. Find yours today.',
 						$term->name
 					);
 			}
@@ -598,7 +606,7 @@ if ( ! function_exists( 'db_seo_fallback_def' ) ) {
 		if ( is_post_type_archive( 'domain' ) || is_home() ) {
 			return array(
 				'title' => 'Premium Domains for Sale' . $brand,
-				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with an step-by-step transfer and flexible payment plans. Find your domain today.',
+				'desc'  => 'Browse every premium domain for sale at Domain Brothers, each with a step-by-step transfer and payment plans on names from $600. Find your domain today.',
 				'kw'    => 'premium domains for sale',
 			);
 		}
@@ -624,6 +632,9 @@ if ( ! function_exists( 'db_seo_current' ) ) {
 		}
 		$done  = true;
 		$cache = db_seo_resolve();
+		if ( function_exists( 'db_rankmath_overlay' ) ) {
+			$cache = db_rankmath_overlay( $cache );
+		}
 		return $cache;
 	}
 }
@@ -680,6 +691,13 @@ if ( ! function_exists( 'db_seo_resolve' ) ) {
 	}
 }
 
+// The theme declares no title-tag support, so WordPress prints no <title>
+// unless it is switched on here. Needed whoever writes the title (this plugin
+// or Rank Math).
+add_action( 'after_setup_theme', function () {
+	add_theme_support( 'title-tag' );
+}, 99 );
+
 /* ─── Output ───────────────────────────────────────────────────────────────── */
 
 if ( DB_SEO_ACTIVE ) {
@@ -709,9 +727,6 @@ if ( DB_SEO_ACTIVE ) {
 	// one <title>, and the filters above optimize it. A handful of the
 	// theme's payment templates DO hardcode their own <title>; the head
 	// deduper below strips those so the optimized one is the only survivor.
-	add_action( 'after_setup_theme', function () {
-		add_theme_support( 'title-tag' );
-	}, 99 );
 
 	add_action( 'wp_head', function () {
 		if ( is_admin() || is_feed() || is_robots() ) {
@@ -750,7 +765,7 @@ if ( DB_SEO_ACTIVE ) {
 
 /* ─── <head> deduper ───────────────────────────────────────────────────────── */
 
-if ( DB_SEO_ACTIVE ) {
+if ( true ) { // both modes: the theme hardcodes a second <title> and canonical whoever writes the real ones
 	/**
 	 * The theme hardcodes a <title> into some payment templates and a
 	 * <link rel="canonical"> into the domain-listing template, on top of the
@@ -915,3 +930,16 @@ add_action( 'template_redirect', function () {
 	}
 	ob_start( 'db_seo_promote_archive_h1' );
 }, 20 );
+
+
+if ( ! function_exists( 'db_seo_prose_only' ) ) {
+	/**
+	 * Pure: post content without tables, lists, shortcodes, scripts and figure captions, so the
+	 * fallback description starts with real sentences. Six 'Top 10' posts shared one description
+	 * made of their price tables (bug register batch 2, SE-7).
+	 */
+	function db_seo_prose_only( $html ) {
+		$html = (string) preg_replace( '#<(table|ul|ol|script|style|figure|figcaption)\b.*?</\1>#is', ' ', (string) $html );
+		return (string) preg_replace( '/\[[^\]]{1,200}\]/', ' ', $html );
+	}
+}

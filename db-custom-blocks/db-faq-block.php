@@ -109,8 +109,12 @@ if ( ! function_exists( 'db_faq_topics' ) ) {
 						'a' => 'Send us the domain name and your asking price through our ' . $contact . ' or by email to ' . $mail . '. We’ll review your submission and get back to you shortly.',
 					),
 					array(
+						'q' => 'How do I find out what my domain is worth?',
+						'a' => 'Start with comparable sales: what similar names have sold for recently. For a written range with the reasoning explained, ask for a <a href="' . esc_url( home_url( '/domain-appraisal-services/' ) ) . '">domain appraisal</a>. A broker replies within one business day.',
+					),
+					array(
 						'q' => 'What sort of payment methods do you accept?',
-						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3- and 6-month plans are interest-free, the 9-month plan carries 5% interest and the 12-month plan 10%.',
+						'a' => 'We accept all major credit and debit cards through our secure Stripe checkout. Domains priced at $' . number_format( $floor ) . ' or more can also be paid in monthly installments over 3, 6, 9 or 12 months: the 3-month plan is interest-free, the 6-month plan carries 5% interest, the 9-month plan 8% and the 12-month plan 10%.',
 					),
 					array(
 						'q' => 'How long does the domain transfer take?',
@@ -318,7 +322,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( is_admin() || ! db_faq_is_page() ) {
 		return;
 	}
-	wp_enqueue_style( 'db-faq-font', 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	// One typeface sitewide (the system stack): no Google Fonts request (design audit 2026-11-24).
 	$file = __DIR__ . '/assets/faq.css';
 	$css  = is_readable( $file ) ? (string) file_get_contents( $file ) : '';
 	if ( '' === $css ) {

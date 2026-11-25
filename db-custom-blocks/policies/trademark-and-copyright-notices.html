@@ -1,0 +1,140 @@
+<!-- wp:html -->
+<style>
+
+body.page-id-__ID__{overflow-x:clip}
+body.page-id-__ID__ #page .db-breadcrumbs,body.page-id-__ID__ #page article.post-__ID__>.entry-title,body.page-id-__ID__ #page .db-ad{display:none!important}
+body.page-id-__ID__ #page #content{padding-bottom:0!important}
+body.page-id-__ID__ #page #content #main.site-main,body.page-id-__ID__ #page #content article.post-__ID__{margin-top:0!important;padding-top:0!important;margin-bottom:0!important;padding-bottom:0!important}
+body.page-id-__ID__ .entry-content{margin:0;padding:0}
+#dbr{--navy:#0c1a30;--text:#2f3a4b;--muted:#5a6475;--lime:#a6d22b;--lime-ink:#94bf1e;--lime-soft:#eef8d9;--line:#e1e6ed;--tint:#eff3f8;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;margin-top:-12px}
+#dbr *,#dbr *::before,#dbr *::after{box-sizing:border-box}
+#dbr h1,#dbr h2,#dbr p,#dbr ul,#dbr ol,#dbr li{margin:0;padding:0;font-family:inherit;text-transform:none;border:0;background:none;letter-spacing:normal}
+#dbr .dbr-bleed{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+#dbr .dbr-wrap{width:100%;max-width:1224px;margin:0 auto;padding:0 20px}
+#dbr a{text-decoration:none;box-shadow:none}
+/* Banner */
+#dbr .dbr-hero{background:linear-gradient(180deg,#eef2f7 0%,#f1f4f8 100%);border-top:1px solid #e6eaf0;border-bottom:1px solid #e6eaf0}
+#dbr .dbr-hero .dbr-wrap{padding-top:34px;padding-bottom:36px}
+#dbr .dbr-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:9px;list-style:none;font-size:16px;line-height:1.4;margin:0 0 30px}
+#dbr .dbr-crumbs li{display:flex;align-items:center;gap:9px;color:var(--muted);list-style:none}
+#dbr .dbr-crumbs li+li::before{content:"/";color:#8a93a1}
+#dbr .dbr-crumbs a{color:var(--muted)!important;transition:color .2s}
+#dbr .dbr-crumbs a:hover{color:var(--navy)!important}
+#dbr .dbr-crumbs [aria-current]{color:var(--navy);font-weight:700}
+#dbr .dbr-title{position:relative;padding-left:30px}
+#dbr .dbr-title::before{content:"";position:absolute;left:0;top:0;width:6px;height:clamp(40px,3.6vw,52px);background:var(--lime);border-radius:1px}
+#dbr .dbr-h1{font-size:clamp(36px,3.9vw,54px);line-height:1;font-weight:800;letter-spacing:-.025em;color:var(--navy);margin:0 0 18px}
+#dbr .dbr-sub{font-size:clamp(16px,1.4vw,19px);line-height:1.5;color:var(--text)}
+/* Layout */
+#dbr .dbr-body{padding:50px 0 68px;background:#fff}
+#dbr .dbr-grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:46px;align-items:stretch}
+#dbr .dbr-aside{border-right:1px solid var(--line);padding-right:34px}
+#dbr .dbr-toc{position:sticky;top:110px}
+#dbr .dbr-toc-title{font-size:22px;font-weight:800;letter-spacing:-.01em;color:var(--navy);margin:0 0 20px;line-height:1.3}
+#dbr .dbr-toc ul{list-style:none;border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:24px}
+#dbr .dbr-toc li{list-style:none;margin:0 0 2px}
+#dbr .dbr-toc li a{display:block;padding:9px 20px;border-left:4px solid transparent;border-radius:0 4px 4px 0;font-size:17px;line-height:1.3;font-weight:500;color:var(--text)!important;transition:background .2s,color .2s}
+#dbr .dbr-toc li a:hover{color:var(--navy)!important;background:#f5f7fa}
+#dbr .dbr-toc li a.is-active{background:var(--lime-soft);border-left-color:var(--navy);color:var(--navy)!important;font-weight:700}
+#dbr .dbr-top{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:500;color:var(--navy)!important;transition:color .2s}
+#dbr .dbr-top svg{width:15px;height:15px}
+#dbr .dbr-top:hover{color:var(--lime-ink)!important}
+/* Content */
+#dbr .dbr-content{max-width:790px;min-width:0}
+#dbr .dbr-sec{padding:0 0 26px;margin:0 0 26px;border-bottom:1px solid #d9dee6;scroll-margin-top:110px}
+#dbr .dbr-sec:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+#dbr .dbr-sec h2{font-size:clamp(25px,2.25vw,32px);line-height:1.2;font-weight:800;letter-spacing:-.015em;color:var(--navy);margin:0 0 10px}
+#dbr .dbr-sec p{font-size:17px;line-height:1.42;color:var(--text);margin:0 0 14px;text-wrap:pretty}
+#dbr .dbr-sec p:last-child{margin-bottom:0}
+#dbr .dbr-mail{font-weight:700;color:var(--navy)!important;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere;transition:color .2s}
+#dbr .dbr-mail:hover{color:var(--lime-ink)!important}
+/* Responsive */
+@media (max-width:1199px){#dbr .dbr-grid{grid-template-columns:230px minmax(0,1fr);gap:40px}#dbr .dbr-aside{padding-right:28px}#dbr .dbr-toc li a{padding:8px 16px;font-size:16px}}
+@media (max-width:991px){
+#dbr .dbr-hero .dbr-wrap{padding-top:30px;padding-bottom:32px}
+#dbr .dbr-crumbs{font-size:15px;margin-bottom:22px}
+#dbr .dbr-body{padding:32px 0 56px}
+#dbr .dbr-grid{grid-template-columns:minmax(0,1fr);gap:32px}
+#dbr .dbr-aside{border-right:0;padding-right:0}
+#dbr .dbr-toc{position:static;background:var(--tint);border:1px solid var(--line);border-radius:12px;padding:20px 20px 16px}
+#dbr .dbr-toc-title{font-size:19px;margin-bottom:12px}
+#dbr .dbr-toc ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;border-bottom:0;padding-bottom:0;margin-bottom:0}
+#dbr .dbr-toc li a{padding:8px 14px;font-size:15.5px}
+#dbr .dbr-toc li a:hover{background:#fff}
+#dbr .dbr-top{display:none}
+#dbr .dbr-content{max-width:none}
+#dbr .dbr-sec{scroll-margin-top:90px}
+}
+@media (max-width:640px){
+#dbr .dbr-title{padding-left:20px}
+#dbr .dbr-title::before{width:5px}
+#dbr .dbr-h1{margin-bottom:14px}
+#dbr .dbr-toc ul{grid-template-columns:minmax(0,1fr)}
+#dbr .dbr-sec{padding-bottom:22px;margin-bottom:22px}
+#dbr .dbr-sec p{font-size:16px;line-height:1.55}
+}
+
+
+#dbr .dbr-sec ul,#dbr .dbr-sec ol{margin:0 0 14px 0;padding-left:22px;list-style:disc}
+#dbr .dbr-sec ol{list-style:decimal}
+#dbr .dbr-sec li{font-size:17px;line-height:1.5;color:var(--text);margin:0 0 6px;padding:0;list-style:inherit;text-wrap:pretty}
+#dbr .dbr-sec strong{color:var(--navy);font-weight:700}
+#dbr .dbr-sec p a,#dbr .dbr-sec li a{color:var(--navy)!important;font-weight:600;border-bottom:2px solid var(--lime);padding-bottom:1px;overflow-wrap:anywhere}
+#dbr .dbr-sec p a:hover,#dbr .dbr-sec li a:hover{color:var(--lime-ink)!important}
+#dbr .dbr-tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+#dbr .dbr-sec table{border-collapse:collapse;width:100%;min-width:520px;font-size:16px;line-height:1.45}
+#dbr .dbr-sec th,#dbr .dbr-sec td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+#dbr .dbr-sec th{background:var(--tint);color:var(--navy);font-weight:700}
+#dbr .dbr-sec tr:last-child td{border-bottom:0}
+#dbr .dbr-meta{font-size:15px;color:var(--muted);margin:0 0 22px}
+@media (max-width:640px){#dbr .dbr-sec li{font-size:16px}}
+
+</style>
+<div id="dbr">
+<section class="dbr-hero dbr-bleed"><div class="dbr-wrap">
+<ol class="dbr-crumbs" aria-label="Breadcrumb"><li><a href="/">Home</a></li><li><span aria-current="page">Trademark and Copyright Notices</span></li></ol>
+<div class="dbr-title"><h1 class="dbr-h1">Trademark and Copyright Notices</h1>
+<p class="dbr-sub">How to tell us that a domain we list, or content on our site, infringes your rights.</p></div>
+</div></section>
+<section class="dbr-body dbr-bleed"><div class="dbr-wrap dbr-grid">
+<aside class="dbr-aside" aria-label="On this page"><div class="dbr-toc" id="dbr-toc">
+<p class="dbr-toc-title">On this page</p>
+<ul>
+<li><a href="#dbr-overview" class="is-active">Overview</a></li>
+<li><a href="#dbr-trademark-complaints-about-a-listed-domain">Trademark complaints about a listed domain</a></li>
+<li><a href="#dbr-what-we-do">What we do</a></li>
+<li><a href="#dbr-domain-disputes-udrp">Domain disputes (UDRP)</a></li>
+<li><a href="#dbr-copyright">Copyright</a></li>
+<li><a href="#dbr-misuse-of-this-process">Misuse of this process</a></li>
+<li><a href="#dbr-contact">Contact</a></li>
+</ul>
+<a class="dbr-top" href="#page">Back to top <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13.5V2.5M3.5 7 8 2.5 12.5 7"/></svg></a>
+</div></aside>
+<div class="dbr-content">
+<div class="dbr-sec" id="dbr-overview"><h2>1. Overview</h2>
+<p>Domain names are registered on a first-come basis, and some names resemble brands. We respect the rights of trademark and copyright owners. This page explains how to send us a notice and what we do with it. Buyers are responsible for their own checks, as our <a href="/terms-of-use/">Terms of Use</a> explain.</p></div>
+<div class="dbr-sec" id="dbr-trademark-complaints-about-a-listed-domain"><h2>2. Trademark complaints about a listed domain</h2>
+<p>If you own a trademark and believe a domain we list infringes it, email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> with the subject "Trademark notice" and include:</p>
+<ul><li>the domain name and the page address of the listing;</li><li>your name, your company and your contact details;</li><li>the trademark, its registration number, the country or region, and a copy of the registration;</li><li>why you believe the domain infringes your rights;</li><li>a statement that the information in your notice is accurate, and that you are the owner or authorised to act for the owner.</li></ul></div>
+<div class="dbr-sec" id="dbr-what-we-do"><h2>3. What we do</h2>
+<p>We review each notice and may remove or pause the listing while we look into it, contact the owner of the name, and ask you for more information. We may also tell the other party who sent the notice. We cannot decide who has the better right to a name. That is for the parties, a registry's dispute process or a court.</p></div>
+<div class="dbr-sec" id="dbr-domain-disputes-udrp"><h2>4. Domain disputes (UDRP)</h2>
+<p>Domain names are subject to the Uniform Domain-Name Dispute-Resolution Policy (UDRP) and related registry processes. If a complaint is filed against a name that is still in our custody, we will cooperate with the process and follow its decision. A buyer takes a name subject to those processes, and a decision against a name is not a ground for a refund.</p></div>
+<div class="dbr-sec" id="dbr-copyright"><h2>5. Copyright</h2>
+<p>If you believe content on our site copies your work, email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> with the subject "Copyright notice". Include where the material appears, what the original work is and where it is published, your contact details, and a statement that you are the owner or are authorised to act for the owner and that your information is accurate. We forward copyright notices to the person responsible, in line with Canadian law, and may remove material that infringes.</p></div>
+<div class="dbr-sec" id="dbr-misuse-of-this-process"><h2>6. Misuse of this process</h2>
+<p>Sending a notice you know to be false, or using it to harass, is misuse. We may ignore it and may take action.</p></div>
+<div class="dbr-sec" id="dbr-contact"><h2>7. Contact</h2>
+<p><a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a> or our <a href="/contact-us/">contact page</a>.</p></div>
+</div>
+</div></section>
+</div>
+<script>
+(function(){var toc=document.getElementById('dbr-toc');if(!toc)return;var links=[].slice.call(toc.querySelectorAll('ul a'));var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'))}).filter(Boolean);
+function setActive(id){links.forEach(function(a){a.classList.toggle('is-active',a.getAttribute('href')==='#'+id)})}
+function onScroll(){var y=window.scrollY+140,cur=secs[0];secs.forEach(function(s){if(s.getBoundingClientRect().top+window.scrollY<=y)cur=s});if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-4)cur=secs[secs.length-1];if(cur)setActive(cur.id)}
+links.forEach(function(a){a.addEventListener('click',function(e){var t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();var off=window.innerWidth<992?90:110;window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-off+2,behavior:'smooth'});history.replaceState(null,'',a.getAttribute('href'))})});
+var top=toc.querySelector('.dbr-top');if(top)top.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();})();
+</script>
+<!-- /wp:html -->

@@ -114,7 +114,7 @@ if ( ! function_exists( 'db_develop_banner_html' ) ) {
 	/** "Want to develop this domain?": the build services, with a call to action. Strings only. */
 	function db_develop_banner_html( $post ) {
 		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
-		$quote = add_query_arg( array( 'domain' => $name, 'topic' => 'develop' ), home_url( '/contact-us/' ) );
+		$quote = add_query_arg( array( 'dom' => $name, 'topic' => 'develop' ), home_url( '/contact-us/' ) );
 		$icons = array(
 			'logo'    => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3l2.600 5.400 5.900.8-4.300 4.100 1 5.900L12 16.400 6.800 19.200l1-5.900L3.500 9.200l5.900-.8L12 3z"/></svg>',
 			'social'  => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.500h8M8 12.500h5"/></svg>',
@@ -122,10 +122,10 @@ if ( ! function_exists( 'db_develop_banner_html' ) ) {
 			'app'     => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="2.500" width="10" height="19" rx="2.500"/><path d="M11 18.500h2"/></svg>',
 		);
 		$cards = array(
-			array( 'logo', 'Get a logo designed', 'A mark and brand look that fit the name.', home_url( '/other-services/' ) ),
-			array( 'social', 'Social media marketing', 'Launch campaigns that find your first customers.', home_url( '/digital-marketing/' ) ),
+			array( 'logo', 'Get a logo designed', 'A mark and brand look that fit the name.', home_url( '/website-design-development/' ) ),
+			array( 'social', 'Social media marketing', 'Launch campaigns that find your first customers.', home_url( '/digital-marketing-services/' ) ),
 			array( 'website', 'Website design and build', 'A fast, modern site, live on ' . $name . '.', home_url( '/website-design-development/' ) ),
-			array( 'app', 'Mobile apps', 'iPhone and Android apps for your idea.', home_url( '/mobile-app-development/' ) ),
+			array( 'app', 'Mobile apps', 'iPhone and Android apps for your idea.', home_url( '/mobile-app-development-services/' ) ),
 		);
 		$html  = '<section class="db-dev" aria-labelledby="db-dev-h"><div class="db-dev-inner">';
 		$html .= '<div class="db-dev-copy"><p class="db-dev-eyebrow">Domain Brothers Studio</p><h2 id="db-dev-h">Want to develop this domain?</h2><p class="db-dev-sub">Buy <strong>' . esc_html( $name ) . '</strong> and build on it with one team: logo, social media, website and mobile apps, from first sketch to launch day.</p>';
@@ -145,10 +145,10 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		$name  = strtolower( wp_strip_all_tags( $post->post_title ) );
 		$price = function_exists( 'db_dd_price' ) ? db_dd_price( $post->ID ) : 0.0;
 		$label = array( 'standard' => 'For sale', 'offer' => 'Open to offers', 'sold' => 'Sold', 'not_for_sale' => 'Not for sale' )[ $state ] ?? 'For sale';
-		$h     = '<aside class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
+		$h     = '<section class="db-dd-side" aria-label="Domain status"><p class="db-dd-side-k">Domain status</p><p class="db-dd-side-pill db-dd-side-pill--' . esc_attr( $state ) . '"><span aria-hidden="true"></span>' . esc_html( $label ) . '</p>';
 		if ( 'standard' === $state && $price > 0 ) {
 			$urls = function_exists( 'db_dd_checkout_urls' ) ? db_dd_checkout_urls( $name, $price ) : array( 'buy' => home_url( '/buy-now/' ), 'plan' => home_url( '/payment-plan-setup/' ) );
-			$h   .= '<p class="db-dd-side-price">$' . esc_html( number_format( $price, 0 ) ) . '</p>';
+			$h   .= '<p class="db-dd-side-price">' . esc_html( db_usd( $price ) ) . '</p>';
 			if ( function_exists( 'db_dd_monthly' ) && $price >= ( defined( 'DB_DEAL_MIN_PLAN_AMOUNT' ) ? DB_DEAL_MIN_PLAN_AMOUNT : 600 ) ) {
 				$h .= '<p class="db-dd-side-sub">or from ' . esc_html( db_dd_monthly( $price ) ) . '/month</p>';
 			}
@@ -161,7 +161,7 @@ if ( ! function_exists( 'db_dd_side_html' ) ) {
 		} else {
 			$h .= '<p class="db-dd-side-sub">This domain is not available right now.</p><a class="db-dd-side-btn db-dd-side-btn--ghost" href="' . esc_url( home_url( '/all-domains/' ) ) . '">Browse other domains</a>';
 		}
-		$h .= '<ul class="db-dd-side-list"><li>Secure Stripe payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></aside>';
+		$h .= '<ul class="db-dd-side-list"><li>Secure Stripe payment</li><li>We handle the transfer</li><li>Pay in full or over time</li></ul></section>'; // part of the listing, not a separate landmark (AX-21)
 		return $h;
 	}
 }

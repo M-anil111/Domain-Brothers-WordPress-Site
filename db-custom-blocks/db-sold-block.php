@@ -160,6 +160,19 @@ if ( ! function_exists( 'db_sold_listings' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_sold_public_count' ) ) {
+	/**
+	 * Sold names shown to visitors: published sold listings only. db_sold_listings() also returns
+	 * private and draft ones (kept for price data), so the home page said 85 while /sold/ said 79
+	 * (LS-12). Every visitor-facing "names sold" figure uses this.
+	 */
+	function db_sold_public_count() {
+		return count( array_filter( (array) db_sold_listings(), static function ( $p ) {
+			return 'publish' === $p->post_status;
+		} ) );
+	}
+}
+
 if ( ! function_exists( 'db_sold_info' ) ) {
 	/**
 	 * What is known about one sale. A website order (in the current Stripe mode)

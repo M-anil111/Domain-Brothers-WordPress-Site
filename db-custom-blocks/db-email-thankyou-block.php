@@ -411,6 +411,97 @@ if ( ! function_exists( 'db_ty_resolve' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ty_payment_status_of' ) ) {
+	/**
+	 * Pure: what the thank-you page may say for a PaymentIntent Stripe returned.
+	 *
+	 * @param array|null $pi     Decoded PaymentIntent, or null when Stripe could not be reached.
+	 * @param string     $domain The name the signed link is for.
+	 * @return string succeeded | processing | failed | unknown
+	 */
+	function db_ty_payment_status_of( $pi, $domain ) {
+		if ( null === $pi ) {
+			return 'unknown';
+		}
+		if ( ! is_array( $pi ) || empty( $pi['id'] ) || 0 !== strcasecmp( (string) ( $pi['metadata']['domain'] ?? '' ), (string) $domain ) ) {
+			return 'failed'; // not a payment for this name
+		}
+		$st = (string) ( $pi['status'] ?? '' );
+		if ( 'succeeded' === $st ) {
+			return 'succeeded';
+		}
+		return 'processing' === $st ? 'processing' : 'failed';
+	}
+}
+
+if ( ! function_exists( 'db_ty_payment_status' ) ) {
+	/** Looks the PaymentIntent up in Stripe (once per request) and classifies it. */
+	function db_ty_payment_status( $pi_id, $domain ) {
+		static $memo = array();
+		if ( ! preg_match( '/^pi_[A-Za-z0-9]{8,64}$/', (string) $pi_id ) || ! function_exists( 'db_stripe_keys' ) ) {
+			return 'missing';
+		}
+		if ( isset( $memo[ $pi_id ] ) ) {
+			return $memo[ $pi_id ];
+		}
+		$keys = db_stripe_keys();
+		if ( empty( $keys['sec'] ) ) {
+			return $memo[ $pi_id ] = 'unknown';
+		}
+		$r  = wp_remote_get( 'https://api.stripe.com/v1/payment_intents/' . rawurlencode( $pi_id ), array(
+			'headers' => array( 'Authorization' => 'Bearer ' . $keys['sec'] ),
+			'timeout' => 10,
+		) );
+		$code = is_wp_error( $r ) ? 0 : (int) wp_remote_retrieve_response_code( $r );
+		$pi   = null;
+		if ( 200 === $code ) {
+			$pi = (array) json_decode( (string) wp_remote_retrieve_body( $r ), true );
+		} elseif ( $code >= 400 && $code < 500 ) {
+			$pi = array(); // unknown id: not a payment
+		}
+		return $memo[ $pi_id ] = db_ty_payment_status_of( $pi, $domain );
+	}
+}
+
+if ( ! function_exists( 'db_ty_render' ) ) {
+	/**
+	 * Thank-you content for a resolved link. A signed link proves which name and amount the
+	 * checkout was for, not that it was paid (the link is in the checkout page before payment,
+	 * and Klarna, Affirm or Cash App return here after a failed payment too), so full and plan
+	 * confirmations ask Stripe first (bug register batch 2, CK-1).
+	 */
+	function db_ty_render( $type, $domain, $amount, $months = 0 ) {
+		if ( in_array( $type, array( 'full', 'plan' ), true ) ) {
+			$pi     = isset( $_GET['payment_intent'] ) && is_string( $_GET['payment_intent'] ) ? sanitize_text_field( wp_unslash( $_GET['payment_intent'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+			$status = db_ty_payment_status( $pi, $domain );
+			if ( 'processing' === $status || 'unknown' === $status ) {
+				return db_ty_notice_html( 'processing', $domain );
+			}
+			if ( 'succeeded' !== $status ) {
+				return db_ty_notice_html( 'missing' === $status ? 'missing' : 'failed', $domain );
+			}
+		}
+		return db_ty_html( $type, $domain, $amount, $months );
+	}
+}
+
+if ( ! function_exists( 'db_ty_notice_html' ) ) {
+	/** Thank-you page text when a payment is not (yet) confirmed. */
+	function db_ty_notice_html( $kind, $domain ) {
+		$post = $domain ? get_page_by_title( $domain, OBJECT, 'domain' ) : null;
+		$back = $post ? get_permalink( $post ) : home_url( '/all-domains/' );
+		$name = $domain ? esc_html( $domain ) : 'this domain';
+		if ( 'processing' === $kind ) {
+			$h = '<h1>We are confirming your payment</h1><p>Your payment for ' . $name . ' is still being processed by the payment provider. We email you as soon as it is confirmed, usually within a few minutes. You do not need to pay again.</p>';
+		} elseif ( 'failed' === $kind ) {
+			$h = '<h1>Your payment did not go through</h1><p>The payment for ' . $name . ' was not completed and you have not been charged for it. You can try again with another payment method.</p><p><a class="db-ty-btn" href="' . esc_url( $back ) . '">Back to ' . $name . '</a></p>';
+		} else {
+			$h = '<h1>Thank you</h1><p>If you have just paid, your confirmation email is on its way. Questions? Email <a href="mailto:sales@domainbrothers.com">sales@domainbrothers.com</a>.</p><p><a class="db-ty-btn" href="' . esc_url( $back ) . '">Back to ' . $name . '</a></p>';
+		}
+		return '<section class="db-ty db-ty--notice" style="max-width:720px;margin:40px auto;padding:0 15px">' . $h . '</section>';
+	}
+}
+
 /* -----------------------------------------------------------
    B1. the_content filter — inject thank-you content on /thank-you/
    ----------------------------------------------------------- */
@@ -443,7 +534,7 @@ add_filter( 'the_content', function ( $content ) {
 	list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
 
 	$done = true;
-	return db_ty_html( $type, $domain, $amount, $months ) . $content;
+	return db_ty_render( $type, $domain, $amount, $months ) . $content;
 }, 10 );
 
 /* -----------------------------------------------------------
@@ -456,7 +547,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 		$amount_safe = '';
 		if ( $amount ) {
 			$clean = preg_replace( '/[^0-9.]/', '', $amount );
-			$amount_safe = $clean ? '$' . number_format( (float) $clean, 0 ) : esc_html( $amount );
+			$amount_safe = $clean ? '$' . number_format( (float) $clean, floor( (float) $clean ) == (float) $clean ? 0 : 2 ) : esc_html( $amount );
 		}
 
 		// Green circle-check SVG — stroke draw animated via CSS (reduced-motion safe)
@@ -468,10 +559,10 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 		// Service chips — reuse db_services_list() if available
 		$services = function_exists( 'db_services_list' ) ? db_services_list() : array(
 			'Website Design & Development' => '/website-design-development/',
-			'Digital Marketing'            => '/digital-marketing/',
-			'Software Development'         => '/software-development/',
-			'Mobile App Development'       => '/mobile-app-development/',
-			'Other Services'               => '/other-services/',
+			'Digital Marketing'            => '/digital-marketing-services/',
+			'Software Development'         => '/custom-software-development-services/',
+			'Mobile App Development'       => '/mobile-app-development-services/',
+			'Hosting & Maintenance'        => '/web-hosting-maintenance-services/',
 		);
 
 		$chips = '<div class="db-ty-chips">';
@@ -496,7 +587,7 @@ if ( ! function_exists( 'db_ty_html' ) ) {
 			$html .= '<div class="db-ty-timeline" role="list">';
 			$steps = array(
 				array( 'n' => 1, 'label' => 'Payment confirmed',               'sub' => 'just now',                'done' => true ),
-				array( 'n' => 2, 'label' => 'Transfer initiated',              'sub' => 'within 24 hours',         'done' => false ),
+				array( 'n' => 2, 'label' => 'Transfer initiated',              'sub' => 'within 1&ndash;2 business days', 'done' => false ),
 				array( 'n' => 3, 'label' => 'Authorization email sent to you', 'sub' => 'approve with one click',  'done' => false ),
 				array( 'n' => 4, 'label' => 'Domain live in your account',     'sub' => '2&ndash;5 days',          'done' => false ),
 			);
@@ -934,6 +1025,7 @@ add_shortcode( 'db_thankyou', function ( $atts ) {
 	if ( ! $atts['domain'] && ! $atts['amount'] ) {
 		$sig = ! empty( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
 		list( $type, $domain, $amount ) = db_ty_resolve( $type, $domain, $amount, $sig, $months );
+		return db_ty_render( $type, $domain, $amount, $months );
 	}
 
 	return db_ty_html( $type, $domain, $amount, $months );

@@ -1,0 +1,71 @@
+name: Live QA (staging)
+
+# Runs the browser QA and the accessibility audit against https://beta.domainbrothers.com
+# (bug O-4: both used to run only by hand). Weekly, and on demand from the Actions tab.
+# Kept out of pull-request CI: staging is a shared host that answers 508 under load, so a
+# busy moment must not block a merge. Staging's HTTP password was removed on 2026-11-20; if it
+# is restored, add BETA_USER and BETA_PASS as repository secrets.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1' # Mondays 06:17 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-qa
+  cancel-in-progress: false
+
+jobs:
+  live-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BETA_USER: ${{ secrets.BETA_USER }}
+      BETA_PASS: ${{ secrets.BETA_PASS }}
+      NODE_PATH: /tmp/qa/node_modules
+      AXE_DIR: /tmp/qa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright and axe-core
+        run: |
+          npm install --prefix /tmp/qa playwright@1.48.2 axe-core@4.10.2
+          npx --prefix /tmp/qa playwright install --with-deps chromium
+
+      - name: Browser QA (pages, links, forms)
+        run: |
+          mkdir -p qa-report
+          node tests/qa/run-qa.js ./qa-report
+
+      - name: Accessibility audit, desktop
+        if: always()
+        run: |
+          status=0
+          node tests/qa/axe-audit.js > qa-report/axe-desktop.txt 2>&1 || status=$?
+          cat qa-report/axe-desktop.txt
+          exit $status
+
+      - name: Accessibility audit, phone
+        if: always()
+        env:
+          VIEWPORT: phone
+        run: |
+          status=0
+          node tests/qa/axe-audit.js > qa-report/axe-phone.txt 2>&1 || status=$?
+          cat qa-report/axe-phone.txt
+          exit $status
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-qa-report
+          path: qa-report/
+          retention-days: 30

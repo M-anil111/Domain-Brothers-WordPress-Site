@@ -5,8 +5,11 @@
  * Off until both keys are saved under Domain Brothers > Launch checks. With keys:
  *   - every Contact Form 7 form gets a Turnstile widget, and a submission without a
  *     valid token is treated as spam;
- *   - the sign-in code request (/wishlist/code) and the account offer (/account/offer)
- *     require a valid token;
+ *   - the sign-in code request (/wishlist/code), the registration code request
+ *     (/account/register), the account offer (/account/offer), the broker request on
+ *     the finder and the "Ask the owner" enquiry require a valid token. Offer and
+ *     deal-buyer pages are guarded by a private token, a honeypot and per-IP limits;
+ *     save-search and transfer messages need a signed-in account;
  *   - the secret key is stored encrypted (db_smtp_encrypt) and never shown again.
  *
  * Fail closed: if Cloudflare cannot be reached to verify a token, the form is refused and
@@ -24,14 +27,41 @@ if ( ! function_exists( 'db_ts_settings' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ts_test_mode' ) ) {
+	/**
+	 * Staging only (bug O-3): while option db_turnstile_test_until holds a future time, Turnstile
+	 * uses Cloudflare's published always-pass test keys so scripted QA can sign in and submit
+	 * offers. It switches itself off after the time given (at most two hours from when it was set),
+	 * never applies on production, and applies only to requests that send the cookie db_ts_qa with
+	 * the value of the option db_turnstile_test_key (32+ characters).
+	 */
+	function db_ts_test_mode() {
+		$until = (int) get_option( 'db_turnstile_test_until', 0 );
+		if ( ! ( $until > time() && $until <= time() + 2 * HOUR_IN_SECONDS && function_exists( 'db_is_staging_host' ) && db_is_staging_host() ) ) {
+			return false;
+		}
+		// Only requests that carry the QA cookie get the test keys. Real visitors keep the real
+		// widget even while a test run is on (they used to see "For testing only").
+		$key  = (string) get_option( 'db_turnstile_test_key', '' );
+		$sent = isset( $_COOKIE['db_ts_qa'] ) ? (string) wp_unslash( $_COOKIE['db_ts_qa'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return strlen( $key ) >= 32 && hash_equals( $key, $sent );
+	}
+}
+
 if ( ! function_exists( 'db_ts_site_key' ) ) {
 	function db_ts_site_key() {
+		if ( db_ts_test_mode() ) {
+			return '1x00000000000000000000AA'; // Cloudflare test site key: always passes
+		}
 		return preg_match( '/^[0-9A-Za-z_\-]{10,80}$/', (string) ( db_ts_settings()['site'] ?? '' ) ) ? (string) db_ts_settings()['site'] : '';
 	}
 }
 
 if ( ! function_exists( 'db_ts_secret' ) ) {
 	function db_ts_secret() {
+		if ( db_ts_test_mode() ) {
+			return '1x0000000000000000000000000000000AA'; // Cloudflare test secret: always passes (public, not a credential)
+		}
 		return (string) db_smtp_decrypt( db_ts_settings()['secret'] ?? '' );
 	}
 }
@@ -42,9 +72,36 @@ if ( ! function_exists( 'db_ts_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'db_ts_broken' ) ) {
+	/**
+	 * True when a site key and a stored secret exist but the secret cannot be decrypted (for
+	 * example after the salts were rotated). Turnstile then fails closed instead of quietly
+	 * switching off (SC-16). With no keys saved at all, Turnstile is simply off.
+	 */
+	function db_ts_broken() {
+		if ( db_ts_test_mode() ) {
+			return false;
+		}
+		$stored = (string) ( db_ts_settings()['secret'] ?? '' );
+		return '' !== db_ts_site_key() && '' !== $stored && '' === (string) db_smtp_decrypt( $stored );
+	}
+}
+
+add_action( 'admin_notices', function () {
+	if ( current_user_can( 'manage_options' ) && function_exists( 'db_ts_broken' ) && db_ts_broken() ) {
+		echo '<div class="notice notice-error"><p><strong>Turnstile secret cannot be read</strong> (the WordPress salts may have changed). Sign-in, offer and contact forms are refusing submissions until you save the Turnstile secret key again.</p></div>';
+	}
+} );
+
 if ( ! function_exists( 'db_ts_verify' ) ) {
-	/** True when Turnstile is off, or the token is valid. Fails closed when Cloudflare cannot be reached. */
+	/** True when Turnstile is off, or the token is valid. Fails closed when Cloudflare cannot be reached or the secret is unreadable. */
 	function db_ts_verify( $token, $ip = '' ) {
+		if ( db_ts_broken() ) {
+			if ( function_exists( 'db_wh_log_limited' ) ) {
+				db_wh_log_limited( 'turnstile', 'DB Turnstile: secret cannot be decrypted; refusing form submissions until it is saved again.' );
+			}
+			return false;
+		}
 		if ( ! db_ts_enabled() ) {
 			return true;
 		}
@@ -70,8 +127,12 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() || ! db_ts_enabled() ) {
 		return;
 	}
-	echo '<script>window.DB_TS_SITE=' . wp_json_encode( db_ts_site_key() ) . ';window.dbTsRender=function(root){if(!window.turnstile||!window.DB_TS_SITE){return;}(root||document).querySelectorAll(".db-ts:not([data-ts-id])").forEach(function(el){el.setAttribute("data-ts-id",String(window.turnstile.render(el,{sitekey:window.DB_TS_SITE})));});};window.dbTsToken=function(root){var i=root&&root.querySelector("input[name=\'cf-turnstile-response\']");return i?i.value:"";};window.dbTsLoad=function(){window.dbTsRender(document);};</script>' . "\n" .
-		'<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=dbTsLoad&amp;render=explicit" async defer></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources, WordPress.Security.EscapeOutput
+	echo '<script>window.DB_TS_SITE=' . wp_json_encode( db_ts_site_key() ) . ';window.dbTsNeed=function(){if(window.dbTsAsked){return;}window.dbTsAsked=true;var s=document.createElement("script");s.src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=dbTsLoad&render=explicit";s.async=true;document.head.appendChild(s);};window.dbTsRender=function(root){if(!window.DB_TS_SITE){return;}if(!window.turnstile){if((root||document).querySelector(".db-ts")){window.dbTsNeed();}return;}(root||document).querySelectorAll(".db-ts:not([data-ts-id])").forEach(function(el){el.setAttribute("data-ts-id",String(window.turnstile.render(el,{sitekey:window.DB_TS_SITE})));});};window.dbTsReset=function(root){if(!window.turnstile){return;}var r=root||document;var els=r.matches&&r.matches(".db-ts[data-ts-id]")?[r]:r.querySelectorAll(".db-ts[data-ts-id]");[].forEach.call(els,function(el){try{window.turnstile.reset(el.getAttribute("data-ts-id"));}catch(e){}});};window.dbTsToken=function(root){var i=root&&root.querySelector("input[name=\'cf-turnstile-response\']");var v=i?i.value:"";if(v&&root){setTimeout(function(){window.dbTsReset(root);},1500);}return v;};document.addEventListener("wpcf7submit",function(e){window.dbTsReset(e.target);});window.dbTsLoad=function(){window.dbTsRender(document);};'
+			// Speed: the Turnstile script (about 100 KB and a long task on phones) used to load on every
+			// page. It now loads only when a form with a check is near the viewport or gets focus, and
+			// (2026-11-24) only after the visitor's first scroll, tap, key or mouse move: on Contact and
+			// Register the form is in view at once and the check downloaded about 3.4 MB on load.
+			. '(function(){function watch(){var els=document.querySelectorAll(".db-ts");if(!els.length){return;}if(!("IntersectionObserver" in window)){window.dbTsNeed();return;}var io=new IntersectionObserver(function(en){en.forEach(function(e){if(e.isIntersecting){io.disconnect();window.dbTsNeed();}});},{rootMargin:"600px 0px"});[].forEach.call(els,function(el){io.observe(el);});document.addEventListener("focusin",function(e){var f=e.target&&e.target.closest&&e.target.closest("form");if(f&&f.querySelector(".db-ts")){window.dbTsNeed();}});}var evs=["pointerdown","keydown","touchstart","scroll","wheel","mousemove"],armed=false;function go(){if(armed){return;}armed=true;evs.forEach(function(t){window.removeEventListener(t,go,true);});watch();}evs.forEach(function(t){window.addEventListener(t,go,{capture:true,passive:true});});document.addEventListener("focusin",function(e){var f=e.target&&e.target.closest&&e.target.closest("form");if(f&&f.querySelector(".db-ts")){window.dbTsNeed();}});})();</script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources, WordPress.Security.EscapeOutput
 }, 85 );
 
 // Contact Form 7: a widget at the end of every form, and a missing or failed check counts as spam.
@@ -79,7 +140,10 @@ add_filter( 'wpcf7_form_elements', function ( $html ) {
 	if ( ! db_ts_enabled() ) {
 		return $html;
 	}
-	return $html . '<div class="db-ts" style="margin:12px 0"></div>';
+	// Before the submit button, so visitors see the check before they press Send (batch 2, AC-5).
+	$widget = '<div class="db-ts" style="margin:12px 0"></div>';
+	$out    = preg_replace( '/(<p>\s*)?<input\b[^>]*type="submit"/i', $widget . '$0', $html, 1, $n );
+	return ( $n && is_string( $out ) ) ? $out : $html . $widget;
 } );
 
 add_filter( 'wpcf7_spam', function ( $spam ) {
@@ -100,6 +164,14 @@ add_filter( 'wpcf7_spam', function ( $spam ) {
 	}
 	return ! $ok;
 } );
+
+// A failed check is not a server error: tell the visitor what to do (batch 2, AC-5).
+add_filter( 'wpcf7_display_message', function ( $message, $status ) {
+	if ( 'spam' === $status && db_ts_enabled() ) {
+		return 'Please complete the security check above the Send button, then send again.';
+	}
+	return $message;
+}, 10, 2 );
 
 /** Admin: the two keys, and turning the check off again. */
 if ( ! function_exists( 'db_ts_admin_html' ) ) {
@@ -133,3 +205,20 @@ add_action( 'admin_post_db_turnstile_save', function () {
 	wp_safe_redirect( admin_url( 'admin.php?page=db-launch&saved=turnstile#turnstile' ) );
 	exit;
 } );
+
+/*
+ * A request carrying the QA cookie may be drawn with Cloudflare's test keys, so it must never be
+ * stored by our page cache or LiteSpeed and later served to visitors. pagecache/serve.php also
+ * skips requests with this cookie.
+ */
+add_action( 'send_headers', function () {
+	if ( is_admin() || headers_sent() || empty( $_COOKIE['db_ts_qa'] ) ) {
+		return;
+	}
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true );
+	}
+	do_action( 'litespeed_control_set_nocache', 'db turnstile qa' );
+	header( 'X-LiteSpeed-Cache-Control: no-cache, private' );
+	header( 'Cache-Control: private, no-store, max-age=0' );
+}, 2 );
