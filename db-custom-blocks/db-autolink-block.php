@@ -257,7 +257,12 @@ if ( ! function_exists( 'db_autolink_live_map' ) ) {
 // Articles (guides and news) and content pages. Not the home page or the transactional pages,
 // which have their own flow; not listings, whose text is the seller's.
 add_filter( 'the_content', function ( $html ) {
-	if ( is_admin() || is_feed() || ! in_the_loop() || ! is_main_query() || ! is_singular( array( 'post', 'page' ) ) ) {
+	if ( is_admin() || is_feed() || ! is_singular( array( 'post', 'page' ) ) ) {
+		return $html;
+	}
+	// The home template (DomainFolio page-templates/frontpage.php) prints its content outside the
+	// main loop, so the loop check applies to every other page only.
+	if ( ! is_front_page() && ( ! in_the_loop() || ! is_main_query() ) ) {
 		return $html;
 	}
 	if ( '1' === (string) get_option( 'db_autolink_off', '0' ) ) {
