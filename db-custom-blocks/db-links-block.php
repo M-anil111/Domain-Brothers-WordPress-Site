@@ -55,7 +55,9 @@ if ( ! function_exists( 'db_link_hub_html' ) ) {
 			if ( $i[0] === $current || $n >= $max ) {
 				continue;
 			}
-			$li .= '<li><a href="' . esc_url( home_url( $i[0] ) ) . '"><strong>' . esc_html( $i[1] ) . '</strong><span>' . esc_html( $i[2] ) . '</span></a></li>';
+			// The link wraps the title only, so its anchor text is the short title (Google: concise,
+			// descriptive anchors). An overlay keeps the whole card clickable (2026-11-25).
+			$li .= '<li><a href="' . esc_url( home_url( $i[0] ) ) . '"><strong>' . esc_html( $i[1] ) . '</strong></a><span>' . esc_html( $i[2] ) . '</span></li>';
 			++$n;
 		}
 		if ( '' === $li ) {
@@ -64,9 +66,10 @@ if ( ! function_exists( 'db_link_hub_html' ) ) {
 		return '<section class="db-hub" aria-labelledby="db-hub-h"><h2 id="db-hub-h">Explore Domain Brothers</h2><ul>' . $li . '</ul></section>'
 			. '<style>.db-hub{max-width:1320px;margin:48px auto 0;padding:0}.db-hub h2{margin:0 0 16px;font-size:clamp(22px,2.4vw,28px);font-weight:800;letter-spacing:-.02em;color:#0a1628}'
 			. '.db-hub ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:0;padding:0;list-style:none}'
-			. '.db-hub a{display:flex;flex-direction:column;gap:4px;height:100%;padding:16px 18px;border:1px solid #dfe5e1;border-radius:16px;background:#fff;color:#0a1628!important;text-decoration:none!important;transition:border-color .15s,box-shadow .15s}'
-			. '.db-hub a:hover,.db-hub a:focus-visible{border-color:#0a1628;box-shadow:0 8px 22px rgba(10,22,40,.08)}.db-hub strong{font-size:16px;font-weight:800}.db-hub span{font-size:14px;line-height:1.5;color:#4b5563}'
-			. '@media(prefers-reduced-motion:reduce){.db-hub a{transition:none}}</style>';
+			. '.db-hub li{position:relative;display:flex;flex-direction:column;gap:4px;height:100%;padding:16px 18px;border:1px solid #dfe5e1;border-radius:16px;background:#fff;transition:border-color .15s,box-shadow .15s}'
+			. '.db-hub a{color:#0a1628!important;text-decoration:none!important}.db-hub a::after{content:"";position:absolute;inset:0;border-radius:16px}.db-hub a:focus-visible{outline:none}.db-hub li:focus-within{outline:3px solid #0a1628;outline-offset:2px}'
+			. '.db-hub li:hover,.db-hub li:focus-within{border-color:#0a1628;box-shadow:0 8px 22px rgba(10,22,40,.08)}.db-hub strong{font-size:16px;font-weight:800}.db-hub span{font-size:14px;line-height:1.5;color:#4b5563}'
+			. '@media(prefers-reduced-motion:reduce){.db-hub li{transition:none}}</style>';
 	}
 }
 
