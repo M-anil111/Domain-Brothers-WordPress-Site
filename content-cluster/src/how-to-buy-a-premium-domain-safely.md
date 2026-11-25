@@ -119,7 +119,7 @@ Most fraud in buying premium domains starts with pressure to pay quickly or away
 
 ## If you would rather have help
 
-If buying premium domains on your own feels like too much, we handle every step for buyers: checks, price negotiation and transfer. Read about our [buy domains service](/buy-domains-service/) or ask our [brokers](/domain-brokerage-services/) to find a name for you. A broker can handle buying premium domains for you, from the first contact to the transfer.
+If buying premium domains on your own feels like too much, we handle every step for buyers: checks, price negotiation and transfer. Read about [premium domain acquisition](/acquire-premium-domain/) or ask our [brokers](/domain-brokerage-services/) to find a name for you. A broker can handle buying premium domains for you, from the first contact to the transfer.
 
 ## Where to go next
 

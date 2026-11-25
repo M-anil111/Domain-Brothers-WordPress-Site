@@ -83,7 +83,7 @@ const MORE_PAGES = [
 	['sell-handles', '/sell-social-media-handles/'], ['acquire-handles', '/acquire-social-media-handles/'], ['about-db', '/about-domain-brothers/'],
 	['handle-form', '/acquire-a-handle-now/'], ['acquire-premium', '/acquire-premium-domain/'], ['transfer', '/domain-transfer/'],
 	['epp', '/epp-guidelines/'], ['under-review', '/domains-under-review/'], ['thank-you', '/thank-you/'], ['not-found', '/this-page-does-not-exist/'],
-	['buy-service', '/buy-domains-service/'], ['sell-service', '/sell-domains-service/'], ['digital-marketing', '/digital-marketing/'],
+	['sell-service', '/sell-domains-service/'], ['digital-marketing', '/digital-marketing/'],
 	['mobile-app', '/mobile-app-development/'], ['other-services', '/other-services/'], ['software', '/software-development/'], ['web-design', '/website-design-development/'],
 	['team', '/our-team/'], ['team-member', '/our-team/jay-mehta/'],
 	['privacy', '/privacy-policy/'], ['refund', '/refund-policy/'], ['terms', '/terms-of-use/'], ['site-map', '/site-map/'],

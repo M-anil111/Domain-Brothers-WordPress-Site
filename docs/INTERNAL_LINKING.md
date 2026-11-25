@@ -33,7 +33,7 @@ to each other. No indexable page is more than three clicks from home.
 | Hub | Pages under it | Owns |
 |---|---|---|
 | Buy: `/all-domains/` | `/3-` to `/6-character-domains/`, `/numeric-domains-for-sale/`, `/premium-domain-deals/`, `/collections/`, `/domain-category/*/`, then each `/domains/<name>/` | premium domains for sale, N-letter domains |
-| Broker services: `/our-services/` | `/domain-brokerage-services/` (domain broker), `/acquire-premium-domain/` (domain acquisition), `/buy-domains-service/`, `/domain-appraisal-services/`, `/domain-management-services/`, `/domain-transfer/`, social handle pages | domain broker, acquisition, appraisal |
+| Broker services: `/our-services/` | `/domain-brokerage-services/` (domain broker), `/acquire-premium-domain/` (domain acquisition; `/buy-domains-service/` merged into it with a 301 on 2026-11-25), `/domain-appraisal-services/`, `/domain-management-services/`, `/domain-transfer/`, social handle pages | domain broker, acquisition, appraisal |
 | Sell: `/sell-your-domains/` | `/seller-agreement/`, `/sell-my-domain/` guide, appraisal | sell my domain |
 | Learn: `/premium-domain-names-complete-guide/` | 25 guides in `/category/domain-guides/`, `/domain-glossary/`, `/domain-price-index/`, `/domain-tools/` and 17 tools, `/faqs/`, `/epp-guidelines/`, `/news/` | informational searches |
 
@@ -62,7 +62,7 @@ the topic. The map is `db_autolink_map()`; examples:
 | Words in the text | Links to |
 |---|---|
 | domain broker, domain brokerage (services) | `/domain-brokerage-services/` |
-| domain acquisition, acquire a specific domain | `/acquire-premium-domain/` |
+| domain acquisition, acquire a specific domain, domain buy service | `/acquire-premium-domain/` |
 | domain appraisal | `/domain-appraisal-services/` |
 | 3-letter / 4-letter / 5-letter / 6-letter domains, numeric domains | the matching list page |
 | payment plan(s) | `/payment-terms/` |

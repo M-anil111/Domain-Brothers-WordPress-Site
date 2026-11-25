@@ -43,9 +43,8 @@ if ( ! function_exists( 'db_autolink_map' ) ) {
 		$map = array(
 			// Buying and broker services (money pages).
 			array( 'domain (?:name )?brok(?:er|ers|erage)(?: services?)?', '/domain-brokerage-services/' ),
-			array( '(?:premium )?domain acquisition(?: services?)?|acquire a (?:specific|premium) domain', '/acquire-premium-domain/' ),
+			array( '(?:premium )?domain acquisition(?: services?)?|acquire a (?:specific|premium) domain|domain buy(?:ing)? service', '/acquire-premium-domain/' ), // buy service merged here 2026-11-25
 			array( 'domain appraisal(?: services?)?|appraise (?:a|your) domain', '/domain-appraisal-services/' ),
-			array( 'domain buy(?:ing)? service', '/buy-domains-service/' ),
 			array( 'domain management(?: services?)?', '/domain-management-services/' ),
 			array( '(?:3|three)[- ](?:letter|character) domains?(?: names?)?', '/3-character-domains/' ),
 			array( '(?:4|four)[- ](?:letter|character) domains?(?: names?)?', '/4-character-domains/' ),
