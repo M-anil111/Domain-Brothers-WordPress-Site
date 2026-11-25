@@ -95,3 +95,13 @@ add_filter( 'the_content', function ( $html ) {
 	}
 	return $html . db_link_hub_html( db_link_hub_path() );
 }, 40 );
+
+// Every listing: one line for owners of similar names, linking to domain appraisal (approved
+// copy 1d, 2026-11-25). Added to the shared details section, which sits after the offer cards
+// on priced listings and after the "About" paragraph on the others.
+add_filter( 'db_dd_html', function ( $html, $post ) {
+	if ( ! is_string( $html ) || false !== strpos( $html, 'db-dd-appraise' ) ) {
+		return $html;
+	}
+	return $html . '<p class="db-dd-appraise" style="margin:20px 0 0;font-size:15px;color:#374151">Selling a name like this? Get a <a href="' . esc_url( home_url( '/domain-appraisal-services/' ) ) . '">domain appraisal</a> first.</p>';
+}, 20, 2 );
