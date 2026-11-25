@@ -26,6 +26,8 @@ if ( ! function_exists( 'db_service_redirect_map' ) ) {
 			'software-development'   => 'custom-software-development-services',
 			'mobile-app-development' => 'mobile-app-development-services',
 			'other-services'         => 'web-hosting-maintenance-services',
+			// Merged 2026-11-25: three pages competed for "get a name someone else owns".
+			'buy-domains-service'    => 'acquire-premium-domain',
 		) );
 	}
 }
@@ -113,3 +115,50 @@ add_filter( 'rank_math/sitemap/entry', function ( $url, $type, $post ) {
 	}
 	return $url;
 }, 10, 3 );
+
+if ( ! function_exists( 'db_service_redirect_rewrite_links' ) ) {
+	/**
+	 * Rewrites links to an old address so they point at the current page directly, not through
+	 * the 301 (Google: link to the final URL). Pure: tested offline.
+	 *
+	 * @param string $html Page HTML.
+	 * @param array  $map  Old slug => new slug (only live targets).
+	 * @param string $home Site root URL without trailing slash, e.g. "https://example.com".
+	 * @return string
+	 */
+	function db_service_redirect_rewrite_links( $html, array $map, $home ) {
+		if ( ! is_string( $html ) || ! $map ) {
+			return $html;
+		}
+		$host = preg_quote( (string) preg_replace( '#^https?://#i', '', rtrim( (string) $home, '/' ) ), '#' );
+		$alts = implode( '|', array_map( static function ( $s ) {
+			return preg_quote( (string) $s, '#' );
+		}, array_keys( $map ) ) );
+		$re   = '#(\shref\s*=\s*["\'])((?:https?://' . $host . ')?/)(' . $alts . ')/?(?=["\'?\#])#i';
+		$out  = preg_replace_callback( $re, static function ( $m ) use ( $map ) {
+			$new = $map[ strtolower( $m[3] ) ] ?? '';
+			return '' === $new ? $m[0] : $m[1] . $m[2] . $new . '/';
+		}, $html );
+		return is_string( $out ) ? $out : $html;
+	}
+}
+
+// Front end: every link to an old service address goes straight to the current page.
+add_action( 'template_redirect', function () {
+	if ( is_admin() || is_feed() || is_robots() ) {
+		return;
+	}
+	$live = array();
+	foreach ( db_service_redirect_map() as $old => $new ) {
+		if ( db_service_redirect_live_target( $new ) ) {
+			$live[ strtolower( (string) $old ) ] = (string) $new;
+		}
+	}
+	if ( ! $live ) {
+		return;
+	}
+	$home = untrailingslashit( home_url() );
+	ob_start( static function ( $html ) use ( $live, $home ) {
+		return db_service_redirect_rewrite_links( $html, $live, $home );
+	} );
+}, 21 );
