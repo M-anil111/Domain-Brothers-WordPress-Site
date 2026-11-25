@@ -257,11 +257,23 @@ if ( ! function_exists( 'db_autolink_live_map' ) ) {
 // Articles (guides and news) and content pages. Not the home page or the transactional pages,
 // which have their own flow; not listings, whose text is the seller's.
 add_filter( 'the_content', function ( $html ) {
-	if ( is_admin() || is_feed() || ! in_the_loop() || ! is_main_query() || ! is_singular( array( 'post', 'page' ) ) || is_front_page() ) {
+	if ( is_admin() || is_feed() || ! in_the_loop() || ! is_main_query() || ! is_singular( array( 'post', 'page' ) ) ) {
 		return $html;
 	}
 	if ( '1' === (string) get_option( 'db_autolink_off', '0' ) ) {
 		return $html;
+	}
+	// Home: only the broker topics. Search Console sent "domain broker" searches to the home page
+	// (positions 63 to 86) instead of the brokerage page; a link from home's own "domain
+	// brokerage" wording tells Google which page owns that topic.
+	if ( is_front_page() ) {
+		$only = array( '/domain-brokerage-services/', '/acquire-premium-domain/' );
+		$map  = array_values( array_filter( db_autolink_live_map(), static function ( $row ) use ( $only ) {
+			return in_array( $row[1], $only, true );
+		} ) );
+		return db_autolink_apply( (string) $html, $map, '/', 2, static function ( $p ) {
+			return home_url( $p );
+		} );
 	}
 	$skip = array( 'all-domains', 'my-wishlist', 'checkout', 'buy-now', 'make-an-offer', 'payment-plan-setup', 'thank-you', 'sign-in', 'register', 'seller', 'sold', 'site-map', 'privacy-policy', 'terms-of-use', 'refund-policy', 'cookie-policy', 'acceptable-use-policy', 'trademark-and-copyright-notices', 'seller-agreement', 'contact-us' );
 	if ( is_page( $skip ) ) {
